@@ -1,3 +1,18 @@
+import { closeEditor } from './editor.js';
+
+/**
+ * Remove a row from the table. If the row holds the open editor, save and close the editor first.
+ */
+const removeRow = function (row) {
+    const obj = this;
+
+    if (obj.edition && row.contains(obj.edition[0])) {
+        closeEditor.call(obj, obj.edition[0], true);
+    }
+
+    obj.tbody.removeChild(row);
+};
+
 /**
  * Go to a page in a lazyLoading
  */
@@ -41,7 +56,7 @@ export const loadPage = function (pageNumber) {
         }
 
         if (obj.tbody.children.length > quantityPerPage) {
-            obj.tbody.removeChild(obj.tbody.firstChild);
+            removeRow.call(obj, obj.tbody.firstChild);
         }
     }
 };
@@ -93,7 +108,7 @@ export const loadUp = function () {
                         obj.tbody.insertBefore(obj.rows[item].element, obj.tbody.firstChild);
                     }
                     if (obj.tbody.children.length > 100) {
-                        obj.tbody.removeChild(obj.tbody.lastChild);
+                        removeRow.call(obj, obj.tbody.lastChild);
                         test = 1;
                     }
                 }
@@ -130,7 +145,7 @@ export const loadDown = function () {
                         obj.tbody.appendChild(obj.rows[item].element);
                     }
                     if (obj.tbody.children.length > 100) {
-                        obj.tbody.removeChild(obj.tbody.firstChild);
+                        removeRow.call(obj, obj.tbody.firstChild);
                         test = 1;
                     }
                 }
