@@ -1074,9 +1074,20 @@ export const updateScroll = function (direction) {
     // Freeze columns?
     const freezed = getFreezeWidth.call(obj);
 
+    // The frozen columns stay at the left of the content only when scrollLeft is more than 50.
+    // Then a cell whose left border is under the frozen columns goes to the right of the frozen columns.
+    const frozen = freezed > 0 && obj.content.scrollLeft > 50;
+    const left = x2 - x1 + obj.content.scrollLeft;
+    const underFreezed = frozen && left < obj.content.scrollLeft + freezed;
+
     // Left position check - TODO: change that to the bottom border of the element
-    if (x > obj.content.scrollLeft + freezed && x < obj.content.scrollLeft + w1) {
+    if (
+        (frozen && obj.selectedCell[2] < obj.options.freezeColumns) ||
+        (!underFreezed && x > obj.content.scrollLeft + freezed && x < obj.content.scrollLeft + w1)
+    ) {
         // In the viewport
+    } else if (underFreezed) {
+        obj.content.scrollLeft = left - freezed - 1 < 50 ? 0 : left - freezed - 1;
     } else {
         // Out of viewport
         if (x < obj.content.scrollLeft + 30) {
