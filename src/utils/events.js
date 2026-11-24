@@ -43,7 +43,8 @@ const getElement = function (element) {
 
     path(element);
 
-    return [jssElement, jssSection];
+    // A section of a table outside a worksheet is not a section of the grid
+    return [jssElement, jssElement ? jssSection : 0];
 };
 
 const mouseUpControls = function (e) {
@@ -204,7 +205,7 @@ const mouseDownControls = function (e) {
                 closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition[0], true);
             }
 
-            if (!e.target.classList.contains('jss_object')) {
+            if (!e.target.closest('.jss_object')) {
                 resetSelection.call(libraryBase.jspreadsheet.current, true);
                 libraryBase.jspreadsheet.current = null;
             }
