@@ -246,4 +246,132 @@ describe('Use the columns method', () => {
         expect(rows[0].children[2].innerHTML).to.include(3);
         expect(rows[0].children[3].innerHTML).to.include(4);
     });
+
+    it('hideColumn keeps a merged range visible when it covers a column that is not hidden', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['Item', '', 'x', ''],
+                        ['', '', '', ''],
+                        ['', '', 'y', ''],
+                    ],
+                    mergeCells: { A1: [2, 1], C3: [2, 1] },
+                },
+            ],
+        });
+
+        const worksheet = instance[0];
+
+        worksheet.hideColumn(1);
+        worksheet.hideColumn(2);
+
+        expect(worksheet.records[0][0].element.style.display).to.equal('');
+        expect(worksheet.records[2][2].element.style.display).to.equal('');
+        expect(worksheet.records[1][1].element.style.display).to.equal('none');
+        expect(worksheet.records[1][2].element.style.display).to.equal('none');
+
+        // The visible first cell spans only the columns that are not hidden, so the next cells keep their columns
+        expect(worksheet.records[0][0].element.getAttribute('colspan')).to.equal('1');
+        expect(worksheet.records[2][2].element.getAttribute('colspan')).to.equal('1');
+
+        worksheet.showColumn([1, 2]);
+
+        expect(worksheet.records[0][0].element.getAttribute('colspan')).to.equal('2');
+        expect(worksheet.records[2][2].element.getAttribute('colspan')).to.equal('2');
+    });
+
+    it('hideColumn hides a merged range when each column that it covers is hidden', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['Item', '', 'x'],
+                        ['', '', ''],
+                    ],
+                    mergeCells: { A1: [2, 1] },
+                },
+            ],
+        });
+
+        const worksheet = instance[0];
+
+        worksheet.hideColumn([0, 1]);
+
+        expect(worksheet.records[0][0].element.style.display).to.equal('none');
+    });
+
+    it('setMerge gives the first cell only the columns that are not hidden', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [4, 2] }],
+        });
+
+        const worksheet = instance[0];
+
+        worksheet.hideColumn(1);
+        worksheet.setMerge('A1', 3, 1);
+
+        expect(worksheet.records[0][0].element.style.display).to.equal('');
+        expect(worksheet.records[0][0].element.getAttribute('colspan')).to.equal('2');
+
+        worksheet.showColumn(1);
+
+        expect(worksheet.records[0][0].element.getAttribute('colspan')).to.equal('3');
+    });
+
+    it('keeps a merged range visible when one of its columns has the type hidden', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [['Item', 'b', 'c']],
+                    columns: [{ type: 'hidden' }, {}, {}],
+                    mergeCells: { A1: [2, 1] },
+                },
+            ],
+        });
+
+        const worksheet = instance[0];
+
+        expect(worksheet.records[0][0].element.style.display).to.equal('');
+        expect(worksheet.records[0][0].element.getAttribute('colspan')).to.equal('1');
+    });
+
+    it('removeMerge keeps the cells of a hidden column hidden', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [{ data: [['Item', '', 'x', 'y']], mergeCells: { A1: [2, 1] } }],
+        });
+
+        const worksheet = instance[0];
+
+        worksheet.hideColumn(0);
+        worksheet.removeMerge('A1');
+
+        expect(worksheet.records[0][0].element.style.display).to.equal('none');
+        expect(worksheet.records[0][1].element.style.display).to.equal('');
+
+        worksheet.setMerge('A1', 2, 1);
+        worksheet.hideColumn(1);
+        worksheet.showColumn(0);
+        worksheet.removeMerge('A1');
+
+        expect(worksheet.records[0][0].element.style.display).to.equal('');
+        expect(worksheet.records[0][1].element.style.display).to.equal('none');
+    });
+
+    it('selects each column of a merged range when one of its columns is hidden', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [4, 2], mergeCells: { A1: [3, 1] } }],
+        });
+
+        const worksheet = instance[0];
+
+        worksheet.hideColumn(1);
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+
+        expect(worksheet.headers.map((header) => header.classList.contains('selected'))).to.eql([true, false, true, false]);
+
+        worksheet.resetSelection();
+
+        expect(worksheet.headers.map((header) => header.classList.contains('selected'))).to.eql([false, false, false, false]);
+    });
 });

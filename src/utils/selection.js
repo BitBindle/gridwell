@@ -6,6 +6,18 @@ import { updateCell, updateFormula, updateFormulaChain, updateTable } from './in
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { updateToolbar } from './toolbar.js';
 
+/**
+ * Get the number of columns of the merged range that starts at x, y.
+ * The colspan attribute counts only the columns that are not hidden.
+ */
+const getMergedColspan = function (element, x, y) {
+    const obj = this;
+
+    const merged = obj.options.mergeCells && obj.options.mergeCells[getColumnNameFromId([x, y])];
+
+    return merged ? parseInt(merged[0]) : parseInt(element.getAttribute('colspan'));
+};
+
 export const updateCornerPosition = function () {
     const obj = this;
 
@@ -81,7 +93,7 @@ export const resetSelection = function (blur) {
             let ux, uy;
 
             if (obj.highlighted[i].element.getAttribute('data-merged')) {
-                const colspan = parseInt(obj.highlighted[i].element.getAttribute('colspan'));
+                const colspan = getMergedColspan.call(obj, obj.highlighted[i].element, px, py);
                 const rowspan = parseInt(obj.highlighted[i].element.getAttribute('rowspan'));
                 ux = colspan > 0 ? px + (colspan - 1) : px;
                 uy = rowspan > 0 ? py + (rowspan - 1) : py;
@@ -227,7 +239,7 @@ export const updateSelectionFromCoords = function (x1, y1, x2, y2, origin) {
             if (obj.records[j][i] && obj.records[j][i].element.getAttribute('data-merged')) {
                 const x = parseInt(obj.records[j][i].element.getAttribute('data-x'));
                 const y = parseInt(obj.records[j][i].element.getAttribute('data-y'));
-                const colspan = parseInt(obj.records[j][i].element.getAttribute('colspan'));
+                const colspan = getMergedColspan.call(obj, obj.records[j][i].element, x, y);
                 const rowspan = parseInt(obj.records[j][i].element.getAttribute('rowspan'));
 
                 if (colspan > 1) {
