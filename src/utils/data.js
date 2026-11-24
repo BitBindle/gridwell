@@ -230,6 +230,8 @@ export const setValue = function (cell, value, force) {
             if (keys.length > 0) {
                 for (let i = 0; i < keys.length; i++) {
                     let x, y;
+                    // An item without its own value gets the value argument
+                    let cellValue = value;
 
                     if (typeof cell[i] == 'string') {
                         const columnId = getIdFromColumnName(cell[i], true);
@@ -241,7 +243,7 @@ export const setValue = function (cell, value, force) {
                             y = cell[i].y;
                             // Flexible setup
                             if (cell[i].value != null) {
-                                value = cell[i].value;
+                                cellValue = cell[i].value;
                             }
                         } else {
                             x = cell[i].getAttribute('data-x');
@@ -251,7 +253,7 @@ export const setValue = function (cell, value, force) {
 
                     // Update cell
                     if (x != null && y != null) {
-                        records.push(updateCell.call(obj, x, y, value, force));
+                        records.push(updateCell.call(obj, x, y, cellValue, force));
 
                         // Update all formulas in the chain
                         updateFormulaChain.call(obj, x, y, records);
