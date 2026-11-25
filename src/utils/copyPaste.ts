@@ -2,7 +2,6 @@ import jSuites from 'jsuites';
 
 import { parseCSV } from './helpers.js';
 import dispatch from './dispatch.js';
-import { setHistory } from './history.js';
 import { updateCell, updateFormulaChain, updateTable, updateTableReferences } from './internal.js';
 import { downGet, rightGet } from './keys.js';
 import { hash, removeCopyingSelection, updateSelectionFromCoords } from './selection.js';
@@ -421,7 +420,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data) {
         updateSelectionFromCoords.call(obj, x, y, colIndex, rowIndex);
 
         // Update history
-        setHistory.call(obj, {
+        obj.history.add({
             action: 'setValue',
             records: records,
             selection: obj.selectedCell,

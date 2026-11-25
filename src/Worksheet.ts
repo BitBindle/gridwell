@@ -1,4 +1,5 @@
 import type jspreadsheet from './jspreadsheet';
+import { History } from './components/History.js';
 import type { Spreadsheet, WorksheetState } from './types/internal';
 
 /**
@@ -27,8 +28,7 @@ export class Worksheet {
         this.filters = [];
         // The formula chain by cell name. setData also starts it as an array, which the code uses as an object.
         this.formula = [] as unknown as Worksheet['formula'];
-        this.history = [];
-        this.historyIndex = -1;
+        this.history = new History();
         this.selection = [];
     }
 }

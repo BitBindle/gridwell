@@ -2,7 +2,6 @@ import jSuites from 'jsuites';
 
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { renderCell, updateCell } from './internal.js';
-import { setHistory } from './history.js';
 import dispatch from './dispatch.js';
 import { updateSelection } from './selection.js';
 import type jspreadsheet from '../jspreadsheet';
@@ -275,7 +274,7 @@ export const setMerge = function (
         updateSelection.call(obj, obj.records[cell[1]][cell[0]].element);
 
         if (!ignoreHistoryAndEvents) {
-            setHistory.call(obj, {
+            obj.history.add({
                 action: 'setMerge',
                 column: cellName,
                 colspan: colspan!,

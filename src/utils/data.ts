@@ -2,7 +2,6 @@ import { createRow } from './rows.js';
 import { updateCell, updateFormulaChain, updateTable } from './internal.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import dispatch from './dispatch.js';
-import { setHistory } from './history.js';
 import { updatePagination } from './pagination.js';
 import { setMerge } from './merges.js';
 import { getCoordsFromRange } from './helpers.js';
@@ -67,10 +66,7 @@ export const setData: WorksheetMethod<'setData'> = function (data) {
     obj.rows = [];
     obj.results = null;
     obj.records = [];
-    obj.history = [];
-
-    // Reset internal controllers
-    obj.historyIndex = -1;
+    obj.history.clear();
 
     // Reset data
     obj.tbody.innerHTML = '';
@@ -273,7 +269,7 @@ export const setValue: WorksheetMethod<'setValue'> = function (cell: any, value,
     }
 
     // Update history
-    setHistory.call(obj, {
+    obj.history.add({
         action: 'setValue',
         records: records,
         selection: obj.selectedCell,
@@ -314,7 +310,7 @@ export const setValueFromCoords: WorksheetMethod<'setValueFromCoords'> = functio
     updateFormulaChain.call(obj, x, y, records);
 
     // Update history
-    setHistory.call(obj, {
+    obj.history.add({
         action: 'setValue',
         records: records,
         selection: obj.selectedCell,

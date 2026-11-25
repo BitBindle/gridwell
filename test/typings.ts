@@ -136,3 +136,12 @@ const fontItem: jspreadsheet.ToolbarItem = { type: 'select', options: ['Arial', 
 
 // The value of a select item is the index of the option it shows first
 const alignItem: jspreadsheet.ToolbarItem = { type: 'select', options: ['top', 'middle', 'bottom'], value: 1 };
+
+// The undo history is an object with the records, the position and the flag
+assertType<Equals<typeof worksheet.history.records, jspreadsheet.HistoryRecord[]>>();
+assertType<Equals<ReturnType<typeof worksheet.history.canUndo>, boolean>>();
+assertType<Equals<ReturnType<typeof worksheet.history.back>, jspreadsheet.HistoryRecord | undefined>>();
+// @ts-expect-error The position is in history.index
+void worksheet.historyIndex;
+// @ts-expect-error The flag is history.ignore
+void worksheet.ignoreHistory;

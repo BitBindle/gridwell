@@ -1,7 +1,6 @@
 import jSuites from 'jsuites';
 import dispatch from './dispatch.js';
 import { getColumnName } from './helpers.js';
-import { setHistory } from './history.js';
 import { isColMerged, updateMergedColumns } from './merges.js';
 import { createCell, updateTableReferences } from './internal.js';
 import { conditionalSelectionUpdate, updateCornerPosition } from './selection.js';
@@ -287,7 +286,7 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
         }
 
         // Keep history
-        setHistory.call(obj, {
+        obj.history.add({
             action: 'insertColumn',
             columnNumber: columnNumber,
             numOfColumns: numOfColumns,
@@ -382,7 +381,7 @@ export const moveColumn: WorksheetMethod<'moveColumn'> = function (o, d) {
     }
 
     // Keeping history of changes
-    setHistory.call(obj, {
+    obj.history.add({
         action: 'moveColumn',
         oldValue: o,
         newValue: d,
@@ -529,7 +528,7 @@ export const deleteColumn: WorksheetMethod<'deleteColumn'> = function (columnNum
                 }
 
                 // Keeping history of changes
-                setHistory.call(obj, {
+                obj.history.add({
                     action: 'deleteColumn',
                     columnNumber: columnNumber,
                     numOfColumns: numOfColumns,
@@ -633,7 +632,7 @@ export const setWidth = function (this: Worksheet, column: number | number[], wi
         }
 
         // Keeping history of changes
-        setHistory.call(obj, {
+        obj.history.add({
             action: 'setWidth',
             column: column,
             oldValue: oldWidth,

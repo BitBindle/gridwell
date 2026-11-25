@@ -8,7 +8,7 @@ describe('Style', () => {
             worksheets: [{ minDimensions: [2, 2], style: { A1: 'font-weight:bold' } }],
         });
 
-        expect(instance[0].history.length).to.equal(0);
+        expect(instance[0].history.records.length).to.equal(0);
 
         instance[0].undo();
         expect(instance[0].getStyle('A1', 'font-weight')).to.equal('bold');
@@ -24,7 +24,7 @@ describe('Style', () => {
 
         expect(instance[0].getStyle('A1', 'color')).to.equal('red');
         expect(instance[0].getStyle('B1', 'color')).to.equal('blue');
-        expect(instance[0].history.length).to.equal(0);
+        expect(instance[0].history.records.length).to.equal(0);
     });
 
     it('setStyle adds the change to the history by default', () => {
@@ -33,7 +33,7 @@ describe('Style', () => {
         });
 
         instance[0].setStyle('A1', 'color', 'red');
-        expect(instance[0].history.length).to.equal(1);
+        expect(instance[0].history.records.length).to.equal(1);
 
         instance[0].undo();
         expect(instance[0].getStyle('A1', 'color')).to.equal('');
@@ -49,7 +49,7 @@ describe('Style', () => {
 
         expect(instance[0].getStyle('A1', 'color')).to.equal('');
         expect(instance[0].getStyle('A1', 'font-weight')).to.equal('bold');
-        expect(instance[0].history.length).to.equal(0);
+        expect(instance[0].history.records.length).to.equal(0);
     });
 
     it('setStyle does not change the styles that it gets', () => {

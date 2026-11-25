@@ -7,7 +7,7 @@ version 5. AGENTS.md describes the code as it is today; this file says where it 
 
 Version 5 builds a worksheet as a plain object that about twenty modules add properties to. About fifty state
 properties have no owner: any module reads and writes any of them. About 140 public methods are bound to each worksheet
-instance. There are 17 import cycles, which only work because no module calls an imported function while it loads. The
+instance. There were 17 import cycles, which only work because no module calls an imported function while it loads. The
 keyboard and clipboard events find their worksheet through one global, `jspreadsheet.current`, which the code reads in
 more than 300 places.
 
@@ -52,7 +52,8 @@ what it changes, and lists its breaking changes in UPGRADING.md.
 1. **Worksheet and Spreadsheet classes.** One constructor sets up all the state of a worksheet; the public methods move
    from each instance to the prototype. `instanceof` replaces the check of `parent` that tells a worksheet from a
    spreadsheet.
-2. **History.** The undo history and the `ignoreHistory` flag move into `components/History.ts`.
+2. **History.** The undo history and the `ignoreHistory` flag move into `components/History.ts`. Applying a record
+   (`undo` and `redo` in `utils/history.ts`) stays a worksheet method until the functions it calls are components.
 3. **Clipboard.** Copy, cut, paste and the copied data move into `components/Clipboard.ts`.
 4. **Editor.** `edition` and the editor types move into `components/Editor.ts`.
 5. **Selection.** `selectedCell`, `highlighted`, the borders, the active cell and the focus state move into
