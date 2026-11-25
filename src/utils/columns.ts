@@ -207,7 +207,7 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
                 for (let i = 0; i < numOfColumns; i++) {
                     historyFooters[j].push('');
                 }
-                obj.options.footers[j].splice(columnIndex, 0, historyFooters[j] as any);
+                obj.options.footers[j].splice(columnIndex, 0, ...historyFooters[j]);
             }
         }
 
