@@ -2186,8 +2186,9 @@ declare namespace jspreadsheet {
          * @param k - property to be changed.
          * @param v - New property value. If equal to the property's current value and the "force" parameter is false, removes that property from the style.
          * @param force - If true, changes the value of the property even if the cell is read-only. Also, if true, even if the new value of the property is the same as the current one, the property is not removed.
+         * @param ignoreHistoryAndEvents - If true, do not add this action to history. The onchangestyle event still occurs.
          */
-        setStyle(o: string, k: string, v: string, force?: boolean): void;
+        setStyle(o: string, k: string, v: string, force?: boolean, ignoreHistoryAndEvents?: boolean): void;
 
         /**
          * Change cell styles.
@@ -2195,8 +2196,9 @@ declare namespace jspreadsheet {
          * @param k - It is not used.
          * @param v - It is not used.
          * @param force - If true, changes the value of the property even if the cell is read-only. Also, if true, even if the new value of the property is the same as the current one, the property is not removed.
+         * @param ignoreHistoryAndEvents - If true, do not add this action to history. The onchangestyle event still occurs.
          */
-        setStyle(o: Record<string, string | string[]>, k?: null | undefined, v?: null | undefined, force?: boolean): void;
+        setStyle(o: Record<string, string | string[]>, k?: null | undefined, v?: null | undefined, force?: boolean, ignoreHistoryAndEvents?: boolean): void;
 
         /**
          * Change the value of one or more cells.
