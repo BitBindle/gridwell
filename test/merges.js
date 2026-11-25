@@ -316,4 +316,19 @@ describe('Merge tests', () => {
 
         expect(instance[0].getMerge('A1')).to.equal(null);
     });
+
+    it('setMerge without arguments merges the selected cells', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [
+                {
+                    minDimensions: [4, 4],
+                },
+            ],
+        });
+
+        instance[0].updateSelectionFromCoords(1, 1, 2, 2);
+        instance[0].setMerge();
+
+        expect(instance[0].getMerge('B2')).to.eql([2, 2]);
+    });
 });

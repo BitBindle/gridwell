@@ -127,10 +127,13 @@ export const setMerge = function (cellName, colspan, rowspan, ignoreHistoryAndEv
             alert(jSuites.translate('No cells selected'));
             return null;
         } else {
-            const x1 = parseInt(obj.highlighted[0].getAttribute('data-x'));
-            const y1 = parseInt(obj.highlighted[0].getAttribute('data-y'));
-            const x2 = parseInt(obj.highlighted[obj.highlighted.length - 1].getAttribute('data-x'));
-            const y2 = parseInt(obj.highlighted[obj.highlighted.length - 1].getAttribute('data-y'));
+            // The highlighted items are cell records, not td elements
+            const first = obj.highlighted[0].element;
+            const last = obj.highlighted[obj.highlighted.length - 1].element;
+            const x1 = parseInt(first.getAttribute('data-x'));
+            const y1 = parseInt(first.getAttribute('data-y'));
+            const x2 = parseInt(last.getAttribute('data-x'));
+            const y2 = parseInt(last.getAttribute('data-y'));
             cellName = getColumnNameFromId([x1, y1]);
             colspan = x2 - x1 + 1;
             rowspan = y2 - y1 + 1;
