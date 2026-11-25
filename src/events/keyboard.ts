@@ -1,6 +1,5 @@
 import jSuites from 'jsuites';
 import libraryBase from '../utils/libraryBase.js';
-import { down, first, last, left, right, up } from '../utils/keys.js';
 import { getCellColumnIndex } from '../utils/values.js';
 import { copyControls, cutControls, pasteControls } from './clipboard.js';
 import { getElement, isCtrl } from './helpers.js';
@@ -97,7 +96,7 @@ const enterKey = function (this: SelectedWorksheet, e: TargetEvent<KeyboardEvent
 
     // Move cursor
     if (e.shiftKey) {
-        up.call(obj);
+        obj.selection.up();
     } else {
         if (obj.options.allowInsertRow != false) {
             if (obj.options.allowManualInsertRow != false) {
@@ -108,7 +107,7 @@ const enterKey = function (this: SelectedWorksheet, e: TargetEvent<KeyboardEvent
             }
         }
 
-        down.call(obj);
+        obj.selection.down();
     }
     e.preventDefault();
 };
@@ -121,7 +120,7 @@ const tabKey = function (this: SelectedWorksheet, e: TargetEvent<KeyboardEvent>)
 
     // Tab
     if (e.shiftKey) {
-        left.call(obj);
+        obj.selection.left();
     } else {
         if (obj.options.allowInsertColumn != false) {
             if (obj.options.allowManualInsertColumn != false) {
@@ -132,7 +131,7 @@ const tabKey = function (this: SelectedWorksheet, e: TargetEvent<KeyboardEvent>)
             }
         }
 
-        right.call(obj);
+        obj.selection.right();
     }
     e.preventDefault();
 };
@@ -222,22 +221,22 @@ const gridKeys = function (this: SelectedWorksheet, e: TargetEvent<KeyboardEvent
 
     // Which key
     if (e.which == 37) {
-        left.call(obj, e.shiftKey, e.ctrlKey);
+        obj.selection.left(e.shiftKey, e.ctrlKey);
         e.preventDefault();
     } else if (e.which == 39) {
-        right.call(obj, e.shiftKey, e.ctrlKey);
+        obj.selection.right(e.shiftKey, e.ctrlKey);
         e.preventDefault();
     } else if (e.which == 38) {
-        up.call(obj, e.shiftKey, e.ctrlKey);
+        obj.selection.up(e.shiftKey, e.ctrlKey);
         e.preventDefault();
     } else if (e.which == 40) {
-        down.call(obj, e.shiftKey, e.ctrlKey);
+        obj.selection.down(e.shiftKey, e.ctrlKey);
         e.preventDefault();
     } else if (e.which == 36) {
-        first.call(obj, e.shiftKey, e.ctrlKey);
+        obj.selection.first(e.shiftKey, e.ctrlKey);
         e.preventDefault();
     } else if (e.which == 35) {
-        last.call(obj, e.shiftKey, e.ctrlKey);
+        obj.selection.last(e.shiftKey, e.ctrlKey);
         e.preventDefault();
     } else if (e.which == 46 || e.which == 8) {
         // Delete

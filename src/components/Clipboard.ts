@@ -3,7 +3,6 @@ import { parseCSV } from '../utils/helpers.js';
 import dispatch from '../utils/dispatch.js';
 import { updateCell } from '../utils/render.js';
 import { updateTable } from '../utils/table.js';
-import { downGet, rightGet } from '../utils/keys.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
@@ -432,7 +431,7 @@ export class Clipboard {
                             break;
                         }
                     }
-                    colIndex = rightGet.call(obj, colIndex, rowIndex);
+                    colIndex = obj.selection.rightGet(colIndex, rowIndex);
                 }
             }
 
@@ -447,7 +446,7 @@ export class Clipboard {
                         break;
                     }
                 }
-                rowIndex = downGet.call(obj, x, rowIndex);
+                rowIndex = obj.selection.downGet(x, rowIndex);
             }
         }
 

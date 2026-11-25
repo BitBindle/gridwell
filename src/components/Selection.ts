@@ -1,11 +1,11 @@
 import dispatch from '../utils/dispatch.js';
-import { getFreezeWidth } from '../utils/freeze.js';
+import { getFreezeWidth, getIndexWidth } from '../utils/freeze.js';
 import { getCellNameFromCoords } from '../utils/helpers.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import { updateToolbar } from '../utils/toolbar.js';
 import { setCellLabel } from '../utils/accessibility.js';
 import libraryBase from '../utils/libraryBase.js';
-import type { WorksheetState, Worksheet } from '../types/internal';
+import type { WorksheetState, Worksheet, SelectedWorksheet } from '../types/internal';
 
 /** The column and the row of a corner of the selection, then of the other corner: [x1, y1, x2, y2]. */
 type Range = [number, number, number, number];
@@ -19,13 +19,26 @@ const isFocusLost = function () {
     return !active || active === document.body;
 };
 
+/** The corner of the selection that moves: 0 for the cell in selection.range[0] and [1], 1 for the cell in [2] and [3]. */
+type Corner = 0 | 1;
+
+/** 0 moves to the last visible cell in that direction (with Ctrl), 1 moves to the next visible cell. */
+type Step = 0 | 1;
+
+/**
+ * Whether the worksheet has a selection
+ */
+const hasSelection = function (obj: Worksheet): obj is SelectedWorksheet {
+    return obj.selection.range ? true : false;
+};
+
 /**
  * The selection of a worksheet: the selected range, the highlighted cells, the cells that a drag of the corner fills,
  * and the cell that has the keyboard focus. It selects cells and updates their classes, the ARIA attributes, the corner
  * and the toolbar, keeps the selected cell the tab stop of the grid, and tells which cells are selected.
  *
  * Each worksheet has one, as worksheet.selection. updateSelectionFromCoords, resetSelection, selectAll, getSelection,
- * getSelected, getSelectedColumns, getSelectedRows, getRange, isSelected and getHighlighted call it.
+ * getSelected, getSelectedColumns, getSelectedRows, getRange, isSelected, getHighlighted, up, down, left, right, first and last call it.
  */
 export class Selection {
     readonly worksheet: Worksheet;
@@ -787,5 +800,543 @@ export class Selection {
                 cell.focus({ preventScroll: true });
             }
         });
+    }
+
+    /**
+     * Move the selection from a cell that a merged range hides to the first cell of the range
+     */
+    private toFirstCell() {
+        // The moves call it after they check that the worksheet has a selection
+        const obj = this.worksheet as SelectedWorksheet;
+
+        const element = obj.records[obj.selection.range[1]][obj.selection.range[0]].element;
+
+        if (element.getAttribute('data-merged')) {
+            obj.selection.range[0] = parseInt(element.getAttribute('data-x'));
+            obj.selection.range[1] = parseInt(element.getAttribute('data-y'));
+        }
+    }
+
+    private upGet(x: number, y: number) {
+        const obj = this.worksheet;
+
+        x = parseInt(x);
+        y = parseInt(y);
+        for (let j = y - 1; j >= 0; j--) {
+            if (obj.records[j][x].element.style.display != 'none' && obj.rows[j].element.style.display != 'none') {
+                if (obj.records[j][x].element.getAttribute('data-merged')) {
+                    if (obj.records[j][x].element == obj.records[y][x].element) {
+                        continue;
+                    }
+                }
+                y = j;
+                break;
+            }
+        }
+
+        return y;
+    }
+
+    private upVisible(group: Corner, direction: Step) {
+        // The moves call it after they check that the worksheet has a selection
+        const obj = this.worksheet as SelectedWorksheet;
+
+        let x, y;
+
+        if (group == 0) {
+            x = parseInt(obj.selection.range[0]);
+            y = parseInt(obj.selection.range[1]);
+        } else {
+            x = parseInt(obj.selection.range[2]);
+            y = parseInt(obj.selection.range[3]);
+        }
+
+        if (direction == 0) {
+            for (let j = 0; j < y; j++) {
+                if (obj.records[j][x].element.style.display != 'none' && obj.rows[j].element.style.display != 'none') {
+                    y = j;
+                    break;
+                }
+            }
+        } else {
+            y = this.upGet(x, y);
+        }
+
+        if (group == 0) {
+            obj.selection.range[0] = x;
+            obj.selection.range[1] = y;
+        } else {
+            obj.selection.range[2] = x;
+            obj.selection.range[3] = y;
+        }
+    }
+
+    up(shiftKey?: boolean, ctrlKey?: boolean) {
+        const obj = this.worksheet;
+
+        // Without a selection, there is nothing to move
+        if (!hasSelection(obj)) {
+            return;
+        }
+
+        if (shiftKey) {
+            if (obj.selection.range[3] > 0) {
+                this.upVisible(1, ctrlKey ? 0 : 1);
+            }
+        } else {
+            if (obj.selection.range[1] > 0) {
+                this.upVisible(0, ctrlKey ? 0 : 1);
+            }
+            this.toFirstCell();
+            obj.selection.range[2] = obj.selection.range[0];
+            obj.selection.range[3] = obj.selection.range[1];
+        }
+
+        // Update selection
+        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+
+        // Change page
+        if (obj.options.lazyLoading == true) {
+            if (obj.selection.range[1] == 0 || obj.selection.range[3] == 0) {
+                obj.view.loadPage(0);
+                obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+            } else {
+                if (obj.view.loadValidation()) {
+                    obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+                } else {
+                    const item = parseInt((obj.tbody.firstChild as HTMLElement).getAttribute('data-y'));
+                    if (obj.selection.range[1] - item < 30) {
+                        obj.view.loadUp();
+                        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+                    }
+                }
+            }
+        } else if (obj.options.pagination! > 0) {
+            const pageNumber = obj.whichPage(obj.selection.range[3]);
+            if (pageNumber != obj.view.pageNumber) {
+                obj.page(pageNumber);
+            }
+        }
+
+        this.updateScroll(1);
+    }
+
+    rightGet(x: number, y: number) {
+        const obj = this.worksheet;
+
+        x = parseInt(x);
+        y = parseInt(y);
+
+        for (let i = x + 1; i < obj.headers.length; i++) {
+            if (obj.records[y][i].element.style.display != 'none') {
+                if (obj.records[y][i].element.getAttribute('data-merged')) {
+                    if (obj.records[y][i].element == obj.records[y][x].element) {
+                        continue;
+                    }
+                }
+                x = i;
+                break;
+            }
+        }
+
+        return x;
+    }
+
+    private rightVisible(group: Corner, direction: Step) {
+        // The moves call it after they check that the worksheet has a selection
+        const obj = this.worksheet as SelectedWorksheet;
+
+        let x, y;
+
+        if (group == 0) {
+            x = parseInt(obj.selection.range[0]);
+            y = parseInt(obj.selection.range[1]);
+        } else {
+            x = parseInt(obj.selection.range[2]);
+            y = parseInt(obj.selection.range[3]);
+        }
+
+        if (direction == 0) {
+            for (let i = obj.headers.length - 1; i > x; i--) {
+                if (obj.records[y][i].element.style.display != 'none') {
+                    x = i;
+                    break;
+                }
+            }
+        } else {
+            x = this.rightGet(x, y);
+        }
+
+        if (group == 0) {
+            obj.selection.range[0] = x;
+            obj.selection.range[1] = y;
+        } else {
+            obj.selection.range[2] = x;
+            obj.selection.range[3] = y;
+        }
+    }
+
+    right(shiftKey?: boolean, ctrlKey?: boolean) {
+        const obj = this.worksheet;
+
+        // Without a selection, there is nothing to move
+        if (!hasSelection(obj)) {
+            return;
+        }
+
+        if (shiftKey) {
+            if (obj.selection.range[2] < obj.headers.length - 1) {
+                this.rightVisible(1, ctrlKey ? 0 : 1);
+            }
+        } else {
+            if (obj.selection.range[0] < obj.headers.length - 1) {
+                this.rightVisible(0, ctrlKey ? 0 : 1);
+            }
+            this.toFirstCell();
+            obj.selection.range[2] = obj.selection.range[0];
+            obj.selection.range[3] = obj.selection.range[1];
+        }
+
+        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+        this.updateScroll(2);
+    }
+
+    downGet(x: number, y: number) {
+        const obj = this.worksheet;
+
+        x = parseInt(x);
+        y = parseInt(y);
+        for (let j = y + 1; j < obj.rows.length; j++) {
+            if (obj.records[j][x].element.style.display != 'none' && obj.rows[j].element.style.display != 'none') {
+                if (obj.records[j][x].element.getAttribute('data-merged')) {
+                    if (obj.records[j][x].element == obj.records[y][x].element) {
+                        continue;
+                    }
+                }
+                y = j;
+                break;
+            }
+        }
+
+        return y;
+    }
+
+    private downVisible(group: Corner, direction: Step) {
+        // The moves call it after they check that the worksheet has a selection
+        const obj = this.worksheet as SelectedWorksheet;
+
+        let x, y;
+
+        if (group == 0) {
+            x = parseInt(obj.selection.range[0]);
+            y = parseInt(obj.selection.range[1]);
+        } else {
+            x = parseInt(obj.selection.range[2]);
+            y = parseInt(obj.selection.range[3]);
+        }
+
+        if (direction == 0) {
+            for (let j = obj.rows.length - 1; j > y; j--) {
+                if (obj.records[j][x].element.style.display != 'none' && obj.rows[j].element.style.display != 'none') {
+                    y = j;
+                    break;
+                }
+            }
+        } else {
+            y = this.downGet(x, y);
+        }
+
+        if (group == 0) {
+            obj.selection.range[0] = x;
+            obj.selection.range[1] = y;
+        } else {
+            obj.selection.range[2] = x;
+            obj.selection.range[3] = y;
+        }
+    }
+
+    down(shiftKey?: boolean, ctrlKey?: boolean) {
+        const obj = this.worksheet;
+
+        // Without a selection, there is nothing to move
+        if (!hasSelection(obj)) {
+            return;
+        }
+
+        if (shiftKey) {
+            if (obj.selection.range[3] < obj.records.length - 1) {
+                this.downVisible(1, ctrlKey ? 0 : 1);
+            }
+        } else {
+            if (obj.selection.range[1] < obj.records.length - 1) {
+                this.downVisible(0, ctrlKey ? 0 : 1);
+            }
+            this.toFirstCell();
+            obj.selection.range[2] = obj.selection.range[0];
+            obj.selection.range[3] = obj.selection.range[1];
+        }
+
+        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+
+        // Change page
+        if (obj.options.lazyLoading == true) {
+            if (obj.selection.range[1] == obj.records.length - 1 || obj.selection.range[3] == obj.records.length - 1) {
+                obj.view.loadPage(-1);
+                obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+            } else {
+                if (obj.view.loadValidation()) {
+                    obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+                } else {
+                    const item = parseInt((obj.tbody.lastChild as HTMLElement).getAttribute('data-y'));
+                    if (item - obj.selection.range[3] < 30) {
+                        obj.view.loadDown();
+                        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+                    }
+                }
+            }
+        } else if (obj.options.pagination! > 0) {
+            const pageNumber = obj.whichPage(obj.selection.range[3]);
+            if (pageNumber != obj.view.pageNumber) {
+                obj.page(pageNumber);
+            }
+        }
+
+        this.updateScroll(3);
+    }
+
+    private leftGet(x: number, y: number) {
+        const obj = this.worksheet;
+
+        x = parseInt(x);
+        y = parseInt(y);
+        for (let i = x - 1; i >= 0; i--) {
+            if (obj.records[y][i].element.style.display != 'none') {
+                if (obj.records[y][i].element.getAttribute('data-merged')) {
+                    if (obj.records[y][i].element == obj.records[y][x].element) {
+                        continue;
+                    }
+                }
+                x = i;
+                break;
+            }
+        }
+
+        return x;
+    }
+
+    private leftVisible(group: Corner, direction: Step) {
+        // The moves call it after they check that the worksheet has a selection
+        const obj = this.worksheet as SelectedWorksheet;
+
+        let x, y;
+
+        if (group == 0) {
+            x = parseInt(obj.selection.range[0]);
+            y = parseInt(obj.selection.range[1]);
+        } else {
+            x = parseInt(obj.selection.range[2]);
+            y = parseInt(obj.selection.range[3]);
+        }
+
+        if (direction == 0) {
+            for (let i = 0; i < x; i++) {
+                if (obj.records[y][i].element.style.display != 'none') {
+                    x = i;
+                    break;
+                }
+            }
+        } else {
+            x = this.leftGet(x, y);
+        }
+
+        if (group == 0) {
+            obj.selection.range[0] = x;
+            obj.selection.range[1] = y;
+        } else {
+            obj.selection.range[2] = x;
+            obj.selection.range[3] = y;
+        }
+    }
+
+    left(shiftKey?: boolean, ctrlKey?: boolean) {
+        const obj = this.worksheet;
+
+        // Without a selection, there is nothing to move
+        if (!hasSelection(obj)) {
+            return;
+        }
+
+        if (shiftKey) {
+            if (obj.selection.range[2] > 0) {
+                this.leftVisible(1, ctrlKey ? 0 : 1);
+            }
+        } else {
+            if (obj.selection.range[0] > 0) {
+                this.leftVisible(0, ctrlKey ? 0 : 1);
+            }
+            this.toFirstCell();
+            obj.selection.range[2] = obj.selection.range[0];
+            obj.selection.range[3] = obj.selection.range[1];
+        }
+
+        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+        this.updateScroll(0);
+    }
+
+    first(shiftKey?: boolean, ctrlKey?: boolean) {
+        const obj = this.worksheet;
+
+        // Without a selection, there is nothing to move
+        if (!hasSelection(obj)) {
+            return;
+        }
+
+        if (shiftKey) {
+            if (ctrlKey) {
+                obj.selection.range[3] = 0;
+            } else {
+                this.leftVisible(1, 0);
+            }
+        } else {
+            if (ctrlKey) {
+                obj.selection.range[1] = 0;
+            } else {
+                this.leftVisible(0, 0);
+            }
+            this.toFirstCell();
+            obj.selection.range[2] = obj.selection.range[0];
+            obj.selection.range[3] = obj.selection.range[1];
+        }
+
+        // Change page
+        if (obj.options.lazyLoading == true && (obj.selection.range[1] == 0 || obj.selection.range[3] == 0)) {
+            obj.view.loadPage(0);
+        } else if (obj.options.pagination! > 0) {
+            const pageNumber = obj.whichPage(obj.selection.range[3]);
+            if (pageNumber != obj.view.pageNumber) {
+                obj.page(pageNumber);
+            }
+        }
+
+        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+        this.updateScroll(1);
+    }
+
+    last(shiftKey?: boolean, ctrlKey?: boolean) {
+        const obj = this.worksheet;
+
+        // Without a selection, there is nothing to move
+        if (!hasSelection(obj)) {
+            return;
+        }
+
+        if (shiftKey) {
+            if (ctrlKey) {
+                obj.selection.range[3] = obj.records.length - 1;
+            } else {
+                this.rightVisible(1, 0);
+            }
+        } else {
+            if (ctrlKey) {
+                obj.selection.range[1] = obj.records.length - 1;
+            } else {
+                this.rightVisible(0, 0);
+            }
+            this.toFirstCell();
+            obj.selection.range[2] = obj.selection.range[0];
+            obj.selection.range[3] = obj.selection.range[1];
+        }
+
+        // Change page
+        if (obj.options.lazyLoading == true && (obj.selection.range[1] == obj.records.length - 1 || obj.selection.range[3] == obj.records.length - 1)) {
+            obj.view.loadPage(-1);
+        } else if (obj.options.pagination! > 0) {
+            const pageNumber = obj.whichPage(obj.selection.range[3]);
+            if (pageNumber != obj.view.pageNumber) {
+                obj.page(pageNumber);
+            }
+        }
+
+        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+        this.updateScroll(3);
+    }
+
+    /**
+     * Update scroll position based on the selection
+     */
+    private updateScroll(direction: 0 | 1 | 2 | 3) {
+        const obj = this.worksheet;
+
+        // Jspreadsheet Container information
+        const contentRect = obj.content.getBoundingClientRect();
+        const x1 = contentRect.left;
+        const y1 = contentRect.top;
+        const w1 = contentRect.width;
+        const h1 = contentRect.height;
+
+        // Direction Left or Up
+        const reference = obj.records[obj.selection.range![3]][obj.selection.range![2]].element;
+
+        // Reference
+        const referenceRect = reference.getBoundingClientRect();
+        const x2 = referenceRect.left;
+        const y2 = referenceRect.top;
+        const w2 = referenceRect.width;
+        const h2 = referenceRect.height;
+
+        let x, y;
+
+        // Direction
+        if (direction == 0 || direction == 1) {
+            x = x2 - x1 + obj.content.scrollLeft;
+            y = y2 - y1 + obj.content.scrollTop - 2;
+        } else {
+            x = x2 - x1 + obj.content.scrollLeft + w2;
+            y = y2 - y1 + obj.content.scrollTop + h2;
+        }
+
+        // Top position check
+        if (y > obj.content.scrollTop + 30 && y < obj.content.scrollTop + h1) {
+            // In the viewport
+        } else {
+            // Out of viewport
+            if (y < obj.content.scrollTop + 30) {
+                obj.content.scrollTop = y - h2;
+            } else {
+                obj.content.scrollTop = y - (h1 - 2);
+            }
+        }
+
+        // Freeze columns?
+        const freezed = getFreezeWidth.call(obj);
+
+        // The frozen columns stay at the left of the content only when scrollLeft is more than the width of the index column.
+        // Then a cell whose left border is under the frozen columns goes to the right of the frozen columns.
+        const indexWidth = getIndexWidth.call(obj);
+        const frozen = freezed > 0 && obj.content.scrollLeft > indexWidth;
+        const left = x2 - x1 + obj.content.scrollLeft;
+        const underFreezed = frozen && left < obj.content.scrollLeft + freezed;
+
+        // Left position check - TODO: change that to the bottom border of the element
+        if (
+            (frozen && obj.selection.range![2] < obj.options.freezeColumns!) ||
+            (!underFreezed && x > obj.content.scrollLeft + freezed && x < obj.content.scrollLeft + w1)
+        ) {
+            // In the viewport
+        } else if (underFreezed) {
+            obj.content.scrollLeft = left - freezed - 1 < indexWidth ? 0 : left - freezed - 1;
+        } else {
+            // Out of viewport
+            if (x < obj.content.scrollLeft + 30) {
+                obj.content.scrollLeft = x;
+                if (obj.content.scrollLeft < 50) {
+                    obj.content.scrollLeft = 0;
+                }
+            } else if (x < obj.content.scrollLeft + freezed) {
+                obj.content.scrollLeft = x - freezed - 1;
+            } else {
+                obj.content.scrollLeft = x - (w1 - 20);
+            }
+        }
     }
 }

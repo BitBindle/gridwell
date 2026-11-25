@@ -22,7 +22,6 @@ import { scrollControls, wheelControls } from '../events/scroll.js';
 import { deleteRow, getHeight, getRowData, hideRow, insertRow, moveRow, setHeight, setRowData, showRow } from './rows.js';
 import { getHeader, getHeaders, setHeader } from './headers.js';
 import { download } from './download.js';
-import { down, first, last, left, right, up } from './keys.js';
 import { createNestedHeader } from './headers.js';
 import { hideIndex, showIndex } from './rows.js';
 import { getWorksheetActive } from './activeWorksheet.js';
@@ -906,12 +905,42 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
     ],
     // The public dispatch takes any event name, and dispatch is typed for the events of the library
     ['dispatch', dispatch as (this: Worksheet, ...args: never[]) => unknown],
-    ['down', down],
-    ['first', first],
-    ['last', last],
-    ['left', left],
-    ['right', right],
-    ['up', up],
+    [
+        'down',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.down(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'first',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.first(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'last',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.last(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'left',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.left(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'right',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.right(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'up',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.up(shiftKey, ctrlKey);
+        },
+    ],
     [
         'openFilter',
         function (this: Worksheet, columnId: number) {
