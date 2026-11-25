@@ -229,3 +229,43 @@ describe('Use the rows method', () => {
         expect(table.children[1].children[1].innerHTML).to.include(1);
     });
 });
+
+describe('Drag a row', () => {
+    // The spreadsheet adds its event handlers after a promise
+    const load = (options) =>
+        new Promise((resolve) => {
+            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+        });
+
+    // jsdom has no layout, so offsetX and offsetY are set: a press at the right edge of a row number starts a drag
+    const mouse = (element, type) => {
+        const event = new window.MouseEvent(type, { bubbles: true, buttons: 1 });
+        Object.defineProperty(event, 'offsetX', { value: 0 });
+        Object.defineProperty(event, 'offsetY', { value: 0 });
+        element.dispatchEvent(event);
+    };
+
+    it('ends the drag of the only row without an error', async () => {
+        // Without row resize, the press at the edge is for a drag
+        const worksheet = await load({ worksheets: [{ data: [['a']], rowResize: false }] });
+
+        const errors = [];
+        const onerror = (event) => {
+            errors.push(event.message);
+            // Keep jsdom from reporting the error to the console
+            event.preventDefault();
+        };
+        window.addEventListener('error', onerror);
+
+        const rowNumber = worksheet.rows[0].element.children[0];
+        mouse(rowNumber, 'mousedown');
+        expect(worksheet.dragging).to.not.equal(null);
+        mouse(rowNumber, 'mouseup');
+
+        window.removeEventListener('error', onerror);
+
+        expect(errors).to.eql([]);
+        expect(worksheet.dragging).to.equal(null);
+        expect(worksheet.getData()).to.eql([['a']]);
+    });
+});

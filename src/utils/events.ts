@@ -138,17 +138,19 @@ const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
                         }
                     }
                 } else {
-                    let position;
-
-                    if (libraryBase.jspreadsheet.current.dragging.element.nextSibling) {
-                        position = parseInt(libraryBase.jspreadsheet.current.dragging.element.nextSibling.getAttribute('data-y'));
-                        if (libraryBase.jspreadsheet.current.dragging.row < position) {
-                            position -= 1;
-                        }
-                    } else {
-                        position = parseInt(libraryBase.jspreadsheet.current.dragging.element.previousSibling.getAttribute('data-y'));
-                    }
+                    // A row that moved has a sibling. A row that did not move can be the only row.
                     if (libraryBase.jspreadsheet.current.dragging.row != libraryBase.jspreadsheet.current.dragging.destination) {
+                        let position;
+
+                        if (libraryBase.jspreadsheet.current.dragging.element.nextSibling) {
+                            position = parseInt(libraryBase.jspreadsheet.current.dragging.element.nextSibling.getAttribute('data-y'));
+                            if (libraryBase.jspreadsheet.current.dragging.row < position) {
+                                position -= 1;
+                            }
+                        } else {
+                            position = parseInt(libraryBase.jspreadsheet.current.dragging.element.previousSibling.getAttribute('data-y'));
+                        }
+
                         moveRow.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.dragging.row, position, true);
                     }
                     libraryBase.jspreadsheet.current.dragging.element.classList.remove('dragging');
