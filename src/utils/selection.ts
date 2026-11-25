@@ -656,16 +656,8 @@ export const getSelectedRows: WorksheetMethod<'getSelectedRows'> = function (vis
 export const selectAll: WorksheetMethod<'selectAll'> = function () {
     const obj = this;
 
-    if (!obj.selection.range) {
-        obj.selection.range = [] as unknown as [number, number, number, number];
-    }
-
-    obj.selection.range[0] = 0;
-    obj.selection.range[1] = 0;
-    obj.selection.range[2] = obj.headers.length - 1;
-    obj.selection.range[3] = obj.records.length - 1;
-
-    obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+    // updateSelectionFromCoords sets the range, unless onbeforeselection cancels the selection
+    obj.updateSelectionFromCoords(0, 0, obj.headers.length - 1, obj.records.length - 1);
 };
 
 export const getSelection: WorksheetMethod<'getSelection'> = function () {

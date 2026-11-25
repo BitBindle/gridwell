@@ -58,6 +58,25 @@ describe('Selection', () => {
         expect(worksheet.getValue('A1')).to.equal('a');
         expect(worksheet.getSelection()).to.eql([0, 0, 0, 0]);
     });
+
+    it('selectAll keeps the selection when onbeforeselection cancels it', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b'],
+                        ['c', 'd'],
+                    ],
+                },
+            ],
+        })[0];
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.parent.config.onbeforeselection = () => false;
+        worksheet.selectAll();
+
+        expect(worksheet.selection.range).to.eql([0, 0, 0, 0]);
+    });
 });
 
 describe('Selection with the mouse', () => {
