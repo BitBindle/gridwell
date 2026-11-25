@@ -8,7 +8,7 @@ import { conditionalSelectionUpdate, updateCornerPosition } from './selection.js
 import { setFooter } from './footer.js';
 import { updateFreezePosition } from './events.js';
 import { getColumnNameFromId, injectArray } from './internalHelpers.js';
-import { setHeaderRole } from './accessibility.js';
+import { setHeaderRole, updateTabStop } from './accessibility.js';
 
 export const getNumberOfColumns = function () {
     const obj = this;
@@ -711,6 +711,9 @@ export const hideColumn = function (colNumber) {
     }
 
     obj.resetSelection();
+
+    // The tab stop of the grid can be in a hidden column
+    updateTabStop.call(obj);
 };
 
 /**

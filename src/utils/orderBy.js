@@ -4,6 +4,7 @@ import dispatch from './dispatch.js';
 import { updateTableReferences } from './internal.js';
 import { loadPage } from './lazyLoading.js';
 import { closeFilter } from './filter.js';
+import { updateTabStop } from './accessibility.js';
 
 /**
  * Update order arrow
@@ -78,6 +79,8 @@ export const updateOrder = function (rows) {
             for (let j = 0; j < obj.rows.length; j++) {
                 obj.tbody.appendChild(obj.rows[j].element);
             }
+            // A moved row loses the focus
+            updateTabStop.call(obj);
         }
     }
 };

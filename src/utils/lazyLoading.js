@@ -1,4 +1,5 @@
 import { closeEditor } from './editor.js';
+import { updateTabStop } from './accessibility.js';
 
 /**
  * Remove a row from the table. If the row holds the open editor, save and close the editor first.
@@ -59,6 +60,9 @@ export const loadPage = function (pageNumber) {
             removeRow.call(obj, obj.tbody.firstChild);
         }
     }
+
+    // The tab stop of the grid can be in a removed row
+    updateTabStop.call(obj);
 };
 
 export const loadValidation = function () {
@@ -130,6 +134,10 @@ export const loadUp = function () {
             }
         }
     }
+
+    // The tab stop of the grid can be in a removed row
+    updateTabStop.call(obj);
+
     return test;
 };
 
@@ -168,6 +176,9 @@ export const loadDown = function () {
             }
         }
     }
+
+    // The tab stop of the grid can be in a removed row
+    updateTabStop.call(obj);
 
     return test;
 };

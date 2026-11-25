@@ -371,3 +371,388 @@ describe('Accessible names', () => {
         }
     });
 });
+
+describe('Keyboard focus', () => {
+    const keydown = function (target, key, keyCode) {
+        target.dispatchEvent(
+            new window.KeyboardEvent('keydown', { bubbles: true, cancelable: true, composed: true, key: key, keyCode: keyCode, which: keyCode })
+        );
+    };
+
+    const getTabStops = function (worksheet) {
+        return Array.prototype.slice.call(worksheet.table.querySelectorAll('[tabindex="0"]'));
+    };
+
+    const wait = function () {
+        return new Promise(function (resolve) {
+            setTimeout(resolve, 10);
+        });
+    };
+
+    it('Make the first cell the tab stop', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3) }] })[0];
+
+        expect(getTabStops(worksheet)).to.deep.equal([worksheet.records[0][0].element]);
+        expect(worksheet.table.getAttribute('aria-multiselectable')).to.equal('true');
+    });
+
+    it('Mark the selected cells with aria-selected', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 3] }] })[0];
+        const getCells = function (value) {
+            const cells = worksheet.table.querySelectorAll('[aria-selected="' + value + '"]');
+            return Array.prototype.map.call(cells, (td) => td.getAttribute('data-x') + ',' + td.getAttribute('data-y'));
+        };
+
+        // The tab stop is not selected
+        expect(getCells('false')).to.eql(['0,0']);
+        expect(getCells('true')).to.eql([]);
+
+        worksheet.updateSelectionFromCoords(0, 0, 1, 1);
+
+        expect(getCells('true')).to.eql(['0,0', '1,0', '0,1', '1,1']);
+        expect(getCells('false')).to.eql([]);
+
+        worksheet.updateSelectionFromCoords(2, 2, 2, 2);
+
+        expect(getCells('true')).to.eql(['2,2']);
+        expect(getCells('false')).to.eql([]);
+
+        worksheet.resetSelection();
+
+        expect(getCells('true')).to.eql([]);
+        expect(getCells('false')).to.eql(['2,2']);
+
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+
+        expect(getCells('true')).to.eql(['1,1']);
+        expect(getCells('false')).to.eql([]);
+    });
+
+    it('Move the tab stop and the focus', () => {
+        const data = [
+            ['0-0', true, '#ff0000', ''],
+            ['1-0', false, '#00ff00', 'data:image/png;base64,iVBORw0KGgo='],
+        ];
+        const columns = [{}, { type: 'checkbox' }, { type: 'color', render: 'square' }, { type: 'image' }];
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: data, columns: columns }] })[0];
+        const a1 = worksheet.records[0][0].element;
+        const a2 = worksheet.records[1][0].element;
+
+        // The focus on the spreadsheet container is in the grid
+        worksheet.parent.element.focus();
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+
+        expect(document.activeElement).to.equal(a1);
+        expect(a1.getAttribute('aria-label')).to.equal('A1 0-0');
+
+        keydown(a1, 'ArrowDown', 40);
+
+        expect(document.activeElement).to.equal(a2);
+        expect(getTabStops(worksheet)).to.deep.equal([a2]);
+        expect(a1.tabIndex).to.equal(-1);
+        expect(a1.hasAttribute('aria-label')).to.equal(false);
+        expect(a2.getAttribute('aria-label')).to.equal('A2 1-0');
+
+        worksheet.setValue('A2', 'Total');
+
+        expect(a2.getAttribute('aria-label')).to.equal('A2 Total');
+
+        // A cell without text gives its value
+        keydown(a2, 'ArrowRight', 39);
+
+        expect(document.activeElement.getAttribute('aria-label')).to.equal('B2 false');
+
+        keydown(document.activeElement, 'ArrowRight', 39);
+
+        expect(document.activeElement.getAttribute('aria-label')).to.equal('C2 #00ff00');
+
+        // The value of an image is the image data
+        keydown(document.activeElement, 'ArrowRight', 39);
+
+        expect(document.activeElement.getAttribute('aria-label')).to.equal('D2');
+    });
+
+    it('Keep the focus outside the grid', () => {
+        // The grid never had the focus
+        document.activeElement.blur();
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3) }] })[0];
+        const input = document.createElement('input');
+        root.appendChild(input);
+
+        expect(document.activeElement).to.equal(document.body);
+
+        worksheet.updateSelectionFromCoords(2, 2, 2, 2);
+
+        expect(document.activeElement).to.equal(document.body);
+        expect(getTabStops(worksheet)).to.deep.equal([worksheet.records[2][2].element]);
+
+        input.focus();
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+
+        expect(document.activeElement).to.equal(input);
+        expect(getTabStops(worksheet)).to.deep.equal([worksheet.records[1][1].element]);
+
+        // The new cells do not take the focus from the input
+        worksheet.records[1][1].element.focus();
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+        input.focus();
+        worksheet.setData(createData(3, 3));
+
+        expect(document.activeElement).to.equal(input);
+
+        // A press outside the spreadsheet
+        worksheet.records[1][1].element.focus();
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+        document.activeElement.blur();
+        document.body.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, buttons: 1, which: 1 }));
+        worksheet.setData(createData(3, 3));
+
+        expect(document.activeElement).to.equal(document.body);
+
+        // The focus goes to an element outside the spreadsheet, and the element is removed
+        const dialog = document.createElement('input');
+        document.body.appendChild(dialog);
+        worksheet.records[1][1].element.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, buttons: 1, which: 1 }));
+        document.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+
+        expect(document.activeElement).to.equal(worksheet.records[1][1].element);
+
+        dialog.focus();
+        dialog.remove();
+        worksheet.setData(createData(3, 3));
+
+        expect(document.activeElement).to.equal(document.body);
+    });
+
+    it('Move the focus to the editor and back', async () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3) }] })[0];
+        const cell = worksheet.records[1][1].element;
+
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+        worksheet.openEditor(cell);
+        // A change of the rows while the editor is open
+        worksheet.insertRow();
+
+        expect(cell.hasAttribute('tabindex')).to.equal(false);
+        expect(cell.hasAttribute('aria-label')).to.equal(false);
+        expect(getTabStops(worksheet)).to.deep.equal([]);
+
+        worksheet.edition[0].children[0].value = 'new';
+        worksheet.closeEditor(cell, true);
+
+        expect(cell.tabIndex).to.equal(0);
+        expect(cell.getAttribute('aria-label')).to.equal('B2 new');
+
+        cell.focus();
+        keydown(cell, 'F2', 113);
+
+        const editor = worksheet.edition[0].children[0];
+        expect(document.activeElement).to.equal(editor);
+
+        keydown(editor, 'Escape', 27);
+        await wait();
+
+        expect(worksheet.edition).to.equal(null);
+        expect(document.activeElement).to.equal(cell);
+        expect(cell.tabIndex).to.equal(0);
+        expect(cell.getAttribute('aria-label')).to.equal('B2 new');
+
+        // The editor of a cell that is not the tab stop
+        worksheet.openEditor(worksheet.records[0][2].element);
+        worksheet.closeEditor(worksheet.records[0][2].element, false);
+
+        expect(getTabStops(worksheet)).to.deep.equal([cell]);
+    });
+
+    it('Focus the dropdown and custom editors', () => {
+        const editorType = {
+            createCell: function (cell, value) {
+                cell.textContent = value;
+                return cell;
+            },
+            updateCell: function (cell, value) {
+                cell.textContent = value;
+                return value;
+            },
+            openEditor: function (cell) {
+                const control = document.createElement('input');
+                cell.classList.add('editor');
+                cell.innerHTML = '';
+                cell.appendChild(control);
+                control.focus();
+            },
+            closeEditor: function (cell) {
+                return cell.children[0].value;
+            },
+        };
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b', 'c']], columns: [{}, { type: 'dropdown', source: ['a', 'b'] }, { type: editorType }] }],
+        })[0];
+        const dropdownCell = worksheet.records[0][1].element;
+        const customCell = worksheet.records[0][2].element;
+
+        dropdownCell.focus();
+        worksheet.updateSelectionFromCoords(1, 0, 1, 0);
+        keydown(dropdownCell, 'F2', 113);
+
+        expect(document.activeElement).to.equal(dropdownCell.querySelector('.jdropdown-header'));
+        expect(document.activeElement.getAttribute('aria-label')).to.equal('Edit cell B1');
+
+        worksheet.closeEditor(dropdownCell, false);
+        worksheet.updateSelectionFromCoords(2, 0, 2, 0);
+        worksheet.openEditor(customCell);
+
+        expect(customCell.hasAttribute('tabindex')).to.equal(false);
+
+        keydown(worksheet.edition[0].children[0], 'Escape', 27);
+
+        expect(worksheet.edition).to.equal(null);
+        expect(customCell.tabIndex).to.equal(0);
+    });
+
+    it('Focus a cell after a press', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3) }] })[0];
+        const cell = worksheet.records[2][1].element;
+
+        document.body.focus();
+        cell.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, buttons: 1, which: 1 }));
+
+        expect(document.activeElement).to.equal(cell);
+        expect(getTabStops(worksheet)).to.deep.equal([cell]);
+    });
+
+    it('Focus the cell after a focus loss', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3), search: true }] })[0];
+        const a1 = worksheet.records[0][0].element;
+
+        a1.focus();
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        a1.blur();
+        keydown(document.body, 'ArrowDown', 40);
+
+        expect(document.activeElement).to.equal(worksheet.records[1][0].element);
+
+        // The focused row is not in the results
+        worksheet.search('2-1');
+
+        expect(document.activeElement).to.equal(worksheet.records[2][0].element);
+
+        // The table attaches the rows again
+        worksheet.resetSearch();
+
+        expect(document.activeElement).to.equal(worksheet.records[2][0].element);
+
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+        worksheet.setData(createData(3, 3));
+
+        expect(document.activeElement).to.equal(worksheet.records[1][1].element);
+
+        // The sort moves the focused row
+        worksheet.orderBy(0, 1);
+
+        expect(document.activeElement).to.equal(worksheet.records[1][1].element);
+        expect(getTabStops(worksheet)).to.deep.equal([worksheet.records[1][1].element]);
+
+        // The focused cell is no longer the tab stop
+        worksheet.records[0][0].element.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, buttons: 1, which: 1 }));
+        document.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+        worksheet.resetSelection();
+        worksheet.hideColumn(0);
+
+        expect(document.activeElement).to.equal(worksheet.records[0][1].element);
+    });
+
+    it('Move the focus in a shadow root', async () => {
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        const shadowRoot = host.attachShadow({ mode: 'open' });
+        const container = document.createElement('div');
+        shadowRoot.appendChild(container);
+
+        try {
+            const worksheet = jspreadsheet(container, { root: shadowRoot, worksheets: [{ data: createData(3, 3) }] })[0];
+            const a1 = worksheet.records[0][0].element;
+            const a2 = worksheet.records[1][0].element;
+
+            a1.focus();
+            worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+            keydown(a1, 'ArrowDown', 40);
+
+            expect(shadowRoot.activeElement).to.equal(a2);
+
+            keydown(a2, 'F2', 113);
+            keydown(worksheet.edition[0].children[0], 'Escape', 27);
+            await wait();
+
+            expect(shadowRoot.activeElement).to.equal(a2);
+        } finally {
+            host.remove();
+        }
+    });
+
+    it('Skip hidden cells', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3), columns: [{ type: 'hidden' }, {}, {}] }] })[0];
+
+        expect(getTabStops(worksheet)).to.deep.equal([worksheet.records[0][1].element]);
+
+        worksheet.hideRow(0);
+
+        expect(getTabStops(worksheet)).to.deep.equal([worksheet.records[1][1].element]);
+
+        worksheet.hideColumn(1);
+
+        expect(getTabStops(worksheet)).to.deep.equal([worksheet.records[1][2].element]);
+    });
+
+    it('Move the tab stop out of removed cells', async () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(4, 3), pagination: 2, search: true }] })[0];
+        const b2 = worksheet.records[1][1].element;
+
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+        worksheet.page(1);
+
+        expect(getTabStops(worksheet)).to.deep.equal([worksheet.records[2][0].element]);
+
+        worksheet.page(0);
+
+        expect(getTabStops(worksheet)).to.deep.equal([b2]);
+
+        worksheet.resetSelection();
+        worksheet.insertRow();
+
+        expect(getTabStops(worksheet)).to.deep.equal([b2]);
+
+        worksheet.deleteColumn(1);
+
+        expect(getTabStops(worksheet)).to.deep.equal([worksheet.records[0][0].element]);
+
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+        worksheet.resetSelection();
+        worksheet.setData(createData(4, 2));
+
+        expect(getTabStops(worksheet)).to.deep.equal([worksheet.records[0][0].element]);
+
+        // The selected row is not in the results
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+        worksheet.search('3-1');
+
+        expect(getTabStops(worksheet)).to.deep.equal([worksheet.records[3][0].element]);
+
+        // Lazy loading removes the row of the tab stop
+        const container = document.createElement('div');
+        root.appendChild(container);
+        const lazy = jspreadsheet(container, { worksheets: [{ data: createData(300, 2), lazyLoading: true, tableOverflow: true, tableHeight: '300px' }] })[0];
+        lazy.content.dispatchEvent(new window.WheelEvent('wheel', { bubbles: true }));
+        await new Promise(function (resolve) {
+            setTimeout(resolve, 150);
+        });
+
+        expect(lazy.tbody.firstChild.getAttribute('data-y')).to.not.equal('0');
+        expect(getTabStops(lazy)).to.deep.equal([lazy.tbody.firstChild.children[1]]);
+
+        // After the sort, the first page does not have the row of the tab stop
+        lazy.orderBy(0, 0);
+
+        expect(getTabStops(lazy)).to.deep.equal([lazy.tbody.firstChild.children[1]]);
+    });
+});

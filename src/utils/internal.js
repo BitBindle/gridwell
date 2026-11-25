@@ -10,7 +10,7 @@ import { updateFreezePosition } from './events.js';
 import { updatePagination } from './pagination.js';
 import { setFooter } from './footer.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
-import { updateGridSize, updateRowIndex } from './accessibility.js';
+import { setCellLabel, updateGridSize, updateRowIndex, updateTabStop } from './accessibility.js';
 
 export const updateTable = function () {
     const obj = this;
@@ -792,6 +792,11 @@ export const updateCell = function (x, y, value, force) {
             column.render(obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : null, value, parseInt(x), parseInt(y), obj, column);
         }
 
+        // Accessible name of the active cell
+        if (obj.activeCell && obj.records[y] && obj.records[y][x] && obj.records[y][x].element === obj.activeCell) {
+            setCellLabel.call(obj, obj.activeCell);
+        }
+
         // On change
         dispatch.call(obj, 'onchange', obj, obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : null, x, y, value, record.oldValue);
     }
@@ -1108,6 +1113,9 @@ export const updateTableReferences = function () {
     // Update the size of the grid
     updateGridSize.call(obj);
 
+    // The tab stop of the grid can be in a deleted row or column
+    updateTabStop.call(obj);
+
     // Refresh selection
     refreshSelection.call(obj);
 
@@ -1230,6 +1238,9 @@ export const updateResult = function () {
             obj.rows[j].element.style.display = 'none';
         }
     }
+
+    // The tab stop of the grid can be in a row that is not in the results
+    updateTabStop.call(obj);
 
     // Update pagination
     if (obj.options.pagination > 0) {
