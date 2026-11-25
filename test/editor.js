@@ -42,6 +42,37 @@ describe('Editor', () => {
         expect(worksheet.edition).to.equal(null);
     });
 
+    it('opens a multiple dropdown editor when the value is a number', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [[1], ['1;2']],
+                    columns: [
+                        {
+                            type: 'dropdown',
+                            multiple: true,
+                            source: [
+                                { id: 1, name: 'One' },
+                                { id: 2, name: 'Two' },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        });
+
+        const worksheet = instance[0];
+        const cell = worksheet.getCell('A1');
+        worksheet.openEditor(cell);
+
+        expect(worksheet.edition).to.not.equal(null);
+        expect(cell.children[0].dropdown.getValue(true)).to.deep.equal(['1']);
+
+        worksheet.closeEditor(cell, true);
+        expect(worksheet.edition).to.equal(null);
+        expect('' + worksheet.getValueFromCoords(0, 0)).to.equal('1');
+    });
+
     it('saves and closes the text editor when lazy loading removes its row', async () => {
         // The grid loads rows 100 ms after a scroll, one load at a time. Let the loads of the tests before end.
         await new Promise((resolve) => setTimeout(resolve, 150));

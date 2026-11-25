@@ -108,7 +108,8 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 // Get current value
                 let value: any = obj.options.data[y][x];
                 if (column.multiple && !Array.isArray(value)) {
-                    value = value.split(column.delimiter || ';');
+                    // A number has no split
+                    value = ('' + value).split(column.delimiter || ';');
                 }
 
                 // Create dropdown
