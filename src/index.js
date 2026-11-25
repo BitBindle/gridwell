@@ -32,7 +32,7 @@ libraryBase.jspreadsheet.getWorksheetInstanceByName = function (worksheetName, n
         return spreadsheet.config.namespace === namespace;
     });
 
-    if (targetSpreadsheet) {
+    if (!targetSpreadsheet) {
         return {};
     }
 
