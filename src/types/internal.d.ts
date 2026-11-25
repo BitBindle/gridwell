@@ -31,6 +31,9 @@ export interface Worksheet extends jspreadsheet.WorksheetInstance {
     /** The public typings allow text, but the library only stores numbers. */
     selectedCell: undefined | null | [number, number, number, number];
 
+    /** The public typings allow any record. The library stores the records in WorksheetHistoryRecord. */
+    history: WorksheetHistoryRecord[];
+
     /** The cell that has the roving tabindex (the tab stop of the grid). */
     activeCell?: HTMLTableCellElement | null;
 
@@ -110,3 +113,66 @@ export interface SelectedWorksheet extends Worksheet {
  * spreadsheet, and the code reads the target without a check, as it did in JavaScript.
  */
 export type TargetEvent<E extends Event = Event> = E & { target: HTMLElement };
+
+/** A cell that a setValue record of the history changed. */
+export type HistoryCellChange = {
+    x: number;
+    y: number;
+    col: number;
+    row: number;
+    /** Missing when the cell did not change, for example because it is read-only. */
+    value?: jspreadsheet.CellValue;
+    oldValue?: jspreadsheet.CellValue;
+};
+
+/**
+ * A record of the undo history, by its action. Undo and redo read the fields of the action. Type aliases, not
+ * interfaces, so that a record is a public HistoryRecord too.
+ */
+export type WorksheetHistoryRecord =
+    | {
+          action: 'insertColumn' | 'deleteColumn';
+          columnNumber: number;
+          numOfColumns: number;
+          /** insertColumn keeps its argument. deleteColumn stores 1, so that undo inserts the columns before columnNumber. */
+          insertBefore: boolean | number | undefined;
+          /** deleteColumn stores undefined when the worksheet has no column options, which setup always gives it. */
+          columns: Worksheet['options']['columns'] | undefined;
+          headers: Worksheet['headers'];
+          cols: Worksheet['cols'];
+          records: Worksheet['records'];
+          footers: string[][];
+          data: jspreadsheet.CellValue[][];
+      }
+    | {
+          action: 'insertRow' | 'deleteRow';
+          rowNumber: number;
+          numOfRows: number;
+          /** insertRow keeps its argument. deleteRow stores 1, so that undo inserts the rows before rowNumber. */
+          insertBefore: boolean | number | undefined;
+          rowRecords: Worksheet['records'];
+          rowData: jspreadsheet.CellValue[][];
+          rowNode: Worksheet['rows'];
+      }
+    | { action: 'moveColumn' | 'moveRow'; oldValue: number; newValue: number }
+    | { action: 'setWidth'; column: number | number[]; oldValue: number | number[]; newValue: number | number[] }
+    | {
+          action: 'setHeight';
+          row: number;
+          /** The height attribute of the row as text, or the measured height when the row has no attribute. */
+          oldValue: number | string;
+          newValue: number;
+      }
+    | { action: 'setHeader'; column: number; oldValue: string; newValue: string }
+    | { action: 'setComments'; oldValue: Record<string, string | null>; newValue: Record<string, string | null | undefined> }
+    | {
+          action: 'setValue';
+          records: HistoryCellChange[];
+          selection: Worksheet['selectedCell'];
+          /** The style that a paste set and the style it replaced. A paste stores both. */
+          newStyle?: Record<string, string>;
+          oldStyle?: Record<string, string>;
+      }
+    | { action: 'setMerge'; column: string; colspan: number; rowspan: number; data: jspreadsheet.CellValue[] }
+    | { action: 'orderBy'; rows: number[]; column: number; order: boolean | number }
+    | { action: 'setStyle'; oldValue: Record<string, string[]>; newValue: Record<string, string[]> };

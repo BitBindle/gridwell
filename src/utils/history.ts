@@ -4,14 +4,14 @@ import { updateTableReferences } from './internal.js';
 import { setMerge } from './merges.js';
 import { updateOrder, updateOrderArrow } from './orderBy.js';
 import { conditionalSelectionUpdate } from './selection.js';
-import type { Worksheet, WorksheetMethod } from '../types/internal';
+import type { Worksheet, WorksheetHistoryRecord, WorksheetMethod } from '../types/internal';
 
 /**
  * Initializes a new history record for undo/redo
  *
  * @return null
  */
-export const setHistory = function (this: Worksheet, changes: any) {
+export const setHistory = function (this: Worksheet, changes: WorksheetHistoryRecord) {
     const obj = this;
 
     if (obj.ignoreHistory != true) {
@@ -29,7 +29,14 @@ export const setHistory = function (this: Worksheet, changes: any) {
 /**
  * Process row
  */
-const historyProcessRow = function (this: Worksheet, type: any, historyRecord: any) {
+/** 1 removes the rows or columns of the record, 0 inserts them again. */
+type HistoryProcess = 0 | 1;
+
+const historyProcessRow = function (
+    this: Worksheet,
+    type: HistoryProcess,
+    historyRecord: Extract<WorksheetHistoryRecord, { action: 'insertRow' | 'deleteRow' }>
+) {
     const obj = this;
 
     const rowIndex = !historyRecord.insertBefore ? historyRecord.rowNumber + 1 : +historyRecord.rowNumber;
@@ -55,12 +62,12 @@ const historyProcessRow = function (this: Worksheet, type: any, historyRecord: a
         conditionalSelectionUpdate.call(obj, 1, rowIndex, numOfRows + rowIndex - 1);
     } else {
         // Insert data
-        const records = historyRecord.rowRecords.map((row: any[]) => {
+        const records = historyRecord.rowRecords.map((row) => {
             return [...row];
         });
         obj.records = injectArray(obj.records, rowIndex, records);
 
-        const data = historyRecord.rowData.map((row: any[]) => {
+        const data = historyRecord.rowData.map((row) => {
             return [...row];
         });
         obj.options.data = injectArray(obj.options.data, rowIndex, data);
@@ -95,7 +102,11 @@ const historyProcessRow = function (this: Worksheet, type: any, historyRecord: a
 /**
  * Process column
  */
-const historyProcessColumn = function (this: Worksheet, type: any, historyRecord: any) {
+const historyProcessColumn = function (
+    this: Worksheet,
+    type: HistoryProcess,
+    historyRecord: Extract<WorksheetHistoryRecord, { action: 'insertColumn' | 'deleteColumn' }>
+) {
     const obj = this;
 
     const columnIndex = !historyRecord.insertBefore ? historyRecord.columnNumber + 1 : historyRecord.columnNumber;
@@ -126,7 +137,8 @@ const historyProcessColumn = function (this: Worksheet, type: any, historyRecord
         }
     } else {
         // Insert data
-        obj.options.columns = injectArray(obj.options.columns, columnIndex, historyRecord.columns);
+        // The worksheet always has column options, so deleteColumn stored them
+        obj.options.columns = injectArray(obj.options.columns, columnIndex, historyRecord.columns!);
         obj.headers = injectArray(obj.headers, columnIndex, historyRecord.headers);
         obj.cols = injectArray(obj.cols, columnIndex, historyRecord.cols);
 
@@ -222,9 +234,11 @@ export const undo: WorksheetMethod<'undo'> = function () {
         } else if (historyRecord.action == 'setStyle') {
             obj.setStyle(historyRecord.oldValue, null, null, 1 as any); // 1 means force
         } else if (historyRecord.action == 'setWidth') {
-            obj.setWidth(historyRecord.column, historyRecord.oldValue);
+            // The public overloads take one column or a list, not either
+            (obj.setWidth as (column: number | number[], width: number | number[]) => void)(historyRecord.column, historyRecord.oldValue);
         } else if (historyRecord.action == 'setHeight') {
-            obj.setHeight(historyRecord.row, historyRecord.oldValue);
+            // The old height can be the text of the height attribute. setHeight reads it with parseInt.
+            obj.setHeight(historyRecord.row, historyRecord.oldValue as number);
         } else if (historyRecord.action == 'setHeader') {
             obj.setHeader(historyRecord.column, historyRecord.oldValue);
         } else if (historyRecord.action == 'setComments') {
@@ -302,7 +316,7 @@ export const redo: WorksheetMethod<'redo'> = function () {
         } else if (historyRecord.action == 'setStyle') {
             obj.setStyle(historyRecord.newValue, null, null, 1 as any); // 1 means force
         } else if (historyRecord.action == 'setWidth') {
-            obj.setWidth(historyRecord.column, historyRecord.newValue);
+            (obj.setWidth as (column: number | number[], width: number | number[]) => void)(historyRecord.column, historyRecord.newValue);
         } else if (historyRecord.action == 'setHeight') {
             obj.setHeight(historyRecord.row, historyRecord.newValue);
         } else if (historyRecord.action == 'setHeader') {
@@ -317,7 +331,7 @@ export const redo: WorksheetMethod<'redo'> = function () {
             // Redo for changes in cells
             for (let i = 0; i < historyRecord.records.length; i++) {
                 if (historyRecord.oldStyle) {
-                    obj.resetStyle(historyRecord.newStyle);
+                    obj.resetStyle(historyRecord.newStyle!);
                 }
             }
             // Update selection
