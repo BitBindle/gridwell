@@ -1,8 +1,9 @@
 import jSuites from 'jsuites';
 import { getCellNameFromCoords } from './helpers.js';
 import { getWorksheetInstance } from './internal.js';
+import type { Spreadsheet, Worksheet } from '../types/internal';
 
-const setItemStatus = function (toolbarItem, worksheet) {
+const setItemStatus = function (toolbarItem: any, worksheet: Worksheet) {
     if (worksheet.options.editable != false) {
         toolbarItem.classList.remove('jtoolbar-disabled');
     } else {
@@ -10,8 +11,9 @@ const setItemStatus = function (toolbarItem, worksheet) {
     }
 };
 
-export const getDefault = function () {
-    const items = [];
+export const getDefault = function (this: Spreadsheet) {
+    // The public ToolbarItem type requires content, which the select items here do not have
+    const items: any[] = [];
     const spreadsheet = this;
 
     const getActive = function () {
@@ -55,10 +57,10 @@ export const getDefault = function () {
         type: 'select',
         width: '120px',
         options: ['Default', 'Verdana', 'Arial', 'Courier New'],
-        render: function (e) {
+        render: function (e: any) {
             return '<span style="font-family:' + e + '">' + e + '</span>';
         },
-        onchange: function (a, b, c, d, e) {
+        onchange: function (a: any, b: any, c: any, d: any, e: any) {
             const worksheet = getActive();
 
             let cells = worksheet.getSelected(true);
@@ -67,14 +69,14 @@ export const getDefault = function () {
 
                 worksheet.setStyle(
                     Object.fromEntries(
-                        cells.map(function (cellName) {
+                        cells.map(function (cellName: any) {
                             return [cellName, 'font-family: ' + value];
                         })
                     )
                 );
             }
         },
-        updateState: function (a, b, toolbarItem) {
+        updateState: function (a: any, b: any, toolbarItem: any) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -84,24 +86,24 @@ export const getDefault = function () {
         width: '48px',
         content: 'format_size',
         options: ['x-small', 'small', 'medium', 'large', 'x-large'],
-        render: function (e) {
+        render: function (e: any) {
             return '<span style="font-size:' + e + '">' + e + '</span>';
         },
-        onchange: function (a, b, c, value) {
+        onchange: function (a: any, b: any, c: any, value: any) {
             const worksheet = getActive();
 
             let cells = worksheet.getSelected(true);
             if (cells) {
                 worksheet.setStyle(
                     Object.fromEntries(
-                        cells.map(function (cellName) {
+                        cells.map(function (cellName: any) {
                             return [cellName, 'font-size: ' + value];
                         })
                     )
                 );
             }
         },
-        updateState: function (a, b, toolbarItem) {
+        updateState: function (a: any, b: any, toolbarItem: any) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -109,24 +111,24 @@ export const getDefault = function () {
     items.push({
         type: 'select',
         options: ['left', 'center', 'right', 'justify'],
-        render: function (e) {
+        render: function (e: any) {
             return '<i class="material-icons">format_align_' + e + '</i>';
         },
-        onchange: function (a, b, c, value) {
+        onchange: function (a: any, b: any, c: any, value: any) {
             const worksheet = getActive();
 
             let cells = worksheet.getSelected(true);
             if (cells) {
                 worksheet.setStyle(
                     Object.fromEntries(
-                        cells.map(function (cellName) {
+                        cells.map(function (cellName: any) {
                             return [cellName, 'text-align: ' + value];
                         })
                     )
                 );
             }
         },
-        updateState: function (a, b, toolbarItem) {
+        updateState: function (a: any, b: any, toolbarItem: any) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -140,14 +142,14 @@ export const getDefault = function () {
             if (cells) {
                 worksheet.setStyle(
                     Object.fromEntries(
-                        cells.map(function (cellName) {
+                        cells.map(function (cellName: any) {
                             return [cellName, 'font-weight:bold'];
                         })
                     )
                 );
             }
         },
-        updateState: function (a, b, toolbarItem) {
+        updateState: function (a: any, b: any, toolbarItem: any) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -156,7 +158,7 @@ export const getDefault = function () {
         type: 'color',
         content: 'format_color_text',
         k: 'color',
-        updateState: function (a, b, toolbarItem) {
+        updateState: function (a: any, b: any, toolbarItem: any) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -165,7 +167,7 @@ export const getDefault = function () {
         type: 'color',
         content: 'format_color_fill',
         k: 'background-color',
-        updateState: function (a, b, toolbarItem, d) {
+        updateState: function (a: any, b: any, toolbarItem: any, d: any) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -175,25 +177,25 @@ export const getDefault = function () {
     items.push({
         type: 'select',
         options: ['vertical_align_top', 'vertical_align_center', 'vertical_align_bottom'],
-        render: function (e) {
+        render: function (e: any) {
             return '<i class="material-icons">' + e + '</i>';
         },
         value: 1,
-        onchange: function (a, b, c, d, value) {
+        onchange: function (a: any, b: any, c: any, d: any, value: any) {
             const worksheet = getActive();
 
             let cells = worksheet.getSelected(true);
             if (cells) {
                 worksheet.setStyle(
                     Object.fromEntries(
-                        cells.map(function (cellName) {
+                        cells.map(function (cellName: any) {
                             return [cellName, 'vertical-align: ' + verticalAlign[value]];
                         })
                     )
                 );
             }
         },
-        updateState: function (a, b, toolbarItem) {
+        updateState: function (a: any, b: any, toolbarItem: any) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -225,7 +227,7 @@ export const getDefault = function () {
                 }
             }
         },
-        updateState: function (a, b, toolbarItem) {
+        updateState: function (a: any, b: any, toolbarItem: any) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -245,11 +247,11 @@ export const getDefault = function () {
             'border_clear',
         ],
         columns: 5,
-        render: function (e) {
+        render: function (e: any) {
             return '<i class="material-icons">' + e + '</i>';
         },
         right: true,
-        onchange: function (a, b, c, d) {
+        onchange: function (a: any, b: any, c: any, d: any) {
             const worksheet = getActive();
 
             if (worksheet.selectedCell) {
@@ -272,7 +274,7 @@ export const getDefault = function () {
                         thickness += 2;
                     }
 
-                    let style = {};
+                    let style: Record<string, string> = {};
 
                     // Matrix
                     let px = selectedRange[0];
@@ -280,7 +282,7 @@ export const getDefault = function () {
                     let ux = selectedRange[2];
                     let uy = selectedRange[3];
 
-                    const setBorder = function (columnName, i, j) {
+                    const setBorder = function (columnName: string, i: number, j: number) {
                         let border = ['', '', '', ''];
 
                         if (
@@ -336,7 +338,7 @@ export const getDefault = function () {
                 }
             }
         },
-        onload: function (a, b) {
+        onload: function (a: any, b: any) {
             // Border color
             let container = document.createElement('div');
             let div = document.createElement('div');
@@ -344,11 +346,11 @@ export const getDefault = function () {
 
             let colorPicker = jSuites.color(div, {
                 closeOnChange: false,
-                onchange: function (o, v) {
+                onchange: function (o: any, v: any) {
                     o.parentNode.children[1].style.color = v;
                     b.color = v;
                 },
-            });
+            } as any);
 
             let i = document.createElement('i');
             i.classList.add('material-icons');
@@ -363,38 +365,38 @@ export const getDefault = function () {
             jSuites.picker(div, {
                 type: 'select',
                 data: [1, 2, 3, 4, 5],
-                render: function (e) {
+                render: function (e: any) {
                     return '<div style="height: ' + e + 'px; width: 30px; background-color: black;"></div>';
                 },
-                onchange: function (a, k, c, d) {
+                onchange: function (a: any, k: any, c: any, d: any) {
                     b.thickness = d;
                 },
                 width: '50px',
-            });
+            } as any);
             a.children[1].appendChild(div);
 
             const borderStylePicker = document.createElement('div');
             jSuites.picker(borderStylePicker, {
                 type: 'select',
                 data: ['solid', 'dotted', 'dashed', 'double'],
-                render: function (e) {
+                render: function (e: any) {
                     if (e === 'double') {
                         return '<div style="width: 30px; border-top: 3px ' + e + ' black;"></div>';
                     }
                     return '<div style="width: 30px; border-top: 2px ' + e + ' black;"></div>';
                 },
-                onchange: function (a, k, c, d) {
+                onchange: function (a: any, k: any, c: any, d: any) {
                     b.style = d;
                 },
                 width: '50px',
-            });
+            } as any);
             a.children[1].appendChild(borderStylePicker);
 
             div = document.createElement('div');
             div.style.flex = '1';
             a.children[1].appendChild(div);
         },
-        updateState: function (a, b, toolbarItem) {
+        updateState: function (a: any, b: any, toolbarItem: any) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -406,7 +408,7 @@ export const getDefault = function () {
     items.push({
         content: 'fullscreen',
         tooltip: 'Toggle Fullscreen',
-        onclick: function (a, b, c) {
+        onclick: function (a: any, b: any, c: any) {
             if (c.children[0].textContent === 'fullscreen') {
                 spreadsheet.fullscreen(true);
                 c.children[0].textContent = 'fullscreen_exit';
@@ -415,7 +417,7 @@ export const getDefault = function () {
                 c.children[0].textContent = 'fullscreen';
             }
         },
-        updateState: function (a, b, c, d) {
+        updateState: function (a: any, b: any, c: any, d: any) {
             if (d.parent.config.fullscreen === true) {
                 c.children[0].textContent = 'fullscreen_exit';
             } else {
@@ -427,7 +429,7 @@ export const getDefault = function () {
     return items;
 };
 
-const adjustToolbarSettingsForJSuites = function (toolbar) {
+const adjustToolbarSettingsForJSuites = function (this: Spreadsheet, toolbar: any) {
     const spreadsheet = this;
 
     const items = toolbar.items;
@@ -449,14 +451,14 @@ const adjustToolbarSettingsForJSuites = function (toolbar) {
                 delete items[i].v;
 
                 if (items[i].k && !items[i].onchange) {
-                    items[i].onchange = function (el, config, value) {
+                    items[i].onchange = function (el: any, config: any, value: any) {
                         const worksheet = getWorksheetInstance.call(spreadsheet);
 
                         const cells = worksheet.getSelected(true);
 
                         worksheet.setStyle(
                             Object.fromEntries(
-                                cells.map(function (cellName) {
+                                cells.map(function (cellName: any) {
                                     return [cellName, items[i].k + ': ' + value];
                                 })
                             )
@@ -467,26 +469,26 @@ const adjustToolbarSettingsForJSuites = function (toolbar) {
         } else if (items[i].type == 'color') {
             items[i].type = 'i';
 
-            items[i].onclick = function (a, b, c) {
+            items[i].onclick = function (a: any, b: any, c: any) {
                 if (!c.color) {
                     jSuites.color(c, {
-                        onchange: function (o, v) {
+                        onchange: function (o: any, v: any) {
                             const worksheet = getWorksheetInstance.call(spreadsheet);
 
                             const cells = worksheet.getSelected(true);
 
                             worksheet.setStyle(
                                 Object.fromEntries(
-                                    cells.map(function (cellName) {
+                                    cells.map(function (cellName: any) {
                                         return [cellName, items[i].k + ': ' + v];
                                     })
                                 )
                             );
                         },
-                        onopen: function (o) {
+                        onopen: function (o: any) {
                             o.color.select('');
                         },
-                    });
+                    } as any);
 
                     c.color.open();
                 }
@@ -498,7 +500,7 @@ const adjustToolbarSettingsForJSuites = function (toolbar) {
 /**
  * Create toolbar
  */
-export const createToolbar = function (toolbar) {
+export const createToolbar = function (this: Spreadsheet, toolbar: any) {
     const spreadsheet = this;
 
     const toolbarElement = document.createElement('div');
@@ -523,17 +525,18 @@ export const createToolbar = function (toolbar) {
     return toolbarElement;
 };
 
-export const updateToolbar = function (worksheet) {
+export const updateToolbar = function (worksheet: Worksheet) {
     if (worksheet.parent.toolbar) {
-        worksheet.parent.toolbar.toolbar.update(worksheet);
+        // jsuites keeps the toolbar instance on the element
+        (worksheet.parent.toolbar as any).toolbar.update(worksheet);
     }
 };
 
-export const showToolbar = function () {
+export const showToolbar = function (this: Spreadsheet) {
     const spreadsheet = this;
 
     if (spreadsheet.config.toolbar && !spreadsheet.toolbar) {
-        let toolbar;
+        let toolbar: any;
 
         if (Array.isArray(spreadsheet.config.toolbar)) {
             toolbar = {
@@ -555,7 +558,7 @@ export const showToolbar = function () {
     }
 };
 
-export const hideToolbar = function () {
+export const hideToolbar = function (this: Spreadsheet) {
     const spreadsheet = this;
 
     if (spreadsheet.toolbar) {

@@ -15,8 +15,18 @@ import type jspreadsheet from '../index';
 export interface Worksheet extends jspreadsheet.WorksheetInstance {
     parent: Spreadsheet;
 
-    /** setData changes rows that are objects to arrays, so the library code always gets arrays. */
-    options: Omit<jspreadsheet.WorksheetOptions, 'data'> & { data?: jspreadsheet.CellValue[][] };
+    options: Omit<jspreadsheet.WorksheetOptions, 'data' | 'columns'> & {
+        /** setData changes rows that are objects to arrays, so the library code always gets arrays. */
+        data?: jspreadsheet.CellValue[][];
+        /**
+         * Column is a union by type, and the code reads the options of one type after a test of the type that the
+         * type check cannot follow. The index signature allows that.
+         */
+        columns?: (jspreadsheet.Column & Record<string, any>)[];
+    };
+
+    /** The public typings allow text, but the library only stores numbers. */
+    selectedCell: undefined | null | [number, number, number, number];
 
     /** The cell that has the roving tabindex (the tab stop of the grid). */
     activeCell?: HTMLTableCellElement | null;

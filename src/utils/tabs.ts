@@ -5,12 +5,36 @@ import jSuites from 'jsuites';
  * WAI-ARIA tabs pattern for the tab headers: https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
  * The object has the methods of jSuites.tabs, and the same class names, so the jSuites styles still apply.
  */
-export const createTabs = function (el, options) {
-    const obj = {};
+/** A tab header. It keeps a reference to its panel. */
+type TabHeader = HTMLButtonElement & { content?: HTMLElement };
+
+export interface Tabs {
+    options: Record<string, any>;
+    headers: HTMLDivElement;
+    content: HTMLDivElement;
+    setBorder(index: number | false): void;
+    open(index: number): void;
+    selectIndex(a: Element): number;
+    /** The index of the open tab, or false when no tab is open. */
+    getActive(): number | false;
+    rename(i: number, title?: string): void;
+    create(title?: string): HTMLDivElement | false;
+    remove(index: number): void | false;
+    nextNumber(): number;
+    deleteElement(index: number): void | false;
+    appendElement(title?: string, cb?: (div: HTMLDivElement, header: TabHeader) => void, openTab?: boolean, position?: number): HTMLDivElement;
+    updateContent(position: number, newContent: string | HTMLElement): void;
+    updatePosition(f: number, t: number, ignoreEvents?: boolean, openTab?: boolean): void;
+    move(f: number, t: number, ignoreEvents?: boolean, openTab?: boolean): void;
+    init(): void;
+}
+
+export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: any) {
+    const obj = {} as Tabs;
     obj.options = {};
 
     // Default configuration
-    const defaults = {
+    const defaults: Record<string, any> = {
         data: [],
         allowCreate: false,
         hideHeaders: false,
@@ -31,23 +55,23 @@ export const createTabs = function (el, options) {
         }
     }
 
-    let prev = null;
-    let next = null;
-    let border = null;
+    let prev: HTMLDivElement = null;
+    let next: HTMLDivElement = null;
+    let border: HTMLDivElement = null;
 
-    const getHeader = function (index) {
-        const header = obj.headers.children[index];
+    const getHeader = function (index: number | false) {
+        const header = obj.headers.children[index as number];
 
         if (header && header !== border) {
-            return header;
+            return header as TabHeader;
         }
 
         return null;
     };
 
-    const getIndex = function (element) {
+    const getIndex = function (element: HTMLElement) {
         while (element && element.parentNode !== obj.headers) {
-            element = element.parentNode;
+            element = element.parentNode as HTMLElement;
         }
 
         if (!element || element === border) {
@@ -57,7 +81,7 @@ export const createTabs = function (el, options) {
         return Array.prototype.indexOf.call(obj.headers.children, element);
     };
 
-    const updateControls = function (x) {
+    const updateControls = function (x: number) {
         if (typeof obj.headers.scrollTo == 'function') {
             obj.headers.scrollTo({
                 left: x,
@@ -92,7 +116,7 @@ export const createTabs = function (el, options) {
      * Show the headers when the user can choose a worksheet or create one, unless the option hideHeaders is true
      */
     const updateHeaders = function () {
-        const container = obj.headers.parentNode;
+        const container = obj.headers.parentNode as HTMLElement;
 
         if (obj.options.hideHeaders == true || (obj.content.children.length < 2 && obj.options.allowCreate != true)) {
             container.style.display = 'none';
@@ -238,7 +262,8 @@ export const createTabs = function (el, options) {
         let num = 0;
 
         for (let i = 0; i < obj.content.children.length; i++) {
-            const tmp = getHeader(i).textContent.match(/[0-9].*/);
+            // The match is compared and parsed as text
+            const tmp: any = getHeader(i).textContent.match(/[0-9].*/);
 
             if (tmp > num) {
                 num = parseInt(tmp);
@@ -307,7 +332,7 @@ export const createTabs = function (el, options) {
             h.setAttribute('aria-controls', contentId);
             h.tabIndex = -1;
             h.textContent = title;
-            h.content = div;
+            (h as TabHeader).content = div;
 
             if (typeof position === 'undefined' || !obj.content.children[position]) {
                 obj.content.appendChild(div);
@@ -338,7 +363,7 @@ export const createTabs = function (el, options) {
             return;
         }
 
-        let contentItem;
+        let contentItem: HTMLElement;
 
         if (typeof newContent !== 'string') {
             contentItem = newContent;
@@ -475,7 +500,7 @@ export const createTabs = function (el, options) {
 
         // Events
         obj.headers.addEventListener('click', function (e) {
-            const index = getIndex(e.target);
+            const index = getIndex(e.target as HTMLElement);
 
             if (index >= 0) {
                 obj.open(index);
@@ -487,7 +512,7 @@ export const createTabs = function (el, options) {
         });
 
         obj.headers.addEventListener('contextmenu', function (e) {
-            const index = getIndex(e.target);
+            const index = getIndex(e.target as HTMLElement);
 
             if (index >= 0) {
                 obj.open(index);
@@ -496,7 +521,7 @@ export const createTabs = function (el, options) {
 
         // Keyboard: the arrow keys, Home and End move the focus and open the tab
         obj.headers.addEventListener('keydown', function (e) {
-            const index = getIndex(e.target);
+            const index = getIndex(e.target as HTMLElement);
             const total = obj.content.children.length;
 
             if (index < 0 || !total || e.altKey || e.ctrlKey || e.metaKey) {

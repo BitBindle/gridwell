@@ -7,6 +7,7 @@ import { updateCell, updateFormulaChain, updateTable, updateTableReferences } fr
 import { downGet, rightGet } from './keys.js';
 import { hash, removeCopyingSelection, updateSelectionFromCoords } from './selection.js';
 import { getColumnNameFromId } from './internalHelpers.js';
+import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
  * Copy method
@@ -15,7 +16,16 @@ import { getColumnNameFromId } from './internalHelpers.js';
  * @param delimiter - \t default to keep compatibility with excel
  * @return string value
  */
-export const copy = function (highlighted, delimiter, returnData, includeHeaders, download, isCut, processed) {
+export const copy = function (
+    this: Worksheet,
+    highlighted: boolean,
+    delimiter: string,
+    returnData: any,
+    includeHeaders: boolean,
+    download: any,
+    isCut: any,
+    processed: boolean
+) {
     const obj = this;
 
     if (!delimiter) {
@@ -32,7 +42,7 @@ export const copy = function (highlighted, delimiter, returnData, includeHeaders
     const rowLabel = [];
     const x = obj.options.data[0].length;
     const y = obj.options.data.length;
-    let tmp = '';
+    let tmp: any = '';
     let copyHeader = false;
     let headers = '';
     let nestedHeaders = '';
@@ -97,7 +107,7 @@ export const copy = function (highlighted, delimiter, returnData, includeHeaders
                     header.push(obj.headers[i].textContent);
                 }
                 // Values
-                let value = obj.options.data[j][i];
+                let value: any = obj.options.data[j][i];
                 if (value.match && (value.match(div) || value.match(/,/g) || value.match(/\n/) || value.match(/"/))) {
                     value = value.replace(new RegExp('"', 'g'), '""');
                     value = '"' + value + '"';
@@ -218,7 +228,8 @@ export const copy = function (highlighted, delimiter, returnData, includeHeaders
  * @param data paste data. if data hash is the same as the copied data, apply style from copied cells
  * @return string value
  */
-export const paste = function (x, y, data) {
+// data is text, and then the rows that parseCSV makes from it
+export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
     const obj = this;
 
     // Controls
@@ -241,7 +252,8 @@ export const paste = function (x, y, data) {
 
     // Modify data to allow wor extending paste range in multiples of input range
     const srcW = data[0].length;
-    if ((w > 1) & Number.isInteger(w / srcW)) {
+    // A bitwise and of booleans, as before
+    if (((w > 1) as any) & (Number.isInteger(w / srcW) as any)) {
         const repeats = w / srcW;
         if (style) {
             const newStyle = [];
@@ -254,8 +266,8 @@ export const paste = function (x, y, data) {
             style = newStyle;
         }
 
-        const arrayB = data.map(function (row, i) {
-            const arrayC = Array.apply(null, { length: repeats * row.length }).map(function (e, i) {
+        const arrayB = data.map(function (row: any[], i: number) {
+            const arrayC = Array.apply(null, { length: repeats * row.length } as any).map(function (e: any, i: number) {
                 return row[i % row.length];
             });
             return arrayC;
@@ -263,7 +275,7 @@ export const paste = function (x, y, data) {
         data = arrayB;
     }
     const srcH = data.length;
-    if ((h > 1) & Number.isInteger(h / srcH)) {
+    if (((h > 1) as any) & (Number.isInteger(h / srcH) as any)) {
         const repeats = h / srcH;
         if (style) {
             const newStyle = [];
@@ -272,7 +284,7 @@ export const paste = function (x, y, data) {
             }
             style = newStyle;
         }
-        const arrayB = Array.apply(null, { length: repeats * srcH }).map(function (e, i) {
+        const arrayB = Array.apply(null, { length: repeats * srcH } as any).map(function (e: any, i: number) {
             return data[i % srcH];
         });
         data = arrayB;
@@ -283,8 +295,8 @@ export const paste = function (x, y, data) {
         obj,
         'onbeforepaste',
         obj,
-        data.map(function (row) {
-            return row.map(function (item) {
+        data.map(function (row: any[]) {
+            return row.map(function (item: any) {
                 return { value: item };
             });
         }),
@@ -303,8 +315,8 @@ export const paste = function (x, y, data) {
         let i = 0;
         let j = 0;
         const records = [];
-        const newStyle = {};
-        const oldStyle = {};
+        const newStyle: Record<string, any> = {};
+        const oldStyle: Record<string, any> = {};
         let styleIndex = 0;
 
         // Index
@@ -341,9 +353,10 @@ export const paste = function (x, y, data) {
                 let value = row[i];
 
                 if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].type == 'calendar') {
-                    value = jSuites.calendar.extractDateFromString(
+                    // The jsuites typings miss extractDateFromString, and a calendar column has options
+                    value = (jSuites.calendar as any).extractDateFromString(
                         value,
-                        (obj.options.columns[i].options && obj.options.columns[i].options.format) || 'YYYY-MM-DD'
+                        ((obj.options.columns[i] as any).options && (obj.options.columns[i] as any).options.format) || 'YYYY-MM-DD'
                     );
                 }
 

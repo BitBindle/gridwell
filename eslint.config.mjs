@@ -42,6 +42,7 @@ export default tseslint.config(
             'prefer-const': 'off',
             'prefer-rest-params': 'off',
             'no-var': 'off',
+            'prefer-spread': 'off',
         },
     },
     {

@@ -10,7 +10,7 @@ import type { MergeInfo, Worksheet, WorksheetMethod } from '../types/internal';
 /**
  * Is column merged
  */
-export const isColMerged = function (this: Worksheet, x: number, insertBefore?: boolean) {
+export const isColMerged = function (this: Worksheet, x: number, insertBefore?: any) {
     const obj = this;
 
     const cols = [];
@@ -47,7 +47,7 @@ export const isColMerged = function (this: Worksheet, x: number, insertBefore?: 
 /**
  * Is rows merged
  */
-export const isRowMerged = function (this: Worksheet, y: number, insertBefore?: boolean) {
+export const isRowMerged = function (this: Worksheet, y: number, insertBefore?: any) {
     const obj = this;
 
     const rows = [];

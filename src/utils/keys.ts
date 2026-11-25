@@ -1,10 +1,11 @@
 import { updateScroll } from './internal.js';
 import { loadDown, loadPage, loadUp, loadValidation } from './lazyLoading.js';
+import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
  * Move the selection from a cell that a merged range hides to the first cell of the range
  */
-const toFirstCell = function () {
+const toFirstCell = function (this: Worksheet) {
     const obj = this;
 
     const element = obj.records[obj.selectedCell[1]][obj.selectedCell[0]].element;
@@ -15,7 +16,7 @@ const toFirstCell = function () {
     }
 };
 
-const upGet = function (x, y) {
+const upGet = function (this: Worksheet, x: number, y: number) {
     const obj = this;
 
     x = parseInt(x);
@@ -35,7 +36,7 @@ const upGet = function (x, y) {
     return y;
 };
 
-const upVisible = function (group, direction) {
+const upVisible = function (this: Worksheet, group: any, direction: any) {
     const obj = this;
 
     let x, y;
@@ -68,7 +69,7 @@ const upVisible = function (group, direction) {
     }
 };
 
-export const up = function (shiftKey, ctrlKey) {
+export const up: WorksheetMethod<'up'> = function (shiftKey, ctrlKey) {
     const obj = this;
 
     if (shiftKey) {
@@ -96,7 +97,7 @@ export const up = function (shiftKey, ctrlKey) {
             if (loadValidation.call(obj)) {
                 obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
             } else {
-                const item = parseInt(obj.tbody.firstChild.getAttribute('data-y'));
+                const item = parseInt((obj.tbody.firstChild as HTMLElement).getAttribute('data-y'));
                 if (obj.selectedCell[1] - item < 30) {
                     loadUp.call(obj);
                     obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
@@ -113,7 +114,7 @@ export const up = function (shiftKey, ctrlKey) {
     updateScroll.call(obj, 1);
 };
 
-export const rightGet = function (x, y) {
+export const rightGet = function (this: Worksheet, x: number, y: number) {
     const obj = this;
 
     x = parseInt(x);
@@ -134,7 +135,7 @@ export const rightGet = function (x, y) {
     return x;
 };
 
-const rightVisible = function (group, direction) {
+const rightVisible = function (this: Worksheet, group: any, direction: any) {
     const obj = this;
 
     let x, y;
@@ -167,7 +168,7 @@ const rightVisible = function (group, direction) {
     }
 };
 
-export const right = function (shiftKey, ctrlKey) {
+export const right: WorksheetMethod<'right'> = function (shiftKey, ctrlKey) {
     const obj = this;
 
     if (shiftKey) {
@@ -187,7 +188,7 @@ export const right = function (shiftKey, ctrlKey) {
     updateScroll.call(obj, 2);
 };
 
-export const downGet = function (x, y) {
+export const downGet = function (this: Worksheet, x: number, y: number) {
     const obj = this;
 
     x = parseInt(x);
@@ -207,7 +208,7 @@ export const downGet = function (x, y) {
     return y;
 };
 
-const downVisible = function (group, direction) {
+const downVisible = function (this: Worksheet, group: any, direction: any) {
     const obj = this;
 
     let x, y;
@@ -240,7 +241,7 @@ const downVisible = function (group, direction) {
     }
 };
 
-export const down = function (shiftKey, ctrlKey) {
+export const down: WorksheetMethod<'down'> = function (shiftKey, ctrlKey) {
     const obj = this;
 
     if (shiftKey) {
@@ -267,7 +268,7 @@ export const down = function (shiftKey, ctrlKey) {
             if (loadValidation.call(obj)) {
                 obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
             } else {
-                const item = parseInt(obj.tbody.lastChild.getAttribute('data-y'));
+                const item = parseInt((obj.tbody.lastChild as HTMLElement).getAttribute('data-y'));
                 if (item - obj.selectedCell[3] < 30) {
                     loadDown.call(obj);
                     obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
@@ -284,7 +285,7 @@ export const down = function (shiftKey, ctrlKey) {
     updateScroll.call(obj, 3);
 };
 
-const leftGet = function (x, y) {
+const leftGet = function (this: Worksheet, x: number, y: number) {
     const obj = this;
 
     x = parseInt(x);
@@ -304,7 +305,7 @@ const leftGet = function (x, y) {
     return x;
 };
 
-const leftVisible = function (group, direction) {
+const leftVisible = function (this: Worksheet, group: any, direction: any) {
     const obj = this;
 
     let x, y;
@@ -337,7 +338,7 @@ const leftVisible = function (group, direction) {
     }
 };
 
-export const left = function (shiftKey, ctrlKey) {
+export const left: WorksheetMethod<'left'> = function (shiftKey, ctrlKey) {
     const obj = this;
 
     if (shiftKey) {
@@ -357,7 +358,7 @@ export const left = function (shiftKey, ctrlKey) {
     updateScroll.call(obj, 0);
 };
 
-export const first = function (shiftKey, ctrlKey) {
+export const first: WorksheetMethod<'first'> = function (shiftKey, ctrlKey) {
     const obj = this;
 
     if (shiftKey) {
@@ -391,7 +392,7 @@ export const first = function (shiftKey, ctrlKey) {
     updateScroll.call(obj, 1);
 };
 
-export const last = function (shiftKey, ctrlKey) {
+export const last: WorksheetMethod<'last'> = function (shiftKey, ctrlKey) {
     const obj = this;
 
     if (shiftKey) {

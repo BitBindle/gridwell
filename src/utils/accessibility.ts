@@ -2,6 +2,7 @@ import jSuites from 'jsuites';
 
 import libraryBase from './libraryBase.js';
 import { getColumnNameFromId } from './internalHelpers.js';
+import type { Spreadsheet, Worksheet } from '../types/internal';
 
 /**
  * ARIA grid semantics of the worksheet table (https://www.w3.org/WAI/ARIA/apg/patterns/grid/).
@@ -27,7 +28,7 @@ const defaultLabels = {
 /**
  * Text of an accessible name
  */
-export const getLabelText = function (key, value) {
+export const getLabelText = function (this: Spreadsheet, key: keyof typeof defaultLabels, value?: any) {
     const spreadsheet = this;
 
     const labels = spreadsheet && spreadsheet.config && spreadsheet.config.labels;
@@ -39,7 +40,7 @@ export const getLabelText = function (key, value) {
 /**
  * Number of rows before the first data row
  */
-const getHeaderRows = function () {
+const getHeaderRows = function (this: Worksheet) {
     const obj = this;
 
     return obj.thead.children.length;
@@ -48,7 +49,7 @@ const getHeaderRows = function () {
 /**
  * Roles of the table, its sections and its header rows
  */
-export const setGridRoles = function () {
+export const setGridRoles = function (this: Worksheet) {
     const obj = this;
 
     obj.table.setAttribute('role', 'grid');
@@ -77,7 +78,7 @@ export const setGridRoles = function () {
 /**
  * Accessible names of the table, the select all corner and the clipboard helper
  */
-export const setGridLabels = function () {
+export const setGridLabels = function (this: Worksheet) {
     const obj = this;
 
     if (obj.options.worksheetName) {
@@ -92,7 +93,7 @@ export const setGridLabels = function () {
 /**
  * Role and position of a column header
  */
-export const setHeaderRole = function (td, x) {
+export const setHeaderRole = function (td: HTMLTableCellElement, x: number) {
     td.setAttribute('role', 'columnheader');
     td.setAttribute('aria-colindex', parseInt(x) + 2);
 };
@@ -100,7 +101,7 @@ export const setHeaderRole = function (td, x) {
 /**
  * Role and position of a data row and its row number
  */
-export const setRowRole = function (tr, y) {
+export const setRowRole = function (this: Worksheet, tr: HTMLTableRowElement, y: number) {
     const obj = this;
 
     tr.setAttribute('role', 'row');
@@ -112,7 +113,7 @@ export const setRowRole = function (tr, y) {
 /**
  * Position of a data row after a change of its index
  */
-export const updateRowIndex = function (tr, y) {
+export const updateRowIndex = function (this: Worksheet, tr: HTMLTableRowElement, y: number) {
     const obj = this;
 
     tr.setAttribute('aria-rowindex', getHeaderRows.call(obj) + parseInt(y) + 1);
@@ -121,7 +122,7 @@ export const updateRowIndex = function (tr, y) {
 /**
  * Column positions of the cells of a filter or footer row. The first cell is in the row number column.
  */
-const updateRowCells = function (tr) {
+const updateRowCells = function (tr: Element) {
     for (let i = 0; i < tr.children.length; i++) {
         tr.children[i].setAttribute('aria-colindex', i + 1);
     }
@@ -131,7 +132,7 @@ const updateRowCells = function (tr) {
  * Size of the grid, and the positions in the nested header, filter and footer rows, after a change of the rows or
  * columns. These rows have few cells.
  */
-export const updateGridSize = function () {
+export const updateGridSize = function (this: Worksheet) {
     const obj = this;
 
     const headerRows = getHeaderRows.call(obj);
@@ -169,7 +170,7 @@ export const updateGridSize = function () {
  * square, gives its value. An image gives no value, because its value is the image data. A cell with an open editor has
  * no name, because the editor shows other text and has its own name.
  */
-export const setCellLabel = function (td) {
+export const setCellLabel = function (this: Worksheet, td: HTMLTableCellElement) {
     const obj = this;
 
     if (td.classList.contains('editor') || (obj.edition && obj.edition[0] === td)) {
@@ -191,25 +192,31 @@ export const setCellLabel = function (td) {
 /**
  * A cell can be the tab stop when its row is in the table and the cell and its row are not hidden
  */
-const isVisibleCell = function (td) {
+const isVisibleCell = function (this: Worksheet, td: HTMLTableCellElement) {
     const obj = this;
 
-    return !!td && !!td.parentNode && td.parentNode.parentNode === obj.tbody && td.style.display !== 'none' && td.parentNode.style.display !== 'none';
+    return (
+        !!td &&
+        !!td.parentNode &&
+        td.parentNode.parentNode === obj.tbody &&
+        td.style.display !== 'none' &&
+        (td.parentNode as HTMLElement).style.display !== 'none'
+    );
 };
 
 /**
  * First visible cell of the rows in the table
  */
-const getFirstVisibleCell = function () {
+const getFirstVisibleCell = function (this: Worksheet) {
     const obj = this;
 
     for (let j = 0; j < obj.tbody.children.length; j++) {
-        const tr = obj.tbody.children[j];
+        const tr = obj.tbody.children[j] as HTMLTableRowElement;
         if (tr.style.display !== 'none') {
             // The first child is the row number
             for (let i = 1; i < tr.children.length; i++) {
-                if (tr.children[i].style.display !== 'none') {
-                    return tr.children[i];
+                if ((tr.children[i] as HTMLTableCellElement).style.display !== 'none') {
+                    return tr.children[i] as HTMLTableCellElement;
                 }
             }
         }
@@ -222,7 +229,7 @@ const getFirstVisibleCell = function () {
  * Roving tabindex: the active cell is the only cell with tabindex 0. The grid is multiselectable, so the active cell
  * gives aria-selected="false" when it is not selected.
  */
-const setActiveCell = function (td) {
+const setActiveCell = function (this: Worksheet, td: HTMLTableCellElement) {
     const obj = this;
 
     const previous = obj.activeCell;
@@ -251,10 +258,10 @@ const setActiveCell = function (td) {
 /**
  * The focused element in the document or in the shadow root of the worksheet
  */
-const getActiveElement = function () {
+const getActiveElement = function (this: Worksheet) {
     const obj = this;
 
-    const root = obj.table.getRootNode();
+    const root = obj.table.getRootNode() as Document | ShadowRoot;
 
     return root.activeElement || null;
 };
@@ -275,10 +282,10 @@ const isFocusLost = function () {
  * attached its row again, the focus fell to the body, and the tab stop gets it back. A focused cell that is no longer the
  * tab stop also gives the focus to the tab stop.
  */
-export const updateTabStop = function () {
+export const updateTabStop = function (this: Worksheet) {
     const obj = this;
 
-    let td = null;
+    let td: HTMLTableCellElement = null;
     if (obj.selectedCell) {
         const x = obj.selectedCell[0];
         const y = obj.selectedCell[1];
@@ -305,11 +312,11 @@ export const updateTabStop = function () {
 /**
  * When the focus goes from the grid to an element outside the spreadsheet, a later change of the grid does not take it back
  */
-export const setGridFocusEvents = function () {
+export const setGridFocusEvents = function (this: Worksheet) {
     const obj = this;
 
     obj.table.addEventListener('focusout', function (e) {
-        if (e.relatedTarget && e.relatedTarget.nodeType === 1 && !obj.parent.element.contains(e.relatedTarget)) {
+        if (e.relatedTarget && (e.relatedTarget as Node).nodeType === 1 && !obj.parent.element.contains(e.relatedTarget as Node)) {
             obj.focusInGrid = false;
         }
     });
@@ -320,7 +327,7 @@ export const setGridFocusEvents = function () {
  * the grid, or when the focus fell from the grid to the body, for example after lazy loading removed the focused row.
  * A selection does not take the focus from other parts of the page.
  */
-export const updateActiveCell = function (x, y, origin) {
+export const updateActiveCell = function (this: Worksheet, x: number, y: number, origin: any) {
     const obj = this;
 
     const td = obj.records[y] && obj.records[y][x] && obj.records[y][x].element;
@@ -346,7 +353,7 @@ export const updateActiveCell = function (x, y, origin) {
  * After the editor closes, the cell is a focus target again. It gets the focus back when the focus fell to the body
  * with the removed editor.
  */
-export const restoreActiveCell = function (cell) {
+export const restoreActiveCell = function (this: Worksheet, cell: any) {
     const obj = this;
 
     if (obj.activeCell !== cell) {

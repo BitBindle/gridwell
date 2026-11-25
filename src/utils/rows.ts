@@ -7,11 +7,12 @@ import { conditionalSelectionUpdate, getSelectedRows, updateCornerPosition } fro
 import { setHistory } from './history.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import { setRowRole, updateTabStop } from './accessibility.js';
+import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
  * Create row
  */
-export const createRow = function (j, data) {
+export const createRow = function (this: Worksheet, j: number, data: any) {
     const obj = this;
 
     // Create container
@@ -42,7 +43,7 @@ export const createRow = function (j, data) {
     // Definitions
     if (obj.options.rows && obj.options.rows[j]) {
         if (obj.options.rows[j].height) {
-            row.element.style.height = obj.options.rows[j].height;
+            row.element.style.height = obj.options.rows[j].height as string;
         }
         if (obj.options.rows[j].title) {
             index = obj.options.rows[j].title;
@@ -53,7 +54,7 @@ export const createRow = function (j, data) {
     }
     // Row number label
     const td = document.createElement('td');
-    td.innerHTML = index;
+    td.innerHTML = index as any;
     td.setAttribute('data-y', j);
     td.className = 'jss_row';
     row.element.appendChild(td);
@@ -72,7 +73,7 @@ export const createRow = function (j, data) {
         row.element.appendChild(obj.records[j][i].element);
 
         if (obj.options.columns && obj.options.columns[i] && typeof obj.options.columns[i].render === 'function') {
-            obj.options.columns[i].render(obj.records[j][i].element, data[i], parseInt(i), parseInt(j), obj, obj.options.columns[i]);
+            (obj.options.columns[i].render as any)(obj.records[j][i].element, data[i], parseInt(i), parseInt(j), obj, obj.options.columns[i]);
         }
     }
 
@@ -91,7 +92,7 @@ export const createRow = function (j, data) {
  * @param insertBefore
  * @return void
  */
-export const insertRow = function (mixed, rowNumber, insertBefore) {
+export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumber, insertBefore: any) {
     const obj = this;
 
     // Configuration
@@ -100,7 +101,7 @@ export const insertRow = function (mixed, rowNumber, insertBefore) {
         var records = [];
 
         // Data to be insert
-        let data = [];
+        let data: any[] = [];
 
         // The insert could be lead by number of rows or the array of data
         let numOfRows;
@@ -250,7 +251,7 @@ export const insertRow = function (mixed, rowNumber, insertBefore) {
  *
  * @return void
  */
-export const moveRow = function (o, d, ignoreDom) {
+export const moveRow = function (this: Worksheet, o: any, d: any, ignoreDom?: any) {
     const obj = this;
 
     if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
@@ -339,7 +340,7 @@ export const moveRow = function (o, d, ignoreDom) {
  * @param integer numOfRows - number of lines
  * @return void
  */
-export const deleteRow = function (rowNumber, numOfRows) {
+export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numOfRows) {
     const obj = this;
 
     // Global Configuration
@@ -481,7 +482,7 @@ export const deleteRow = function (rowNumber, numOfRows) {
  * @param row - row number (first row is: 0)
  * @return height - current row height
  */
-export const getHeight = function (row) {
+export const getHeight = function (this: Worksheet, row: any) {
     const obj = this;
 
     let data;
@@ -514,7 +515,7 @@ export const getHeight = function (row) {
  * @param height - new row height
  * @param oldHeight - old row height
  */
-export const setHeight = function (row, height, oldHeight) {
+export const setHeight = function (this: Worksheet, row: any, height: number, oldHeight: any) {
     const obj = this;
 
     if (height > 0) {
@@ -563,7 +564,7 @@ export const setHeight = function (row, height, oldHeight) {
 /**
  * Show row
  */
-export const showRow = function (rowNumber) {
+export const showRow: WorksheetMethod<'showRow'> = function (rowNumber) {
     const obj = this;
 
     if (!Array.isArray(rowNumber)) {
@@ -578,7 +579,7 @@ export const showRow = function (rowNumber) {
 /**
  * Hide row
  */
-export const hideRow = function (rowNumber) {
+export const hideRow: WorksheetMethod<'hideRow'> = function (rowNumber) {
     const obj = this;
 
     if (!Array.isArray(rowNumber)) {
@@ -596,7 +597,7 @@ export const hideRow = function (rowNumber) {
 /**
  * Get a row data by rowNumber
  */
-export const getRowData = function (rowNumber, processed) {
+export const getRowData: WorksheetMethod<'getRowData'> = function (rowNumber, processed) {
     const obj = this;
 
     if (processed) {
@@ -611,7 +612,7 @@ export const getRowData = function (rowNumber, processed) {
 /**
  * Set a row data by rowNumber
  */
-export const setRowData = function (rowNumber, data, force) {
+export const setRowData: WorksheetMethod<'setRowData'> = function (rowNumber, data, force) {
     const obj = this;
 
     for (let i = 0; i < obj.headers.length; i++) {

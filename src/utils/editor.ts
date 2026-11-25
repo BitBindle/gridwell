@@ -5,6 +5,7 @@ import { getCellColumnIndex, getMask, isFormula, updateCell } from './internal.j
 import { setHistory } from './history.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import { getLabelText, restoreActiveCell } from './accessibility.js';
+import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
  * Open the editor
@@ -12,12 +13,12 @@ import { getLabelText, restoreActiveCell } from './accessibility.js';
  * @param object cell
  * @return void
  */
-export const openEditor = function (cell, empty, e) {
+export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, e) {
     const obj = this;
 
-    // Get cell position
-    const y = cell.getAttribute('data-y');
-    const x = cell.getAttribute('data-x');
+    // Get cell position. The code uses the text as numbers.
+    const y: any = cell.getAttribute('data-y');
+    const x: any = cell.getAttribute('data-x');
 
     // Column options
     const column = obj.options.columns && obj.options.columns[getCellColumnIndex.call(obj, x, y)];
@@ -34,7 +35,8 @@ export const openEditor = function (cell, empty, e) {
     }
 
     // Create editor
-    const createEditor = function (type) {
+    // The editor element gets properties, for example the jsuites control
+    const createEditor = function (type: string): any {
         // Cell information
         const info = cell.getBoundingClientRect();
 
@@ -85,14 +87,14 @@ export const openEditor = function (cell, empty, e) {
                 // Do nothing
             } else if (column && (column.type == 'checkbox' || column.type == 'radio')) {
                 // Get value
-                const value = cell.children[0].checked ? false : true;
+                const value = (cell.children[0] as HTMLInputElement).checked ? false : true;
                 // Toogle value
                 obj.setValue(cell, value);
                 // Do not keep edition open
                 obj.edition = null;
             } else if (column && column.type == 'dropdown') {
                 // Get current value
-                let value = obj.options.data[y][x];
+                let value: any = obj.options.data[y][x];
                 if (column.multiple && !Array.isArray(value)) {
                     value = value.split(column.delimiter || ';');
                 }
@@ -120,7 +122,7 @@ export const openEditor = function (cell, empty, e) {
                 // On edition start
                 dispatch.call(obj, 'oncreateeditor', obj, cell, parseInt(x), parseInt(y), null, column);
 
-                const options = {
+                const options: any = {
                     data: data,
                     multiple: column.multiple ? true : false,
                     autocomplete: column.autocomplete ? true : false,
@@ -154,14 +156,14 @@ export const openEditor = function (cell, empty, e) {
 
                 editor.value = value;
 
-                const options = column.options ? { ...column.options } : {};
+                const options: any = column.options ? { ...column.options } : {};
 
                 if (obj.options.tableOverflow == true || obj.parent.config.fullscreen == true) {
                     options.position = true;
                 }
                 options.value = obj.options.data[y][x];
                 options.opened = true;
-                options.onclose = function (el, value) {
+                options.onclose = function (el: any, value: any) {
                     closeEditor.call(obj, cell, true);
                 };
                 // Current value
@@ -194,9 +196,10 @@ export const openEditor = function (cell, empty, e) {
                 const div = document.createElement('div');
                 div.classList.add('jss_richtext');
                 editor.appendChild(div);
-                const richText = jSuites.editor(div, {
+                // The jsuites typings miss the editor property
+                const richText: any = jSuites.editor(div, {
                     focus: true,
-                    value: value,
+                    value: value as string,
                 });
                 // Accessible role and name of the rich text editor
                 if (richText && richText.editor) {
@@ -219,7 +222,7 @@ export const openEditor = function (cell, empty, e) {
                 }
             } else if (column && column.type == 'image') {
                 // Value
-                const img = cell.children[0];
+                const img = cell.children[0] as HTMLImageElement;
                 // Create editor
                 const editor = createEditor('div');
 
@@ -267,7 +270,7 @@ export const openEditor = function (cell, empty, e) {
                 if (!isFormula(value)) {
                     if (options) {
                         // Format
-                        const opt = getMask(options);
+                        const opt: any = getMask(options);
 
                         if (opt) {
                             // Masking
@@ -284,7 +287,8 @@ export const openEditor = function (cell, empty, e) {
                             // Configuration
                             editor.mask = opt;
                             // Do not treat the decimals
-                            jSuites.mask.render(value, opt, false);
+                            // The jsuites typings miss render and extract
+                            (jSuites.mask as any).render(value, opt, false);
                         }
                     }
                 }
@@ -305,7 +309,7 @@ export const openEditor = function (cell, empty, e) {
  * @param boolean save
  * @return void
  */
-export const closeEditor = function (cell, save) {
+export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save) {
     const obj = this;
 
     const x = parseInt(cell.getAttribute('data-x'));
@@ -314,6 +318,7 @@ export const closeEditor = function (cell, save) {
     // Column options
     const column = obj.options.columns && obj.options.columns[getCellColumnIndex.call(obj, x, y)];
 
+    // The editor element has the jsuites control as a property
     let value;
 
     // Get cell properties
@@ -327,30 +332,30 @@ export const closeEditor = function (cell, save) {
             if (column && (column.type == 'checkbox' || column.type == 'radio' || column.type == 'hidden')) {
                 // Do nothing
             } else if (column && column.type == 'dropdown') {
-                const dropdown = cell.children[0].dropdown;
+                const dropdown = (cell.children[0] as any).dropdown;
                 const delimiter = column.delimiter;
                 dropdown.close(true);
                 value = delimiter && column.multiple ? dropdown.getValue(true).join(delimiter) : dropdown.getValue();
             } else if (column && column.type == 'calendar') {
-                value = cell.children[0].calendar.close(true);
+                value = (cell.children[0] as any).calendar.close(true);
             } else if (column && column.type == 'color') {
-                value = cell.children[0].color.close(true);
+                value = (cell.children[0] as any).color.close(true);
             } else if (column && column.type == 'html') {
-                value = cell.children[0].children[0].editor.getData();
+                value = (cell.children[0] as any).children[0].editor.getData();
             } else if (column && column.type == 'image') {
-                const img = cell.children[0].children[0].children[0];
+                const img = (cell.children[0] as any).children[0].children[0];
                 value = img && img.tagName == 'IMG' ? img.src : '';
             } else if (column && column.type == 'numeric') {
-                value = cell.children[0].value;
+                value = (cell.children[0] as any).value;
                 if (('' + value).substr(0, 1) != '=') {
                     if (value == '') {
                         value = column.allowEmpty ? '' : 0;
                     }
                 }
-                cell.children[0].onblur = null;
+                (cell.children[0] as any).onblur = null;
             } else {
-                value = cell.children[0].value;
-                cell.children[0].onblur = null;
+                value = (cell.children[0] as any).value;
+                (cell.children[0] as any).onblur = null;
 
                 // Column options
                 const options = column;
@@ -361,7 +366,7 @@ export const closeEditor = function (cell, save) {
                     if (opt) {
                         // Keep numeric in the raw data
                         if (value !== '' && !isFormula(value) && typeof value !== 'number') {
-                            const t = jSuites.mask.extract(value, opt, true);
+                            const t = (jSuites.mask as any).extract(value, opt, true);
                             if (t && t.value !== '') {
                                 value = t.value;
                             }
@@ -383,13 +388,13 @@ export const closeEditor = function (cell, save) {
             column.type.closeEditor(cell, save, parseInt(x), parseInt(y), obj, column);
         } else {
             if (column && column.type == 'dropdown') {
-                cell.children[0].dropdown.close(true);
+                (cell.children[0] as any).dropdown.close(true);
             } else if (column && column.type == 'calendar') {
-                cell.children[0].calendar.close(true);
+                (cell.children[0] as any).calendar.close(true);
             } else if (column && column.type == 'color') {
-                cell.children[0].color.close(true);
+                (cell.children[0] as any).color.close(true);
             } else {
-                cell.children[0].onblur = null;
+                (cell.children[0] as any).onblur = null;
             }
         }
 
@@ -413,14 +418,14 @@ export const closeEditor = function (cell, save) {
 /**
  * Toogle
  */
-export const setCheckRadioValue = function () {
+export const setCheckRadioValue = function (this: Worksheet) {
     const obj = this;
 
     const records = [];
     const keys = Object.keys(obj.highlighted);
     for (let i = 0; i < keys.length; i++) {
-        const x = obj.highlighted[i].element.getAttribute('data-x');
-        const y = obj.highlighted[i].element.getAttribute('data-y');
+        const x: any = obj.highlighted[i].element.getAttribute('data-x');
+        const y: any = obj.highlighted[i].element.getAttribute('data-y');
 
         const column = obj.options.columns[getCellColumnIndex.call(obj, x, y)];
         if (column.type == 'checkbox' || column.type == 'radio') {
