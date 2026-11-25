@@ -202,3 +202,59 @@ void worksheet.corner;
 void worksheet.headerContainer;
 // @ts-expect-error The link below the table is internal
 void worksheet.ads;
+
+// The values that the application or a formula gives have the type unknown, not any
+assertType<Equals<jspreadsheet.MetaInformation[string], unknown>>();
+assertType<Equals<jspreadsheet.HistoryRecord['records'], unknown>>();
+const formulaResult = worksheet.executeFormula('=1+1');
+assertType<Equals<typeof formulaResult, unknown>>();
+type SaveData = Parameters<NonNullable<jspreadsheet.SpreadsheetOptions['onsave']>>[2];
+assertType<Equals<SaveData, unknown>>();
+
+// dispatch takes the arguments of the handler of the event
+const dispatched = worksheet.dispatch('onselection', worksheet, 0, 0, 1, 1, undefined);
+assertType<Equals<typeof dispatched, unknown>>();
+// @ts-expect-error onselection gets the worksheet first
+worksheet.dispatch('onselection', 0);
+// @ts-expect-error The event must be an event of SpreadsheetOptions
+worksheet.dispatch('oncustom');
+
+// onevent gets the name of the event, then its arguments. A test of the name in args[0] narrows the arguments.
+const eventOptions: jspreadsheet.SpreadsheetOptions = {
+    worksheets: [],
+    onevent: function (...args) {
+        if (args[0] === 'onselection') {
+            assertType<Equals<(typeof args)[1], jspreadsheet.WorksheetInstance>>();
+            assertType<Equals<(typeof args)[2], number>>();
+        }
+    },
+};
+void eventOptions;
+// A handler that takes any arguments still fits, but not one that expects a worksheet for every event
+const looseOnevent = function (event: string, ...rest: unknown[]) {
+    return [event, rest];
+};
+const looseOptions: jspreadsheet.SpreadsheetOptions = { worksheets: [], onevent: looseOnevent };
+void looseOptions;
+const worksheetOnevent = function (event: string, instance: jspreadsheet.WorksheetInstance) {
+    return [event, instance];
+};
+// @ts-expect-error onbeforesave and others give the spreadsheet first
+const worksheetOptions: jspreadsheet.SpreadsheetOptions = { worksheets: [], onevent: worksheetOnevent };
+void worksheetOptions;
+
+// A context menu item gets the element of the item, and the toolbar items get the jSuites instances
+type ContextMenuClick = Parameters<NonNullable<jspreadsheet.ContextMenuOption['onclick']>>;
+assertType<Equals<ContextMenuClick, [element: HTMLDivElement, e: MouseEvent]>>();
+type ToolbarClick = Parameters<NonNullable<jspreadsheet.ToolbarIconItem['onclick']>>[1];
+assertType<Equals<ToolbarClick, jspreadsheet.ToolbarInstance>>();
+declare const toolbarInstance: jspreadsheet.ToolbarInstance;
+toolbarInstance.refresh();
+declare const pickerInstance: jspreadsheet.PickerInstance;
+pickerInstance.close();
+
+// The library has the static methods that it declares, and no others
+// @ts-expect-error The library has no index signature
+void library.custom;
+// An event of the application's own needs a cast of its name, as UPGRADING.md says
+worksheet.dispatch('oncustom' as jspreadsheet.EventName, worksheet);

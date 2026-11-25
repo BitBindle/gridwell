@@ -132,16 +132,11 @@ export type WorksheetMethod<K extends keyof jspreadsheet.WorksheetInstance> = js
     ? (this: Worksheet, ...args: A) => R
     : never;
 
-/** The handlers of the events in SpreadsheetOptions, by event name. onevent gets every event, so it is not an event. */
-export type EventHandlers = {
-    [K in Exclude<keyof jspreadsheet.SpreadsheetOptions, 'onevent'> as K extends `on${string}` ? K : never]-?: Extract<
-        jspreadsheet.SpreadsheetOptions[K],
-        (...args: never[]) => unknown
-    >;
-};
+/** The handlers of the events, by event name (see src/jspreadsheet.d.ts). */
+export type EventHandlers = jspreadsheet.EventHandlers;
 
 /** The name of an event that dispatch can trigger. */
-export type EventName = keyof EventHandlers;
+export type EventName = jspreadsheet.EventName;
 
 /**
  * dispatch, typed by event: the arguments are those of the handler that SpreadsheetOptions declares for the event, and

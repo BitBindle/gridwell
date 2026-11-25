@@ -6,7 +6,8 @@ import type { Spreadsheet, Worksheet } from '../types/internal';
 import type { Color } from 'jsuites';
 
 /** The border select keeps the thickness, the color and the style that the user chose on its picker instance. */
-type BorderPicker = { thickness?: number; color?: string; style?: string };
+/** The picker of the borders, which keeps the thickness, the color and the style that the user chose. */
+type BorderPicker = jspreadsheet.PickerInstance & { thickness?: number; color?: string; style?: string };
 
 const setItemStatus = function (toolbarItem: HTMLElement, worksheet: Worksheet) {
     if (worksheet.options.editable != false) {

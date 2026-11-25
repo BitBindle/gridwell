@@ -265,7 +265,8 @@ export const parseValue = function (this: Worksheet, i: number, j: number, value
     const obj = this;
 
     if (('' + value).substr(0, 1) == '=' && obj.parent.config.parseFormulas != false) {
-        value = executeFormula.call(obj, value as string, i, j);
+        // The cell shows the result as text, as the DOM converts it. An array from a range shows its items with commas.
+        value = executeFormula.call(obj, value as string, i, j) as jspreadsheet.CellValue;
     }
 
     // Column options
