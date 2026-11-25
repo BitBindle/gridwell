@@ -81,8 +81,9 @@ export const updateTable = function (this: Worksheet) {
 const parseNumber = function (this: Worksheet, value: any, columnNumber: number) {
     const obj = this;
 
-    // Decimal point
-    const decimal = columnNumber && obj.options.columns[columnNumber].decimal ? obj.options.columns[columnNumber].decimal : '.';
+    // Decimal point. Column 0 has one too.
+    const column = obj.options.columns[columnNumber];
+    const decimal = column && column.decimal ? column.decimal : '.';
 
     // Parse both parts of the number
     // Text, then its parts

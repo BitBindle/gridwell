@@ -486,4 +486,18 @@ describe('Calculations', () => {
             expect(test[0].getValue('C1', true)).to.equal('3');
         });
     });
+
+    it('reads a formatted number with the decimal separator of its column, also in column 0', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [['1,5', '1,5', '=A1*2', '=B1*2']],
+                    columns: [{ decimal: ',' }, { decimal: ',' }, {}, {}],
+                },
+            ],
+        })[0];
+
+        expect(worksheet.getValueFromCoords(2, 0, true)).to.equal('3');
+        expect(worksheet.getValueFromCoords(3, 0, true)).to.equal('3');
+    });
 });
