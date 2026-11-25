@@ -1,5 +1,7 @@
 import dispatch from './dispatch.js';
-import { updateCell, updateFormula, updateFormulaChain, updateTable } from './internal.js';
+import { updateCell } from './render.js';
+import { updateFormula, updateFormulaChain } from './references.js';
+import { updateTable } from './table.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import type { Worksheet } from '../types/internal';
 import type { CellChange, CellValue } from '../jspreadsheet';

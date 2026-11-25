@@ -1,6 +1,6 @@
 import { resetFilters } from './filter.js';
 import { getIdFromColumnName } from './internalHelpers.js';
-import { updateResult } from './internal.js';
+import { updateResult } from './pagination.js';
 import { isRowMerged } from './merges.js';
 import type { Worksheet } from '../types/internal';
 import type { CellValue } from '../jspreadsheet';

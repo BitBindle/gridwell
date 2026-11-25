@@ -2,7 +2,9 @@ import jSuites from 'jsuites';
 
 import { parseCSV } from './helpers.js';
 import dispatch from './dispatch.js';
-import { updateCell, updateFormulaChain, updateTable, updateTableReferences } from './internal.js';
+import { updateCell } from './render.js';
+import { updateFormulaChain, updateTableReferences } from './references.js';
+import { updateTable } from './table.js';
 import { downGet, rightGet } from './keys.js';
 import { updateSelectionFromCoords } from './selection.js';
 import { getColumnNameFromId } from './internalHelpers.js';

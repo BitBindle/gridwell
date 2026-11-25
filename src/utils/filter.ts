@@ -1,5 +1,5 @@
 import jSuites from 'jsuites';
-import { updateResult } from './internal.js';
+import { updateResult } from './pagination.js';
 import { refreshSelection } from './selection.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
 

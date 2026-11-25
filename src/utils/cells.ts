@@ -1,5 +1,6 @@
 import { getCoordsFromCellName } from './helpers.js';
-import type { Worksheet } from '../types/internal';
+import { getIdFromColumnName } from './internalHelpers.js';
+import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
  * Make a cell read-only, or editable again.
@@ -44,4 +45,56 @@ export const isReadOnly = function (this: Worksheet, x: number | string, y?: num
     }
 
     return obj.records[y!][x as number].element.classList.contains('readonly');
+};
+
+/**
+ * Get the cell object
+ *
+ * @param object cell
+ * @return string value
+ */
+export const getCell = function (this: Worksheet, x: number, y: number) {
+    const obj = this;
+
+    if (typeof x === 'string') {
+        // Convert in case name is excel liked ex. A10, BB92
+        const cell = getIdFromColumnName(x, true);
+
+        x = cell[0];
+        y = cell[1];
+    }
+
+    return obj.records[y][x].element;
+};
+
+/**
+ * Get the cell object from coords
+ *
+ * @param object cell
+ * @return string value
+ */
+export const getCellFromCoords: WorksheetMethod<'getCellFromCoords'> = function (x, y) {
+    const obj = this;
+
+    return obj.records[y][x].element;
+};
+
+/**
+ * Get label
+ *
+ * @param object cell
+ * @return string value
+ */
+export const getLabel = function (this: Worksheet, x: number, y: number) {
+    const obj = this;
+
+    if (typeof x === 'string') {
+        // Convert in case name is excel liked ex. A10, BB92
+        const cell = getIdFromColumnName(x, true);
+
+        x = cell[0];
+        y = cell[1];
+    }
+
+    return obj.records[y][x].element.innerHTML;
 };

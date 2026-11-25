@@ -1,5 +1,7 @@
 import { createRow } from './rows.js';
-import { updateCell, updateFormulaChain, updateTable } from './internal.js';
+import { updateCell } from './render.js';
+import { updateFormulaChain } from './references.js';
+import { updateTable } from './table.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import dispatch from './dispatch.js';
 import { updatePagination } from './pagination.js';

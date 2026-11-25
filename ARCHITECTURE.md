@@ -102,6 +102,21 @@ what it changes, and lists its breaking changes in UPGRADING.md.
     (`src/types/internal.d.ts`). `isMouseAction` went, as nothing set it. `WorksheetInstance` and `SpreadsheetInstance`
     say that they are the instances of the classes. Only the typings changed: the fields are still on the worksheet.
 
+The steps above give every piece of state an owner and remove the cycles. The next steps clean up what they left: code
+that is hard to read but does not need a new owner. They change no behaviour.
+
+11. **Split `internal.ts`.** It held the functions that were left when the features moved out, and many modules needed it.
+    Done. Each function went to the module of its feature: the creation and the rendering of the cells to
+    `utils/render.ts`, the formula chain and the references to `utils/references.ts`, `updateTable` to `utils/table.ts`,
+    `fullscreen` to `utils/fullscreen.ts`, `getCell`, `getCellFromCoords` and `getLabel` to `cells.ts`, `updateScroll`
+    to `keys.ts`, `updateResult` to `pagination.ts`, `showIndex` and `hideIndex` to `rows.ts`, and
+    `createNestedHeader` to `headers.ts`.
+12. **The event handlers.** Each handler reads the active worksheet once, and the long handlers (`mouseDownControls`,
+    `keyDownControls`) are split into a function for each target or key.
+13. **The tabs.** `createTabs` builds the tabs in one long closure. The tabs become a class, with the methods on the
+    prototype.
+14. **The anys in the public typings.** The `any` types left in `src/jspreadsheet.d.ts` get real types.
+
 ## Rules for each step
 
 -   A step moves code; it does not rewrite it. Fix a bug that the move finds in its own commit, with a test.

@@ -1,6 +1,6 @@
 import jSuites from 'jsuites';
 import dispatch from './dispatch.js';
-import { updateTableReferences } from './internal.js';
+import { updateTableReferences } from './references.js';
 import { loadPage } from './lazyLoading.js';
 import { closeFilter } from './filter.js';
 import { updateTabStop } from './accessibility.js';
