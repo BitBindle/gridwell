@@ -307,7 +307,11 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
 
     if (ret === false) {
         return false;
-    } else if (ret) {
+    } else if (typeof ret == 'string') {
+        // The text to paste instead
+        data = parseCSV(ret, '\t');
+    } else if (ret && ret !== true) {
+        // Rows of values to paste instead, which the typings do not declare
         data = ret;
     }
 
