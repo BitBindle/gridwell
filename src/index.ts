@@ -3,7 +3,7 @@ import jSuites from 'jsuites';
 import libraryBase from './utils/libraryBase.js';
 
 import Factory from './utils/factory.js';
-import { destroyEvents } from './utils/events.js';
+import { destroyEvents } from './events/index.js';
 
 import * as helpers from './utils/helpers.js';
 import dispatch from './utils/dispatch.js';

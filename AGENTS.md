@@ -40,7 +40,8 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 -   `src/components/*.ts`: the components of a worksheet, one class per feature, each owning its state (`History`, `Clipboard`, `Editor`, `Selection`, `Formulas`, `View`). See [ARCHITECTURE.md](ARCHITECTURE.md).
 -   `src/utils/factory.ts`: builds the spreadsheet and its worksheets. `spreadsheetPublicMethods` lists the methods of a spreadsheet.
 -   `src/utils/worksheets.ts`: builds a worksheet's DOM. `worksheetPublicMethods` lists the methods of a worksheet.
--   `src/utils/*.ts`: one module per feature (`columns`, `rows`, `selection`, `editor`, `events`, `history`, `merges`, `accessibility`, …). `internal.ts` and `events.ts` are the largest and most connected.
+-   `src/utils/*.ts`: one module per feature (`columns`, `rows`, `selection`, `editor`, `history`, `merges`, `accessibility`, …). `internal.ts` is the largest and most connected.
+-   `src/events/*.ts`: the document event handlers, one module per input (`mouse`, `keyboard`, `touch`, `clipboard`, `contextMenu`, `scroll`). `index.ts` adds and removes them (`setEvents`, `destroyEvents`), and `helpers.ts` finds the worksheet and the cell of an event target.
 -   `src/jspreadsheet.d.ts`: the public typings, copied unchanged to `dist/index.d.ts`.
 -   `src/types/`: types for the type check only, not published (see [Type checking](#type-checking)).
 -   `src/jspreadsheet.css`, `src/jspreadsheet.themes.css`: the styles, also copied to `dist/`.
@@ -55,9 +56,9 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 
 -   **Two classes.** A _spreadsheet_ (`Spreadsheet`) holds `config`, `element`, `worksheets` and the toolbar. A _worksheet_ (`Worksheet`) holds `options`, the DOM (`table`, `thead`, `tbody`, `headers`, `rows`, `records`) and the state (`selection`, …). `worksheet.parent` is its spreadsheet. Modules still add most of the state while they build the worksheet. The state that has moved into a component is reached through it: `worksheet.history` is a `History`, and a change is recorded with `obj.history.add(record)`; `worksheet.clipboard` is a `Clipboard`, which keeps what the worksheet copied; `worksheet.editor` is an `Editor`, and `obj.editor.isOpen()` tells whether a cell is being edited; `worksheet.selection` is a `Selection`, which holds the selected range and the highlighted cells; `worksheet.formulas` is a `Formulas`, which holds the formula chain; `worksheet.view` is a `View`, which holds the rows that a search or the filters found and the page. To tell a worksheet from a spreadsheet, use `instanceof Worksheet`.
 -   **The worksheet is `this`.** Most functions start with `const obj = this` and are called with `fn.call(worksheet, ...)`. The public methods are these functions, put on `Worksheet.prototype` from `worksheetPublicMethods` (and on `Spreadsheet.prototype` from `spreadsheetPublicMethods`). They are not bound: they need the worksheet as `this`.
--   **One global active worksheet.** `libraryBase.jspreadsheet.current` is the worksheet that keyboard and clipboard events go to. `events.ts` and `worksheets.ts` set it.
+-   **One global active worksheet.** `libraryBase.jspreadsheet.current` is the worksheet that keyboard and clipboard events go to. The handlers in `src/events/` and `worksheets.ts` set it.
 -   **Events** go through `dispatch.call(obj, 'oneventname', ...args)`. `dispatch` calls the spreadsheet's `config.onevent`, then the specific handler in `config`, then each plugin's `onevent`, and returns the last result. Returning `false` from an `onbefore…` handler cancels the action.
--   **Circular imports** exist (6 run-time cycles, for example `internal → pagination → selection`). They work because imported functions are only called at runtime. Do not call an imported function at the top level of a module.
+-   **Circular imports** exist (4 run-time cycles, for example `internal → pagination → selection`). They work because imported functions are only called at runtime. Do not call an imported function at the top level of a module.
 
 ## Adding or changing a public method
 

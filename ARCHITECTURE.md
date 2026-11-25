@@ -78,6 +78,10 @@ what it changes, and lists its breaking changes in UPGRADING.md.
    `rows`, `records`), which `Worksheet` keeps. The state of a mouse drag (`resizing`, `dragging`, `selectedHeader`,
    `selectedRow`, `selectedCorner`, `cursor`) goes with the events in step 8.
 8. **Events.** `events.ts` splits by input under `events/`, and the handlers route through the spreadsheet.
+   The split is done: `src/events/` has one module per input, and `updateFreezePosition`, which places the frozen
+   columns, moved to `utils/freezePosition.ts`, so the modules that change columns no longer import the event handlers.
+   That removed two import cycles. The handlers still read the global active worksheet; routing them through the
+   spreadsheet is the second part of this step.
 9. **No import cycles.** The last cycles go, and `npm run lint` checks for new ones.
 10. **The public typings.** The fields that only the library uses leave `WorksheetInstance`; the typings describe the
     classes.

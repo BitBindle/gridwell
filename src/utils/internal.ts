@@ -6,7 +6,7 @@ import { refreshSelection, updateCornerPosition } from './selection.js';
 import { getColumnName } from './helpers.js';
 import { updateMeta } from './meta.js';
 import { getFreezeWidth, getIndexWidth } from './freeze.js';
-import { updateFreezePosition } from './events.js';
+import { updateFreezePosition } from './freezePosition.js';
 import { updatePagination } from './pagination.js';
 import { setFooter } from './footer.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
