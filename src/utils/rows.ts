@@ -7,6 +7,7 @@ import { conditionalSelectionUpdate, getSelectedRows, updateCornerPosition } fro
 import { setHistory } from './history.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import { setRowRole, updateTabStop } from './accessibility.js';
+import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
@@ -54,7 +55,8 @@ export const createRow = function (this: Worksheet, j: number, data: jspreadshee
     }
     // Row number label
     const td = document.createElement('td');
-    td.innerHTML = index as any;
+    // A title, or the number of the row, which the DOM writes as text
+    td.innerHTML = index as string;
     td.setAttribute('data-y', j);
     td.className = 'jss_row';
     row.element.appendChild(td);
@@ -73,7 +75,15 @@ export const createRow = function (this: Worksheet, j: number, data: jspreadshee
         row.element.appendChild(obj.records[j][i].element);
 
         if (obj.options.columns && obj.options.columns[i] && typeof obj.options.columns[i].render === 'function') {
-            (obj.options.columns[i].render as any)(obj.records[j][i].element, data[i], parseInt(i), parseInt(j), obj, obj.options.columns[i]);
+            // The test above makes it a function, which TypeScript does not narrow through the index
+            (obj.options.columns[i].render as NonNullable<jspreadsheet.BaseColumn['render']>)(
+                obj.records[j][i].element,
+                data[i],
+                parseInt(i),
+                parseInt(j),
+                obj,
+                obj.options.columns[i]
+            );
         }
     }
 
@@ -98,7 +108,7 @@ export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumbe
     // Configuration
     if (obj.options.allowInsertRow != false) {
         // Data to be insert
-        let data: any[] = [];
+        let data: jspreadsheet.CellValue[] = [];
 
         // The insert could be lead by number of rows or the array of data
         let numOfRows;
