@@ -33,6 +33,10 @@ assertType<Equals<typeof cellMeta, jspreadsheet.MetaInformation | null>>();
 const allMeta = worksheet.getMeta();
 assertType<Equals<typeof allMeta, Record<string, jspreadsheet.MetaInformation> | undefined>>();
 
+// resetStyle takes the new styles by cell name, as setStyle does
+type ResetStyles = Parameters<jspreadsheet.WorksheetInstance['resetStyle']>[0];
+assertType<Equals<ResetStyles, Record<string, string | string[]>>>();
+
 declare const spreadsheet: jspreadsheet.SpreadsheetInstance;
 
 // The factory gives each spreadsheet getConfig
@@ -40,6 +44,11 @@ const config = spreadsheet.getConfig();
 assertType<Equals<typeof config, jspreadsheet.SpreadsheetOptions>>();
 
 declare const library: jspreadsheet.JSpreadsheet;
+
+// invert gives the keys by value
+const inverted = library.helpers.invert({ a: 0, b: 'x' });
+assertType<Equals<typeof inverted, string[] & Record<string, string>>>();
+assertType<Equals<Parameters<typeof library.helpers.getCaretIndex>[0], Node>>();
 
 // version returns the version information, which has no type
 const versionInfo = library.version();

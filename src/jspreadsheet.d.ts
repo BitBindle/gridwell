@@ -2100,10 +2100,10 @@ declare namespace jspreadsheet {
 
         /**
          * Reset styles of one or more cells.
-         * @param o - Object whose keys are the names of the cells that must have their styles reset.
+         * @param o - Object whose keys are the names of the cells that must have their styles reset. Each value is the new style of the cell, as in {@link setStyle}.
          * @param ignoreHistoryAndEvents - If true, do not add this action to history.
          */
-        resetStyle: (o: Record<string, any>, ignoreHistoryAndEvents?: boolean) => void;
+        resetStyle: (o: Record<string, string | string[]>, ignoreHistoryAndEvents?: boolean) => void;
 
         /**
          * Information about the row or column currently being resized.
@@ -2387,9 +2387,9 @@ declare namespace jspreadsheet {
         createFromTable: (element: HTMLTableElement, options: WorksheetOptions) => WorksheetOptions;
 
         /**
-         * Internal method.
+         * Internal method. Get the position of the caret in an element.
          */
-        getCaretIndex: (e: any) => number;
+        getCaretIndex: (e: Node) => number;
 
         /**
          * Get the column letter(s) based on its index.
@@ -2418,9 +2418,9 @@ declare namespace jspreadsheet {
         getCoordsFromRange: (range: string) => [number, number, number, number];
 
         /**
-         * Internal method.
+         * Internal method. Swap the keys and the values of an object. A number value becomes an index of the list.
          */
-        invert: (o: object) => any[] & Record<string, any>;
+        invert: (o: Record<string, string | number>) => string[] & Record<string, string>;
 
         /**
          * Parse CSV string to JS array.
