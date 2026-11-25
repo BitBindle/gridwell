@@ -205,25 +205,4 @@ factory.spreadsheet = async function (el: any, options: jspreadsheet.Spreadsheet
     return spreadsheet;
 };
 
-factory.worksheet = function (spreadsheet: Spreadsheet, options: any, position?: number) {
-    // Worksheet object
-    const w: any = {
-        // Parent of a worksheet is always the spreadsheet
-        parent: spreadsheet,
-        // Options for this worksheet
-        options: {},
-    };
-
-    // Create the worksheets object
-    if (typeof position === 'undefined') {
-        spreadsheet.worksheets.push(w);
-    } else {
-        spreadsheet.worksheets.splice(position, 0, w);
-    }
-    // Keep configuration used
-    Object.assign(w.options, options);
-
-    return w;
-};
-
 export default factory;
