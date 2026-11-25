@@ -1,6 +1,5 @@
 import dispatch from './dispatch.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
-import { setHistory } from './history.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 /** A style declaration read and written by property name, for example style['color'] */
@@ -145,7 +144,7 @@ export const setStyle = function (
 
     if (!ignoreHistoryAndEvents) {
         // Keeping history of changes
-        setHistory.call(obj, {
+        obj.history.add({
             action: 'setStyle',
             oldValue: oldValue as unknown as Record<string, string>,
             newValue: newValue as unknown as Record<string, string>,

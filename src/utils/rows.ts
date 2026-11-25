@@ -4,7 +4,6 @@ import { createCell, updateTableReferences } from './internal.js';
 import dispatch from './dispatch.js';
 import { isRowMerged } from './merges.js';
 import { conditionalSelectionUpdate, getSelectedRows, updateCornerPosition } from './selection.js';
-import { setHistory } from './history.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import { setRowRole, updateTabStop } from './accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
@@ -235,7 +234,7 @@ export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumbe
         }
 
         // Keep history
-        setHistory.call(obj, {
+        obj.history.add({
             action: 'insertRow',
             rowNumber: rowNumber,
             numOfRows: numOfRows,
@@ -327,7 +326,7 @@ export const moveRow = function (this: Worksheet, o: number, d: number, ignoreDo
     }
 
     // Keeping history of changes
-    setHistory.call(obj, {
+    obj.history.add({
         action: 'moveRow',
         oldValue: o,
         newValue: d,
@@ -461,7 +460,7 @@ export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numO
                 conditionalSelectionUpdate.call(obj, 1, rowNumber, rowNumber + numOfRows - 1);
 
                 // Keep history
-                setHistory.call(obj, {
+                obj.history.add({
                     action: 'deleteRow',
                     rowNumber: rowNumber,
                     numOfRows: numOfRows,
@@ -556,7 +555,7 @@ export const setHeight = function (this: Worksheet, row: number, height: number,
         obj.options.rows[row].height = height;
 
         // Keeping history of changes
-        setHistory.call(obj, {
+        obj.history.add({
             action: 'setHeight',
             row: row,
             oldValue: oldHeight,

@@ -33,3 +33,20 @@ each instance.
 
 -   **A worksheet has its methods from the start.** Version 5 added them while it built the worksheet. Calling a method
     before the `onload` event is still not supported: the worksheet has no table yet.
+
+## The undo history is an object
+
+`worksheet.history` used to be the array of records, with the position in `worksheet.historyIndex` and the flag that
+stops new records in `worksheet.ignoreHistory`. It is now an object that holds all three:
+
+| Version 5                                               | Version 6                     |
+| ------------------------------------------------------- | ----------------------------- |
+| `worksheet.history`                                     | `worksheet.history.records`   |
+| `worksheet.historyIndex`                                | `worksheet.history.index`     |
+| `worksheet.ignoreHistory`                               | `worksheet.history.ignore`    |
+| `worksheet.historyIndex >= 0`                           | `worksheet.history.canUndo()` |
+| `worksheet.historyIndex < worksheet.history.length - 1` | `worksheet.history.canRedo()` |
+| `worksheet.history = []; worksheet.historyIndex = -1;`  | `worksheet.history.clear()`   |
+
+`worksheet.history.add(record)` keeps a record, as the library does for each change. `worksheet.undo()` and
+`worksheet.redo()` work as before, and the `onundo` and `onredo` events still get the record.

@@ -7,26 +7,6 @@ import { conditionalSelectionUpdate } from './selection.js';
 import type { Worksheet, WorksheetHistoryRecord, WorksheetMethod } from '../types/internal';
 
 /**
- * Initializes a new history record for undo/redo
- *
- * @return null
- */
-export const setHistory = function (this: Worksheet, changes: WorksheetHistoryRecord) {
-    const obj = this;
-
-    if (obj.ignoreHistory != true) {
-        // Increment and get the current history index
-        const index = ++obj.historyIndex;
-
-        // Slice the array to discard undone changes
-        obj.history = obj.history = obj.history.slice(0, index + 1);
-
-        // Keep history
-        obj.history[index] = changes;
-    }
-};
-
-/**
  * Process row
  */
 /** 1 removes the rows or columns of the record, 0 inserts them again. */
@@ -202,21 +182,18 @@ export const undo: WorksheetMethod<'undo'> = function () {
 
     // Ignore events and history
     const ignoreEvents = obj.parent.ignoreEvents ? true : false;
-    const ignoreHistory = obj.ignoreHistory ? true : false;
+    const ignoreHistory = obj.history.ignore ? true : false;
 
     obj.parent.ignoreEvents = true;
-    obj.ignoreHistory = true;
+    obj.history.ignore = true;
 
     // Records
     const records = [];
 
     // Update cells
-    let historyRecord;
+    const historyRecord = obj.history.back();
 
-    if (obj.historyIndex >= 0) {
-        // History
-        historyRecord = obj.history[obj.historyIndex--];
-
+    if (historyRecord) {
         if (historyRecord.action == 'insertRow') {
             historyProcessRow.call(obj, 1, historyRecord);
         } else if (historyRecord.action == 'deleteRow') {
@@ -272,7 +249,7 @@ export const undo: WorksheetMethod<'undo'> = function () {
         }
     }
     obj.parent.ignoreEvents = ignoreEvents;
-    obj.ignoreHistory = ignoreHistory;
+    obj.history.ignore = ignoreHistory;
 
     // Events
     dispatch.call(obj, 'onundo', obj, historyRecord);
@@ -286,18 +263,15 @@ export const redo: WorksheetMethod<'redo'> = function () {
 
     // Ignore events and history
     const ignoreEvents = obj.parent.ignoreEvents ? true : false;
-    const ignoreHistory = obj.ignoreHistory ? true : false;
+    const ignoreHistory = obj.history.ignore ? true : false;
 
     obj.parent.ignoreEvents = true;
-    obj.ignoreHistory = true;
+    obj.history.ignore = true;
 
     // Update cells
-    let historyRecord;
+    const historyRecord = obj.history.forward();
 
-    if (obj.historyIndex < obj.history.length - 1) {
-        // History
-        historyRecord = obj.history[++obj.historyIndex];
-
+    if (historyRecord) {
         if (historyRecord.action == 'insertRow') {
             historyProcessRow.call(obj, 0, historyRecord);
         } else if (historyRecord.action == 'deleteRow') {
@@ -340,7 +314,7 @@ export const redo: WorksheetMethod<'redo'> = function () {
         }
     }
     obj.parent.ignoreEvents = ignoreEvents;
-    obj.ignoreHistory = ignoreHistory;
+    obj.history.ignore = ignoreHistory;
 
     // Events
     dispatch.call(obj, 'onredo', obj, historyRecord);

@@ -1,6 +1,5 @@
 import dispatch from './dispatch.js';
 import { getCoordsFromCellName } from './helpers.js';
-import { setHistory } from './history.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import type { Worksheet } from '../types/internal';
 
@@ -80,7 +79,7 @@ export const setComments = function (this: Worksheet, cellId: string | Record<st
     });
 
     // Save history
-    setHistory.call(obj, {
+    obj.history.add({
         action: 'setComments',
         newValue: commentsObj,
         oldValue: oldValue,

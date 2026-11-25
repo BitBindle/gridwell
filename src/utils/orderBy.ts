@@ -1,5 +1,4 @@
 import jSuites from 'jsuites';
-import { setHistory } from './history.js';
 import dispatch from './dispatch.js';
 import { updateTableReferences } from './internal.js';
 import { loadPage } from './lazyLoading.js';
@@ -165,7 +164,7 @@ export const orderBy: WorksheetMethod<'orderBy'> = function (column, order) {
         }
 
         // Save history
-        setHistory.call(obj, {
+        obj.history.add({
             action: 'orderBy',
             rows: newValue,
             column: column,

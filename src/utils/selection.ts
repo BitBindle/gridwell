@@ -1,7 +1,6 @@
 import dispatch from './dispatch.js';
 import { getFreezeWidth } from './freeze.js';
 import { getCellNameFromCoords } from './helpers.js';
-import { setHistory } from './history.js';
 import { updateCell, updateFormula, updateFormulaChain, updateTable } from './internal.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { updateToolbar } from './toolbar.js';
@@ -613,7 +612,7 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
     }
 
     // Update history
-    setHistory.call(obj, {
+    obj.history.add({
         action: 'setValue',
         records: records,
         selection: obj.selectedCell,

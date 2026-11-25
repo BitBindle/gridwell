@@ -97,3 +97,134 @@ describe('Use the redo method', () => {
         expect(firstRow.children[2].innerHTML).to.include('TESTING');
     });
 });
+
+describe('The undo history', () => {
+    const create = () =>
+        jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['Hello', 'World'],
+                        ['Testing', 'CE'],
+                    ],
+                },
+            ],
+        })[0];
+
+    it('keeps a record of each change', () => {
+        const worksheet = create();
+
+        expect(worksheet.history.records).to.deep.equal([]);
+        expect(worksheet.history.index).to.equal(-1);
+        expect(worksheet.history.canUndo()).to.equal(false);
+        expect(worksheet.history.canRedo()).to.equal(false);
+
+        worksheet.setValueFromCoords(0, 0, 'New Value');
+        worksheet.setValueFromCoords(1, 0, 'TESTING');
+
+        expect(worksheet.history.records.length).to.equal(2);
+        expect(worksheet.history.records[0].action).to.equal('setValue');
+        expect(worksheet.history.index).to.equal(1);
+        expect(worksheet.history.canUndo()).to.equal(true);
+        expect(worksheet.history.canRedo()).to.equal(false);
+    });
+
+    it('moves through the records with undo and redo', () => {
+        const worksheet = create();
+
+        worksheet.setValueFromCoords(0, 0, 'New Value');
+        worksheet.setValueFromCoords(1, 0, 'TESTING');
+
+        worksheet.undo();
+        worksheet.undo();
+
+        expect(worksheet.history.index).to.equal(-1);
+        expect(worksheet.history.canUndo()).to.equal(false);
+        expect(worksheet.history.canRedo()).to.equal(true);
+        // Undo records nothing itself
+        expect(worksheet.history.records.length).to.equal(2);
+
+        worksheet.redo();
+
+        expect(worksheet.history.index).to.equal(0);
+        expect(worksheet.history.canUndo()).to.equal(true);
+        expect(worksheet.history.canRedo()).to.equal(true);
+    });
+
+    it('drops the undone records when a new change is made', () => {
+        const worksheet = create();
+
+        worksheet.setValueFromCoords(0, 0, 'New Value');
+        worksheet.setValueFromCoords(1, 0, 'TESTING');
+        worksheet.undo();
+        worksheet.setValueFromCoords(0, 1, 'Other');
+
+        expect(worksheet.history.records.length).to.equal(2);
+        expect(worksheet.history.records[1].records[0].value).to.equal('Other');
+        expect(worksheet.history.canRedo()).to.equal(false);
+    });
+
+    it('gives undo and redo events the record', () => {
+        const events = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['Hello']] }],
+            onundo: (instance, record) => events.push(['undo', record]),
+            onredo: (instance, record) => events.push(['redo', record]),
+        })[0];
+
+        worksheet.setValueFromCoords(0, 0, 'New Value');
+        const record = worksheet.history.records[0];
+
+        worksheet.undo();
+        worksheet.redo();
+        worksheet.redo();
+
+        expect(events).to.deep.equal([
+            ['undo', record],
+            ['redo', record],
+            ['redo', undefined],
+        ]);
+    });
+
+    it('keeps no records while ignore is set', () => {
+        const worksheet = create();
+
+        worksheet.history.ignore = true;
+        worksheet.setValueFromCoords(0, 0, 'New Value');
+        worksheet.history.ignore = false;
+
+        expect(worksheet.history.records.length).to.equal(0);
+        expect(worksheet.getValueFromCoords(0, 0)).to.equal('New Value');
+
+        // Undo and redo restore the flag
+        worksheet.setValueFromCoords(0, 0, 'Again');
+        worksheet.undo();
+        worksheet.redo();
+        expect(worksheet.history.ignore).to.equal(false);
+    });
+
+    it('is cleared when the data is replaced', () => {
+        const worksheet = create();
+
+        worksheet.setValueFromCoords(0, 0, 'New Value');
+        worksheet.setData([['A', 'B']]);
+
+        expect(worksheet.history.records).to.deep.equal([]);
+        expect(worksheet.history.index).to.equal(-1);
+    });
+
+    it('is not shared between worksheets', async () => {
+        const worksheets = jspreadsheet(root, {
+            worksheets: [{ data: [['A']] }, { data: [['B']] }],
+        });
+
+        // The worksheets after the first are built asynchronously
+        await new Promise((resolve) => setTimeout(resolve));
+
+        worksheets[0].setValueFromCoords(0, 0, 'New Value');
+
+        expect(worksheets[0].history.records.length).to.equal(1);
+        expect(worksheets[1].history.records.length).to.equal(0);
+        expect(worksheets[0].history).to.not.equal(worksheets[1].history);
+    });
+});

@@ -1,4 +1,3 @@
-import { setHistory } from './history.js';
 import dispatch from './dispatch.js';
 import { getColumnName } from './helpers.js';
 import type { Worksheet } from '../types/internal';
@@ -57,7 +56,7 @@ export const setHeader = function (this: Worksheet, column: number, newValue?: s
         }
         obj.options.columns[column].title = newValue;
 
-        setHistory.call(obj, {
+        obj.history.add({
             action: 'setHeader',
             column: column,
             oldValue: oldValue,

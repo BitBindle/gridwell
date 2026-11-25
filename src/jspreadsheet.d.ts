@@ -334,6 +334,38 @@ declare namespace jspreadsheet {
     }
 
     /**
+     * The undo history of a worksheet, {@link WorksheetInstance.history}.
+     */
+    interface WorksheetHistory {
+        /** The records of the changes, oldest first. */
+        records: HistoryRecord[];
+
+        /** The index in {@link WorksheetHistory.records} of the record that undo reverts next, or -1 when there is nothing to undo. */
+        index: number;
+
+        /** While true, the worksheet keeps no records of its changes. */
+        ignore: boolean;
+
+        /** Keep a record of a change. The records that were undone are dropped. Does nothing while {@link WorksheetHistory.ignore} is true. */
+        add(record: HistoryRecord): void;
+
+        /** Drop all the records. */
+        clear(): void;
+
+        /** Whether {@link WorksheetInstance.undo} has a change to undo. */
+        canUndo(): boolean;
+
+        /** Whether {@link WorksheetInstance.redo} has a change to redo. */
+        canRedo(): boolean;
+
+        /** Move back one record and return it, without changing the worksheet. Returns undefined when there is nothing to undo. */
+        back(): HistoryRecord | undefined;
+
+        /** Move forward one record and return it, without changing the worksheet. Returns undefined when there is nothing to redo. */
+        forward(): HistoryRecord | undefined;
+    }
+
+    /**
      * Item compared in column ordering.
      *
      * It is composed respectively by the index of the row it represents and by the value of that row in the sorting column.
@@ -1904,19 +1936,9 @@ declare namespace jspreadsheet {
         }[];
 
         /**
-         * List of actions performed on the worksheet.
+         * The undo history of the worksheet.
          */
-        history: HistoryRecord[];
-
-        /**
-         * Current position of the {@link WorksheetInstance.history} property. Used to control movement through history.
-         */
-        historyIndex: number;
-
-        /**
-         * If true, the "setHistory" method does not create new records in the history.
-         */
-        ignoreHistory: boolean;
+        history: WorksheetHistory;
 
         /**
          * Check if a cell is within the current selection.
