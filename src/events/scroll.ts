@@ -33,15 +33,13 @@ export const wheelControls = function (this: Worksheet, e?: WheelEvent) {
     }
 };
 
-let scrollLeft = 0;
-
 export const scrollControls = function (this: Worksheet, e: Event) {
     const obj = this;
 
     wheelControls.call(obj);
 
-    if (obj.options.freezeColumns! > 0 && obj.content.scrollLeft != scrollLeft) {
-        scrollLeft = obj.content.scrollLeft;
+    if (obj.options.freezeColumns! > 0 && obj.content.scrollLeft != obj.lastScrollLeft) {
+        obj.lastScrollLeft = obj.content.scrollLeft;
         updateFreezePosition.call(obj);
     }
 

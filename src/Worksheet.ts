@@ -36,5 +36,6 @@ export class Worksheet {
         this.selection = new Selection();
         this.formulas = new Formulas();
         this.view = new View();
+        this.lastScrollLeft = 0;
     }
 }
