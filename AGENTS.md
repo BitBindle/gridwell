@@ -43,6 +43,7 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 -   `src/test.js`: the entry of the dev server. `src/webcomponent.js`: a `<jspreadsheet>` custom element. Both are JavaScript and not part of the bundle.
 -   `resources/lang/*.json`: translations for `jspreadsheet.setDictionary`.
 -   `test/*.js`: mocha + chai tests in jsdom, one file per feature.
+-   `test/typings.ts`: checks the public typings against what the library returns. `npm run typecheck` checks it; mocha does not run it.
 -   `packages/vue`: a small Vue wrapper, published separately.
 -   `docs/`: old v4 documentation. Prettier skips it.
 
@@ -59,7 +60,7 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 1. Declare it on `WorksheetInstance` in `src/jspreadsheet.d.ts`, with a JSDoc comment.
 2. Write the function in the right `src/utils/*.ts` module, typed from the declaration: `export const name: WorksheetMethod<'name'> = function (a, b) { ... };`. The worksheet is `this`.
 3. Add it to `worksheetPublicMethods` in `src/utils/worksheets.ts`.
-4. Add tests that go through the public API.
+4. Add tests that go through the public API. When the return type depends on the arguments, also add the cases to `test/typings.ts`.
 
 New options also go in `src/jspreadsheet.d.ts` (`SpreadsheetOptions` or `WorksheetOptions`).
 
@@ -94,6 +95,7 @@ Modules import each other with the `.js` extension, although the files are `.ts`
 -   Create a spreadsheet with `jspreadsheet(root, { worksheets: [...] })`. It returns the array of worksheet instances.
 -   Test through the public API and the DOM, as the existing tests do. For a bug fix, add a test that fails before the fix.
 -   jsdom has no layout, so sizes and scroll positions are zero. Test the attributes and the state instead.
+-   For a fix to the public typings, add a case to `test/typings.ts` that fails before the fix: `assertType<Equals<typeof result, Expected>>()`, or `// @ts-expect-error` for a property that must not exist.
 
 ## Style
 
