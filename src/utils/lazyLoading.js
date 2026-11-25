@@ -65,13 +65,28 @@ export const loadValidation = function () {
     const obj = this;
 
     if (obj.selectedCell) {
-        const currentPage = parseInt(obj.tbody.firstChild.getAttribute('data-y')) / 100;
-        const selectedPage = parseInt(obj.selectedCell[3] / 100);
-        const totalPages = parseInt(obj.rows.length / 100);
+        let currentRow = parseInt(obj.tbody.firstChild.getAttribute('data-y'));
+        let selectedRow = parseInt(obj.selectedCell[3]);
+        let total = obj.rows.length;
+
+        // With search or filters, the pages are pages of the results
+        if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
+            currentRow = obj.results.indexOf(currentRow);
+            selectedRow = obj.results.indexOf(selectedRow);
+            total = obj.results.length;
+
+            if (selectedRow < 0) {
+                return false;
+            }
+        }
+
+        const currentPage = currentRow / 100;
+        const selectedPage = parseInt(selectedRow / 100);
+        const totalPages = parseInt(total / 100);
 
         if (currentPage != selectedPage && selectedPage <= totalPages) {
-            if (!Array.prototype.indexOf.call(obj.tbody.children, obj.rows[obj.selectedCell[3]].element)) {
-                obj.loadPage(selectedPage);
+            if (Array.prototype.indexOf.call(obj.tbody.children, obj.rows[obj.selectedCell[3]].element) < 0) {
+                loadPage.call(obj, selectedPage);
                 return true;
             }
         }
