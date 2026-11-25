@@ -13,6 +13,7 @@ import type { Editor } from '../components/Editor';
 import type { Formulas } from '../components/Formulas';
 import type { History } from '../components/History';
 import type { Selection } from '../components/Selection';
+import type { View } from '../components/View';
 
 /** The classes. Their fields are in WorksheetState and SpreadsheetState below. */
 export type { Spreadsheet, Worksheet };
@@ -52,6 +53,8 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
     selection: Selection;
 
     formulas: Formulas;
+
+    view: View;
 
     /** The select for the number of rows per page, when the worksheet has pagination options. */
     paginationDropdown?: HTMLSelectElement;

@@ -170,3 +170,11 @@ void worksheet.edition;
 assertType<Equals<typeof worksheet.formulas.chain, Record<string, string[]>>>();
 // @ts-expect-error The chain is formulas.chain
 void worksheet.formula;
+
+// The rows that the worksheet shows are in view
+assertType<Equals<typeof worksheet.view.results, number[] | null>>();
+assertType<Equals<typeof worksheet.view.pageNumber, number>>();
+// @ts-expect-error The results are view.results
+void worksheet.results;
+// @ts-expect-error The page is view.pageNumber
+void worksheet.pageNumber;

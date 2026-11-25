@@ -12,8 +12,8 @@ export const whichPage: WorksheetMethod<'whichPage'> = function (row) {
     const obj = this;
 
     // Search
-    if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
-        row = obj.results.indexOf(row);
+    if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
+        row = obj.view.results.indexOf(row);
     }
 
     return Math.ceil((parseInt(row) + 1) / parseInt(obj.options.pagination)) - 1;
@@ -34,8 +34,8 @@ export const updatePagination = function (this: Worksheet) {
         // Searchable
         let results: number;
 
-        if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
-            results = obj.results.length;
+        if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
+            results = obj.view.results.length;
         } else {
             results = obj.rows.length;
         }
@@ -49,18 +49,18 @@ export const updatePagination = function (this: Worksheet) {
 
             let startNumber, finalNumber;
 
-            if (obj.pageNumber! < 6) {
+            if (obj.view.pageNumber < 6) {
                 startNumber = 1;
                 finalNumber = quantyOfPages < 10 ? quantyOfPages : 10;
-            } else if (quantyOfPages - obj.pageNumber! < 5) {
+            } else if (quantyOfPages - obj.view.pageNumber < 5) {
                 startNumber = quantyOfPages - 9;
                 finalNumber = quantyOfPages;
                 if (startNumber < 1) {
                     startNumber = 1;
                 }
             } else {
-                startNumber = obj.pageNumber! - 4;
-                finalNumber = obj.pageNumber! + 5;
+                startNumber = obj.view.pageNumber - 4;
+                finalNumber = obj.view.pageNumber + 5;
             }
 
             // First
@@ -79,7 +79,7 @@ export const updatePagination = function (this: Worksheet) {
                 paginationItem.innerHTML = String(i);
                 obj.pagination.children[1].appendChild(paginationItem);
 
-                if (obj.pageNumber == i - 1) {
+                if (obj.view.pageNumber == i - 1) {
                     paginationItem.classList.add('jss_page_selected');
                 }
             }
@@ -100,7 +100,7 @@ export const updatePagination = function (this: Worksheet) {
                 });
             };
 
-            obj.pagination.children[0].innerHTML = format(jSuites.translate('Showing page {0} of {1} entries'), obj.pageNumber! + 1, quantyOfPages);
+            obj.pagination.children[0].innerHTML = format(jSuites.translate('Showing page {0} of {1} entries'), obj.view.pageNumber + 1, quantyOfPages);
         }
     }
 };
@@ -111,13 +111,13 @@ export const updatePagination = function (this: Worksheet) {
 export const page: WorksheetMethod<'page'> = function (pageNumber) {
     const obj = this;
 
-    const oldPage = obj.pageNumber;
+    const oldPage = obj.view.pageNumber;
 
     // Search: the indexes of the rows found, or the rows
     let results: number[] | Worksheet['rows'];
 
-    if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
-        results = obj.results;
+    if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
+        results = obj.view.results;
     } else {
         results = obj.rows;
     }
@@ -132,7 +132,7 @@ export const page: WorksheetMethod<'page'> = function (pageNumber) {
     }
 
     // Page number
-    obj.pageNumber = pageNumber;
+    obj.view.pageNumber = pageNumber;
 
     let startRow = pageNumber * quantityPerPage;
     let finalRow = pageNumber * quantityPerPage + quantityPerPage;
@@ -150,7 +150,7 @@ export const page: WorksheetMethod<'page'> = function (pageNumber) {
 
     // Appeding items
     for (let j = startRow; j < finalRow; j++) {
-        if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
+        if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
             obj.tbody.appendChild(obj.rows[results[j] as number].element);
         } else {
             obj.tbody.appendChild(obj.rows[j].element);
@@ -168,15 +168,15 @@ export const page: WorksheetMethod<'page'> = function (pageNumber) {
     updateCornerPosition.call(obj);
 
     // Events. setData sets the page number of a worksheet with pagination.
-    dispatch.call(obj, 'onchangepage', obj, pageNumber, oldPage!, obj.options.pagination!);
+    dispatch.call(obj, 'onchangepage', obj, pageNumber, oldPage, obj.options.pagination!);
 };
 
 export const quantiyOfPages: WorksheetMethod<'quantiyOfPages'> = function () {
     const obj = this;
 
     let results: number;
-    if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
-        results = obj.results.length;
+    if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
+        results = obj.view.results.length;
     } else {
         results = obj.rows.length;
     }

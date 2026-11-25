@@ -165,7 +165,7 @@ export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumbe
 
         // Clear any search
         if (obj.options.search == true) {
-            if (obj.results && obj.results.length != obj.rows.length) {
+            if (obj.view.results && obj.view.results.length != obj.rows.length) {
                 if (confirm(jSuites.translate('This action will clear your search results. Are you sure?'))) {
                     obj.resetSearch();
                 } else {
@@ -173,7 +173,7 @@ export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumbe
                 }
             }
 
-            obj.results = null;
+            obj.view.results = null;
         }
 
         // Insertbefore
@@ -230,7 +230,7 @@ export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumbe
 
         // Respect pagination
         if (obj.options.pagination! > 0) {
-            obj.page(obj.pageNumber!);
+            obj.page(obj.view.pageNumber);
         }
 
         // Keep history
@@ -279,7 +279,7 @@ export const moveRow = function (this: Worksheet, o: number, d: number, ignoreDo
     }
 
     if (obj.options.search == true) {
-        if (obj.results && obj.results.length != obj.rows.length) {
+        if (obj.view.results && obj.view.results.length != obj.rows.length) {
             if (confirm(jSuites.translate('This action will clear your search results. Are you sure?'))) {
                 obj.resetSearch();
             } else {
@@ -287,7 +287,7 @@ export const moveRow = function (this: Worksheet, o: number, d: number, ignoreDo
             }
         }
 
-        obj.results = null;
+        obj.view.results = null;
     }
 
     if (!ignoreDom) {
@@ -322,7 +322,7 @@ export const moveRow = function (this: Worksheet, o: number, d: number, ignoreDo
 
     // Respect pagination
     if (obj.options.pagination! > 0 && obj.tbody.children.length != obj.options.pagination) {
-        obj.page(obj.pageNumber!);
+        obj.page(obj.view.pageNumber);
     }
 
     // Keeping history of changes
@@ -411,7 +411,7 @@ export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numO
 
                 // Clear any search
                 if (obj.options.search == true) {
-                    if (obj.results && obj.results.length != obj.rows.length) {
+                    if (obj.view.results && obj.view.results.length != obj.rows.length) {
                         if (confirm(jSuites.translate('This action will clear your search results. Are you sure?'))) {
                             obj.resetSearch();
                         } else {
@@ -419,7 +419,7 @@ export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numO
                         }
                     }
 
-                    obj.results = null;
+                    obj.view.results = null;
                 }
 
                 // If delete all rows, and set allowDeletingAllRows false, will stay one row
@@ -453,7 +453,7 @@ export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numO
 
                 // Respect pagination
                 if (obj.options.pagination! > 0 && obj.tbody.children.length != obj.options.pagination) {
-                    obj.page(obj.pageNumber!);
+                    obj.page(obj.view.pageNumber);
                 }
 
                 // Remove selection

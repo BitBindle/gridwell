@@ -124,7 +124,7 @@ export const up: WorksheetMethod<'up'> = function (shiftKey, ctrlKey) {
         }
     } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selection.range[3]);
-        if (pageNumber != obj.pageNumber) {
+        if (pageNumber != obj.view.pageNumber) {
             obj.page(pageNumber);
         }
     }
@@ -305,7 +305,7 @@ export const down: WorksheetMethod<'down'> = function (shiftKey, ctrlKey) {
         }
     } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selection.range[3]);
-        if (pageNumber != obj.pageNumber) {
+        if (pageNumber != obj.view.pageNumber) {
             obj.page(pageNumber);
         }
     }
@@ -421,7 +421,7 @@ export const first: WorksheetMethod<'first'> = function (shiftKey, ctrlKey) {
         loadPage.call(obj, 0);
     } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selection.range[3]);
-        if (pageNumber != obj.pageNumber) {
+        if (pageNumber != obj.view.pageNumber) {
             obj.page(pageNumber);
         }
     }
@@ -460,7 +460,7 @@ export const last: WorksheetMethod<'last'> = function (shiftKey, ctrlKey) {
         loadPage.call(obj, -1);
     } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selection.range[3]);
-        if (pageNumber != obj.pageNumber) {
+        if (pageNumber != obj.view.pageNumber) {
             obj.page(pageNumber);
         }
     }

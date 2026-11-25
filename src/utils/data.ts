@@ -64,7 +64,7 @@ export const setData: WorksheetMethod<'setData'> = function (data) {
 
     // Reset containers
     obj.rows = [];
-    obj.results = null;
+    obj.view.results = null;
     obj.records = [];
     obj.history.clear();
 
@@ -87,11 +87,11 @@ export const setData: WorksheetMethod<'setData'> = function (data) {
         }
     } else if (obj.options.pagination) {
         // Pagination
-        if (!obj.pageNumber) {
-            obj.pageNumber = 0;
+        if (!obj.view.pageNumber) {
+            obj.view.pageNumber = 0;
         }
-        startNumber = obj.options.pagination * obj.pageNumber;
-        finalNumber = obj.options.pagination * obj.pageNumber + obj.options.pagination;
+        startNumber = obj.options.pagination * obj.view.pageNumber;
+        finalNumber = obj.options.pagination * obj.view.pageNumber + obj.options.pagination;
 
         if (obj.options.data.length < finalNumber) {
             finalNumber = obj.options.data.length;
