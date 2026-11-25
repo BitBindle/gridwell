@@ -3,6 +3,28 @@ const { expect } = require('chai');
 const jspreadsheet = require('../dist/index.js');
 
 describe('Keys', () => {
+    const ctrlKey = function (target, key, keyCode) {
+        target.dispatchEvent(
+            new window.KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: key, keyCode: keyCode, which: keyCode, ctrlKey: true, metaKey: true })
+        );
+    };
+
+    it('copies the selection with Ctrl+X when the worksheet is read-only', () => {
+        const copied = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b']], editable: false }],
+            oncopy: function (instance, coords, text, isCut) {
+                copied.push(text);
+            },
+        })[0];
+
+        worksheet.updateSelectionFromCoords(0, 0, 1, 0);
+        ctrlKey(worksheet.records[0][0].element, 'x', 88);
+
+        expect(copied).to.eql(['a\tb']);
+        expect(worksheet.getData()).to.eql([['a', 'b']]);
+    });
+
     it('moves the selection to the first cell of a merged range, not to a cell that the range hides', () => {
         const worksheet = jspreadsheet(root, {
             worksheets: [{ minDimensions: [4, 6], mergeCells: { A1: [2, 1], C2: [1, 3] } }],

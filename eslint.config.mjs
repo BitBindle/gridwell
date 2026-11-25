@@ -1,7 +1,8 @@
 import js from '@eslint/js';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
-export default [
+export default tseslint.config(
     js.configs.recommended,
     {
         ignores: ['dist/**', 'node_modules/**'],
@@ -20,6 +21,23 @@ export default [
         },
         rules: {
             'no-unused-vars': 'off',
+        },
+    },
+    {
+        files: ['**/*.ts'],
+        extends: [tseslint.configs.recommended],
+        languageOptions: {
+            globals: {
+                ...globals.browser,
+                ...globals.es2022,
+            },
+        },
+        rules: {
+            // The modules use the worksheet as this, and most functions start with const obj = this
+            '@typescript-eslint/no-this-alias': 'off',
+            // any is allowed while the code moves to TypeScript
+            '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/no-unused-vars': 'off',
         },
     },
     {
@@ -51,5 +69,5 @@ export default [
                 process: 'readonly',
             },
         },
-    },
-];
+    }
+);

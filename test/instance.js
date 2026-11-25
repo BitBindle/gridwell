@@ -86,3 +86,69 @@ describe('Create a jspreadsheet instance', () => {
         expect(headerWorksheets.children[1].innerHTML).not.to.include('Countries');
     });
 });
+
+describe('Use getWorksheetInstanceByName', () => {
+    // The spreadsheet joins jspreadsheet.spreadsheet after a promise resolves
+    const create = async (namespace) => {
+        const worksheets = jspreadsheet(root, {
+            namespace: namespace,
+            worksheets: [
+                { minDimensions: [2, 2], worksheetName: 'Countries' },
+                { minDimensions: [2, 2], worksheetName: 'Employees' },
+            ],
+        });
+
+        await new Promise((resolve) => setTimeout(resolve));
+
+        return worksheets;
+    };
+
+    it('returns the worksheet with the name in the namespace', async () => {
+        const worksheets = await create('byName');
+
+        expect(jspreadsheet.getWorksheetInstanceByName('Countries', 'byName')).to.equal(worksheets[0]);
+        expect(jspreadsheet.getWorksheetInstanceByName('Employees', 'byName')).to.equal(worksheets[1]);
+    });
+
+    it('returns all worksheets of the namespace by name when the name is null or undefined', async () => {
+        const worksheets = await create('allByName');
+
+        for (const worksheetName of [null, undefined]) {
+            const result = jspreadsheet.getWorksheetInstanceByName(worksheetName, 'allByName');
+
+            expect(Object.keys(result)).to.deep.equal(['Countries', 'Employees']);
+            expect(result.Countries).to.equal(worksheets[0]);
+            expect(result.Employees).to.equal(worksheets[1]);
+        }
+    });
+
+    it('returns undefined for a name that is not in the namespace', async () => {
+        await create('unknownName');
+
+        expect(jspreadsheet.getWorksheetInstanceByName('Products', 'unknownName')).to.equal(undefined);
+    });
+
+    it('returns an empty object for a namespace that does not exist', async () => {
+        await create('existing');
+
+        expect(jspreadsheet.getWorksheetInstanceByName('Countries', 'missing')).to.deep.equal({});
+        expect(jspreadsheet.getWorksheetInstanceByName(null, 'missing')).to.deep.equal({});
+    });
+});
+
+describe('Use the helpers', () => {
+    it('getCaretIndex returns the position of the caret in an element', () => {
+        const element = document.createElement('div');
+        element.textContent = 'Hello world';
+        root.appendChild(element);
+
+        const range = document.createRange();
+        range.setStart(element.firstChild, 5);
+        range.collapse(true);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        expect(jspreadsheet.helpers.getCaretIndex(element)).to.equal(5);
+    });
+});
