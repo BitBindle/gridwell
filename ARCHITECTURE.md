@@ -138,6 +138,11 @@ that is hard to read but does not need a new owner. They change no behaviour.
     `openTextEditor`. `createEditor`, which puts the editor element in the cell, is a function of the module.
 16. **The default toolbar.** `getDefault` in `utils/toolbar.ts` builds all the items of the default toolbar in one
     function of more than 400 lines. Each item, or group of items, gets its own function.
+    Done. `getDefault` lists the items: `getHistoryItems` (undo, redo, save), `getFontItems` (the font, the size, the
+    alignment, bold and the colors), `getVerticalAlignItem`, `getMergeItem`, `getBordersItem` and `getFullscreenItem`.
+    The borders set the style in `setBorders` and add their controls in `addBorderControls`. Five items styled the
+    selected cells with the same code, which is now `setSelectedStyle`, and the merge and the borders share
+    `getSelectedRange`. The items and their order are the same.
 17. **The long builders.** `createTable`, `insertColumn`, `insertRow`, `copy` and `paste` are each more than 200 lines.
     They are split into the steps they do.
 
