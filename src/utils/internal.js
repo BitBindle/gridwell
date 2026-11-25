@@ -232,7 +232,8 @@ export const executeFormula = function (expression, x, y) {
                                 if (obj.parent.config.autoCasting != false && number) {
                                     formulaExpressions[tokens[i]] = number;
                                 } else {
-                                    formulaExpressions[tokens[i]] = '"' + value + '"';
+                                    // Text as a string literal, with its quotes and backslashes escaped
+                                    formulaExpressions[tokens[i]] = JSON.stringify('' + value);
                                 }
                             }
                         }
