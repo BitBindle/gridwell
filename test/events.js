@@ -287,3 +287,71 @@ describe('Destroy', () => {
         }
     });
 });
+
+describe('Context menu', () => {
+    // The spreadsheet adds its event handlers after a promise
+    const load = (options) =>
+        new Promise((resolve) => {
+            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+        });
+
+    const contextmenu = (element) => element.dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+
+    it('selects the cell outside the selection and passes its position as text', async () => {
+        const calls = [];
+        const worksheet = await load({
+            worksheets: [{ minDimensions: [3, 3] }],
+            contextMenu: (instance, x, y, e, items, role) => {
+                calls.push([x, y, role]);
+                return false;
+            },
+        });
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        contextmenu(worksheet.records[2][1].element);
+
+        expect(worksheet.selectedCell).to.eql([1, 2, 1, 2]);
+        expect(calls).to.eql([['1', '2', 'cell']]);
+    });
+
+    it('keeps a selection that has the cell', async () => {
+        const worksheet = await load({
+            worksheets: [{ minDimensions: [3, 3] }],
+            contextMenu: () => false,
+        });
+
+        worksheet.updateSelectionFromCoords(0, 0, 2, 2);
+        contextmenu(worksheet.records[1][1].element);
+
+        expect(worksheet.selectedCell).to.eql([0, 0, 2, 2]);
+    });
+
+    it('selects the row of a row number', async () => {
+        const calls = [];
+        const worksheet = await load({
+            worksheets: [{ minDimensions: [3, 3] }],
+            contextMenu: (instance, x, y, e, items, role) => {
+                calls.push([x, y, role]);
+                return false;
+            },
+        });
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        contextmenu(worksheet.rows[2].element.children[0]);
+
+        expect(worksheet.selectedCell).to.eql([0, 2, 2, 2]);
+        expect(calls).to.eql([[null, '2', 'row']]);
+    });
+
+    it('selects the column of a header', async () => {
+        const worksheet = await load({
+            worksheets: [{ minDimensions: [3, 3] }],
+            contextMenu: () => false,
+        });
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        contextmenu(worksheet.headers[2]);
+
+        expect(worksheet.selectedCell).to.eql([2, 0, 2, 2]);
+    });
+});

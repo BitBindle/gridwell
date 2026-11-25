@@ -171,5 +171,5 @@ export const resetStyle = function (this: Worksheet, o: Record<string, any>, ign
             obj.records[cell[1]][cell[0]].element.setAttribute('style', '');
         }
     }
-    obj.setStyle(o, null, null, null as any, ignoreHistoryAndEvents);
+    obj.setStyle(o, null, null, false, ignoreHistoryAndEvents);
 };

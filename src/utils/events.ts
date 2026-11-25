@@ -99,7 +99,8 @@ const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
             } else {
                 // Remove Class
                 libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.children[0].classList.remove('resizing');
-                const newHeight: any = libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.getAttribute('height');
+                // setHeight parses the height, and it ignores a missing attribute (NaN) as it ignored null
+                const newHeight = parseInt(libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.getAttribute('height'));
                 setHeight.call(
                     libraryBase.jspreadsheet.current,
                     libraryBase.jspreadsheet.current.resizing.row,
@@ -138,17 +139,19 @@ const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
                         }
                     }
                 } else {
-                    let position;
-
-                    if (libraryBase.jspreadsheet.current.dragging.element.nextSibling) {
-                        position = parseInt(libraryBase.jspreadsheet.current.dragging.element.nextSibling.getAttribute('data-y'));
-                        if (libraryBase.jspreadsheet.current.dragging.row < position) {
-                            position -= 1;
-                        }
-                    } else {
-                        position = parseInt(libraryBase.jspreadsheet.current.dragging.element.previousSibling.getAttribute('data-y'));
-                    }
+                    // A row that moved has a sibling. A row that did not move can be the only row.
                     if (libraryBase.jspreadsheet.current.dragging.row != libraryBase.jspreadsheet.current.dragging.destination) {
+                        let position;
+
+                        if (libraryBase.jspreadsheet.current.dragging.element.nextSibling) {
+                            position = parseInt((libraryBase.jspreadsheet.current.dragging.element.nextSibling as HTMLElement).getAttribute('data-y'));
+                            if (libraryBase.jspreadsheet.current.dragging.row < position) {
+                                position -= 1;
+                            }
+                        } else {
+                            position = parseInt((libraryBase.jspreadsheet.current.dragging.element.previousSibling as HTMLElement).getAttribute('data-y'));
+                        }
+
                         moveRow.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.dragging.row, position, true);
                     }
                     libraryBase.jspreadsheet.current.dragging.element.classList.remove('dragging');
@@ -265,7 +268,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                             libraryBase.jspreadsheet.current.resetSelection();
                             // Drag helper
                             libraryBase.jspreadsheet.current.dragging = {
-                                element: e.target,
+                                element: e.target as HTMLTableCellElement,
                                 column: columnId,
                                 destination: columnId,
                             };
@@ -340,7 +343,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                     if (libraryBase.jspreadsheet.current.options.rowResize != false && info.height - e.offsetY < 6) {
                         // Resize helper
                         libraryBase.jspreadsheet.current.resizing = {
-                            element: e.target.parentNode,
+                            element: e.target.parentNode as HTMLTableRowElement,
                             mousePosition: e.pageY,
                             row: rowId,
                             height: info.height,
@@ -357,7 +360,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                             libraryBase.jspreadsheet.current.resetSelection();
                             // Drag helper
                             libraryBase.jspreadsheet.current.dragging = {
-                                element: e.target.parentNode,
+                                element: e.target.parentNode as HTMLTableRowElement,
                                 row: rowId,
                                 destination: rowId,
                             };
@@ -444,9 +447,9 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                 if (e.target.textContent == '<') {
                     libraryBase.jspreadsheet.current.page(0);
                 } else if (e.target.textContent == '>') {
-                    libraryBase.jspreadsheet.current.page((e.target.getAttribute('title') as any) - 1);
+                    libraryBase.jspreadsheet.current.page(parseInt(e.target.getAttribute('title')) - 1);
                 } else {
-                    libraryBase.jspreadsheet.current.page((e.target.textContent as any) - 1);
+                    libraryBase.jspreadsheet.current.page(parseInt(e.target.textContent) - 1);
                 }
             }
         }
@@ -545,7 +548,7 @@ const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
                             if (libraryBase.jspreadsheet.current.dragging.element != target) {
                                 e.target.parentNode!.parentNode!.insertBefore(libraryBase.jspreadsheet.current.dragging.element, target);
                                 libraryBase.jspreadsheet.current.dragging.destination = Array.prototype.indexOf.call(
-                                    libraryBase.jspreadsheet.current.dragging.element.parentNode.children,
+                                    libraryBase.jspreadsheet.current.dragging.element.parentNode!.children,
                                     libraryBase.jspreadsheet.current.dragging.element
                                 );
                             }
@@ -785,7 +788,7 @@ const doubleClickControls = function (e: TargetEvent<MouseEvent>) {
                 // Check valid column header coords
                 const columnId = getIndex(e.target, 'data-x');
                 if (columnId != null) {
-                    (libraryBase.jspreadsheet.current.orderBy as any)(columnId);
+                    libraryBase.jspreadsheet.current.orderBy(columnId);
                 }
             }
 
@@ -1115,8 +1118,9 @@ const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
             if (libraryBase.jspreadsheet.current) {
                 const role = getRole(e.target);
 
-                let x: any = null,
-                    y: any = null;
+                // Text from data-x and data-y, or an index. Number() converts them as a comparison does: null is 0.
+                let x: string | number | null = null,
+                    y: string | number | null = null;
 
                 if (role === 'cell') {
                     let cellElement = e.target;
@@ -1129,12 +1133,12 @@ const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
 
                     if (
                         !libraryBase.jspreadsheet.current.selectedCell ||
-                        x < parseInt(libraryBase.jspreadsheet.current.selectedCell[0]) ||
-                        x > parseInt(libraryBase.jspreadsheet.current.selectedCell[2]) ||
-                        y < parseInt(libraryBase.jspreadsheet.current.selectedCell[1]) ||
-                        y > parseInt(libraryBase.jspreadsheet.current.selectedCell[3])
+                        Number(x) < parseInt(libraryBase.jspreadsheet.current.selectedCell[0]) ||
+                        Number(x) > parseInt(libraryBase.jspreadsheet.current.selectedCell[2]) ||
+                        Number(y) < parseInt(libraryBase.jspreadsheet.current.selectedCell[1]) ||
+                        Number(y) > parseInt(libraryBase.jspreadsheet.current.selectedCell[3])
                     ) {
-                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, x, y, x, y, e);
+                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, parseInt(x), parseInt(y), parseInt(x), parseInt(y), e);
                     }
                 } else if (role === 'row' || role === 'header') {
                     if (role === 'row') {
@@ -1145,15 +1149,22 @@ const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
 
                     if (
                         !libraryBase.jspreadsheet.current.selectedCell ||
-                        x < parseInt(libraryBase.jspreadsheet.current.selectedCell[0]) ||
-                        x > parseInt(libraryBase.jspreadsheet.current.selectedCell[2]) ||
-                        y < parseInt(libraryBase.jspreadsheet.current.selectedCell[1]) ||
-                        y > parseInt(libraryBase.jspreadsheet.current.selectedCell[3])
+                        Number(x) < parseInt(libraryBase.jspreadsheet.current.selectedCell[0]) ||
+                        Number(x) > parseInt(libraryBase.jspreadsheet.current.selectedCell[2]) ||
+                        Number(y) < parseInt(libraryBase.jspreadsheet.current.selectedCell[1]) ||
+                        Number(y) > parseInt(libraryBase.jspreadsheet.current.selectedCell[3])
                     ) {
-                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, x, y, x, y, e);
+                        // A null index selects the whole row or column
+                        const column = x == null ? null : parseInt(x);
+                        const row = y == null ? null : parseInt(y);
+                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, column, row, column, row, e);
                     }
                 } else if (role === 'nested') {
-                    const columns: any[] = e.target.getAttribute('data-column')!.split(',');
+                    // The indexes of the columns under the nested header
+                    const columns = e.target
+                        .getAttribute('data-column')!
+                        .split(',')
+                        .map((column) => parseInt(column));
 
                     x = getElementIndex(e.target) - 1;
                     y = getElementIndex(e.target.parentElement!);
@@ -1335,7 +1346,8 @@ const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
         if (libraryBase.jspreadsheet.current.edition) {
             const current = libraryBase.jspreadsheet.current;
             const column =
-                current.options.columns && current.options.columns[getCellColumnIndex.call(current, current.edition![2] as any, current.edition![3] as any)];
+                current.options.columns &&
+                current.options.columns[getCellColumnIndex.call(current, parseInt(current.edition![2]), parseInt(current.edition![3]))];
 
             if (e.which == 27) {
                 // Escape
@@ -1355,12 +1367,12 @@ const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
                     if (
                         (libraryBase.jspreadsheet.current.options.wordWrap == true ||
                             (column && column.wordWrap == true) ||
-                            (libraryBase.jspreadsheet.current.options.data[libraryBase.jspreadsheet.current.edition[3] as any][
-                                libraryBase.jspreadsheet.current.edition[2] as any
+                            (libraryBase.jspreadsheet.current.options.data[parseInt(libraryBase.jspreadsheet.current.edition[3])][
+                                parseInt(libraryBase.jspreadsheet.current.edition[2])
                             ] &&
                                 (
-                                    libraryBase.jspreadsheet.current.options.data[libraryBase.jspreadsheet.current.edition[3] as any][
-                                        libraryBase.jspreadsheet.current.edition[2] as any
+                                    libraryBase.jspreadsheet.current.options.data[parseInt(libraryBase.jspreadsheet.current.edition[3])][
+                                        parseInt(libraryBase.jspreadsheet.current.edition[2])
                                     ] as string
                                 ).length > 200)) &&
                         e.altKey
@@ -1659,7 +1671,7 @@ export const scrollControls = function (this: Worksheet, e: Event) {
 
     // Close a floating editor. The text editor is inside the cell and scrolls with it.
     if (obj.options.lazyLoading == true || obj.options.tableOverflow == true) {
-        if (obj.edition && hasFloatingEditor.call(obj, obj.edition[2] as any) && (e.target as HTMLElement).className.substr(0, 9) != 'jdropdown') {
+        if (obj.edition && hasFloatingEditor.call(obj, parseInt(obj.edition[2])) && (e.target as HTMLElement).className.substr(0, 9) != 'jdropdown') {
             closeEditor.call(obj, obj.edition[0], true);
         }
     }
@@ -1679,34 +1691,35 @@ const hasFloatingEditor = function (this: Worksheet, x: number) {
     return typeof column.type === 'object' || ['dropdown', 'calendar', 'color', 'html', 'image'].indexOf(column.type) >= 0;
 };
 
-export const setEvents = function (root: any) {
+export const setEvents = function (root: Document | HTMLElement | ShadowRoot) {
     destroyEvents(root);
-    root.addEventListener('mouseup', mouseUpControls);
-    root.addEventListener('mousedown', mouseDownControls);
-    root.addEventListener('mousemove', mouseMoveControls);
-    root.addEventListener('mouseover', mouseOverControls);
-    root.addEventListener('dblclick', doubleClickControls);
-    root.addEventListener('paste', pasteControls);
-    root.addEventListener('contextmenu', contextMenuControls);
-    root.addEventListener('touchstart', touchStartControls);
-    root.addEventListener('touchend', touchEndControls);
-    root.addEventListener('touchcancel', touchEndControls);
-    root.addEventListener('touchmove', touchEndControls);
-    // keyDownControls reads the target as an element, which the type of the listener does not promise
+    // The handlers read the target as an element, which the type of a listener does not promise
+    root.addEventListener('mouseup', mouseUpControls as EventListener);
+    root.addEventListener('mousedown', mouseDownControls as EventListener);
+    root.addEventListener('mousemove', mouseMoveControls as EventListener);
+    root.addEventListener('mouseover', mouseOverControls as EventListener);
+    root.addEventListener('dblclick', doubleClickControls as EventListener);
+    root.addEventListener('paste', pasteControls as EventListener);
+    root.addEventListener('contextmenu', contextMenuControls as EventListener);
+    root.addEventListener('touchstart', touchStartControls as EventListener);
+    root.addEventListener('touchend', touchEndControls as EventListener);
+    root.addEventListener('touchcancel', touchEndControls as EventListener);
+    root.addEventListener('touchmove', touchEndControls as EventListener);
     document.addEventListener('keydown', keyDownControls as EventListener);
 };
 
-export const destroyEvents = function (root: any) {
-    root.removeEventListener('mouseup', mouseUpControls);
-    root.removeEventListener('mousedown', mouseDownControls);
-    root.removeEventListener('mousemove', mouseMoveControls);
-    root.removeEventListener('mouseover', mouseOverControls);
-    root.removeEventListener('dblclick', doubleClickControls);
-    root.removeEventListener('paste', pasteControls);
-    root.removeEventListener('contextmenu', contextMenuControls);
-    root.removeEventListener('touchstart', touchStartControls);
-    root.removeEventListener('touchend', touchEndControls);
-    root.removeEventListener('touchcancel', touchEndControls);
-    root.removeEventListener('touchmove', touchEndControls);
+export const destroyEvents = function (root: Document | HTMLElement | ShadowRoot) {
+    // The handlers read the target as an element, which the type of a listener does not promise
+    root.removeEventListener('mouseup', mouseUpControls as EventListener);
+    root.removeEventListener('mousedown', mouseDownControls as EventListener);
+    root.removeEventListener('mousemove', mouseMoveControls as EventListener);
+    root.removeEventListener('mouseover', mouseOverControls as EventListener);
+    root.removeEventListener('dblclick', doubleClickControls as EventListener);
+    root.removeEventListener('paste', pasteControls as EventListener);
+    root.removeEventListener('contextmenu', contextMenuControls as EventListener);
+    root.removeEventListener('touchstart', touchStartControls as EventListener);
+    root.removeEventListener('touchend', touchEndControls as EventListener);
+    root.removeEventListener('touchcancel', touchEndControls as EventListener);
+    root.removeEventListener('touchmove', touchEndControls as EventListener);
     document.removeEventListener('keydown', keyDownControls as EventListener);
 };

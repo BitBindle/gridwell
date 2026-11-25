@@ -232,7 +232,7 @@ export const undo: WorksheetMethod<'undo'> = function () {
         } else if (historyRecord.action == 'setMerge') {
             obj.removeMerge(historyRecord.column, historyRecord.data);
         } else if (historyRecord.action == 'setStyle') {
-            obj.setStyle(historyRecord.oldValue, null, null, 1 as any); // 1 means force
+            obj.setStyle(historyRecord.oldValue, null, null, true); // true means force
         } else if (historyRecord.action == 'setWidth') {
             // The public overloads take one column or a list, not either
             (obj.setWidth as (column: number | number[], width: number | number[]) => void)(historyRecord.column, historyRecord.oldValue);
@@ -314,7 +314,7 @@ export const redo: WorksheetMethod<'redo'> = function () {
         } else if (historyRecord.action == 'setMerge') {
             setMerge.call(obj, historyRecord.column, historyRecord.colspan, historyRecord.rowspan, 1);
         } else if (historyRecord.action == 'setStyle') {
-            obj.setStyle(historyRecord.newValue, null, null, 1 as any); // 1 means force
+            obj.setStyle(historyRecord.newValue, null, null, true); // true means force
         } else if (historyRecord.action == 'setWidth') {
             (obj.setWidth as (column: number | number[], width: number | number[]) => void)(historyRecord.column, historyRecord.newValue);
         } else if (historyRecord.action == 'setHeight') {

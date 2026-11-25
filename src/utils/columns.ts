@@ -9,6 +9,7 @@ import { setFooter } from './footer.js';
 import { updateFreezePosition } from './events.js';
 import { getColumnNameFromId, injectArray } from './internalHelpers.js';
 import { setHeaderRole, updateTabStop } from './accessibility.js';
+import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 export const getNumberOfColumns = function (this: Worksheet) {
@@ -86,7 +87,7 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
     // Configuration
     if (obj.options.allowInsertColumn != false) {
         // Data to be insert
-        let data: any[] = [];
+        let data: jspreadsheet.CellValue[] = [];
 
         // The insert could be lead by number of rows or the array of data
         let numOfColumns;
@@ -184,7 +185,7 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
         const historyHeaders = [];
         const historyColgroup = [];
         const historyRecords: { element: HTMLTableCellElement; x: number; y: number }[][] = [];
-        const historyData: any[][] = [];
+        const historyData: jspreadsheet.CellValue[][] = [];
         const historyFooters: string[][] = [];
 
         // Add new headers
@@ -228,14 +229,22 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
                 obj.records[row][col] = {
                     element: td,
                     y: row,
-                } as any;
+                } as Worksheet['records'][number][number];
                 // Add cell to the row
                 if (obj.rows[row]) {
                     obj.rows[row].element.insertBefore(td, obj.rows[row].element.children[col + 1]);
                 }
 
                 if (obj.options.columns && obj.options.columns[col] && typeof obj.options.columns[col].render === 'function') {
-                    (obj.options.columns[col].render as any)(td, value, parseInt(col), parseInt(row), obj, obj.options.columns[col]);
+                    // The test above makes it a function, which TypeScript does not narrow through the index
+                    (obj.options.columns[col].render as NonNullable<jspreadsheet.BaseColumn['render']>)(
+                        td,
+                        value,
+                        parseInt(col),
+                        parseInt(row),
+                        obj,
+                        obj.options.columns[col]
+                    );
                 }
 
                 // Record History
@@ -267,12 +276,13 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
                 const colspan = parseInt(obj.options.nestedHeaders[j][obj.options.nestedHeaders[j].length - 1].colspan) + numOfColumns;
                 obj.options.nestedHeaders[j][obj.options.nestedHeaders[j].length - 1].colspan = colspan;
                 obj.thead.children[j].children[obj.thead.children[j].children.length - 1].setAttribute('colspan', colspan);
-                let o: any = obj.thead.children[j].children[obj.thead.children[j].children.length - 1].getAttribute('data-column');
-                o = o.split(',');
+                const o: (string | number)[] = obj.thead.children[j].children[obj.thead.children[j].children.length - 1]
+                    .getAttribute('data-column')!
+                    .split(',');
                 for (let col = columnIndex; col < numOfColumns + columnIndex; col++) {
                     o.push(col);
                 }
-                obj.thead.children[j].children[obj.thead.children[j].children.length - 1].setAttribute('data-column', o);
+                obj.thead.children[j].children[obj.thead.children[j].children.length - 1].setAttribute('data-column', o.join(','));
             }
         }
 

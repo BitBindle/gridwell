@@ -58,7 +58,7 @@ const setWorksheetFunctions = function (worksheet: Worksheet) {
     for (let i = 0; i < worksheetPublicMethodsLength; i++) {
         const [methodName, method] = worksheetPublicMethods[i];
 
-        (worksheet as any)[methodName] = method.bind(worksheet);
+        (worksheet as unknown as Record<string, unknown>)[methodName] = method.bind(worksheet);
     }
 };
 
@@ -113,13 +113,13 @@ const createTable = function (this: Worksheet) {
 
         for (let i = 0; i < obj.options.paginationOptions.length; i++) {
             const temp = document.createElement('option');
-            temp.value = obj.options.paginationOptions[i] as any;
-            temp.innerHTML = obj.options.paginationOptions[i] as any;
+            temp.value = String(obj.options.paginationOptions[i]);
+            temp.innerHTML = String(obj.options.paginationOptions[i]);
             obj.paginationDropdown.appendChild(temp);
         }
 
         // Set initial pagination value
-        obj.paginationDropdown.value = obj.options.pagination as any;
+        obj.paginationDropdown.value = String(obj.options.pagination);
 
         paginationUpdateContainer.appendChild(document.createTextNode(jSuites.translate('Show ')));
         paginationUpdateContainer.appendChild(obj.paginationDropdown);
@@ -215,7 +215,7 @@ const createTable = function (this: Worksheet) {
     obj.textarea = document.createElement('textarea');
     obj.textarea.className = 'jss_textarea';
     obj.textarea.id = 'jss_textarea';
-    obj.textarea.tabIndex = '-1' as any;
+    obj.textarea.tabIndex = -1;
     obj.textarea.ariaHidden = 'true';
 
     // Powered by Jspreadsheet
@@ -302,7 +302,8 @@ const createTable = function (this: Worksheet) {
 
     // Style
     if (obj.options.style) {
-        (obj.setStyle as any)(obj.options.style, null, null, 1, 1);
+        // The numbers, indexes in the style list of the spreadsheet, were changed to the styles when the spreadsheet was created
+        obj.setStyle(obj.options.style as Record<string, string>, null, null, true, true);
 
         delete obj.options.style;
     }
@@ -399,7 +400,7 @@ const prepareTable = function (this: Worksheet) {
                     index: i,
                     method: 'GET',
                     dataType: 'json',
-                    success: function (data: any) {
+                    success: function (this: { index: number }, data: unknown[]) {
                         if (!obj.options.columns[this.index].source) {
                             obj.options.columns[this.index].source = [];
                         }
@@ -464,7 +465,7 @@ export const buildWorksheet = async function (this: Worksheet) {
                 url: obj.options.csv,
                 method: 'GET',
                 dataType: 'text',
-                success: function (result: any) {
+                success: function (result: string) {
                     // Convert data
                     const newData = parseCSV(result, obj.options.csvDelimiter);
 
@@ -505,9 +506,10 @@ export const buildWorksheet = async function (this: Worksheet) {
                 url: obj.options.url,
                 method: 'GET',
                 dataType: 'json',
-                success: function (result: any) {
+                // The data, or an object with the data in its data property. setData changes rows of objects to arrays.
+                success: function (result: { data?: jspreadsheet.CellValue[][] }) {
                     // Data
-                    obj.options.data = result.data ? result.data : result;
+                    obj.options.data = result.data ? result.data : (result as jspreadsheet.CellValue[][]);
                     // Prepare table
                     prepareTable.call(obj);
 
@@ -533,7 +535,7 @@ export const buildWorksheet = async function (this: Worksheet) {
     }
 };
 
-export const createWorksheetObj = function (this: Worksheet, options: any) {
+export const createWorksheetObj = function (this: Worksheet, options: jspreadsheet.WorksheetOptions) {
     const obj = this;
 
     const spreadsheet = obj.parent;
@@ -586,7 +588,8 @@ export const deleteWorksheet: WorksheetMethod<'deleteWorksheet'> = function (pos
     dispatch.call(obj.parent, 'ondeleteworksheet', removedWorksheet, position);
 };
 
-const worksheetPublicMethods: [string, (...args: any[]) => any][] = [
+// never[]: each method has its own parameters
+const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Worksheet, ...args: never[]) => unknown][] = [
     ['selectAll', selectAll],
     [
         'updateSelectionFromCoords',

@@ -11,7 +11,7 @@ import { createTabs } from './tabs.js';
 import { getSpreadsheetConfig, setConfig } from './config.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Spreadsheet, Worksheet } from '../types/internal';
-import type { Tabs } from './tabs.js';
+import type { Tabs, TabsOptions } from './tabs.js';
 
 const factory = function () {};
 
@@ -19,7 +19,7 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: jspr
     // Create worksheets
     const o = options.worksheets;
     if (o) {
-        const tabsOptions: any = {
+        const tabsOptions: Partial<TabsOptions> = {
             animation: true,
             onbeforecreate: function (element: HTMLElement, title?: string | null) {
                 if (title) {
@@ -28,7 +28,7 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: jspr
                     return getNextDefaultWorksheetName(spreadsheet);
                 }
             },
-            oncreate: function (element: HTMLElement & { tabs: Tabs }, newTabContent: HTMLDivElement) {
+            oncreate: function (element: HTMLElement & { tabs: Tabs }, newTabContent: HTMLDivElement | undefined) {
                 if (!spreadsheet.creationThroughJss) {
                     const worksheetName = element.tabs.headers.children[element.tabs.headers.children.length - 2].innerHTML;
 
@@ -43,6 +43,7 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: jspr
                 const newWorksheet = spreadsheet.worksheets[spreadsheet.worksheets.length - 1];
 
                 // buildWorksheet adds jssWorksheet
+                // onbeforecreate always gives a title, so the tab has its content
                 newWorksheet.element = newTabContent as Worksheet['element'];
 
                 buildWorksheet.call(newWorksheet).then(function () {
@@ -77,7 +78,8 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: jspr
             }
 
             tabsOptions.data.push({
-                title: o[i].worksheetName,
+                // Set above
+                title: o[i].worksheetName!,
                 content: '',
             });
         }
@@ -109,7 +111,7 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: jspr
                 history: [],
                 selection: [],
                 historyIndex: -1,
-            } as any);
+            } as unknown as Worksheet);
 
             await buildWorksheet.call(spreadsheet.worksheets[i]);
         }
@@ -118,7 +120,8 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: jspr
     }
 };
 
-factory.spreadsheet = async function (el: any, options: jspreadsheet.SpreadsheetOptions, worksheets: Worksheet[]) {
+// A table is replaced by a div. The div gets the spreadsheet in its spreadsheet property.
+factory.spreadsheet = async function (el: HTMLElement & { spreadsheet?: Spreadsheet }, options: jspreadsheet.SpreadsheetOptions, worksheets: Worksheet[]) {
     if (el.tagName == 'TABLE') {
         if (!options) {
             // The worksheets are added below
@@ -131,20 +134,23 @@ factory.spreadsheet = async function (el: any, options: jspreadsheet.Spreadsheet
 
         const tableOptions = createFromTable(el, options.worksheets[0]);
 
-        options.worksheets[0] = tableOptions;
+        // el is a table, so the options were created
+        options.worksheets[0] = tableOptions!;
 
         const div = document.createElement('div');
-        el.parentNode.insertBefore(div, el);
+        // A table outside the document has no parent, and this throws (issue #55)
+        el.parentNode!.insertBefore(div, el);
         el.remove();
         el = div;
     }
 
+    // The other properties are added below, and el gets the spreadsheet at the end
     const spreadsheet = {
         worksheets: worksheets,
         config: options,
         element: el,
         el,
-    } as Spreadsheet;
+    } as unknown as Spreadsheet;
 
     // Contextmenu container
     // jSuites.contextmenu adds the contextmenu instance below
@@ -179,11 +185,12 @@ factory.spreadsheet = async function (el: any, options: jspreadsheet.Spreadsheet
     spreadsheet.element.appendChild(spreadsheet.contextMenu);
 
     // Create element
+    // The jsuites typings want items and a null onclick
     jSuites.contextmenu(spreadsheet.contextMenu, {
         onclick: function () {
             spreadsheet.contextMenu.contextmenu.close(false);
         },
-    } as any);
+    } as unknown as Parameters<typeof jSuites.contextmenu>[1]);
 
     // Fullscreen
     if (spreadsheet.config.fullscreen == true) {
@@ -202,27 +209,6 @@ factory.spreadsheet = async function (el: any, options: jspreadsheet.Spreadsheet
     el.spreadsheet = spreadsheet;
 
     return spreadsheet;
-};
-
-factory.worksheet = function (spreadsheet: Spreadsheet, options: any, position?: number) {
-    // Worksheet object
-    const w: any = {
-        // Parent of a worksheet is always the spreadsheet
-        parent: spreadsheet,
-        // Options for this worksheet
-        options: {},
-    };
-
-    // Create the worksheets object
-    if (typeof position === 'undefined') {
-        spreadsheet.worksheets.push(w);
-    } else {
-        spreadsheet.worksheets.splice(position, 0, w);
-    }
-    // Keep configuration used
-    Object.assign(w.options, options);
-
-    return w;
 };
 
 export default factory;

@@ -11,12 +11,12 @@ import type { Worksheet, WorksheetMethod } from '../types/internal';
 import type { CellValue } from '../jspreadsheet';
 
 // data can be rows of objects. They are changed to arrays.
-export const setData: WorksheetMethod<'setData'> = function (data: any) {
+export const setData: WorksheetMethod<'setData'> = function (data) {
     const obj = this;
 
-    // Update data
+    // Update data. Rows of objects are changed to arrays below.
     if (data) {
-        obj.options.data = data;
+        obj.options.data = data as CellValue[][];
     }
 
     // Data
@@ -27,17 +27,17 @@ export const setData: WorksheetMethod<'setData'> = function (data: any) {
     // Prepare data
     if (obj.options.data && obj.options.data[0]) {
         if (!Array.isArray(obj.options.data[0])) {
-            data = [];
+            const rows: CellValue[][] = [];
             for (let j = 0; j < obj.options.data.length; j++) {
-                const row = [];
+                const row: CellValue[] = [];
                 for (let i = 0; i < obj.options.columns.length; i++) {
                     // The rows are objects here
-                    row[i] = (obj.options.data[j] as any)[obj.options.columns[i].name!];
+                    row[i] = (obj.options.data[j] as unknown as Record<string, CellValue>)[obj.options.columns[i].name!];
                 }
-                data.push(row);
+                rows.push(row);
             }
 
-            obj.options.data = data;
+            obj.options.data = rows;
         }
     }
 
@@ -145,16 +145,16 @@ export const setData: WorksheetMethod<'setData'> = function (data: any) {
  * @param object cell
  * @return string value
  */
-export const getValue: WorksheetMethod<'getValue'> = function (cell: any, processedValue) {
+export const getValue: WorksheetMethod<'getValue'> = function (cell, processedValue) {
     const obj = this;
 
     if (typeof cell !== 'string') {
         return null;
     }
 
-    cell = getIdFromColumnName(cell, true);
-    const x = cell[0];
-    const y = cell[1];
+    const coords = getIdFromColumnName(cell, true);
+    const x = coords[0];
+    const y = coords[1];
 
     let value = null;
 
@@ -203,6 +203,7 @@ export const getValueFromCoords: WorksheetMethod<'getValueFromCoords'> = functio
  * @param string value value
  * @return void
  */
+// any: a cell element gives the text of data-x and data-y to updateCell (issue #52)
 export const setValue: WorksheetMethod<'setValue'> = function (cell: any, value, force) {
     const obj = this;
 

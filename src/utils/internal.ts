@@ -81,8 +81,9 @@ export const updateTable = function (this: Worksheet) {
 const parseNumber = function (this: Worksheet, value: any, columnNumber: number) {
     const obj = this;
 
-    // Decimal point
-    const decimal = columnNumber && obj.options.columns[columnNumber].decimal ? obj.options.columns[columnNumber].decimal : '.';
+    // Decimal point. Column 0 has one too.
+    const column = obj.options.columns[columnNumber];
+    const decimal = column && column.decimal ? column.decimal : '.';
 
     // Parse both parts of the number
     // Text, then its parts
@@ -116,9 +117,9 @@ const parseNumber = function (this: Worksheet, value: any, columnNumber: number)
 export const executeFormula: WorksheetMethod<'executeFormula'> = function (expression, x, y) {
     const obj = this;
 
-    // Arrays used as maps, as before
-    const formulaResults: any = [];
-    const formulaLoopProtection: any = [];
+    // The results and the formulas in progress, by cell name
+    const formulaResults: Record<string, any> = {};
+    const formulaLoopProtection: Record<string, boolean> = {};
 
     // A formula engine of the application calculates the formula in place of the formula plugin
     const formulaEngine = typeof obj.parent.config.formulaEngine === 'function' ? obj.parent.config.formulaEngine : null;
@@ -140,7 +141,7 @@ export const executeFormula: WorksheetMethod<'executeFormula'> = function (expre
         formulaLoopProtection[parentId] = true;
 
         // Convert range tokens
-        const tokensUpdate = function (tokens: any) {
+        const tokensUpdate = function (tokens: string[]) {
             for (let index = 0; index < tokens.length; index++) {
                 const f = [];
                 const token = tokens[index].split(':');
@@ -210,9 +211,9 @@ export const executeFormula: WorksheetMethod<'executeFormula'> = function (expre
                     }
 
                     // Do not calculate again. The formula engine reads the values of the references itself.
-                    if (!formulaEngine && typeof (globalThis as any)[tokens[i]] === 'undefined') {
+                    if (!formulaEngine && typeof (globalThis as unknown as Record<string, unknown>)[tokens[i]] === 'undefined') {
                         // Coords
-                        const position = getIdFromColumnName(tokens[i], 1 as any);
+                        const position = getIdFromColumnName(tokens[i], true);
                         // Get value
                         let value: any;
 
@@ -436,7 +437,7 @@ export const parseValue = function (this: Worksheet, i: number, j: number, value
 /**
  * Get dropdown value from key
  */
-const getDropDownValue = function (this: Worksheet, column: any, key: any) {
+const getDropDownValue = function (this: Worksheet, column: number, key: unknown) {
     const obj = this;
 
     const value = [];
@@ -892,7 +893,8 @@ const secureFormula = function (oldValue: string) {
 /**
  * Update all related cells in the chain
  */
-let chainLoopProtection: any = [];
+// The cells in progress, by cell name
+let chainLoopProtection: Record<string, boolean> = {};
 
 export const updateFormulaChain = function (this: Worksheet, x: number, y: number, records: HistoryCellChange[]) {
     const obj = this;
@@ -922,7 +924,7 @@ export const updateFormulaChain = function (this: Worksheet, x: number, y: numbe
         }
     }
 
-    chainLoopProtection = [];
+    chainLoopProtection = {};
 };
 
 /**
@@ -1049,15 +1051,15 @@ export const updateTableReferences = function (this: Worksheet) {
                 obj.rows[j].element.children[0].setAttribute('data-y', j);
                 updateRowIndex.call(obj, obj.rows[j].element, j);
                 // Row number
-                obj.rows[j].element.children[0].innerHTML = (j + 1) as any;
+                obj.rows[j].element.children[0].innerHTML = String(j + 1);
             }
         }
     }
 
-    // Regular cells affected by this change
-    // Arrays used as maps, as before
-    const affectedTokens: any = [];
-    const mergeCellUpdates: any = [];
+    // Regular cells affected by this change: the new cell name by the old one
+    const affectedTokens: Record<string, string> = {};
+    // The merged cells affected by this change: false, or the new cell name and the column and row offsets
+    const mergeCellUpdates: Record<string, false | [string, number, number]> = {};
 
     // Update cell
     const updatePosition = function (x: number, y: number, i: number, j: number) {
@@ -1108,20 +1110,21 @@ export const updateTableReferences = function (this: Worksheet) {
     const keys = Object.keys(mergeCellUpdates);
     if (keys.length) {
         for (let i = 0; i < keys.length; i++) {
-            if (mergeCellUpdates[keys[i]]) {
+            const update = mergeCellUpdates[keys[i]];
+            if (update) {
                 const info = getIdFromColumnName(keys[i], true);
                 let x = info[0];
                 let y = info[1];
-                updatePosition(x, y, x + mergeCellUpdates[keys[i]][1], y + mergeCellUpdates[keys[i]][2]);
+                updatePosition(x, y, x + update[1], y + update[2]);
 
                 const columnIdFrom = keys[i];
-                const columnIdTo = mergeCellUpdates[keys[i]][0];
+                const columnIdTo = update[0];
                 for (let j = 0; j < (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]!.length; j++) {
                     x = parseInt((obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].getAttribute('data-x'));
                     y = parseInt((obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].getAttribute('data-y'));
-                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-x', x + mergeCellUpdates[keys[i]][1]);
-                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('aria-colindex', x + mergeCellUpdates[keys[i]][1] + 2);
-                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-y', y + mergeCellUpdates[keys[i]][2]);
+                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-x', x + update[1]);
+                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('aria-colindex', x + update[1] + 2);
+                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-y', y + update[2]);
                 }
 
                 obj.options.mergeCells![columnIdTo] = obj.options.mergeCells![columnIdFrom];

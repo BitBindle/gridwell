@@ -450,4 +450,53 @@ describe('Paste', () => {
             ['3-0', '3-1', '3-2', ''],
         ]);
     });
+
+    describe('onbeforepaste', () => {
+        const pasteWith = function (onbeforepaste) {
+            const sheet = jspreadsheet(root, {
+                worksheets: [{ minDimensions: [3, 3] }],
+                onbeforepaste,
+            })[0];
+            sheet.updateSelectionFromCoords(0, 0, 0, 0);
+            sheet.paste(0, 0, 'a\tb');
+            return sheet;
+        };
+
+        it('pastes the text that it returns', () => {
+            const sheet = pasteWith(() => 'x\ty\nz');
+
+            expect(sheet.getData()).to.eql([
+                ['x', 'y', ''],
+                ['z', '', ''],
+                ['', '', ''],
+            ]);
+        });
+
+        it('pastes the data when it returns true', () => {
+            const sheet = pasteWith(() => true);
+
+            expect(sheet.getData()).to.eql([
+                ['a', 'b', ''],
+                ['', '', ''],
+                ['', '', ''],
+            ]);
+        });
+
+        it('pastes the rows of values that it returns', () => {
+            const sheet = pasteWith(() => [['r']]);
+
+            expect(sheet.getValue('A1')).to.equal('r');
+            expect(sheet.getValue('B1')).to.equal('');
+        });
+
+        it('cancels the paste when it returns false', () => {
+            const sheet = pasteWith(() => false);
+
+            expect(sheet.getData()).to.eql([
+                ['', '', ''],
+                ['', '', ''],
+                ['', '', ''],
+            ]);
+        });
+    });
 });

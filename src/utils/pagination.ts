@@ -32,7 +32,7 @@ export const updatePagination = function (this: Worksheet) {
     // Start pagination
     if (obj.options.pagination) {
         // Searchable
-        let results: any;
+        let results: number;
 
         if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
             results = obj.results.length;
@@ -68,8 +68,7 @@ export const updatePagination = function (this: Worksheet) {
                 const paginationItem = document.createElement('div');
                 paginationItem.className = 'jss_page';
                 paginationItem.innerHTML = '<';
-                // The DOM turns the numbers into text
-                paginationItem.title = 1 as any;
+                paginationItem.title = '1';
                 obj.pagination.children[1].appendChild(paginationItem);
             }
 
@@ -77,7 +76,7 @@ export const updatePagination = function (this: Worksheet) {
             for (let i = startNumber; i <= finalNumber; i++) {
                 const paginationItem = document.createElement('div');
                 paginationItem.className = 'jss_page';
-                paginationItem.innerHTML = i as any;
+                paginationItem.innerHTML = String(i);
                 obj.pagination.children[1].appendChild(paginationItem);
 
                 if (obj.pageNumber == i - 1) {
@@ -90,14 +89,14 @@ export const updatePagination = function (this: Worksheet) {
                 const paginationItem = document.createElement('div');
                 paginationItem.className = 'jss_page';
                 paginationItem.innerHTML = '>';
-                paginationItem.title = quantyOfPages as any;
+                paginationItem.title = String(quantyOfPages);
                 obj.pagination.children[1].appendChild(paginationItem);
             }
 
             // Text
-            const format = function (format: string, ...args: any[]): string {
+            const format = function (format: string, ...args: number[]): string {
                 return format.replace(/{(\d+)}/g, function (match: string, number: number) {
-                    return typeof args[number] != 'undefined' ? args[number] : match;
+                    return typeof args[number] != 'undefined' ? String(args[number]) : match;
                 });
             };
 
@@ -114,8 +113,8 @@ export const page: WorksheetMethod<'page'> = function (pageNumber) {
 
     const oldPage = obj.pageNumber;
 
-    // Search
-    let results: any;
+    // Search: the indexes of the rows found, or the rows
+    let results: number[] | Worksheet['rows'];
 
     if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
         results = obj.results;
@@ -152,7 +151,7 @@ export const page: WorksheetMethod<'page'> = function (pageNumber) {
     // Appeding items
     for (let j = startRow; j < finalRow; j++) {
         if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
-            obj.tbody.appendChild(obj.rows[results[j]].element);
+            obj.tbody.appendChild(obj.rows[results[j] as number].element);
         } else {
             obj.tbody.appendChild(obj.rows[j].element);
         }
@@ -175,7 +174,7 @@ export const page: WorksheetMethod<'page'> = function (pageNumber) {
 export const quantiyOfPages: WorksheetMethod<'quantiyOfPages'> = function () {
     const obj = this;
 
-    let results: any;
+    let results: number;
     if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
         results = obj.results.length;
     } else {

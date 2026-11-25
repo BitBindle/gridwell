@@ -23,13 +23,13 @@ export const openFilter: WorksheetMethod<'openFilter'> = function (columnId) {
             optionsFiltered.push({ id: 'false', name: 'False' });
         } else {
             // Labels by value. An array used as a map, as before.
-            const options: any = [];
+            const options = [] as unknown as Record<string, string>;
             let hasBlanks = false;
             for (let j = 0; j < obj.options.data.length; j++) {
                 const k = obj.options.data[j][columnId];
                 const v = obj.records[j][columnId].element.innerHTML;
                 if (k && v) {
-                    options[k as any] = v;
+                    options[k as string] = v;
                 } else {
                     hasBlanks = true;
                 }
@@ -61,10 +61,12 @@ export const openFilter: WorksheetMethod<'openFilter'> = function (columnId) {
             value: obj.filters[columnId] !== undefined ? obj.filters[columnId] : null,
             width: '100%',
             position: obj.options.tableOverflow == true || obj.parent.config.fullscreen == true ? true : false,
-            onclose: function (o: any) {
+            // The element of the dropdown, which holds the dropdown
+            onclose: function (o: HTMLElement & { dropdown: ReturnType<typeof jSuites.dropdown> }) {
                 resetFilters.call(obj);
-                obj.filters[columnId] = o.dropdown.getValue(true);
-                obj.filter!.children[columnId + 1].innerHTML = o.dropdown.getText();
+                // A list, because the dropdown has multiple
+                obj.filters[columnId] = o.dropdown.getValue(true) as string[];
+                obj.filter!.children[columnId + 1].innerHTML = o.dropdown.getText() as string;
                 (obj.filter!.children[columnId + 1] as HTMLElement).style.paddingLeft = '';
                 (obj.filter!.children[columnId + 1] as HTMLElement).style.paddingRight = '';
                 (obj.filter!.children[columnId + 1] as HTMLElement).style.overflow = '';
@@ -73,13 +75,13 @@ export const openFilter: WorksheetMethod<'openFilter'> = function (columnId) {
             },
         };
 
-        // Dynamic dropdown
-        // The jsuites typings want a number for width, but the dropdown takes any CSS width
-        jSuites.dropdown(div, opt as any);
+        // Dynamic dropdown. The jsuites typings want a number for width and text for value, but the dropdown takes any CSS width,
+        // and a list or null for the value of a dropdown with multiple.
+        jSuites.dropdown(div, opt as unknown as Parameters<typeof jSuites.dropdown>[1]);
     }
 };
 
-export const closeFilter = function (this: Worksheet, columnId?: any) {
+export const closeFilter = function (this: Worksheet, columnId?: number) {
     const obj = this;
 
     if (!columnId) {
@@ -91,7 +93,7 @@ export const closeFilter = function (this: Worksheet, columnId?: any) {
     }
 
     // Search filter
-    const search = function (query: any, x: number, y: number) {
+    const search = function (query: string[], x: number, y: number) {
         for (let i = 0; i < query.length; i++) {
             const value = '' + obj.options.data[y][x];
             const label = '' + obj.records[y][x].element.innerHTML;
@@ -102,10 +104,11 @@ export const closeFilter = function (this: Worksheet, columnId?: any) {
         return false;
     };
 
-    const query = obj.filters[columnId];
+    // The column has a filter: openFilter passes its column, and orderBy calls this only while a filter gives results
+    const query = obj.filters[columnId!]!;
     obj.results = [];
     for (let j = 0; j < obj.options.data.length; j++) {
-        if (search(query, columnId, j)) {
+        if (search(query, columnId!, j)) {
             obj.results.push(j);
         }
     }
