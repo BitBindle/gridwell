@@ -9,24 +9,26 @@ import dispatch from './dispatch.js';
 import { createFromTable } from './helpers.js';
 import { createTabs } from './tabs.js';
 import { getSpreadsheetConfig, setConfig } from './config.js';
+import type jspreadsheet from '../jspreadsheet';
 import type { Spreadsheet, Worksheet } from '../types/internal';
+import type { Tabs } from './tabs.js';
 
 const factory = function () {};
 
-const createWorksheets = async function (spreadsheet: Spreadsheet, options: any, el: HTMLElement) {
+const createWorksheets = async function (spreadsheet: Spreadsheet, options: jspreadsheet.SpreadsheetOptions, el: HTMLElement) {
     // Create worksheets
     const o = options.worksheets;
     if (o) {
         const tabsOptions: any = {
             animation: true,
-            onbeforecreate: function (element: any, title: any) {
+            onbeforecreate: function (element: HTMLElement, title?: string | null) {
                 if (title) {
                     return title;
                 } else {
                     return getNextDefaultWorksheetName(spreadsheet);
                 }
             },
-            oncreate: function (element: any, newTabContent: any) {
+            oncreate: function (element: HTMLElement & { tabs: Tabs }, newTabContent: HTMLDivElement) {
                 if (!spreadsheet.creationThroughJss) {
                     const worksheetName = element.tabs.headers.children[element.tabs.headers.children.length - 2].innerHTML;
 
@@ -40,7 +42,8 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: any,
 
                 const newWorksheet = spreadsheet.worksheets[spreadsheet.worksheets.length - 1];
 
-                newWorksheet.element = newTabContent;
+                // buildWorksheet adds jssWorksheet
+                newWorksheet.element = newTabContent as Worksheet['element'];
 
                 buildWorksheet.call(newWorksheet).then(function () {
                     updateToolbar(newWorksheet);
@@ -48,7 +51,7 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: any,
                     dispatch.call(newWorksheet, 'oncreateworksheet', newWorksheet, options, spreadsheet.worksheets.length - 1);
                 });
             },
-            onchange: function (element: any, instance: any, tabIndex: number) {
+            onchange: function (element: HTMLElement, instance: Tabs, tabIndex: number) {
                 if (spreadsheet.worksheets.length != 0 && spreadsheet.worksheets[tabIndex]) {
                     updateToolbar(spreadsheet.worksheets[tabIndex]);
                 }
@@ -89,9 +92,10 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: any,
 
         for (let i = 0; i < o.length; i++) {
             if (o[i].style) {
-                Object.entries(o[i].style).forEach(function ([cellName, value]) {
+                Object.entries(o[i].style!).forEach(function ([cellName, value]) {
                     if (typeof value === 'number') {
-                        o[i].style[cellName] = spreadsheetStyles[value];
+                        // A number is the index of a style in the spreadsheet options, which the application passes with it
+                        o[i].style![cellName] = spreadsheetStyles![value];
                     }
                 });
             }
@@ -114,10 +118,11 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: any,
     }
 };
 
-factory.spreadsheet = async function (el: any, options: any, worksheets: Worksheet[]) {
+factory.spreadsheet = async function (el: any, options: jspreadsheet.SpreadsheetOptions, worksheets: Worksheet[]) {
     if (el.tagName == 'TABLE') {
         if (!options) {
-            options = {};
+            // The worksheets are added below
+            options = {} as jspreadsheet.SpreadsheetOptions;
         }
 
         if (!options.worksheets) {
@@ -153,19 +158,20 @@ factory.spreadsheet = async function (el: any, options: any, worksheets: Workshe
     spreadsheet.getConfig = getSpreadsheetConfig.bind(spreadsheet);
     spreadsheet.setConfig = setConfig.bind(spreadsheet);
 
-    spreadsheet.setPlugins = function (newPlugins: any) {
+    spreadsheet.setPlugins = function (newPlugins) {
         if (!spreadsheet.plugins) {
             spreadsheet.plugins = {};
         }
 
         if (typeof newPlugins == 'object') {
-            Object.entries(newPlugins).forEach(function ([pluginName, plugin]: [string, any]) {
+            Object.entries(newPlugins).forEach(function ([pluginName, plugin]) {
                 spreadsheet.plugins[pluginName] = plugin.call(libraryBase.jspreadsheet, spreadsheet, {}, spreadsheet.config);
             });
         }
     };
 
-    spreadsheet.setPlugins(options.plugins);
+    // setPlugins ignores a missing value
+    spreadsheet.setPlugins(options.plugins as Record<string, jspreadsheet.PluginFactory>);
 
     // Create as worksheets
     await createWorksheets(spreadsheet, options, el);

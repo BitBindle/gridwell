@@ -8,9 +8,9 @@ export const getCaretIndex = function (this: Spreadsheet, e: any) {
     let d;
 
     // Applications call it as jspreadsheet.helpers.getCaretIndex, so this is a spreadsheet only when the caller sets it.
-    // root is not a documented option
-    if (this && this.config && (this.config as any).root) {
-        d = (this.config as any).root;
+    if (this && this.config && this.config.root) {
+        // An element has no getSelection, and a shadow root has it only in some browsers (issue #46)
+        d = this.config.root as unknown as Window;
     } else {
         d = window;
     }
