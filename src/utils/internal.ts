@@ -1241,8 +1241,8 @@ export const updateResult = function (this: Worksheet) {
     } else if (obj.options.pagination! > 0) {
         total = obj.options.pagination!;
     } else {
-        if (obj.results) {
-            total = obj.results.length;
+        if (obj.view.results) {
+            total = obj.view.results.length;
         } else {
             total = obj.rows.length;
         }
@@ -1255,7 +1255,7 @@ export const updateResult = function (this: Worksheet) {
 
     // Hide all records from the table
     for (let j = 0; j < obj.rows.length; j++) {
-        if (!obj.results || obj.results.indexOf(j) > -1) {
+        if (!obj.view.results || obj.view.results.indexOf(j) > -1) {
             if (index < total) {
                 obj.tbody.appendChild(obj.rows[j].element);
                 index++;
@@ -1276,7 +1276,7 @@ export const updateResult = function (this: Worksheet) {
 
     updateCornerPosition.call(obj);
 
-    dispatch.call(obj, 'onupdateresult', obj, obj.results);
+    dispatch.call(obj, 'onupdateresult', obj, obj.view.results);
 
     return total;
 };

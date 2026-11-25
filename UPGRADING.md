@@ -108,3 +108,19 @@ an object, where `worksheet.formula` was an array used as an object, so it has n
 entry that a reference loop ended is an empty array, where it was an empty text. `worksheet.formulas.add(cell,
 dependent)` adds to the chain, and `worksheet.formulas.rename(references)` renames its cells. `executeFormula()` and the
 calculation of formulas work as before.
+
+## The rows that a worksheet shows are in its view
+
+The state of the search, the filters and the pagination is now in `worksheet.view`, a `View` object:
+
+| Version 5              | Version 6                   |
+| ---------------------- | --------------------------- |
+| `worksheet.results`    | `worksheet.view.results`    |
+| `worksheet.filters`    | `worksheet.view.filters`    |
+| `worksheet.pageNumber` | `worksheet.view.pageNumber` |
+
+`worksheet.view.pageNumber` is `0` from the start, also without pagination, where `worksheet.pageNumber` was undefined
+until the worksheet had pagination. `worksheet.view.results` is `null` from the start. `search()`, `resetSearch()`,
+`openFilter()`, `resetFilters()`, `page()` and the `onupdateresult` and `onchangepage` events work as before.
+The search input, the filter row and the pagination controls stay on the worksheet (`searchInput`, `filter`,
+`pagination`).

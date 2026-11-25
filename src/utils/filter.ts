@@ -58,14 +58,14 @@ export const openFilter: WorksheetMethod<'openFilter'> = function (columnId) {
             multiple: true,
             autocomplete: true,
             opened: true,
-            value: obj.filters[columnId] !== undefined ? obj.filters[columnId] : null,
+            value: obj.view.filters[columnId] !== undefined ? obj.view.filters[columnId] : null,
             width: '100%',
             position: obj.options.tableOverflow == true || obj.parent.config.fullscreen == true ? true : false,
             // The element of the dropdown, which holds the dropdown
             onclose: function (o: HTMLElement & { dropdown: ReturnType<typeof jSuites.dropdown> }) {
                 resetFilters.call(obj);
                 // A list, because the dropdown has multiple
-                obj.filters[columnId] = o.dropdown.getValue(true) as string[];
+                obj.view.filters[columnId] = o.dropdown.getValue(true) as string[];
                 obj.filter!.children[columnId + 1].innerHTML = o.dropdown.getText() as string;
                 (obj.filter!.children[columnId + 1] as HTMLElement).style.paddingLeft = '';
                 (obj.filter!.children[columnId + 1] as HTMLElement).style.paddingRight = '';
@@ -85,7 +85,7 @@ export const closeFilter = function (this: Worksheet, columnId?: number) {
 
     if (!columnId) {
         for (let i = 0; i < obj.filter!.children.length; i++) {
-            if (obj.filters[i]) {
+            if (obj.view.filters[i]) {
                 columnId = i;
             }
         }
@@ -104,15 +104,15 @@ export const closeFilter = function (this: Worksheet, columnId?: number) {
     };
 
     // The column has a filter: openFilter passes its column, and orderBy calls this only while a filter gives results
-    const query = obj.filters[columnId!]!;
-    obj.results = [];
+    const query = obj.view.filters[columnId!]!;
+    obj.view.results = [];
     for (let j = 0; j < obj.options.data.length; j++) {
         if (search(query, columnId!, j)) {
-            obj.results.push(j);
+            obj.view.results.push(j);
         }
     }
-    if (!obj.results.length) {
-        obj.results = null;
+    if (!obj.view.results.length) {
+        obj.view.results = null;
     }
 
     updateResult.call(obj);
@@ -124,10 +124,10 @@ export const resetFilters: WorksheetMethod<'resetFilters'> = function () {
     if (obj.options.filters) {
         for (let i = 0; i < obj.filter!.children.length; i++) {
             obj.filter!.children[i].innerHTML = '&nbsp;';
-            obj.filters[i] = null;
+            obj.view.filters[i] = null;
         }
     }
 
-    obj.results = null;
+    obj.view.results = null;
     updateResult.call(obj);
 };

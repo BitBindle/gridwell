@@ -4,6 +4,7 @@ import { Editor } from './components/Editor.js';
 import { Formulas } from './components/Formulas.js';
 import { History } from './components/History.js';
 import { Selection } from './components/Selection.js';
+import { View } from './components/View.js';
 import type { Spreadsheet, WorksheetState } from './types/internal';
 
 /**
@@ -29,11 +30,11 @@ export class Worksheet {
             // buildWorksheet adds jssWorksheet
             this.element = element as Worksheet['element'];
         }
-        this.filters = [];
         this.history = new History();
         this.clipboard = new Clipboard();
         this.editor = new Editor();
         this.selection = new Selection();
         this.formulas = new Formulas();
+        this.view = new View();
     }
 }

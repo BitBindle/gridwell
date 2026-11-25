@@ -22,7 +22,7 @@ const historyProcessRow = function (
     const rowIndex = !historyRecord.insertBefore ? historyRecord.rowNumber + 1 : +historyRecord.rowNumber;
 
     if (obj.options.search == true) {
-        if (obj.results && obj.results.length != obj.rows.length) {
+        if (obj.view.results && obj.view.results.length != obj.rows.length) {
             obj.resetSearch();
         }
     }
@@ -73,7 +73,7 @@ const historyProcessRow = function (
 
     // Respect pagination
     if (obj.options.pagination! > 0) {
-        obj.page(obj.pageNumber!);
+        obj.page(obj.view.pageNumber);
     }
 
     updateTableReferences.call(obj);

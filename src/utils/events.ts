@@ -353,7 +353,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                     } else if (libraryBase.jspreadsheet.current.options.rowDrag != false && info.width - e.offsetX < 6) {
                         if (isRowMerged.call(libraryBase.jspreadsheet.current, rowId).length) {
                             console.error('Jspreadsheet: This row is part of a merged cell');
-                        } else if (libraryBase.jspreadsheet.current.options.search == true && libraryBase.jspreadsheet.current.results) {
+                        } else if (libraryBase.jspreadsheet.current.options.search == true && libraryBase.jspreadsheet.current.view.results) {
                             console.error('Jspreadsheet: Please clear your search before perform this action');
                         } else {
                             // Reset selection

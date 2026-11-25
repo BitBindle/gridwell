@@ -21,8 +21,8 @@ export const search = function (this: Worksheet, query: string) {
     obj.resetSelection();
 
     // Total of results
-    obj.pageNumber = 0;
-    obj.results = [];
+    obj.view.pageNumber = 0;
+    obj.view.results = [];
 
     if (query) {
         if (obj.searchInput.value !== query) {
@@ -48,8 +48,8 @@ export const search = function (this: Worksheet, query: string) {
          * @param k - The row.
          */
         const addToResult = function (k: number) {
-            if (obj.results!.indexOf(k) == -1) {
-                obj.results!.push(k);
+            if (obj.view.results!.indexOf(k) == -1) {
+                obj.view.results!.push(k);
             }
         };
 
@@ -75,7 +75,7 @@ export const search = function (this: Worksheet, query: string) {
             }
         });
     } else {
-        obj.results = null;
+        obj.view.results = null;
     }
 
     updateResult.call(obj);
@@ -89,5 +89,5 @@ export const resetSearch = function (this: Worksheet) {
 
     obj.searchInput.value = '';
     obj.search('');
-    obj.results = null;
+    obj.view.results = null;
 };

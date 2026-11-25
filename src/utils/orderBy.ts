@@ -61,7 +61,7 @@ export const updateOrder = function (this: Worksheet, rows: number[]) {
     updateTableReferences.call(obj);
 
     // Redo search
-    if (obj.results && obj.results.length) {
+    if (obj.view.results && obj.view.results.length) {
         if (obj.searchInput.value) {
             obj.search(obj.searchInput.value);
         } else {
@@ -69,8 +69,8 @@ export const updateOrder = function (this: Worksheet, rows: number[]) {
         }
     } else {
         // Create page
-        obj.results = null;
-        obj.pageNumber = 0;
+        obj.view.results = null;
+        obj.view.pageNumber = 0;
 
         if (obj.options.pagination! > 0) {
             obj.page(0);

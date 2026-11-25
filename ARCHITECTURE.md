@@ -72,6 +72,11 @@ what it changes, and lists its breaking changes in UPGRADING.md.
    `redo`.
 7. **The rest of the worksheet state**, one component at a time: merges, filters and search, pagination and lazy
    loading, frozen columns, columns and rows.
+   Search, filters and pagination had state of their own: the rows found, the filter values and the page. These moved
+   into `components/View.ts`, which the lazy loading also reads. The other features have none to move: the merges and
+   the frozen columns are in the options, and the columns and rows are the DOM of the worksheet (`headers`, `cols`,
+   `rows`, `records`), which `Worksheet` keeps. The state of a mouse drag (`resizing`, `dragging`, `selectedHeader`,
+   `selectedRow`, `selectedCorner`, `cursor`) goes with the events in step 8.
 8. **Events.** `events.ts` splits by input under `events/`, and the handlers route through the spreadsheet.
 9. **No import cycles.** The last cycles go, and `npm run lint` checks for new ones.
 10. **The public typings.** The fields that only the library uses leave `WorksheetInstance`; the typings describe the

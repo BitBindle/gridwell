@@ -365,6 +365,22 @@ declare namespace jspreadsheet {
     }
 
     /**
+     * Which rows a worksheet shows, {@link WorksheetInstance.view}. {@link WorksheetInstance.search},
+     * the filters ({@link WorksheetInstance.openFilter},
+     * {@link WorksheetInstance.resetFilters}), {@link WorksheetInstance.page} and the lazy loading change it.
+     */
+    interface WorksheetView {
+        /** The indexes of the rows that a search or the filters found, or null when the worksheet shows every row. */
+        results: number[] | null;
+
+        /** The values that each column is filtered by, by column index. null or a missing entry is a column without filter. */
+        filters: (string[] | null)[];
+
+        /** The page that the worksheet shows, from 0, when it has pagination. */
+        pageNumber: number;
+    }
+
+    /**
      * The formula chain of a worksheet, {@link WorksheetInstance.formulas}. The worksheet adds to it when it calculates
      * a formula.
      */
@@ -1784,11 +1800,6 @@ declare namespace jspreadsheet {
         filter: null | HTMLTableRowElement;
 
         /**
-         * Active filters.
-         */
-        filters: (string[] | null)[];
-
-        /**
          * Simulates the action of the Home key. Does nothing when no cell is selected.
          * @param shiftKey - If true, the method simulates the action of the Home key while the Shift key is pressed.
          * @param ctrlKey - If true, the method simulates the action of the Home key while the Ctrl key is pressed.
@@ -2148,11 +2159,6 @@ declare namespace jspreadsheet {
         page: (pageNumber: number) => void;
 
         /**
-         * Current spreadsheet page.
-         */
-        pageNumber: undefined | number;
-
-        /**
          * Div with pagination controls.
          */
         pagination: HTMLDivElement;
@@ -2223,11 +2229,6 @@ declare namespace jspreadsheet {
          * Information about the row or column currently being resized.
          */
         resizing: undefined | null | ResizeRowInfo | ResizeColumnInfo;
-
-        /**
-         * Indices of the rows that include the searched text.
-         */
-        results: null | number[];
 
         /**
          * Simulates the action of the "arrow right" key. Does nothing when no cell is selected.
@@ -2458,6 +2459,9 @@ declare namespace jspreadsheet {
          * @param y2 - Row index of the last cell of the selection. Default: Parameter "y1".
          */
         updateSelectionFromCoords: (x1: number | null, y1: number | null, x2?: number | null, y2?: number | null) => false | undefined;
+
+        /** Which rows the worksheet shows: the results of a search or the filters, the filter values and the page. */
+        view: WorksheetView;
 
         /**
          * Get the page index of a row.
