@@ -329,3 +329,77 @@ describe('Insert rows', () => {
         ]);
     });
 });
+
+describe('Row heights, visibility and data', () => {
+    it('getHeight returns the height of a row, and of the rows that have one', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        [1, 2],
+                        [3, 4],
+                        [5, 6],
+                    ],
+                    rows: { 1: { height: '40px' } },
+                },
+            ],
+        })[0];
+
+        expect(worksheet.getHeight(1)).to.equal('40px');
+        expect(worksheet.getHeight(0)).to.equal('');
+
+        worksheet.setHeight(2, 50);
+
+        expect(worksheet.getHeight(2)).to.equal('50px');
+        expect(worksheet.getHeight()).to.eql([undefined, '40px', '50px']);
+    });
+
+    it('hideRow and showRow hide and show the rows', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        [1, 2],
+                        [3, 4],
+                        [5, 6],
+                    ],
+                },
+            ],
+        })[0];
+
+        worksheet.hideRow([0, 2]);
+
+        expect(worksheet.rows.map((row) => row.element.style.display)).to.eql(['none', '', 'none']);
+
+        worksheet.showRow(0);
+
+        expect(worksheet.rows.map((row) => row.element.style.display)).to.eql(['', '', 'none']);
+
+        worksheet.showRow([2]);
+
+        expect(worksheet.rows.map((row) => row.element.style.display)).to.eql(['', '', '']);
+    });
+
+    it('getRowData and setRowData read and change the values of a row', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        [1, 2, '=A1+B1'],
+                        [4, 5, '=A2+B2'],
+                    ],
+                },
+            ],
+        })[0];
+
+        expect(worksheet.getRowData(1)).to.eql([4, 5, '=A2+B2']);
+        expect(worksheet.getRowData(1, true)).to.eql(['4', '5', '9']);
+
+        // A null value leaves the cell as it is
+        worksheet.setRowData(0, ['a', null, 7]);
+
+        expect(worksheet.getRowData(0)).to.eql(['a', 2, 7]);
+        expect(worksheet.getRowData(0, true)).to.eql(['a', '2', '7']);
+        expect(worksheet.getValue('A1')).to.equal('a');
+    });
+});
