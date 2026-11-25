@@ -4,6 +4,7 @@ import { closeEditor, openEditor, setCheckRadioValue } from './editor.js';
 import libraryBase from './libraryBase.js';
 import { down, first, last, left, right, up } from './keys.js';
 import { isColMerged, isRowMerged } from './merges.js';
+import { getCellColumnIndex } from './internal.js';
 import { copyData, removeCopySelection, resetSelection, selectAll, updateCornerPosition, updateSelectionFromCoords } from './selection.js';
 import { copy, paste } from './copyPaste.js';
 import { openFilter } from './filter.js';
@@ -1217,7 +1218,8 @@ const touchStartControls = function (e) {
 
                 libraryBase.jspreadsheet.timeControl = setTimeout(function () {
                     // Keep temporary reference to the element
-                    if (libraryBase.jspreadsheet.current.options.columns[columnId].type == 'color') {
+                    const column = libraryBase.jspreadsheet.current.options.columns[getCellColumnIndex.call(libraryBase.jspreadsheet.current, columnId, rowId)];
+                    if (column.type == 'color') {
                         libraryBase.jspreadsheet.tmpElement = null;
                     } else {
                         libraryBase.jspreadsheet.tmpElement = e.target;
@@ -1281,6 +1283,9 @@ const isCtrl = function (e) {
 const keyDownControls = function (e) {
     if (libraryBase.jspreadsheet.current) {
         if (libraryBase.jspreadsheet.current.edition) {
+            const current = libraryBase.jspreadsheet.current;
+            const column = current.options.columns && current.options.columns[getCellColumnIndex.call(current, current.edition[2], current.edition[3])];
+
             if (e.which == 27) {
                 // Escape
                 if (libraryBase.jspreadsheet.current.edition) {
@@ -1290,25 +1295,15 @@ const keyDownControls = function (e) {
                 e.preventDefault();
             } else if (e.which == 13) {
                 // Enter
-                if (
-                    libraryBase.jspreadsheet.current.options.columns &&
-                    libraryBase.jspreadsheet.current.options.columns[libraryBase.jspreadsheet.current.edition[2]] &&
-                    libraryBase.jspreadsheet.current.options.columns[libraryBase.jspreadsheet.current.edition[2]].type == 'calendar'
-                ) {
+                if (column && column.type == 'calendar') {
                     closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition[0], true);
-                } else if (
-                    libraryBase.jspreadsheet.current.options.columns &&
-                    libraryBase.jspreadsheet.current.options.columns[libraryBase.jspreadsheet.current.edition[2]] &&
-                    libraryBase.jspreadsheet.current.options.columns[libraryBase.jspreadsheet.current.edition[2]].type == 'dropdown'
-                ) {
+                } else if (column && column.type == 'dropdown') {
                     // Do nothing
                 } else {
                     // Alt enter -> do not close editor
                     if (
                         (libraryBase.jspreadsheet.current.options.wordWrap == true ||
-                            (libraryBase.jspreadsheet.current.options.columns &&
-                                libraryBase.jspreadsheet.current.options.columns[libraryBase.jspreadsheet.current.edition[2]] &&
-                                libraryBase.jspreadsheet.current.options.columns[libraryBase.jspreadsheet.current.edition[2]].wordWrap == true) ||
+                            (column && column.wordWrap == true) ||
                             (libraryBase.jspreadsheet.current.options.data[libraryBase.jspreadsheet.current.edition[3]][
                                 libraryBase.jspreadsheet.current.edition[2]
                             ] &&
@@ -1332,11 +1327,7 @@ const keyDownControls = function (e) {
                 }
             } else if (e.which == 9) {
                 // Tab
-                if (
-                    libraryBase.jspreadsheet.current.options.columns &&
-                    libraryBase.jspreadsheet.current.options.columns[libraryBase.jspreadsheet.current.edition[2]] &&
-                    ['calendar', 'html'].includes(libraryBase.jspreadsheet.current.options.columns[libraryBase.jspreadsheet.current.edition[2]].type)
-                ) {
+                if (column && ['calendar', 'html'].includes(column.type)) {
                     closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition[0], true);
                 } else {
                     libraryBase.jspreadsheet.current.edition[0].children[0].blur();
@@ -1462,15 +1453,14 @@ const keyDownControls = function (e) {
                         if (libraryBase.jspreadsheet.current.options.editable != false) {
                             const rowId = libraryBase.jspreadsheet.current.selectedCell[1];
                             const columnId = libraryBase.jspreadsheet.current.selectedCell[0];
+                            const column =
+                                libraryBase.jspreadsheet.current.options.columns[getCellColumnIndex.call(libraryBase.jspreadsheet.current, columnId, rowId)];
 
                             // Characters able to start a edition
                             if (e.keyCode == 32) {
                                 // Space
                                 e.preventDefault();
-                                if (
-                                    libraryBase.jspreadsheet.current.options.columns[columnId].type == 'checkbox' ||
-                                    libraryBase.jspreadsheet.current.options.columns[columnId].type == 'radio'
-                                ) {
+                                if (column.type == 'checkbox' || column.type == 'radio') {
                                     setCheckRadioValue.call(libraryBase.jspreadsheet.current);
                                 } else {
                                     // Start edition
@@ -1488,11 +1478,7 @@ const keyDownControls = function (e) {
                                 // Start edition
                                 openEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.records[rowId][columnId].element, true, e);
                                 // Prevent entries in the calendar
-                                if (
-                                    libraryBase.jspreadsheet.current.options.columns &&
-                                    libraryBase.jspreadsheet.current.options.columns[columnId] &&
-                                    libraryBase.jspreadsheet.current.options.columns[columnId].type == 'calendar'
-                                ) {
+                                if (column && column.type == 'calendar') {
                                     e.preventDefault();
                                 }
                             }

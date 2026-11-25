@@ -374,4 +374,221 @@ describe('Use the columns method', () => {
 
         expect(worksheet.headers.map((header) => header.classList.contains('selected'))).to.eql([false, false, false, false]);
     });
+
+    describe('A merged range whose first column has the type hidden', () => {
+        const source = [
+            { id: '1', name: 'One' },
+            { id: '2', name: 'Two' },
+        ];
+
+        it('shows and edits the first cell with the options of the first visible column', () => {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['1', '', 'x']],
+                        columns: [{ type: 'hidden' }, { type: 'dropdown', source }, { type: 'text' }],
+                        mergeCells: { A1: [2, 1] },
+                    },
+                ],
+            })[0];
+
+            const cell = worksheet.records[0][0].element;
+            expect(cell.style.display).to.equal('');
+            expect(cell.classList.contains('jss_dropdown')).to.equal(true);
+            expect(cell.textContent).to.equal('One');
+
+            worksheet.openEditor(cell);
+            expect(cell.querySelector('.jdropdown')).to.not.equal(null);
+            worksheet.closeEditor(cell, false);
+
+            worksheet.setValueFromCoords(0, 0, '2');
+            expect(cell.textContent).to.equal('Two');
+            expect(worksheet.options.data[0][0]).to.equal('2');
+        });
+
+        it('saves the text of the editor to the first cell', () => {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['a', '']],
+                        columns: [{ type: 'hidden' }, { type: 'text' }],
+                        mergeCells: { A1: [2, 1] },
+                    },
+                ],
+            })[0];
+
+            const cell = worksheet.records[0][0].element;
+            worksheet.openEditor(cell);
+            cell.children[0].value = 'b';
+            worksheet.closeEditor(cell, true);
+
+            expect(worksheet.options.data[0][0]).to.equal('b');
+            expect(cell.textContent).to.equal('b');
+        });
+
+        it('renders the first cell again when setMerge, hideColumn, showColumn and removeMerge change the first visible column', () => {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['1', '', 'x']],
+                        columns: [{ type: 'hidden' }, { type: 'dropdown', source }, { type: 'text' }],
+                    },
+                ],
+            })[0];
+
+            const cell = worksheet.records[0][0].element;
+
+            worksheet.setMerge('A1', 3, 1);
+            expect(cell.textContent).to.equal('One');
+
+            worksheet.hideColumn(1);
+            expect(cell.textContent).to.equal('1');
+            expect(cell.classList.contains('jss_dropdown')).to.equal(false);
+
+            worksheet.showColumn(1);
+            expect(cell.textContent).to.equal('One');
+
+            worksheet.removeMerge('A1');
+            expect(cell.style.display).to.equal('none');
+            expect(cell.textContent).to.equal('1');
+            expect(cell.classList.contains('jss_dropdown')).to.equal(false);
+        });
+
+        it('keeps the readOnly state and the style of the first cell when hideColumn and showColumn change the first visible column', () => {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['1', '', 'x', 'y']],
+                        columns: [{ type: 'hidden' }, { type: 'text' }, { type: 'text' }, { type: 'text' }],
+                        mergeCells: { A1: [3, 1] },
+                        style: { A1: 'text-align: left; white-space: nowrap;' },
+                    },
+                ],
+            })[0];
+
+            worksheet.setReadOnly('A1', true);
+
+            worksheet.hideColumn(1);
+            expect(worksheet.isReadOnly('A1')).to.equal(true);
+            expect(worksheet.records[0][0].element.style.textAlign.trim()).to.equal('left');
+            expect(worksheet.records[0][0].element.style.whiteSpace.trim()).to.equal('nowrap');
+
+            worksheet.showColumn(1);
+            expect(worksheet.isReadOnly('A1')).to.equal(true);
+            expect(worksheet.records[0][0].element.style.textAlign.trim()).to.equal('left');
+        });
+
+        it('keeps the value of the hidden column when the first visible column is a checkbox column', () => {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['id-7', '', 'x']],
+                        columns: [{ type: 'hidden' }, { type: 'checkbox' }, { type: 'text' }],
+                        mergeCells: { A1: [2, 1] },
+                    },
+                ],
+            })[0];
+
+            expect(worksheet.getValueFromCoords(0, 0)).to.equal('id-7');
+            expect(worksheet.records[0][0].element.querySelector('input')).to.equal(null);
+        });
+
+        it('adds a new line with Alt+Enter when the first visible column has wordWrap', () => {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['a', '', 'x']],
+                        columns: [{ type: 'hidden' }, { type: 'text', wordWrap: true }, { type: 'text' }],
+                        mergeCells: { A1: [2, 1] },
+                    },
+                ],
+            })[0];
+
+            const cell = worksheet.records[0][0].element;
+            worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+            worksheet.openEditor(cell);
+            const editor = cell.children[0];
+            editor.selectionStart = editor.selectionEnd = editor.value.length;
+            editor.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, key: 'Enter', keyCode: 13, which: 13, altKey: true }));
+
+            expect(worksheet.edition).to.not.equal(null);
+            expect(editor.value).to.equal('a\n');
+            worksheet.closeEditor(cell, false);
+        });
+
+        it('uses the readOnly and align options of the first visible column when setMerge, hideColumn and showColumn change that column', () => {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['v', '', '']],
+                        columns: [{ type: 'hidden' }, { type: 'text', readOnly: true, align: 'left' }, { type: 'text', align: 'right' }],
+                    },
+                ],
+            })[0];
+
+            const cell = worksheet.records[0][0].element;
+
+            worksheet.setMerge('A1', 3, 1);
+            expect(worksheet.isReadOnly('A1')).to.equal(true);
+            expect(cell.style.textAlign).to.equal('left');
+
+            worksheet.hideColumn(1);
+            expect(worksheet.isReadOnly('A1')).to.equal(false);
+            expect(cell.style.textAlign).to.equal('right');
+
+            worksheet.showColumn(1);
+            expect(worksheet.isReadOnly('A1')).to.equal(true);
+            expect(cell.style.textAlign).to.equal('left');
+        });
+
+        it('uses the options of the first visible column when deleteColumn and insertColumn move the range before hideColumn', () => {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['a', 'v', '', '']],
+                        columns: [{ type: 'text' }, { type: 'hidden' }, { type: 'text', readOnly: true, align: 'left' }, { type: 'text', align: 'right' }],
+                        mergeCells: { B1: [3, 1] },
+                    },
+                ],
+            })[0];
+
+            worksheet.deleteColumn(0);
+            worksheet.hideColumn(1);
+            expect(worksheet.isReadOnly('A1')).to.equal(false);
+            expect(worksheet.records[0][0].element.style.textAlign).to.equal('right');
+
+            worksheet.showColumn(1);
+            expect(worksheet.isReadOnly('A1')).to.equal(true);
+            expect(worksheet.records[0][0].element.style.textAlign).to.equal('left');
+
+            worksheet.insertColumn(1, 0, true);
+            worksheet.hideColumn(2);
+            expect(worksheet.isReadOnly('B1')).to.equal(false);
+            expect(worksheet.records[0][1].element.style.textAlign).to.equal('right');
+        });
+
+        it('sends oncreatecell once for the first cell and keeps the changes of the handler', () => {
+            const cells = [];
+            const worksheet = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['1', '', 'x']],
+                        columns: [{ type: 'hidden' }, { type: 'text' }, { type: 'text' }],
+                        mergeCells: { A1: [2, 1] },
+                    },
+                ],
+                oncreatecell: (worksheet, td, x, y) => {
+                    if (x == 0 && y == 0) {
+                        cells.push(td);
+                        const badge = document.createElement('span');
+                        badge.className = 'badge';
+                        td.appendChild(badge);
+                    }
+                },
+            })[0];
+
+            expect(cells.length).to.equal(1);
+            expect(worksheet.records[0][0].element.querySelector('.badge')).to.not.equal(null);
+        });
+    });
 });

@@ -280,6 +280,89 @@ export const executeFormula = function (expression, x, y) {
     return execute(expression, x, y);
 };
 
+/**
+ * Get the column whose options a cell uses. The first cell of a merged range whose first column has the
+ * type hidden uses the options of the first visible column of the range, because it shows the range.
+ * A checkbox or radio column is not used, because these types write a boolean to the data of the cell.
+ */
+export const getCellColumnIndex = function (x, y) {
+    const obj = this;
+
+    x = parseInt(x);
+
+    if (obj.options.columns && obj.options.columns[x] && obj.options.columns[x].type == 'hidden' && obj.options.mergeCells) {
+        const merged = obj.options.mergeCells[getColumnNameFromId([x, y])];
+        if (merged) {
+            for (let i = x + 1; i < x + merged[0]; i++) {
+                if (obj.headers[i] && obj.headers[i].style.display != 'none' && (!obj.options.columns[i] || obj.options.columns[i].type != 'hidden')) {
+                    if (obj.options.columns[i] && (obj.options.columns[i].type == 'checkbox' || obj.options.columns[i].type == 'radio')) {
+                        break;
+                    }
+                    return i;
+                }
+            }
+        }
+    }
+
+    return x;
+};
+
+// The offset from the column of a cell to the column whose options the cell uses, when it is not 0. See getCellColumnIndex.
+// An offset stays valid when a column outside a merged range is inserted, deleted or moved.
+const cellColumns = new WeakMap();
+
+/**
+ * Render a cell again when getCellColumnIndex gives another column for it.
+ * A setting changes only when the options of the two columns are different for it,
+ * so a value from setReadOnly or setStyle stays.
+ */
+export const renderCell = function (x, y) {
+    const obj = this;
+
+    x = parseInt(x);
+
+    const element = obj.records[y][x].element;
+    const previous = x + (cellColumns.get(element) || 0);
+    const c = getCellColumnIndex.call(obj, x, y);
+    if (c == previous) {
+        return;
+    }
+
+    const td = createCell.call(obj, x, y, obj.options.data[y][x], true);
+
+    const getOptions = function (i) {
+        return (obj.options.columns && obj.options.columns[i]) || {};
+    };
+    const before = getOptions(previous);
+    const after = getOptions(c);
+
+    if ((before.readOnly == true) != (after.readOnly == true)) {
+        element.classList.toggle('readonly', after.readOnly == true);
+    }
+    if (before.align != after.align) {
+        element.style.textAlign = td.style.textAlign;
+    }
+    if (before.wordWrap != after.wordWrap) {
+        element.style.whiteSpace = td.style.whiteSpace;
+    }
+    if (before.type == 'color' || after.type == 'color') {
+        element.style.color = td.style.color;
+    }
+    element.classList.toggle('red', td.classList.contains('red'));
+    element.classList.toggle('jss_dropdown', td.classList.contains('jss_dropdown'));
+
+    element.innerHTML = '';
+    while (td.firstChild) {
+        element.appendChild(td.firstChild);
+    }
+
+    if (c == x) {
+        cellColumns.delete(element);
+    } else {
+        cellColumns.set(element, c - x);
+    }
+};
+
 export const parseValue = function (i, j, value, cell) {
     const obj = this;
 
@@ -288,7 +371,7 @@ export const parseValue = function (i, j, value, cell) {
     }
 
     // Column options
-    const options = obj.options.columns && obj.options.columns[i];
+    const options = obj.options.columns && obj.options.columns[getCellColumnIndex.call(obj, i, j)];
     if (options && !isFormula(value)) {
         // Mask options
         let opt = null;
@@ -396,11 +479,18 @@ const stripScript = function (a) {
     return b.innerHTML;
 };
 
-export const createCell = function (i, j, value) {
+export const createCell = function (i, j, value, silent) {
     const obj = this;
+
+    // Column options
+    const c = getCellColumnIndex.call(obj, i, j);
+    const column = obj.options.columns && obj.options.columns[c];
 
     // Create cell and properties
     let td = document.createElement('td');
+    if (c != i) {
+        cellColumns.set(td, c - parseInt(i));
+    }
     td.setAttribute('data-x', i);
     td.setAttribute('data-y', j);
 
@@ -417,31 +507,31 @@ export const createCell = function (i, j, value) {
     }
 
     // Custom column
-    if (obj.options.columns && obj.options.columns[i] && typeof obj.options.columns[i].type === 'object') {
+    if (column && typeof column.type === 'object') {
         if (obj.parent.config.parseHTML === true) {
             td.innerHTML = value;
         } else {
             td.textContent = value;
         }
-        if (typeof obj.options.columns[i].type.createCell == 'function') {
-            obj.options.columns[i].type.createCell(td, value, parseInt(i), parseInt(j), obj, obj.options.columns[i]);
+        if (typeof column.type.createCell == 'function') {
+            column.type.createCell(td, value, parseInt(i), parseInt(j), obj, column);
         }
     } else {
         // Hidden column
-        if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].type == 'hidden') {
+        if (column && column.type == 'hidden') {
             td.style.display = 'none';
             td.textContent = value;
-        } else if (obj.options.columns && obj.options.columns[i] && (obj.options.columns[i].type == 'checkbox' || obj.options.columns[i].type == 'radio')) {
+        } else if (column && (column.type == 'checkbox' || column.type == 'radio')) {
             // Create input
             const element = document.createElement('input');
-            element.type = obj.options.columns[i].type;
-            element.name = 'c' + i;
+            element.type = column.type;
+            element.name = 'c' + c;
             element.checked = value == 1 || value == true || value == 'true' ? true : false;
             element.onclick = function () {
                 obj.setValue(td, this.checked);
             };
 
-            if (obj.options.columns[i].readOnly == true || obj.options.editable == false) {
+            if (column.readOnly == true || obj.options.editable == false) {
                 element.setAttribute('disabled', 'disabled');
             }
 
@@ -449,29 +539,23 @@ export const createCell = function (i, j, value) {
             td.appendChild(element);
             // Make sure the values are correct
             obj.options.data[j][i] = element.checked;
-        } else if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].type == 'calendar') {
+        } else if (column && column.type == 'calendar') {
             // Try formatted date
             let formatted = null;
             if (!validDate(value)) {
-                const tmp = jSuites.calendar.extractDateFromString(
-                    value,
-                    (obj.options.columns[i].options && obj.options.columns[i].options.format) || 'YYYY-MM-DD'
-                );
+                const tmp = jSuites.calendar.extractDateFromString(value, (column.options && column.options.format) || 'YYYY-MM-DD');
                 if (tmp) {
                     formatted = tmp;
                 }
             }
             // Create calendar cell
-            td.textContent = jSuites.calendar.getDateString(
-                formatted ? formatted : value,
-                obj.options.columns[i].options && obj.options.columns[i].options.format
-            );
-        } else if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].type == 'dropdown') {
+            td.textContent = jSuites.calendar.getDateString(formatted ? formatted : value, column.options && column.options.format);
+        } else if (column && column.type == 'dropdown') {
             // Create dropdown cell
             td.classList.add('jss_dropdown');
-            td.textContent = getDropDownValue.call(obj, i, value);
-        } else if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].type == 'color') {
-            if (obj.options.columns[i].render == 'square') {
+            td.textContent = getDropDownValue.call(obj, c, value);
+        } else if (column && column.type == 'color') {
+            if (column.render == 'square') {
                 const color = document.createElement('div');
                 color.className = 'color';
                 color.style.backgroundColor = value;
@@ -480,14 +564,14 @@ export const createCell = function (i, j, value) {
                 td.style.color = value;
                 td.textContent = value;
             }
-        } else if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].type == 'image') {
+        } else if (column && column.type == 'image') {
             if (value && value.substr(0, 10) == 'data:image') {
                 const img = document.createElement('img');
                 img.src = value;
                 td.appendChild(img);
             }
         } else {
-            if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].type == 'html') {
+            if (column && column.type == 'html') {
                 td.innerHTML = stripScript(parseValue.call(this, i, j, value, td));
             } else {
                 if (obj.parent.config.parseHTML === true) {
@@ -500,21 +584,16 @@ export const createCell = function (i, j, value) {
     }
 
     // Readonly
-    if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].readOnly == true) {
+    if (column && column.readOnly == true) {
         td.className = 'readonly';
     }
 
     // Text align
-    const colAlign = (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].align) || obj.options.defaultColAlign || 'center';
+    const colAlign = (column && column.align) || obj.options.defaultColAlign || 'center';
     td.style.textAlign = colAlign;
 
     // Wrap option
-    if (
-        (!obj.options.columns || !obj.options.columns[i] || obj.options.columns[i].wordWrap != false) &&
-        (obj.options.wordWrap == true ||
-            (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].wordWrap == true) ||
-            td.innerHTML.length > 200)
-    ) {
+    if ((!column || column.wordWrap != false) && (obj.options.wordWrap == true || (column && column.wordWrap == true) || td.innerHTML.length > 200)) {
         td.style.whiteSpace = 'pre-wrap';
     }
 
@@ -531,7 +610,10 @@ export const createCell = function (i, j, value) {
         }
     }
 
-    dispatch.call(obj, 'oncreatecell', obj, td, i, j, value);
+    // A cell whose content is rendered again keeps its element, so the event is not sent again
+    if (!silent) {
+        dispatch.call(obj, 'oncreatecell', obj, td, i, j, value);
+    }
 
     return td;
 };
@@ -544,6 +626,10 @@ export const createCell = function (i, j, value) {
  */
 export const updateCell = function (x, y, value, force) {
     const obj = this;
+
+    // Column options
+    const c = getCellColumnIndex.call(obj, x, y);
+    const column = obj.options.columns && obj.options.columns[c];
 
     let record;
 
@@ -574,13 +660,8 @@ export const updateCell = function (x, y, value, force) {
             value = val;
         }
 
-        if (
-            obj.options.columns &&
-            obj.options.columns[x] &&
-            typeof obj.options.columns[x].type === 'object' &&
-            typeof obj.options.columns[x].type.updateCell === 'function'
-        ) {
-            const result = obj.options.columns[x].type.updateCell(obj.records[y][x].element, value, parseInt(x), parseInt(y), obj, obj.options.columns[x]);
+        if (column && typeof column.type === 'object' && typeof column.type.updateCell === 'function') {
+            const result = column.type.updateCell(obj.records[y][x].element, value, parseInt(x), parseInt(y), obj, column);
 
             if (result !== undefined) {
                 value = result;
@@ -597,7 +678,7 @@ export const updateCell = function (x, y, value, force) {
             oldValue: obj.options.data[y][x],
         };
 
-        let editor = obj.options.columns && obj.options.columns[x] && typeof obj.options.columns[x].type === 'object' ? obj.options.columns[x].type : null;
+        let editor = column && typeof column.type === 'object' ? column.type : null;
         if (editor) {
             // Update data and cell
             obj.options.data[y][x] = value;
@@ -606,44 +687,38 @@ export const updateCell = function (x, y, value, force) {
             }
         } else {
             // Native functions
-            if (obj.options.columns && obj.options.columns[x] && (obj.options.columns[x].type == 'checkbox' || obj.options.columns[x].type == 'radio')) {
+            if (column && (column.type == 'checkbox' || column.type == 'radio')) {
                 // Unchecked all options
-                if (obj.options.columns[x].type == 'radio') {
+                if (column.type == 'radio') {
                     for (let j = 0; j < obj.options.data.length; j++) {
-                        obj.options.data[j][x] = false;
+                        obj.options.data[j][c] = false;
                     }
                 }
 
                 // Update data and cell
                 obj.records[y][x].element.children[0].checked = value == 1 || value == true || value == 'true' || value == 'TRUE' ? true : false;
                 obj.options.data[y][x] = obj.records[y][x].element.children[0].checked;
-            } else if (obj.options.columns && obj.options.columns[x] && obj.options.columns[x].type == 'dropdown') {
+            } else if (column && column.type == 'dropdown') {
                 // Update data and cell
                 obj.options.data[y][x] = value;
-                obj.records[y][x].element.textContent = getDropDownValue.call(obj, x, value);
-            } else if (obj.options.columns && obj.options.columns[x] && obj.options.columns[x].type == 'calendar') {
+                obj.records[y][x].element.textContent = getDropDownValue.call(obj, c, value);
+            } else if (column && column.type == 'calendar') {
                 // Try formatted date
                 let formatted = null;
                 if (!validDate(value)) {
-                    const tmp = jSuites.calendar.extractDateFromString(
-                        value,
-                        (obj.options.columns[x].options && obj.options.columns[x].options.format) || 'YYYY-MM-DD'
-                    );
+                    const tmp = jSuites.calendar.extractDateFromString(value, (column.options && column.options.format) || 'YYYY-MM-DD');
                     if (tmp) {
                         formatted = tmp;
                     }
                 }
                 // Update data and cell
                 obj.options.data[y][x] = value;
-                obj.records[y][x].element.textContent = jSuites.calendar.getDateString(
-                    formatted ? formatted : value,
-                    obj.options.columns[x].options && obj.options.columns[x].options.format
-                );
-            } else if (obj.options.columns && obj.options.columns[x] && obj.options.columns[x].type == 'color') {
+                obj.records[y][x].element.textContent = jSuites.calendar.getDateString(formatted ? formatted : value, column.options && column.options.format);
+            } else if (column && column.type == 'color') {
                 // Update color
                 obj.options.data[y][x] = value;
                 // Render
-                if (obj.options.columns[x].render == 'square') {
+                if (column.render == 'square') {
                     const color = document.createElement('div');
                     color.className = 'color';
                     color.style.backgroundColor = value;
@@ -653,7 +728,7 @@ export const updateCell = function (x, y, value, force) {
                     obj.records[y][x].element.style.color = value;
                     obj.records[y][x].element.textContent = value;
                 }
-            } else if (obj.options.columns && obj.options.columns[x] && obj.options.columns[x].type == 'image') {
+            } else if (column && column.type == 'image') {
                 value = '' + value;
                 obj.options.data[y][x] = value;
                 obj.records[y][x].element.innerHTML = '';
@@ -666,7 +741,7 @@ export const updateCell = function (x, y, value, force) {
                 // Update data and cell
                 obj.options.data[y][x] = value;
                 // Label
-                if (obj.options.columns && obj.options.columns[x] && obj.options.columns[x].type == 'html') {
+                if (column && column.type == 'html') {
                     obj.records[y][x].element.innerHTML = stripScript(parseValue.call(obj, x, y, value));
                 } else {
                     if (obj.parent.config.parseHTML === true) {
@@ -677,10 +752,8 @@ export const updateCell = function (x, y, value, force) {
                 }
                 // Handle big text inside a cell
                 if (
-                    (!obj.options.columns || !obj.options.columns[x] || obj.options.columns[x].wordWrap != false) &&
-                    (obj.options.wordWrap == true ||
-                        (obj.options.columns && obj.options.columns[x] && obj.options.columns[x].wordWrap == true) ||
-                        obj.records[y][x].element.innerHTML.length > 200)
+                    (!column || column.wordWrap != false) &&
+                    (obj.options.wordWrap == true || (column && column.wordWrap == true) || obj.records[y][x].element.innerHTML.length > 200)
                 ) {
                     obj.records[y][x].element.style.whiteSpace = 'pre-wrap';
                 } else {
@@ -698,15 +771,8 @@ export const updateCell = function (x, y, value, force) {
             }
         }
 
-        if (obj.options.columns && obj.options.columns[x] && typeof obj.options.columns[x].render === 'function') {
-            obj.options.columns[x].render(
-                obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : null,
-                value,
-                parseInt(x),
-                parseInt(y),
-                obj,
-                obj.options.columns[x]
-            );
+        if (column && typeof column.render === 'function') {
+            column.render(obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : null, value, parseInt(x), parseInt(y), obj, column);
         }
 
         // On change

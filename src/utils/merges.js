@@ -1,7 +1,7 @@
 import jSuites from 'jsuites';
 
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
-import { updateCell } from './internal.js';
+import { renderCell, updateCell } from './internal.js';
 import { setHistory } from './history.js';
 import dispatch from './dispatch.js';
 import { updateSelection } from './selection.js';
@@ -107,6 +107,11 @@ const updateMergedCell = function (cellName) {
         if (colspan > 1) {
             element.setAttribute('colspan', visible);
         }
+    }
+
+    // A first cell in a column with the type hidden shows the range with the options of another column
+    if (obj.options.columns && obj.options.columns[cell[0]] && obj.options.columns[cell[0]].type == 'hidden') {
+        renderCell.call(obj, cell[0], cell[1]);
     }
 };
 
@@ -311,6 +316,11 @@ export const removeMerge = function (cellName, data, keepOptions) {
 
         if (!keepOptions) {
             delete obj.options.mergeCells[cellName];
+        }
+
+        // A first cell in a column with the type hidden uses the options of its own column again
+        if (obj.options.columns && obj.options.columns[cell[0]] && obj.options.columns[cell[0]].type == 'hidden') {
+            renderCell.call(obj, cell[0], cell[1]);
         }
 
         dispatch.call(obj, 'onunmerge', obj, cellName, beforeMerges);
