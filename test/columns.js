@@ -610,3 +610,35 @@ describe('Insert columns', () => {
         expect(worksheet.getData()).to.eql([['a', 'b', '']]);
     });
 });
+
+describe('Drag a column header', () => {
+    // The spreadsheet adds its event handlers after a promise
+    const load = (options) =>
+        new Promise((resolve) => {
+            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+        });
+
+    // jsdom has no layout, so offsetX and offsetY are set: a press at the bottom edge of a header starts a drag
+    const mouse = (element, type) => {
+        const event = new window.MouseEvent(type, { bubbles: true, buttons: 1 });
+        Object.defineProperty(event, 'offsetX', { value: 0 });
+        Object.defineProperty(event, 'offsetY', { value: 0 });
+        element.dispatchEvent(event);
+    };
+
+    it('moves the column next to a header after column 9', async () => {
+        const columns = [];
+        for (let i = 0; i < 12; i++) {
+            columns.push({ title: 'C' + i });
+        }
+        // Without column resize, the press at the edge is for a drag
+        const worksheet = await load({ worksheets: [{ minDimensions: [12, 1], columns, columnResize: false }] });
+
+        mouse(worksheet.headers[2], 'mousedown');
+        // jsdom gives the header no width, so the pointer is on its right half
+        mouse(worksheet.headers[10], 'mousemove');
+        mouse(worksheet.headers[10], 'mouseup');
+
+        expect(worksheet.getHeaders(true)).to.eql(['C0', 'C1', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C2', 'C11']);
+    });
+});

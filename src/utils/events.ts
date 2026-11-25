@@ -505,14 +505,15 @@ const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
                                 libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId);
                             } else {
                                 if (e.target.clientWidth / 2 > e.offsetX) {
-                                    if (libraryBase.jspreadsheet.current.dragging.column < columnId) {
+                                    // Compare the indexes as numbers: as text, '9' is after '10'
+                                    if (parseInt(libraryBase.jspreadsheet.current.dragging.column) < parseInt(columnId)) {
                                         libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId) - 1;
                                     } else {
                                         libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId);
                                     }
                                     libraryBase.jspreadsheet.current.headers[columnId].classList.add('dragging-left');
                                 } else {
-                                    if (libraryBase.jspreadsheet.current.dragging.column < columnId) {
+                                    if (parseInt(libraryBase.jspreadsheet.current.dragging.column) < parseInt(columnId)) {
                                         libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId);
                                     } else {
                                         libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId) + 1;
