@@ -1,7 +1,6 @@
 import dispatch from '../utils/dispatch.js';
 import { getCellNameFromCoords } from '../utils/helpers.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
-import { updateToolbar } from '../utils/toolbar.js';
 import { setCellLabel } from '../utils/accessibility.js';
 import libraryBase from '../utils/libraryBase.js';
 import type { WorksheetState, Worksheet, SelectedWorksheet } from '../types/internal';
@@ -145,7 +144,7 @@ export class Selection {
             }
         }
 
-        updateToolbar(obj);
+        obj.parent.toolbarManager.update(obj);
     }
 
     reset(blur?: boolean) {

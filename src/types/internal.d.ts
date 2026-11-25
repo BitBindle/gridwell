@@ -6,6 +6,7 @@
  */
 import type jspreadsheet from '../jspreadsheet';
 import type { Tabs } from '../utils/tabs';
+import type { Toolbar } from '../utils/toolbar';
 import type { Spreadsheet } from '../Spreadsheet';
 import type { Worksheet } from '../Worksheet';
 import type { Cells } from '../components/Cells';
@@ -148,6 +149,9 @@ export interface SpreadsheetState extends jspreadsheet.SpreadsheetInstance {
 
     /** The jsuites toolbar, which jsuites keeps on its element. update calls updateState of each item with the worksheet. */
     toolbar: HTMLDivElement & { toolbar: { update(worksheet: Worksheet): void } };
+
+    /** Creates, shows, hides and updates the toolbar. It is not called toolbar, because toolbar is the element. */
+    toolbarManager: Toolbar;
 
     /** True while createWorksheet adds a tab, so that the tab does not create a second worksheet. */
     creationThroughJss?: boolean;

@@ -235,6 +235,11 @@ that changes it.
     `processColumn` for the records that insert or delete rows and columns. `History` gets its worksheet in its
     constructor, as the other components do.
 30. **The toolbar.** `toolbar.ts` becomes the class `Toolbar` of the spreadsheet, as `Tabs` did.
+    Done. `spreadsheet.toolbarManager` builds the default items (`getDefault`), creates the jSuites toolbar (`create`,
+    with the private `adjustForJSuites`), shows and hides it (`show`, `hide`) and updates its items for a worksheet
+    (`update`). `spreadsheet.toolbar` stays the element, which applications use. `Spreadsheet.ts` imports no module at
+    run time, so the factory creates the `Toolbar` right after the spreadsheet. The functions that build the items stay
+    module functions in `toolbar.ts`.
 
 ## Rules for each step
 
