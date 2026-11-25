@@ -19,11 +19,18 @@ export const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
     }
 
     if (libraryBase.jspreadsheet.current) {
-        // Keys on a control with the class jss_object outside the worksheet, for example a button next to the grid, also in
-        // an open shadow root, do not go to the grid. An editor can have a jss_object control, so this applies only when no
-        // editor is open.
+        // Keys on an element outside the spreadsheet, for example an input or a button next to the grid that has the focus
+        // after Tab, also in an open shadow root, do not go to the grid. Keys with the focus on the body, where it falls when
+        // the focused element is removed, still go to the grid. An editor can have controls outside the spreadsheet, such as
+        // a jss_object control, so this applies only when no editor is open.
         if (!libraryBase.jspreadsheet.current.editor.isOpen()) {
-            if (keyTarget && typeof keyTarget.closest === 'function' && !getElement(keyTarget)[0] && keyTarget.closest('.jss_object')) {
+            if (
+                keyTarget &&
+                typeof keyTarget.closest === 'function' &&
+                keyTarget !== document.body &&
+                keyTarget !== document.documentElement &&
+                !getElement(keyTarget)[0]
+            ) {
                 return;
             }
         }

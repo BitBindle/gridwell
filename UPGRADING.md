@@ -132,3 +132,8 @@ now the focus does too: when the focus moves into another worksheet, for example
 active worksheet. The worksheet that was active closes its editor and loses its selection, as after a press on the
 other worksheet, and a focused cell becomes the selection of a worksheet without one. The focus on the tabs or the
 toolbar of a spreadsheet changes nothing.
+
+The keys on an element outside the spreadsheet, such as an input or a button next to the grid, no longer go to the
+grid when no editor is open. Before, only the keys on a `jss_object` control stayed out of the grid, and typing in an
+input after Tab out of the grid opened the editor of the selected cell. The keys with the focus on the body still go
+to the grid.
