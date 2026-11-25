@@ -1997,9 +1997,9 @@ declare namespace jspreadsheet {
          *
          * This method returns false if the "This action will destroy any existing merged cells. Are you sure?" dialog receives a negative response, or returns true if the sort is successful.
          * @param column - Column index. If the value of this parameter is less than 0, the method returns false and does not perform sorting.
-         * @param order - Sorting direction. 0 for ascending and 1 for descending.
+         * @param order - Sorting direction. 0 for ascending and 1 for descending. Without it, the direction changes: descending when the column is sorted ascending, else ascending.
          */
-        orderBy: (column: number, order: 0 | 1) => boolean | undefined;
+        orderBy: (column: number, order?: 0 | 1) => boolean | undefined;
 
         /**
          * Go to page. Valid only when {@link WorksheetOptions.pagination} is true.
