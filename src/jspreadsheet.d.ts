@@ -333,8 +333,17 @@ declare namespace jspreadsheet {
 
     type MetaInformation = Record<string, any>;
 
-    type ContextMenuItem = {
-        type?: 'line' | 'divisor' | 'default';
+    type ContextMenuItem =
+        | {
+              /** A line between the items. It needs no title. */
+              type: 'line' | 'divisor';
+              title?: string;
+          }
+        | ContextMenuOption;
+
+    /** An item of the context menu that the user can choose. */
+    type ContextMenuOption = {
+        type?: 'default';
         title: string;
         icon?: string;
         id?: string;

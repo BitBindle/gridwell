@@ -63,3 +63,6 @@ library(document.createElement('div'), {
     style: ['background-color: orange;'],
     worksheets: [{ style: { A1: 0, B1: 'font-weight: bold;' } }],
 });
+
+// A context menu line has no title
+const contextMenuItems: jspreadsheet.ContextMenuItem[] = [{ title: 'Copy', onclick: () => {} }, { type: 'line' }];
