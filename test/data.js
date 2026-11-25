@@ -117,6 +117,22 @@ describe('Use the data method', () => {
         expect(secondRow.children[2].innerHTML).to.include('TESTING');
     });
 
+    it('setValue with a list gives the value argument to each item without its own value', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [
+                {
+                    minDimensions: [3, 1],
+                },
+            ],
+        });
+
+        instance[0].setValue([{ x: 0, y: 0, value: 'first' }, { x: 1, y: 0 }, 'C1'], 'default');
+
+        expect(instance[0].getValue('A1')).to.equal('first');
+        expect(instance[0].getValue('B1')).to.equal('default');
+        expect(instance[0].getValue('C1')).to.equal('default');
+    });
+
     it('getValue and it gets the value from the cell', () => {
         const instance = jspreadsheet(root, {
             tabs: true,
