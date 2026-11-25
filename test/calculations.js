@@ -301,4 +301,160 @@ describe('Calculations', () => {
             expect(test[0].getValue('A5')).to.equal('=SUM(A1:A3)');
         });
     });
+
+    describe('formulaEngine', () => {
+        it('calculates a formula with the engine of the application', () => {
+            const calls = [];
+            let test = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['1', '2', '=A1+B1']],
+                    },
+                ],
+                formulaEngine: (worksheet, expression, x, y) => {
+                    calls.push([worksheet, expression, x, y]);
+                    return 'engine ' + expression;
+                },
+            });
+
+            expect(test[0].getValue('C1', true)).to.equal('engine =A1+B1');
+            expect(calls.length).to.equal(1);
+            expect(calls[0][0]).to.equal(test[0]);
+            expect(calls[0].slice(1)).to.eql(['=A1+B1', 2, 0]);
+        });
+
+        it('gives the engine the formula text as typed', () => {
+            const expressions = [];
+            jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['1', '2', '=SUM($A$1:B1)&"$A1:B2"']],
+                    },
+                ],
+                formulaEngine: (worksheet, expression) => {
+                    expressions.push(expression);
+                    return '';
+                },
+            });
+
+            expect(expressions).to.eql(['=SUM($A$1:B1)&"$A1:B2"']);
+        });
+
+        it('gives the engine the text that onbeforeformula returns', () => {
+            const expressions = [];
+            jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['1', '=A1']],
+                    },
+                ],
+                onbeforeformula: () => '=A1*2',
+                formulaEngine: (worksheet, expression) => {
+                    expressions.push(expression);
+                    return '';
+                },
+            });
+
+            expect(expressions).to.eql(['=A1*2']);
+        });
+
+        it('calculates the dependent cells again when a referenced cell changes', () => {
+            let test = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['1', '=DOUBLE(A1)']],
+                    },
+                ],
+                formulaEngine: (worksheet) => Number(worksheet.getValueFromCoords(0, 0)) * 2,
+            });
+
+            expect(test[0].getValue('B1', true)).to.equal('2');
+
+            test[0].setValue('A1', '5');
+
+            expect(test[0].getValue('B1', true)).to.equal('10');
+        });
+
+        it('does not calculate the referenced cells before it calls the engine', () => {
+            const expressions = [];
+            jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['=1', '=A1']],
+                    },
+                ],
+                formulaEngine: (worksheet, expression) => {
+                    expressions.push(expression);
+                    return '';
+                },
+            });
+
+            expect(expressions).to.eql(['=1', '=A1']);
+        });
+
+        it('gives the engine the coordinates as numbers when a cell element is set', () => {
+            const calls = [];
+            let test = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['1', '2', '']],
+                    },
+                ],
+                formulaEngine: (worksheet, expression, x, y) => {
+                    calls.push([expression, x, y]);
+                    return '';
+                },
+            });
+
+            test[0].setValue(test[0].getCell('C1'), '=A1*B1');
+
+            expect(calls).to.eql([['=A1*B1', 2, 0]]);
+        });
+
+        it('gives the engine no coordinates when executeFormula gets none', () => {
+            const calls = [];
+            let test = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['1', '2']],
+                    },
+                ],
+                formulaEngine: (worksheet, expression, x, y) => {
+                    calls.push([expression, x, y]);
+                    return '';
+                },
+            });
+
+            test[0].executeFormula('=A1+B1');
+
+            expect(calls).to.eql([['=A1+B1', undefined, undefined]]);
+        });
+
+        it('shows #ERROR when the engine throws', () => {
+            let test = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['=A2']],
+                    },
+                ],
+                formulaEngine: () => {
+                    throw new Error('Unknown function');
+                },
+            });
+
+            expect(test[0].getValue('A1', true)).to.equal('#ERROR');
+        });
+
+        it('calculates with the formula plugin when the option is not set', () => {
+            let test = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['1', '2', '=A1+B1']],
+                    },
+                ],
+            });
+
+            expect(test[0].getValue('C1', true)).to.equal('3');
+        });
+    });
 });

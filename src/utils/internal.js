@@ -114,8 +114,14 @@ export const executeFormula = function (expression, x, y) {
     const formulaResults = [];
     const formulaLoopProtection = [];
 
+    // A formula engine of the application calculates the formula in place of the formula plugin
+    const formulaEngine = typeof obj.parent.config.formulaEngine === 'function' ? obj.parent.config.formulaEngine : null;
+
     // Execute formula with loop protection
     const execute = function (expression, x, y) {
+        // The formula text as typed, for the formula engine
+        const text = expression;
+
         // Parent column identification
         const parentId = getColumnNameFromId([x, y]);
 
@@ -197,8 +203,8 @@ export const executeFormula = function (expression, x, y) {
                         obj.formula[tokens[i]].push(parentId);
                     }
 
-                    // Do not calculate again
-                    if (typeof globalThis[tokens[i]] === 'undefined') {
+                    // Do not calculate again. The formula engine reads the values of the references itself.
+                    if (!formulaEngine && typeof globalThis[tokens[i]] === 'undefined') {
                         // Coords
                         const position = getIdFromColumnName(tokens[i], 1);
                         // Get value
@@ -240,11 +246,14 @@ export const executeFormula = function (expression, x, y) {
                 }
             }
 
+            let source = text;
+
             const ret = dispatch.call(obj, 'onbeforeformula', obj, expression, x, y);
             if (ret === false) {
                 return expression;
             } else if (ret) {
                 expression = ret;
+                source = ret;
             }
 
             // Hand string literals to the formula parser as variables, so characters such as $ or & inside them are not
@@ -260,7 +269,11 @@ export const executeFormula = function (expression, x, y) {
             let res;
 
             try {
-                res = formula(parsedExpression, formulaExpressions, x, y, obj);
+                if (formulaEngine) {
+                    res = formulaEngine(obj, source, x === undefined ? x : Number(x), y === undefined ? y : Number(y));
+                } else {
+                    res = formula(parsedExpression, formulaExpressions, x, y, obj);
+                }
 
                 if (typeof res === 'function') {
                     res = '#ERROR';
