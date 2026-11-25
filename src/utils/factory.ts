@@ -49,7 +49,7 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: jspr
                 buildWorksheet.call(newWorksheet).then(function () {
                     updateToolbar(newWorksheet);
 
-                    dispatch.call(newWorksheet, 'oncreateworksheet', newWorksheet, options, spreadsheet.worksheets.length - 1);
+                    dispatch.call(newWorksheet, 'oncreateworksheet', newWorksheet, newWorksheet.options, spreadsheet.worksheets.length - 1);
                 });
             },
             onchange: function (element: HTMLElement, instance: Tabs, tabIndex: number) {

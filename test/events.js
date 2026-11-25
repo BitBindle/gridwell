@@ -252,6 +252,25 @@ describe('Dispatch events', () => {
 
         expect(worksheet.getData()).to.eql([['a']]);
     });
+
+    it('gives oncreateworksheet the options of the new worksheet', async () => {
+        let createdOptions = null;
+        const worksheet = await load({
+            worksheets: [{ minDimensions: [2, 2], worksheetName: 'First' }],
+        });
+
+        const created = new Promise((resolve) => {
+            worksheet.parent.config.oncreateworksheet = function (instance, options, index) {
+                createdOptions = options;
+                resolve(index);
+            };
+        });
+        worksheet.createWorksheet({ minDimensions: [3, 3], worksheetName: 'Second' });
+
+        expect(await created).to.equal(1);
+        expect(createdOptions.worksheetName).to.equal('Second');
+        expect(createdOptions).to.equal(worksheet.parent.worksheets[1].options);
+    });
 });
 
 describe('Destroy', () => {
