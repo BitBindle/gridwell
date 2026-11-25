@@ -119,7 +119,7 @@ if (isProduction) {
     webpack.plugins.push(
         new CopyPlugin({
             patterns: [
-                { from: 'src/index.d.ts', to: 'index.d.ts' },
+                { from: 'src/jspreadsheet.d.ts', to: 'index.d.ts' },
                 { from: 'src/jspreadsheet.css', to: 'jspreadsheet.css' },
                 { from: 'src/jspreadsheet.themes.css', to: 'jspreadsheet.themes.css' },
             ],

@@ -8,10 +8,11 @@ import { destroyEvents } from './utils/events.js';
 import * as helpers from './utils/helpers.js';
 import dispatch from './utils/dispatch.js';
 import version from './utils/version.js';
+import type { Library } from './types/internal';
 
-libraryBase.jspreadsheet = function (el, options) {
+libraryBase.jspreadsheet = function (el: any, options: any) {
     try {
-        let worksheets = [];
+        let worksheets: any[] = [];
 
         // Create spreadsheet
         Factory.spreadsheet(el, options, worksheets).then((spreadsheet) => {
@@ -25,9 +26,9 @@ libraryBase.jspreadsheet = function (el, options) {
     } catch (e) {
         console.error(e);
     }
-};
+} as Library;
 
-libraryBase.jspreadsheet.getWorksheetInstanceByName = function (worksheetName, namespace) {
+libraryBase.jspreadsheet.getWorksheetInstanceByName = function (worksheetName: any, namespace: any): any {
     const targetSpreadsheet = libraryBase.jspreadsheet.spreadsheet.find((spreadsheet) => {
         return spreadsheet.config.namespace === namespace;
     });
@@ -50,11 +51,11 @@ libraryBase.jspreadsheet.getWorksheetInstanceByName = function (worksheetName, n
 };
 
 // Define dictionary
-libraryBase.jspreadsheet.setDictionary = function (o) {
+libraryBase.jspreadsheet.setDictionary = function (o: any) {
     jSuites.setDictionary(o);
 };
 
-libraryBase.jspreadsheet.destroy = function (element, destroyEventHandlers) {
+libraryBase.jspreadsheet.destroy = function (element: any, destroyEventHandlers?: boolean) {
     if (element.spreadsheet) {
         const spreadsheetIndex = libraryBase.jspreadsheet.spreadsheet.indexOf(element.spreadsheet);
         libraryBase.jspreadsheet.spreadsheet.splice(spreadsheetIndex, 1);
@@ -82,14 +83,15 @@ libraryBase.jspreadsheet.current = null;
 
 libraryBase.jspreadsheet.spreadsheet = [];
 
-libraryBase.jspreadsheet.helpers = {};
+libraryBase.jspreadsheet.helpers = {} as any;
 
+// The public typings declare version as an object, but it is a function that returns the object
 libraryBase.jspreadsheet.version = function () {
     return version;
-};
+} as any;
 
 Object.entries(helpers).forEach(([key, value]) => {
-    libraryBase.jspreadsheet.helpers[key] = value;
+    (libraryBase.jspreadsheet.helpers as any)[key] = value;
 });
 
 export default libraryBase.jspreadsheet;

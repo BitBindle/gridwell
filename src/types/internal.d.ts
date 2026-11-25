@@ -1,5 +1,5 @@
 /**
- * Types the library code uses internally. They are not published: the public typings are in src/index.d.ts.
+ * Types the library code uses internally. They are not published: the public typings are in src/jspreadsheet.d.ts.
  *
  * In a JavaScript module, import them with a JSDoc tag:
  *
@@ -7,7 +7,7 @@
  *
  * and give a function that uses the worksheet as `this` the tag `@this {Worksheet}`.
  */
-import type jspreadsheet from '../index';
+import type jspreadsheet from '../jspreadsheet';
 
 /**
  * A worksheet as the library sees it: the public instance and the state that only the library uses.
@@ -81,7 +81,7 @@ export interface Spreadsheet extends jspreadsheet.SpreadsheetInstance {
  *
  *     export const getData: WorksheetMethod<'getData'> = function (highlighted, processed) { ... };
  *
- * The parameters get their types from WorksheetInstance in src/index.d.ts, so the code and the public typings agree.
+ * The parameters get their types from WorksheetInstance in src/jspreadsheet.d.ts, so the code and the public typings agree.
  */
 /** A merged range in options.mergeCells: the colspan, the rowspan and, after setMerge, the cells that the range hides. */
 export type MergeInfo = [number, number, HTMLTableCellElement[]?];
