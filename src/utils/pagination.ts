@@ -95,9 +95,7 @@ export const updatePagination = function (this: Worksheet) {
             }
 
             // Text
-            // It reads arguments, so it gets a function type
-            const format: (format: string, ...args: any[]) => string = function (format) {
-                const args = Array.prototype.slice.call(arguments, 1);
+            const format = function (format: string, ...args: any[]): string {
                 return format.replace(/{(\d+)}/g, function (match: string, number: number) {
                     return typeof args[number] != 'undefined' ? args[number] : match;
                 });

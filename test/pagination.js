@@ -3,6 +3,16 @@ const { expect } = require('chai');
 const jspreadsheet = require('../dist/index.js');
 
 describe('Use pagination', () => {
+    it('shows the page number and the number of pages', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [2, 10], pagination: 3 }],
+        })[0];
+
+        worksheet.page(1);
+
+        expect(worksheet.pagination.children[0].textContent).to.equal('Showing page 2 of 4 entries');
+    });
+
     it('Start the worksheet with pagination', () => {
         const instance = jspreadsheet(root, {
             worksheets: [

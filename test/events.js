@@ -204,3 +204,52 @@ describe('Keys on a jss_object control outside the grid', () => {
         expect(worksheet.getValue('B1')).to.equal('b');
     });
 });
+
+describe('Dispatch events', () => {
+    it('gives onevent and plugins the event name and the arguments, and the event handler the arguments', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b']] }],
+            onevent: function (event, instance, cell, x, y, value) {
+                if (event === 'onchange') {
+                    calls.push(['onevent', instance === worksheet, String(x), String(y), value]);
+                }
+            },
+            onchange: function (instance, cell, x, y, value) {
+                calls.push(['onchange', instance === worksheet, String(x), String(y), value]);
+            },
+            plugins: {
+                test: function () {
+                    return {
+                        onevent: function (event, instance, cell, x, y, value) {
+                            if (event === 'onchange') {
+                                calls.push(['plugin', instance === worksheet, String(x), String(y), value]);
+                            }
+                        },
+                    };
+                },
+            },
+        })[0];
+
+        worksheet.setValueFromCoords(1, 0, 'c');
+
+        expect(calls).to.eql([
+            ['onevent', true, '1', '0', 'c'],
+            ['onchange', true, '1', '0', 'c'],
+            ['plugin', true, '1', '0', 'c'],
+        ]);
+    });
+
+    it('returns the result of the handler, so that onbeforeinsertrow can cancel the insertion', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a']] }],
+            onbeforeinsertrow: function () {
+                return false;
+            },
+        })[0];
+
+        worksheet.insertRow();
+
+        expect(worksheet.getData()).to.eql([['a']]);
+    });
+});

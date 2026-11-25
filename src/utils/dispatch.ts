@@ -65,7 +65,7 @@ const save = function (this: Worksheet, url: string, data: any) {
  * The first argument is the name of the event, for example "onchange". The other arguments go to the event handlers.
  * It returns the result of the last handler.
  */
-const dispatch: (this: Worksheet | Spreadsheet, event: string, ...args: any[]) => any = function (event) {
+const dispatch = function (this: Worksheet | Spreadsheet, event: string, ...args: any[]): any {
     const obj = this;
     let ret = null;
 
@@ -75,12 +75,12 @@ const dispatch: (this: Worksheet | Spreadsheet, event: string, ...args: any[]) =
     if (!spreadsheet.ignoreEvents) {
         // Call global event
         if (typeof spreadsheet.config.onevent == 'function') {
-            ret = spreadsheet.config.onevent.apply(this, arguments as any);
+            ret = spreadsheet.config.onevent.call(this, event, ...args);
         }
         // Call specific events
         const config: Record<string, any> = spreadsheet.config;
         if (typeof config[event] == 'function') {
-            ret = config[event].apply(this, Array.prototype.slice.call(arguments, 1));
+            ret = config[event].apply(this, args);
         }
 
         if (typeof spreadsheet.plugins === 'object') {
@@ -91,7 +91,7 @@ const dispatch: (this: Worksheet | Spreadsheet, event: string, ...args: any[]) =
                 const plugin = spreadsheet.plugins[key];
 
                 if (typeof plugin.onevent === 'function') {
-                    ret = plugin.onevent.apply(this, arguments as any);
+                    ret = plugin.onevent.call(this, event, ...args);
                 }
             }
         }
@@ -100,19 +100,17 @@ const dispatch: (this: Worksheet | Spreadsheet, event: string, ...args: any[]) =
     if (event == 'onafterchanges') {
         // Only a worksheet dispatches onafterchanges
         const worksheet = obj as Worksheet;
-        const scope = arguments;
-
         if (typeof spreadsheet.plugins === 'object') {
             Object.entries(spreadsheet.plugins).forEach(function ([, plugin]) {
                 if (typeof plugin.persistence === 'function') {
-                    plugin.persistence(worksheet, 'setValue', { data: scope[2] });
+                    plugin.persistence(worksheet, 'setValue', { data: args[1] });
                 }
             });
         }
 
         if (worksheet.options.persistence) {
             const url = worksheet.options.persistence == true ? worksheet.options.url : worksheet.options.persistence;
-            const data = prepareJson.call(worksheet, arguments[2]);
+            const data = prepareJson.call(worksheet, args[1]);
             save.call(worksheet, url, data);
         }
     }
