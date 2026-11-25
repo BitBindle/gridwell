@@ -1,6 +1,5 @@
 import { closeEditor, openEditor } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
-import { isColMerged, isRowMerged } from '../utils/merges.js';
 import { resetSelection, selectAll, updateCornerPosition, updateSelectionFromCoords } from '../utils/selection.js';
 import { copyData } from '../utils/fill.js';
 import { openFilter } from '../utils/filter.js';
@@ -220,7 +219,7 @@ const pressHeader = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
                 }
             }
         } else if (obj.options.columnDrag != false && info.height - e.offsetY < 6) {
-            if (isColMerged.call(obj, columnId).length) {
+            if (obj.merges.isColMerged(columnId).length) {
                 console.error('Jspreadsheet: This column is part of a merged cell.');
             } else {
                 // Reset selection
@@ -302,7 +301,7 @@ const pressRowNumber = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
         // Border indication
         (e.target.parentNode as HTMLElement).classList.add('resizing');
     } else if (obj.options.rowDrag != false && info.width - e.offsetX < 6) {
-        if (isRowMerged.call(obj, rowId).length) {
+        if (obj.merges.isRowMerged(rowId).length) {
             console.error('Jspreadsheet: This row is part of a merged cell');
         } else if (obj.options.search == true && obj.view.results) {
             console.error('Jspreadsheet: Please clear your search before perform this action');
@@ -504,7 +503,7 @@ const moveDrag = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
     if (dragging.column != null) {
         const columnId = getIndex(e.target, 'data-x');
         if (columnId != null) {
-            if (isColMerged.call(obj, columnId).length) {
+            if (obj.merges.isColMerged(columnId).length) {
                 console.error('Jspreadsheet: This column is part of a merged cell.');
             } else {
                 for (let i = 0; i < obj.headers.length; i++) {
@@ -536,7 +535,7 @@ const moveDrag = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
     } else {
         const rowId = getIndex(e.target, 'data-y');
         if (rowId != null) {
-            if (isRowMerged.call(obj, rowId).length) {
+            if (obj.merges.isRowMerged(rowId).length) {
                 console.error('Jspreadsheet: This row is part of a merged cell.');
             } else {
                 const target = e.target.clientHeight / 2 > e.offsetY ? e.target.parentNode!.nextSibling : e.target.parentNode;

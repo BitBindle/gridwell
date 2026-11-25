@@ -5,6 +5,7 @@ import { Comments } from './components/Comments.js';
 import { Editor } from './components/Editor.js';
 import { Formulas } from './components/Formulas.js';
 import { History } from './components/History.js';
+import { Merges } from './components/Merges.js';
 import { Meta } from './components/Meta.js';
 import { Pointer } from './components/Pointer.js';
 import { Selection } from './components/Selection.js';
@@ -46,6 +47,7 @@ export class Worksheet {
         this.styles = new Styles(this);
         this.comments = new Comments(this);
         this.meta = new Meta(this);
+        this.merges = new Merges(this);
         this.lastScrollLeft = 0;
     }
 }
