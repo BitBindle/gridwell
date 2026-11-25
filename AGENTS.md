@@ -11,7 +11,7 @@ This is BitBindle's fork of [Jspreadsheet CE](https://github.com/jspreadsheet/ce
 
 The fork has its own fixes (pull requests #5 and later), many of them for accessibility. Changes from upstream are not merged automatically.
 
-The code is moving to TypeScript step by step. For now the source is JavaScript, some modules are type-checked through JSDoc (see [Type checking](#type-checking)), and the public typings in `src/index.d.ts` are written by hand.
+The source is TypeScript (see [Type checking](#type-checking)). The modules were moved from JavaScript without changing the code, so they still use `any` in many places. The public typings in `src/jspreadsheet.d.ts` are written by hand.
 
 ## Commands
 
@@ -33,14 +33,14 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 
 ## Layout
 
--   `src/index.js`: the entry point. It defines `jspreadsheet(element, options)` and its static helpers.
--   `src/utils/factory.js`: creates the spreadsheet object and its worksheets.
--   `src/utils/worksheets.js`: builds a worksheet's DOM. `worksheetPublicMethods` lists every method a worksheet instance gets.
--   `src/utils/*.js`: one module per feature (`columns`, `rows`, `selection`, `editor`, `events`, `history`, `merges`, `accessibility`, …). `internal.js` and `events.js` are the largest and most connected.
--   `src/index.d.ts`: the public typings, copied to `dist/` unchanged.
+-   `src/index.ts`: the entry point. It defines `jspreadsheet(element, options)` and its static helpers.
+-   `src/utils/factory.ts`: creates the spreadsheet object and its worksheets.
+-   `src/utils/worksheets.ts`: builds a worksheet's DOM. `worksheetPublicMethods` lists every method a worksheet instance gets.
+-   `src/utils/*.ts`: one module per feature (`columns`, `rows`, `selection`, `editor`, `events`, `history`, `merges`, `accessibility`, …). `internal.ts` and `events.ts` are the largest and most connected.
+-   `src/jspreadsheet.d.ts`: the public typings, copied unchanged to `dist/index.d.ts`.
 -   `src/types/`: types for the type check only, not published (see [Type checking](#type-checking)).
 -   `src/jspreadsheet.css`, `src/jspreadsheet.themes.css`: the styles, also copied to `dist/`.
--   `src/webcomponent.js`: a `<jspreadsheet>` custom element. It is not part of the bundle.
+-   `src/test.js`: the entry of the dev server. `src/webcomponent.js`: a `<jspreadsheet>` custom element. Both are JavaScript and not part of the bundle.
 -   `resources/lang/*.json`: translations for `jspreadsheet.setDictionary`.
 -   `test/*.js`: mocha + chai tests in jsdom, one file per feature.
 -   `packages/vue`: a small Vue wrapper, published separately.
@@ -50,35 +50,32 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 
 -   **Two objects.** A _spreadsheet_ holds `config`, `element`, `worksheets` and the toolbar. A _worksheet_ holds `options`, the DOM (`table`, `thead`, `tbody`, `headers`, `rows`, `records`) and the state (`selectedCell`, `history`, …). `worksheet.parent` is its spreadsheet. Both are plain objects that modules add properties to; there are no classes.
 -   **The worksheet is `this`.** Most functions start with `const obj = this` and are called with `fn.call(worksheet, ...)`. Public methods are bound to each worksheet in `setWorksheetFunctions`.
--   **One global active worksheet.** `libraryBase.jspreadsheet.current` is the worksheet that keyboard and clipboard events go to. `events.js` and `worksheets.js` set it.
+-   **One global active worksheet.** `libraryBase.jspreadsheet.current` is the worksheet that keyboard and clipboard events go to. `events.ts` and `worksheets.ts` set it.
 -   **Events** go through `dispatch.call(obj, 'oneventname', ...args)`. `dispatch` calls the spreadsheet's `config.onevent`, then the specific handler in `config`, then each plugin's `onevent`, and returns the last result. Returning `false` from an `onbefore…` handler cancels the action.
 -   **Circular imports** exist (17 cycles, for example `internal → pagination → selection → history → orderBy`). They work because imported functions are only called at runtime. Do not call an imported function at the top level of a module.
 
 ## Adding or changing a public method
 
-1. Write the function in the right `src/utils/*.js` module, with the worksheet as `this`.
-2. Add it to `worksheetPublicMethods` in `src/utils/worksheets.js`.
-3. Declare it on `WorksheetInstance` in `src/index.d.ts`, with a JSDoc comment.
+1. Declare it on `WorksheetInstance` in `src/jspreadsheet.d.ts`, with a JSDoc comment.
+2. Write the function in the right `src/utils/*.ts` module, typed from the declaration: `export const name: WorksheetMethod<'name'> = function (a, b) { ... };`. The worksheet is `this`.
+3. Add it to `worksheetPublicMethods` in `src/utils/worksheets.ts`.
 4. Add tests that go through the public API.
 
-New options also go in `src/index.d.ts` (`SpreadsheetOptions` or `WorksheetOptions`).
+New options also go in `src/jspreadsheet.d.ts` (`SpreadsheetOptions` or `WorksheetOptions`).
 
 ## Type checking
 
 `npm run typecheck` runs TypeScript 6.0 over `src/` with `tsconfig.json`, and CI runs it too. (TypeScript 7 has no JavaScript API yet, and typescript-eslint needs it. Keep the code valid for TypeScript 7 as well.)
 
-The modules are moving from `.js` to `.ts` files. A `.ts` module is always checked. A `.js` module is checked only when its first line is `// @ts-check`. Modules import each other with the `.js` extension, also when the file is a `.ts` file: TypeScript and webpack find the `.ts` file. esbuild-loader removes the types in the build, so a type-only import must use `import type`.
+Modules import each other with the `.js` extension, although the files are `.ts` files: TypeScript and webpack find the `.ts` file. esbuild-loader removes the types in the build without checking them, so a type-only import must use `import type`.
 
--   **Settings.** `strict` is on except `strictNullChecks`. Turn that on once the modules are TypeScript files.
--   **Internal types.** `src/types/internal.d.ts` has `Worksheet` and `Spreadsheet`: the public instance types and the state only the library uses. Add new internal fields there, with a comment.
--   **Other declarations.** `src/types/modules.d.ts` declares `@jspreadsheet/formula`, which has no typings. `src/types/jsuites.d.ts` adds the jsuites methods that its typings miss. `src/types/globals.d.ts` lets `parseInt` take numbers, as the code does in many places.
--   **In a checked module:**
-    -   Import the internal types with `/** @import { Worksheet } from '../types/internal' */`.
-    -   Give each function that uses the worksheet as `this` the tag `@this {Worksheet}`, and type every parameter with `@param`.
-    -   Where the type check cannot follow the code, cast with `/** @type {X} */ (expression)` and say why in a comment.
--   **JSDoc and TypeScript 7.** TypeScript 7 ignores JSDoc `@overload` tags: declare overloads as `@type {{ (a: string): X; (a: number): Y }}` on the constant, as `getIdFromColumnName` does. A function that reads `arguments` is not variadic: give it a function type, as `dispatch` does.
--   **No behaviour changes.** A commit that adds types changes no behaviour. Fix a bug that the type check finds in a separate commit, with a test.
--   When you change a module that is not checked yet, consider checking it in the same pull request.
+-   **Settings.** `strict` is on except `strictNullChecks`. Turning it on is the next step.
+-   **Internal types.** `src/types/internal.d.ts` has `Worksheet` and `Spreadsheet`: the public instance types and the state only the library uses. Add new internal fields there, with a comment. Import them with `import type { Worksheet } from '../types/internal';`.
+-   **Other declarations.** `src/types/modules.d.ts` declares `@jspreadsheet/formula`, which has no typings. `src/types/jsuites.d.ts` adds the jsuites methods that its typings miss. `src/types/globals.d.ts` lets `parseInt` take numbers and `setAttribute` take numbers, as the code does in many places.
+-   **The worksheet as `this`.** Type a public method from its declaration with `WorksheetMethod<'name'>`, so the code and the public typings agree. Give other functions that use the worksheet as `this` a `this: Worksheet` parameter. A function that reads `arguments` gets a function type on the constant, as `dispatch` does.
+-   **Casts.** Where the type check cannot follow the code, cast with `as X` (or `as any`) and say why in a comment when it is not obvious. Wrap the expression in parentheses rather than add a local variable.
+-   **Lint rules.** `prefer-const`, `no-var`, `prefer-rest-params` and `prefer-spread` are off in `eslint.config.mjs`, so that the move changed no code. Turn them on in their own commits.
+-   **No behaviour changes.** A commit that adds or changes types changes no behaviour. Fix a bug that the type check finds in a separate commit, with a test. To show that a typing commit changes no code, build without minifying before and after, format both bundles the same way (for example with esbuild and terser `--format beautify=true,comments=false`) and compare them.
 
 ## Build quirks
 
@@ -88,7 +85,7 @@ The modules are moving from `.js` to `.ts` files. A `.ts` module is always check
 ## Things to keep
 
 -   **Safe cell rendering.** Cell values are written with `textContent`. `innerHTML` is used only when the application sets `parseHTML: true`, and then after `stripScript`. Do not add new `innerHTML` writes of user data.
--   **Accessibility.** The grid uses the ARIA grid pattern: roles, accessible names, `aria-selected`, and a roving `tabindex` that moves the keyboard focus to the selected cell (`src/utils/accessibility.js`, `test/accessibility.js`). Changes to selection, editing, hiding or merging must keep these working.
+-   **Accessibility.** The grid uses the ARIA grid pattern: roles, accessible names, `aria-selected`, and a roving `tabindex` that moves the keyboard focus to the selected cell (`src/utils/accessibility.ts`, `test/accessibility.js`). Changes to selection, editing, hiding or merging must keep these working.
 -   **Public API compatibility.** Applications use the worksheet methods, options and event signatures. Call out any change to them as a breaking change.
 
 ## Tests

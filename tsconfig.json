@@ -1,7 +1,5 @@
 {
     "compilerOptions": {
-        "allowJs": true,
-        "checkJs": false,
         "noEmit": true,
         "strict": true,
         "strictNullChecks": false,
@@ -13,6 +11,5 @@
         "isolatedModules": true,
         "skipLibCheck": true
     },
-    "include": ["src/**/*.ts", "src/**/*.js"],
-    "exclude": ["src/test.js", "src/webcomponent.js"]
+    "include": ["src/**/*.ts"]
 }

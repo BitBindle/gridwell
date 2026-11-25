@@ -1,11 +1,8 @@
 /**
  * Types the library code uses internally. They are not published: the public typings are in src/jspreadsheet.d.ts.
  *
- * In a JavaScript module, import them with a JSDoc tag:
- *
- *     /** @import { Worksheet } from '../types/internal' *\/
- *
- * and give a function that uses the worksheet as `this` the tag `@this {Worksheet}`.
+ * Import them with `import type { Worksheet } from '../types/internal';` and give a function that uses the worksheet
+ * as `this` a `this: Worksheet` parameter.
  */
 import type jspreadsheet from '../jspreadsheet';
 
