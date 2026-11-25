@@ -154,7 +154,7 @@ export const updateMergedColumns = function (this: Worksheet, columns: number[])
 export const getMerge: WorksheetMethod<'getMerge'> = function (cellName) {
     const obj = this;
 
-    let data: any = {};
+    let data: Record<string, [number, number]> | [number, number] | null = {};
     if (cellName) {
         if (obj.options.mergeCells && obj.options.mergeCells[cellName]) {
             data = [obj.options.mergeCells[cellName][0], obj.options.mergeCells[cellName][1]];
@@ -180,7 +180,13 @@ export const getMerge: WorksheetMethod<'getMerge'> = function (cellName) {
  * @param rowspan
  * @param ignoreHistoryAndEvents
  */
-export const setMerge = function (this: Worksheet, cellName: string, colspan: any, rowspan: any, ignoreHistoryAndEvents?: any): null | undefined {
+export const setMerge = function (
+    this: Worksheet,
+    cellName?: string,
+    colspan?: number,
+    rowspan?: number,
+    ignoreHistoryAndEvents?: boolean | 1
+): null | undefined {
     const obj = this;
 
     let test: string | false = false;
@@ -227,14 +233,14 @@ export const setMerge = function (this: Worksheet, cellName: string, colspan: an
     if (test) {
         alert(jSuites.translate(test));
     } else {
-        // Add property
-        if (colspan > 1) {
-            obj.records[cell[1]][cell[0]].element.setAttribute('colspan', colspan);
+        // Add property. A missing span becomes 1, so from here on the spans are numbers.
+        if (colspan! > 1) {
+            obj.records[cell[1]][cell[0]].element.setAttribute('colspan', colspan!);
         } else {
             colspan = 1;
         }
-        if (rowspan > 1) {
-            obj.records[cell[1]][cell[0]].element.setAttribute('rowspan', rowspan);
+        if (rowspan! > 1) {
+            obj.records[cell[1]][cell[0]].element.setAttribute('rowspan', rowspan!);
         } else {
             rowspan = 1;
         }
@@ -244,7 +250,7 @@ export const setMerge = function (this: Worksheet, cellName: string, colspan: an
         }
 
         // The public typings have only colspan and rowspan
-        obj.options.mergeCells[cellName] = [colspan, rowspan, []] as any;
+        (obj.options.mergeCells as Record<string, MergeInfo>)[cellName] = [colspan!, rowspan!, []];
         // Mark cell as merged
         obj.records[cell[1]][cell[0]].element.setAttribute('data-merged', 'true');
         // Overflow
@@ -252,8 +258,8 @@ export const setMerge = function (this: Worksheet, cellName: string, colspan: an
         // History data
         const data = [];
         // Adjust the nodes
-        for (let y = cell[1]; y < cell[1] + rowspan; y++) {
-            for (let x = cell[0]; x < cell[0] + colspan; x++) {
+        for (let y = cell[1]; y < cell[1] + rowspan!; y++) {
+            for (let x = cell[0]; x < cell[0] + colspan!; x++) {
                 if (!(cell[0] == x && cell[1] == y)) {
                     data.push(obj.options.data[y][x]);
                     updateCell.call(obj, x, y, '', true);
@@ -272,8 +278,8 @@ export const setMerge = function (this: Worksheet, cellName: string, colspan: an
             setHistory.call(obj, {
                 action: 'setMerge',
                 column: cellName,
-                colspan: colspan,
-                rowspan: rowspan,
+                colspan: colspan!,
+                rowspan: rowspan!,
                 data: data,
             });
 
