@@ -77,3 +77,9 @@ assertType<Equals<typeof worksheetByName, jspreadsheet.WorksheetInstance | Recor
 
 // The selection coordinates are numbers
 assertType<Equals<typeof worksheet.selectedCell, undefined | null | [number, number, number, number]>>();
+
+// The indexes of a drag or a resize are numbers
+assertType<Equals<jspreadsheet.DragColumnInfo['column'], number>>();
+assertType<Equals<jspreadsheet.DragRowInfo['row'], number>>();
+assertType<Equals<jspreadsheet.ResizeColumnInfo['column'], number>>();
+assertType<Equals<jspreadsheet.ResizeRowInfo['row'], number>>();

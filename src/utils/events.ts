@@ -57,7 +57,7 @@ const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
         // Update cell size
         if (libraryBase.jspreadsheet.current.resizing) {
             // Columns to be updated
-            if (libraryBase.jspreadsheet.current.resizing.column) {
+            if (libraryBase.jspreadsheet.current.resizing.column != null) {
                 // New width
                 const newWidth = parseInt(
                     libraryBase.jspreadsheet.current.cols[libraryBase.jspreadsheet.current.resizing.column].colElement.getAttribute('width')
@@ -106,7 +106,7 @@ const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
         } else if (libraryBase.jspreadsheet.current.dragging) {
             // Reset dragging helper
             if (libraryBase.jspreadsheet.current.dragging) {
-                if (libraryBase.jspreadsheet.current.dragging.column) {
+                if (libraryBase.jspreadsheet.current.dragging.column != null) {
                     // Target
                     const columnId = e.target.getAttribute('data-x');
                     // Remove move style
@@ -229,8 +229,9 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
         } else {
             // Header found
             if (jssTable[1] == 1) {
-                const columnId: any = e.target.getAttribute('data-x');
-                if (columnId) {
+                const columnText = e.target.getAttribute('data-x');
+                if (columnText) {
+                    const columnId = parseInt(columnText);
                     // Update cursor
                     const info = e.target.getBoundingClientRect();
                     if (libraryBase.jspreadsheet.current.options.columnResize != false && info.width - e.offsetX < 6) {
@@ -271,7 +272,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                     } else {
                         let o, d;
 
-                        if (libraryBase.jspreadsheet.current.selectedHeader && (e.shiftKey || e.ctrlKey)) {
+                        if (libraryBase.jspreadsheet.current.selectedHeader != null && (e.shiftKey || e.ctrlKey)) {
                             o = libraryBase.jspreadsheet.current.selectedHeader;
                             d = columnId;
                         } else {
@@ -319,7 +320,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                     }
                 }
             } else {
-                libraryBase.jspreadsheet.current.selectedHeader = false;
+                libraryBase.jspreadsheet.current.selectedHeader = null;
             }
 
             // Body found
@@ -470,7 +471,7 @@ const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
         if (libraryBase.jspreadsheet.isMouseAction == true) {
             // Resizing is ongoing
             if (libraryBase.jspreadsheet.current.resizing) {
-                if (libraryBase.jspreadsheet.current.resizing.column) {
+                if (libraryBase.jspreadsheet.current.resizing.column != null) {
                     const width = e.pageX - libraryBase.jspreadsheet.current.resizing.mousePosition;
 
                     if (libraryBase.jspreadsheet.current.resizing.width + width > 0) {
@@ -490,7 +491,7 @@ const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
                     }
                 }
             } else if (libraryBase.jspreadsheet.current.dragging) {
-                if (libraryBase.jspreadsheet.current.dragging.column) {
+                if (libraryBase.jspreadsheet.current.dragging.column != null) {
                     const columnId: any = e.target.getAttribute('data-x');
                     if (columnId) {
                         if (isColMerged.call(libraryBase.jspreadsheet.current, columnId).length) {
@@ -506,14 +507,14 @@ const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
                             } else {
                                 if (e.target.clientWidth / 2 > e.offsetX) {
                                     // Compare the indexes as numbers: as text, '9' is after '10'
-                                    if (parseInt(libraryBase.jspreadsheet.current.dragging.column) < parseInt(columnId)) {
+                                    if (libraryBase.jspreadsheet.current.dragging.column < parseInt(columnId)) {
                                         libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId) - 1;
                                     } else {
                                         libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId);
                                     }
                                     libraryBase.jspreadsheet.current.headers[columnId].classList.add('dragging-left');
                                 } else {
-                                    if (parseInt(libraryBase.jspreadsheet.current.dragging.column) < parseInt(columnId)) {
+                                    if (libraryBase.jspreadsheet.current.dragging.column < parseInt(columnId)) {
                                         libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId);
                                     } else {
                                         libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId) + 1;
@@ -676,7 +677,7 @@ const mouseOverControls = function (e: TargetEvent<MouseEvent>) {
             } else {
                 // Header found
                 if (jssTable[1] == 1) {
-                    if (libraryBase.jspreadsheet.current.selectedHeader) {
+                    if (libraryBase.jspreadsheet.current.selectedHeader != null) {
                         columnId = e.target.getAttribute('data-x');
                         const o = libraryBase.jspreadsheet.current.selectedHeader;
                         const d = columnId;
@@ -1403,7 +1404,7 @@ const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
                                 libraryBase.jspreadsheet.current.deleteRow();
                             }
                         }
-                    } else if (libraryBase.jspreadsheet.current.selectedHeader) {
+                    } else if (libraryBase.jspreadsheet.current.selectedHeader != null) {
                         if (libraryBase.jspreadsheet.current.options.allowDeleteColumn != false) {
                             if (confirm(jSuites.translate('Are you sure to delete the selected columns?'))) {
                                 libraryBase.jspreadsheet.current.deleteColumn();

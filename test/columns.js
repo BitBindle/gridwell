@@ -641,6 +641,28 @@ describe('Drag a column header', () => {
 
         expect(worksheet.getHeaders(true)).to.eql(['C0', 'C1', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C2', 'C11']);
     });
+
+    it('keeps the index of the dragged column as a number', async () => {
+        const worksheet = await load({ worksheets: [{ minDimensions: [3, 1], columnResize: false }] });
+
+        mouse(worksheet.headers[2], 'mousedown');
+
+        expect(worksheet.dragging.column).to.equal(2);
+        expect(worksheet.dragging.destination).to.equal(2);
+
+        mouse(worksheet.headers[2], 'mouseup');
+    });
+
+    it('keeps the index of the resized column as a number', async () => {
+        // jsdom gives the header no width, so a press is at its right edge, which resizes the column
+        const worksheet = await load({ worksheets: [{ minDimensions: [3, 1] }] });
+
+        mouse(worksheet.headers[2], 'mousedown');
+
+        expect(worksheet.resizing.column).to.equal(2);
+
+        mouse(worksheet.headers[2], 'mouseup');
+    });
 });
 
 describe('Delete columns with the keyboard', () => {

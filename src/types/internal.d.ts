@@ -53,11 +53,11 @@ export interface Worksheet extends jspreadsheet.WorksheetInstance {
     /** True while the mouse drags the selection corner. */
     selectedCorner?: boolean;
 
-    /** The column whose header the mouse selects, or null or false when there is none. It is text from data-x. */
-    selectedHeader?: any;
+    /** The column whose header the mouse selects, or null when there is none. */
+    selectedHeader?: number | null;
 
-    /** The row whose number the mouse selects, or null or false when there is none. It is text from data-y. */
-    selectedRow?: any;
+    /** The row whose number the mouse selects, or null when there is none. */
+    selectedRow?: number | null;
 
     /**
      * The public typings use unions of the row and column information. The code tests one property and then reads the

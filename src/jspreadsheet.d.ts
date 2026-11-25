@@ -1303,7 +1303,7 @@ declare namespace jspreadsheet {
         /**
          * Index of the column being moved.
          */
-        column: string;
+        column: number;
 
         /**
          * HTML element that corresponds to the column being moved.
@@ -1315,7 +1315,7 @@ declare namespace jspreadsheet {
         /**
          * Index of the row being moved.
          */
-        row: string;
+        row: number;
 
         /**
          * HTML element that corresponds to the row being moved.
@@ -1344,14 +1344,14 @@ declare namespace jspreadsheet {
         /**
          * Index of the row being resized.
          */
-        row: string;
+        row: number;
     }
 
     interface ResizeColumnInfo extends ResizeInfo {
         /**
          * Index of the column being resized.
          */
-        column: string;
+        column: number;
 
         /**
          * Old column width.
