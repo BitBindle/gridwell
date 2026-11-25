@@ -1,0 +1,56 @@
+const { expect } = require('chai');
+
+const jspreadsheet = require('../dist/index.js');
+
+describe('Keys', () => {
+    it('moves the selection to the first cell of a merged range, not to a cell that the range hides', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [4, 6], mergeCells: { A1: [2, 1], C2: [1, 3] } }],
+        })[0];
+
+        // Up from C5 enters the range C2:C4 at C4
+        worksheet.updateSelectionFromCoords(2, 4, 2, 4);
+        worksheet.up();
+        expect(worksheet.selectedCell.map(Number)).to.eql([2, 1, 2, 1]);
+
+        // Left from C1 enters the range A1:B1 at B1
+        worksheet.updateSelectionFromCoords(2, 0, 2, 0);
+        worksheet.left();
+        expect(worksheet.selectedCell.map(Number)).to.eql([0, 0, 0, 0]);
+
+        // The next key starts from the first cell of the range
+        worksheet.down();
+        expect(worksheet.selectedCell.map(Number)).to.eql([0, 1, 0, 1]);
+    });
+
+    it('moves the selection to the first cell of a merged range after End', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [4, 2], mergeCells: { C1: [2, 1] } }],
+        })[0];
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.last();
+        expect(worksheet.selectedCell.map(Number)).to.eql([2, 0, 2, 0]);
+    });
+
+    it('moves the selection to the first cell of a merged range after Right, Down and Home', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [4, 6], mergeCells: { A1: [1, 3], C2: [1, 3], A5: [2, 1] } }],
+        })[0];
+
+        // Right from B3 enters the range C2:C4 at C3
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+        worksheet.right();
+        expect(worksheet.selectedCell.map(Number)).to.eql([2, 1, 2, 1]);
+
+        // Down from B4 enters the range A5:B5 at B5
+        worksheet.updateSelectionFromCoords(1, 3, 1, 3);
+        worksheet.down();
+        expect(worksheet.selectedCell.map(Number)).to.eql([0, 4, 0, 4]);
+
+        // Home from D3 enters the range A1:A3 at A3
+        worksheet.updateSelectionFromCoords(3, 2, 3, 2);
+        worksheet.first();
+        expect(worksheet.selectedCell.map(Number)).to.eql([0, 0, 0, 0]);
+    });
+});

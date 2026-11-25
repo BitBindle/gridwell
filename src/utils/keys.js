@@ -1,6 +1,20 @@
 import { updateScroll } from './internal.js';
 import { loadDown, loadPage, loadUp, loadValidation } from './lazyLoading.js';
 
+/**
+ * Move the selection from a cell that a merged range hides to the first cell of the range
+ */
+const toFirstCell = function () {
+    const obj = this;
+
+    const element = obj.records[obj.selectedCell[1]][obj.selectedCell[0]].element;
+
+    if (element.getAttribute('data-merged')) {
+        obj.selectedCell[0] = parseInt(element.getAttribute('data-x'));
+        obj.selectedCell[1] = parseInt(element.getAttribute('data-y'));
+    }
+};
+
 const upGet = function (x, y) {
     const obj = this;
 
@@ -65,6 +79,7 @@ export const up = function (shiftKey, ctrlKey) {
         if (obj.selectedCell[1] > 0) {
             upVisible.call(obj, 0, ctrlKey ? 0 : 1);
         }
+        toFirstCell.call(obj);
         obj.selectedCell[2] = obj.selectedCell[0];
         obj.selectedCell[3] = obj.selectedCell[1];
     }
@@ -163,6 +178,7 @@ export const right = function (shiftKey, ctrlKey) {
         if (obj.selectedCell[0] < obj.headers.length - 1) {
             rightVisible.call(obj, 0, ctrlKey ? 0 : 1);
         }
+        toFirstCell.call(obj);
         obj.selectedCell[2] = obj.selectedCell[0];
         obj.selectedCell[3] = obj.selectedCell[1];
     }
@@ -235,6 +251,7 @@ export const down = function (shiftKey, ctrlKey) {
         if (obj.selectedCell[1] < obj.records.length - 1) {
             downVisible.call(obj, 0, ctrlKey ? 0 : 1);
         }
+        toFirstCell.call(obj);
         obj.selectedCell[2] = obj.selectedCell[0];
         obj.selectedCell[3] = obj.selectedCell[1];
     }
@@ -331,6 +348,7 @@ export const left = function (shiftKey, ctrlKey) {
         if (obj.selectedCell[0] > 0) {
             leftVisible.call(obj, 0, ctrlKey ? 0 : 1);
         }
+        toFirstCell.call(obj);
         obj.selectedCell[2] = obj.selectedCell[0];
         obj.selectedCell[3] = obj.selectedCell[1];
     }
@@ -354,6 +372,7 @@ export const first = function (shiftKey, ctrlKey) {
         } else {
             leftVisible.call(obj, 0, 0);
         }
+        toFirstCell.call(obj);
         obj.selectedCell[2] = obj.selectedCell[0];
         obj.selectedCell[3] = obj.selectedCell[1];
     }
@@ -387,6 +406,7 @@ export const last = function (shiftKey, ctrlKey) {
         } else {
             rightVisible.call(obj, 0, 0);
         }
+        toFirstCell.call(obj);
         obj.selectedCell[2] = obj.selectedCell[0];
         obj.selectedCell[3] = obj.selectedCell[1];
     }
