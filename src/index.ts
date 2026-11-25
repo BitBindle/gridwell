@@ -12,7 +12,7 @@ import type { Library } from './types/internal';
 
 libraryBase.jspreadsheet = function (el: any, options: any) {
     try {
-        let worksheets: any[] = [];
+        const worksheets: any[] = [];
 
         // Create spreadsheet
         Factory.spreadsheet(el, options, worksheets).then((spreadsheet) => {

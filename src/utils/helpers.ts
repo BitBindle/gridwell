@@ -360,7 +360,7 @@ export const createFromTable = function (el: HTMLElement, options: any) {
         if (content.length) {
             const footers = [];
             for (let j = 0; j < content.length; j++) {
-                let footer = [];
+                const footer = [];
                 for (let i = 0; i < content[j].children.length; i++) {
                     footer.push(content[j].children[i].textContent);
                 }

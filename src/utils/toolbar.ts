@@ -63,9 +63,9 @@ export const getDefault = function (this: Spreadsheet) {
         onchange: function (a: any, b: any, c: any, d: any, e: any) {
             const worksheet = getActive();
 
-            let cells = worksheet.getSelected(true);
+            const cells = worksheet.getSelected(true);
             if (cells) {
-                let value = !e ? '' : d;
+                const value = !e ? '' : d;
 
                 worksheet.setStyle(
                     Object.fromEntries(
@@ -92,7 +92,7 @@ export const getDefault = function (this: Spreadsheet) {
         onchange: function (a: any, b: any, c: any, value: any) {
             const worksheet = getActive();
 
-            let cells = worksheet.getSelected(true);
+            const cells = worksheet.getSelected(true);
             if (cells) {
                 worksheet.setStyle(
                     Object.fromEntries(
@@ -117,7 +117,7 @@ export const getDefault = function (this: Spreadsheet) {
         onchange: function (a: any, b: any, c: any, value: any) {
             const worksheet = getActive();
 
-            let cells = worksheet.getSelected(true);
+            const cells = worksheet.getSelected(true);
             if (cells) {
                 worksheet.setStyle(
                     Object.fromEntries(
@@ -138,7 +138,7 @@ export const getDefault = function (this: Spreadsheet) {
         onclick: function () {
             const worksheet = getActive();
 
-            let cells = worksheet.getSelected(true);
+            const cells = worksheet.getSelected(true);
             if (cells) {
                 worksheet.setStyle(
                     Object.fromEntries(
@@ -172,7 +172,7 @@ export const getDefault = function (this: Spreadsheet) {
         },
     });
 
-    let verticalAlign = ['top', 'middle', 'bottom'];
+    const verticalAlign = ['top', 'middle', 'bottom'];
 
     items.push({
         type: 'select',
@@ -184,7 +184,7 @@ export const getDefault = function (this: Spreadsheet) {
         onchange: function (a: any, b: any, c: any, d: any, value: any) {
             const worksheet = getActive();
 
-            let cells = worksheet.getSelected(true);
+            const cells = worksheet.getSelected(true);
             if (cells) {
                 worksheet.setStyle(
                     Object.fromEntries(
@@ -214,12 +214,12 @@ export const getDefault = function (this: Spreadsheet) {
                     Math.max(worksheet.selectedCell[1], worksheet.selectedCell[3]),
                 ];
 
-                let cell = getCellNameFromCoords(selectedRange[0], selectedRange[1]);
+                const cell = getCellNameFromCoords(selectedRange[0], selectedRange[1]);
                 if (worksheet.records[selectedRange[1]][selectedRange[0]].element.getAttribute('data-merged')) {
                     worksheet.removeMerge(cell);
                 } else {
-                    let colspan = selectedRange[2] - selectedRange[0] + 1;
-                    let rowspan = selectedRange[3] - selectedRange[1] + 1;
+                    const colspan = selectedRange[2] - selectedRange[0] + 1;
+                    const rowspan = selectedRange[3] - selectedRange[1] + 1;
 
                     if (colspan !== 1 || rowspan !== 1) {
                         worksheet.setMerge(cell, colspan, rowspan);
@@ -262,28 +262,28 @@ export const getDefault = function (this: Spreadsheet) {
                     Math.max(worksheet.selectedCell[1], worksheet.selectedCell[3]),
                 ];
 
-                let type = d;
+                const type = d;
 
                 if (selectedRange) {
                     // Default options
                     let thickness = b.thickness || 1;
-                    let color = b.color || 'black';
+                    const color = b.color || 'black';
                     const borderStyle = b.style || 'solid';
 
                     if (borderStyle === 'double') {
                         thickness += 2;
                     }
 
-                    let style: Record<string, string> = {};
+                    const style: Record<string, string> = {};
 
                     // Matrix
-                    let px = selectedRange[0];
-                    let py = selectedRange[1];
-                    let ux = selectedRange[2];
-                    let uy = selectedRange[3];
+                    const px = selectedRange[0];
+                    const py = selectedRange[1];
+                    const ux = selectedRange[2];
+                    const uy = selectedRange[3];
 
                     const setBorder = function (columnName: string, i: number, j: number) {
-                        let border = ['', '', '', ''];
+                        const border = ['', '', '', ''];
 
                         if (
                             ((type === 'border_top' || type === 'border_outer') && j === py) ||
@@ -340,11 +340,11 @@ export const getDefault = function (this: Spreadsheet) {
         },
         onload: function (a: any, b: any) {
             // Border color
-            let container = document.createElement('div');
+            const container = document.createElement('div');
             let div = document.createElement('div');
             container.appendChild(div);
 
-            let colorPicker = jSuites.color(div, {
+            const colorPicker = jSuites.color(div, {
                 closeOnChange: false,
                 onchange: function (o: any, v: any) {
                     o.parentNode.children[1].style.color = v;
@@ -352,7 +352,7 @@ export const getDefault = function (this: Spreadsheet) {
                 },
             } as any);
 
-            let i = document.createElement('i');
+            const i = document.createElement('i');
             i.classList.add('material-icons');
             i.innerHTML = 'color_lens';
             i.onclick = function () {

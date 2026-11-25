@@ -89,7 +89,7 @@ const mouseUpControls = function (e: any) {
             } else {
                 // Remove Class
                 libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.children[0].classList.remove('resizing');
-                let newHeight: any = libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.getAttribute('height');
+                const newHeight: any = libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.getAttribute('height');
                 setHeight.call(
                     libraryBase.jspreadsheet.current,
                     libraryBase.jspreadsheet.current.resizing.row,

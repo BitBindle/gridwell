@@ -62,7 +62,7 @@ const setWorksheetFunctions = function (worksheet: Worksheet) {
 };
 
 const createTable = function (this: Worksheet) {
-    let obj = this;
+    const obj = this;
 
     setWorksheetFunctions(obj);
 

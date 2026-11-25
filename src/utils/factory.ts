@@ -15,9 +15,9 @@ const factory = function () {};
 
 const createWorksheets = async function (spreadsheet: Spreadsheet, options: any, el: HTMLElement) {
     // Create worksheets
-    let o = options.worksheets;
+    const o = options.worksheets;
     if (o) {
-        let tabsOptions: any = {
+        const tabsOptions: any = {
             animation: true,
             onbeforecreate: function (element: any, title: any) {
                 if (title) {
@@ -134,7 +134,7 @@ factory.spreadsheet = async function (el: any, options: any, worksheets: Workshe
         el = div;
     }
 
-    let spreadsheet = {
+    const spreadsheet = {
         worksheets: worksheets,
         config: options,
         element: el,
@@ -199,7 +199,7 @@ factory.spreadsheet = async function (el: any, options: any, worksheets: Workshe
 
 factory.worksheet = function (spreadsheet: Spreadsheet, options: any, position?: number) {
     // Worksheet object
-    let w: any = {
+    const w: any = {
         // Parent of a worksheet is always the spreadsheet
         parent: spreadsheet,
         // Options for this worksheet

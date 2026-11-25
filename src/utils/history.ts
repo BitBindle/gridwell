@@ -230,7 +230,7 @@ export const undo: WorksheetMethod<'undo'> = function () {
         } else if (historyRecord.action == 'setComments') {
             obj.setComments(historyRecord.oldValue);
         } else if (historyRecord.action == 'orderBy') {
-            let rows = [];
+            const rows = [];
             for (let j = 0; j < historyRecord.rows.length; j++) {
                 rows[historyRecord.rows[j]] = j;
             }

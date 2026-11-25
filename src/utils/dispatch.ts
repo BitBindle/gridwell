@@ -69,7 +69,7 @@ const dispatch: (this: Worksheet | Spreadsheet, event: string, ...args: any[]) =
     const obj = this;
     let ret = null;
 
-    let spreadsheet = (obj.parent ? obj.parent : obj) as Spreadsheet;
+    const spreadsheet = (obj.parent ? obj.parent : obj) as Spreadsheet;
 
     // Dispatch events
     if (!spreadsheet.ignoreEvents) {

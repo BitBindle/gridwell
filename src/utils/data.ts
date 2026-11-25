@@ -148,16 +148,13 @@ export const setData: WorksheetMethod<'setData'> = function (data: any) {
 export const getValue: WorksheetMethod<'getValue'> = function (cell: any, processedValue) {
     const obj = this;
 
-    let x;
-    let y;
-
     if (typeof cell !== 'string') {
         return null;
     }
 
     cell = getIdFromColumnName(cell, true);
-    x = cell[0];
-    y = cell[1];
+    const x = cell[0];
+    const y = cell[1];
 
     let value = null;
 

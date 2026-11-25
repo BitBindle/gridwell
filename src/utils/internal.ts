@@ -506,7 +506,7 @@ export const createCell = function (this: Worksheet, i: number, j: number, value
     const column = obj.options.columns && obj.options.columns[c];
 
     // Create cell and properties
-    let td = document.createElement('td');
+    const td = document.createElement('td');
     if (c != i) {
         cellColumns.set(td, c - parseInt(i));
     }
@@ -701,7 +701,7 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
         };
 
         // A custom editor can have setValue, which is not in the public typings
-        let editor: any = column && typeof column.type === 'object' ? column.type : null;
+        const editor: any = column && typeof column.type === 'object' ? column.type : null;
         if (editor) {
             // Update data and cell
             obj.options.data[y][x] = value;

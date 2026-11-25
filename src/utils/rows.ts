@@ -360,7 +360,7 @@ export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numO
             }
 
             // Last column
-            let lastRow = obj.options.data.length - 1;
+            const lastRow = obj.options.data.length - 1;
 
             if (rowNumber == undefined || rowNumber > lastRow || rowNumber < 0) {
                 rowNumber = lastRow;
