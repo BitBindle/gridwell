@@ -394,7 +394,7 @@ declare namespace jspreadsheet {
          * @param role - indicates in which part of the spreadsheet the click occurred.
          * @param x - Horizontal index of the element that was clicked. The meaning of this value depends on the {@link role} argument.
          * @param y - Vertical index of the element that was clicked. The meaning of this value depends on the {@link role} argument.
-         * @returns Context menu configuration that should be created.
+         * @returns Context menu configuration that should be created, or false to open no menu of the spreadsheet.
          */
         contextMenu?: (
             instance: WorksheetInstance,
@@ -405,7 +405,7 @@ declare namespace jspreadsheet {
             role: ContextMenuRole,
             x: string | number | null,
             y: string | number | null
-        ) => ContextMenuItem[] | null | undefined;
+        ) => ContextMenuItem[] | false | null | undefined;
 
         /**
          * Enable the formula debug notices.
