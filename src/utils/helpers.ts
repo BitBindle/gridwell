@@ -291,8 +291,8 @@ export const createFromTable = function (el: HTMLElement, options: any) {
                     }
                     options.data[rowNumber].push(value);
 
-                    // Key
-                    const cellName = getColumnNameFromId([i, j]);
+                    // Key, by the row in the data, which is j - 1 when the first row is the header
+                    const cellName = getColumnNameFromId([i, rowNumber]);
 
                     // Classes
                     const tmp = content[j].children[i].getAttribute('class');
@@ -328,7 +328,7 @@ export const createFromTable = function (el: HTMLElement, options: any) {
 
                 // Row Height
                 if (content[j].style && content[j].style.height) {
-                    rows[j] = { height: content[j].style.height };
+                    rows[rowNumber] = { height: content[j].style.height };
                 }
 
                 // Index
