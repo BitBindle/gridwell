@@ -1,4 +1,5 @@
 import dispatch from './dispatch.js';
+import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -28,7 +29,7 @@ export const updateMeta = function (this: Worksheet, affectedCells: Record<strin
     const obj = this;
 
     if (obj.options.meta) {
-        const newMeta: Record<string, any> = {};
+        const newMeta: Record<string, jspreadsheet.MetaInformation> = {};
         const keys = Object.keys(obj.options.meta);
         for (let i = 0; i < keys.length; i++) {
             if (affectedCells[keys[i]]) {
@@ -48,7 +49,7 @@ export const updateMeta = function (this: Worksheet, affectedCells: Record<strin
  * @param k - The key, with a cell name.
  * @param v - The value, with a cell name.
  */
-export const setMeta = function (this: Worksheet, o: any, k?: string, v?: any) {
+export const setMeta = function (this: Worksheet, o: string | Record<string, jspreadsheet.MetaInformation>, k?: string, v?: string) {
     const obj = this;
 
     if (!obj.options.meta) {
@@ -56,13 +57,13 @@ export const setMeta = function (this: Worksheet, o: any, k?: string, v?: any) {
     }
 
     if (k && v) {
-        // Set data value
-        if (!obj.options.meta[o]) {
-            obj.options.meta[o] = {};
+        // Set data value. o is a cell name.
+        if (!obj.options.meta[o as string]) {
+            obj.options.meta[o as string] = {};
         }
-        obj.options.meta[o][k] = v;
+        obj.options.meta[o as string][k] = v;
 
-        dispatch.call(obj, 'onchangemeta', obj, { [o]: { [k]: v } });
+        dispatch.call(obj, 'onchangemeta', obj, { [o as string]: { [k]: v } });
     } else {
         // Apply that for all cells
         const keys = Object.keys(o);
@@ -71,9 +72,10 @@ export const setMeta = function (this: Worksheet, o: any, k?: string, v?: any) {
                 obj.options.meta[keys[i]] = {};
             }
 
-            const prop = Object.keys(o[keys[i]]);
+            // o is the information by cell name
+            const prop = Object.keys((o as Record<string, jspreadsheet.MetaInformation>)[keys[i]]);
             for (let j = 0; j < prop.length; j++) {
-                obj.options.meta[keys[i]][prop[j]] = o[keys[i]][prop[j]];
+                obj.options.meta[keys[i]][prop[j]] = (o as Record<string, jspreadsheet.MetaInformation>)[keys[i]][prop[j]];
             }
         }
 

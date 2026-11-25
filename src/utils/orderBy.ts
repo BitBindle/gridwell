@@ -5,12 +5,13 @@ import { updateTableReferences } from './internal.js';
 import { loadPage } from './lazyLoading.js';
 import { closeFilter } from './filter.js';
 import { updateTabStop } from './accessibility.js';
+import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
  * Update order arrow
  */
-export const updateOrderArrow = function (this: Worksheet, column: any, order: any) {
+export const updateOrderArrow = function (this: Worksheet, column: number, order: boolean | number) {
     const obj = this;
 
     // Remove order
@@ -30,32 +31,32 @@ export const updateOrderArrow = function (this: Worksheet, column: any, order: a
 /**
  * Update rows position
  */
-export const updateOrder = function (this: Worksheet, rows: any) {
+export const updateOrder = function (this: Worksheet, rows: number[]) {
     const obj = this;
 
     // History
-    let data = [];
+    const data: Worksheet['options']['data'] = [];
     for (let j = 0; j < rows.length; j++) {
         data[j] = obj.options.data[rows[j]];
     }
     obj.options.data = data;
 
-    data = [];
+    const records: Worksheet['records'] = [];
     for (let j = 0; j < rows.length; j++) {
-        data[j] = obj.records[rows[j]];
+        records[j] = obj.records[rows[j]];
 
-        for (let i = 0; i < data[j].length; i++) {
-            data[j][i].y = j;
+        for (let i = 0; i < records[j].length; i++) {
+            records[j][i].y = j;
         }
     }
-    obj.records = data;
+    obj.records = records;
 
-    data = [];
+    const rowObjects: Worksheet['rows'] = [];
     for (let j = 0; j < rows.length; j++) {
-        data[j] = obj.rows[rows[j]];
-        data[j].y = j;
+        rowObjects[j] = obj.rows[rows[j]];
+        rowObjects[j].y = j;
     }
-    obj.rows = data;
+    obj.rows = rowObjects;
 
     // Update references
     updateTableReferences.call(obj);
@@ -111,7 +112,8 @@ export const orderBy: WorksheetMethod<'orderBy'> = function (column, order) {
         }
 
         // Test order
-        let temp: any[] = [];
+        // The row and the value to sort by
+        let temp: jspreadsheet.SortingItem[] = [];
         if (
             obj.options.columns &&
             obj.options.columns[column] &&
