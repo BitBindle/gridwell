@@ -735,3 +735,53 @@ describe('The clipboard', () => {
         expect(worksheets[0].clipboard).to.not.equal(worksheets[1].clipboard);
     });
 });
+
+describe('Download', () => {
+    const getDownload = (worksheet, ...args) => {
+        const createObjectURL = URL.createObjectURL;
+        let blob = null;
+        URL.createObjectURL = (b) => {
+            blob = b;
+            return 'blob:test';
+        };
+        try {
+            worksheet.download(...args);
+        } finally {
+            URL.createObjectURL = createObjectURL;
+        }
+        // The Blob of jsdom has no text method. The download starts with a byte order mark.
+        return new Promise((resolve) => {
+            const reader = new window.FileReader();
+            reader.onload = () => resolve(reader.result.replace(/^\uFEFF/, ''));
+            reader.readAsText(blob);
+        });
+    };
+
+    it('downloads the data with the headers and the nested headers', async () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b,c'],
+                        ['say "hi"', 2],
+                    ],
+                    columns: [{ title: 'One' }, { title: 'Two' }],
+                    nestedHeaders: [[{ title: 'Both', colspan: 2 }]],
+                    csvDelimiter: ',',
+                },
+            ],
+        })[0];
+
+        expect(await getDownload(worksheet, true)).to.equal('Both,\r\nOne,Two\r\na,"b,c"\r\n"say ""hi""",2');
+        expect(await getDownload(worksheet)).to.equal('a,"b,c"\r\n"say ""hi""",2');
+    });
+
+    it('downloads the shown values when processed', async () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [[1, '=A1+1']] }],
+        })[0];
+
+        expect(await getDownload(worksheet, false, false)).to.equal('1\t=A1+1');
+        expect(await getDownload(worksheet, false, true)).to.equal('1\t2');
+    });
+});

@@ -269,3 +269,63 @@ describe('Drag a row', () => {
         expect(worksheet.getData()).to.eql([['a']]);
     });
 });
+
+describe('Insert rows', () => {
+    it('gives the events the new rows, and puts them before or after the row', () => {
+        const events = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b'],
+                        ['c', 'd'],
+                    ],
+                },
+            ],
+            onbeforeinsertrow: (instance, rows) => {
+                events.push(['before', rows]);
+            },
+            oninsertrow: (instance, rows) => {
+                events.push(['after', rows]);
+            },
+        })[0];
+
+        worksheet.insertRow(['x', 'y'], 0, true);
+        worksheet.insertRow(2, 2);
+
+        expect(worksheet.getData()).to.eql([
+            ['x', 'y'],
+            ['a', 'b'],
+            ['c', 'd'],
+            ['', ''],
+            ['', ''],
+        ]);
+        expect(events).to.eql([
+            ['before', [{ row: 0, data: ['x', 'y'] }]],
+            ['after', [{ row: 0, data: ['x', 'y'] }]],
+            [
+                'before',
+                [
+                    { row: 3, data: ['', ''] },
+                    { row: 4, data: ['', ''] },
+                ],
+            ],
+            [
+                'after',
+                [
+                    { row: 3, data: ['', ''] },
+                    { row: 4, data: ['', ''] },
+                ],
+            ],
+        ]);
+        expect(worksheet.rows.map((row) => row.y)).to.eql([0, 1, 2, 3, 4]);
+        expect(Array.from(worksheet.tbody.children)).to.eql(worksheet.rows.map((row) => row.element));
+        expect(worksheet.records.map((row) => row.map((cell) => cell.y))).to.eql([
+            [0, 0],
+            [1, 1],
+            [2, 2],
+            [3, 3],
+            [4, 4],
+        ]);
+    });
+});
