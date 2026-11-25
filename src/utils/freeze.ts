@@ -9,8 +9,8 @@ export const getFreezeWidth = function (this: Worksheet) {
     const obj = this;
 
     let width = 0;
-    if (obj.options.freezeColumns > 0) {
-        for (let i = 0; i < obj.options.freezeColumns; i++) {
+    if (obj.options.freezeColumns! > 0) {
+        for (let i = 0; i < obj.options.freezeColumns!; i++) {
             let columnWidth;
             if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].width !== undefined) {
                 columnWidth = parseInt(obj.options.columns[i].width);

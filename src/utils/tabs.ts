@@ -17,12 +17,17 @@ export interface Tabs {
     selectIndex(a: Element): number;
     /** The index of the open tab, or false when no tab is open. */
     getActive(): number | false;
-    rename(i: number, title?: string): void;
-    create(title?: string): HTMLDivElement | false;
+    rename(i: number, title?: string | null): void;
+    create(title?: string): HTMLDivElement | false | undefined;
     remove(index: number): void | false;
     nextNumber(): number;
     deleteElement(index: number): void | false;
-    appendElement(title?: string, cb?: (div: HTMLDivElement, header: TabHeader) => void, openTab?: boolean, position?: number): HTMLDivElement;
+    appendElement(
+        title?: string | null,
+        cb?: ((div: HTMLDivElement, header: TabHeader) => void) | null,
+        openTab?: boolean,
+        position?: number
+    ): HTMLDivElement | undefined;
     updateContent(position: number, newContent: string | HTMLElement): void;
     updatePosition(f: number, t: number, ignoreEvents?: boolean, openTab?: boolean): void;
     move(f: number, t: number, ignoreEvents?: boolean, openTab?: boolean): void;
@@ -55,9 +60,10 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
         }
     }
 
-    let prev: HTMLDivElement = null;
-    let next: HTMLDivElement = null;
-    let border: HTMLDivElement = null;
+    // init creates these elements
+    let prev: HTMLDivElement = null!;
+    let next: HTMLDivElement = null!;
+    let border: HTMLDivElement = null!;
 
     const getHeader = function (index: number | false) {
         const header = obj.headers.children[index as number];
@@ -263,7 +269,7 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
 
         for (let i = 0; i < obj.content.children.length; i++) {
             // The match is compared and parsed as text
-            const tmp: any = getHeader(i).textContent.match(/[0-9].*/);
+            const tmp: any = getHeader(i)!.textContent.match(/[0-9].*/);
 
             if (tmp > num) {
                 num = parseInt(tmp);
@@ -300,7 +306,7 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
 
         // Keep the focus in the tab list
         if (hadFocus && getHeader(obj.getActive())) {
-            getHeader(obj.getActive()).focus();
+            getHeader(obj.getActive())!.focus();
         }
 
         if (typeof obj.options.ondelete == 'function') {
@@ -374,13 +380,13 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
 
         // Keep the relation with the tab, without a change to the attributes that the caller gave
         if (!contentItem.id) {
-            contentItem.setAttribute('id', current.getAttribute('id'));
+            contentItem.setAttribute('id', current.getAttribute('id')!);
         }
         if (!contentItem.hasAttribute('role')) {
             contentItem.setAttribute('role', 'tabpanel');
         }
         if (!contentItem.hasAttribute('aria-labelledby')) {
-            contentItem.setAttribute('aria-labelledby', current.getAttribute('aria-labelledby'));
+            contentItem.setAttribute('aria-labelledby', current.getAttribute('aria-labelledby')!);
         }
 
         if (current.classList.contains('jtabs-selected')) {
@@ -390,8 +396,8 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
         obj.content.replaceChild(contentItem, current);
 
         if (getHeader(position)) {
-            getHeader(position).content = contentItem;
-            getHeader(position).setAttribute('aria-controls', contentItem.id);
+            getHeader(position)!.content = contentItem;
+            getHeader(position)!.setAttribute('aria-controls', contentItem.id);
         }
 
         obj.setBorder(obj.getActive());
@@ -418,9 +424,9 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
 
     obj.move = function (f, t, ignoreEvents, openTab) {
         if (f > t) {
-            obj.headers.insertBefore(getHeader(f), getHeader(t));
+            obj.headers.insertBefore(getHeader(f)!, getHeader(t));
         } else {
-            obj.headers.insertBefore(getHeader(f), getHeader(t).nextSibling);
+            obj.headers.insertBefore(getHeader(f)!, getHeader(t)!.nextSibling);
         }
 
         obj.updatePosition(f, t, ignoreEvents, openTab);
@@ -494,7 +500,7 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
             const div = obj.appendElement(obj.options.data[i].title, null, false);
 
             if (obj.options.data[i].content) {
-                div.innerHTML = obj.options.data[i].content;
+                div!.innerHTML = obj.options.data[i].content;
             }
         }
 
@@ -543,7 +549,7 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
             if (target !== null) {
                 e.preventDefault();
                 obj.open(target);
-                getHeader(target).focus();
+                getHeader(target)!.focus();
             }
         });
 

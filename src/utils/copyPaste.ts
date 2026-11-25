@@ -163,12 +163,12 @@ export const copy = function (
 
     // Create a hidden textarea to copy the values
     if (!returnData) {
-        // Paste event
+        // Paste event. Without a selection, this throws (issue #41).
         const selectedRange = [
-            Math.min(obj.selectedCell[0], obj.selectedCell[2]),
-            Math.min(obj.selectedCell[1], obj.selectedCell[3]),
-            Math.max(obj.selectedCell[0], obj.selectedCell[2]),
-            Math.max(obj.selectedCell[1], obj.selectedCell[3]),
+            Math.min(obj.selectedCell![0], obj.selectedCell![2]),
+            Math.min(obj.selectedCell![1], obj.selectedCell![3]),
+            Math.max(obj.selectedCell![0], obj.selectedCell![2]),
+            Math.max(obj.selectedCell![1], obj.selectedCell![3]),
         ];
 
         const result = dispatch.call(obj, 'oncopy', obj, selectedRange, strLabel, isCut);
@@ -244,8 +244,9 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
     // Split new line
     data = parseCSV(data, '\t');
 
-    const ex = obj.selectedCell[2];
-    const ey = obj.selectedCell[3];
+    // Without a selection, this throws (issue #41)
+    const ex = obj.selectedCell![2];
+    const ey = obj.selectedCell![3];
 
     const w = ex - x + 1;
     const h = ey - y + 1;

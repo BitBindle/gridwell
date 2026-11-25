@@ -105,7 +105,7 @@ export const up: WorksheetMethod<'up'> = function (shiftKey, ctrlKey) {
                 }
             }
         }
-    } else if (obj.options.pagination > 0) {
+    } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selectedCell[3]);
         if (pageNumber != obj.pageNumber) {
             obj.page(pageNumber);
@@ -278,7 +278,7 @@ export const down: WorksheetMethod<'down'> = function (shiftKey, ctrlKey) {
                 }
             }
         }
-    } else if (obj.options.pagination > 0) {
+    } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selectedCell[3]);
         if (pageNumber != obj.pageNumber) {
             obj.page(pageNumber);
@@ -386,7 +386,7 @@ export const first: WorksheetMethod<'first'> = function (shiftKey, ctrlKey) {
     // Change page
     if (obj.options.lazyLoading == true && (obj.selectedCell[1] == 0 || obj.selectedCell[3] == 0)) {
         loadPage.call(obj, 0);
-    } else if (obj.options.pagination > 0) {
+    } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selectedCell[3]);
         if (pageNumber != obj.pageNumber) {
             obj.page(pageNumber);
@@ -421,7 +421,7 @@ export const last: WorksheetMethod<'last'> = function (shiftKey, ctrlKey) {
     // Change page
     if (obj.options.lazyLoading == true && (obj.selectedCell[1] == obj.records.length - 1 || obj.selectedCell[3] == obj.records.length - 1)) {
         loadPage.call(obj, -1);
-    } else if (obj.options.pagination > 0) {
+    } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selectedCell[3]);
         if (pageNumber != obj.pageNumber) {
             obj.page(pageNumber);

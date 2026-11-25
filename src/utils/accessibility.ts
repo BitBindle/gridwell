@@ -192,7 +192,7 @@ export const setCellLabel = function (this: Worksheet, td: HTMLTableCellElement)
 /**
  * A cell can be the tab stop when its row is in the table and the cell and its row are not hidden
  */
-const isVisibleCell = function (this: Worksheet, td: HTMLTableCellElement) {
+const isVisibleCell = function (this: Worksheet, td: HTMLTableCellElement | null | undefined) {
     const obj = this;
 
     return (
@@ -229,7 +229,7 @@ const getFirstVisibleCell = function (this: Worksheet) {
  * Roving tabindex: the active cell is the only cell with tabindex 0. The grid is multiselectable, so the active cell
  * gives aria-selected="false" when it is not selected.
  */
-const setActiveCell = function (this: Worksheet, td: HTMLTableCellElement) {
+const setActiveCell = function (this: Worksheet, td: HTMLTableCellElement | null | undefined) {
     const obj = this;
 
     const previous = obj.activeCell;
@@ -285,7 +285,7 @@ const isFocusLost = function () {
 export const updateTabStop = function (this: Worksheet) {
     const obj = this;
 
-    let td: HTMLTableCellElement = null;
+    let td: HTMLTableCellElement | null | undefined = null;
     if (obj.selectedCell) {
         const x = obj.selectedCell[0];
         const y = obj.selectedCell[1];

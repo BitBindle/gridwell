@@ -33,7 +33,7 @@ export const download = function (this: Worksheet, includeHeaders?: boolean, pro
             pom.setAttribute('download', (obj.options.csvFileName || obj.options.worksheetName) + '.csv');
             document.body.appendChild(pom);
             pom.click();
-            pom.parentNode.removeChild(pom);
+            pom.parentNode!.removeChild(pom);
         }
     }
 };

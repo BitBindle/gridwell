@@ -76,8 +76,8 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
             cell.removeAttribute('tabindex');
             cell.removeAttribute('aria-label');
 
-            // Custom editors
-            column.type.openEditor(cell, obj.options.data[y][x], parseInt(x), parseInt(y), obj, column, e);
+            // Custom editors. The code expects a custom editor to have openEditor and closeEditor.
+            column.type.openEditor!(cell, obj.options.data[y][x], parseInt(x), parseInt(y), obj, column, e);
 
             // On edition start
             dispatch.call(obj, 'oncreateeditor', obj, cell, parseInt(x), parseInt(y), null, column);
@@ -326,7 +326,7 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
         // If custom editor
         if (column && typeof column.type === 'object') {
             // Custom editor
-            value = column.type.closeEditor(cell, save, parseInt(x), parseInt(y), obj, column);
+            value = column.type.closeEditor!(cell, save, parseInt(x), parseInt(y), obj, column);
         } else {
             // Native functions
             if (column && (column.type == 'checkbox' || column.type == 'radio' || column.type == 'hidden')) {
@@ -378,14 +378,14 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
 
         // Ignore changes if the value is the same
         if (obj.options.data[y][x] == value) {
-            cell.innerHTML = obj.edition[1];
+            cell.innerHTML = obj.edition![1];
         } else {
             obj.setValue(cell, value);
         }
     } else {
         if (column && typeof column.type === 'object') {
             // Custom editor
-            column.type.closeEditor(cell, save, parseInt(x), parseInt(y), obj, column);
+            column.type.closeEditor!(cell, save, parseInt(x), parseInt(y), obj, column);
         } else {
             if (column && column.type == 'dropdown') {
                 (cell.children[0] as any).dropdown.close(true);

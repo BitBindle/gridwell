@@ -40,7 +40,8 @@ export const getStyle = function (this: Worksheet, cell?: string | number[], key
     } else {
         cell = getIdFromColumnName(cell as string, true);
 
-        return key ? obj.records[cell[1]][cell[0]].element.style[key] : obj.records[cell[1]][cell[0]].element.getAttribute('style');
+        // Each cell gets a style attribute when it is created (the text alignment)
+        return key ? obj.records[cell[1]][cell[0]].element.style[key] : obj.records[cell[1]][cell[0]].element.getAttribute('style')!;
     }
 };
 
@@ -160,5 +161,5 @@ export const resetStyle = function (this: Worksheet, o: Record<string, any>, ign
             obj.records[cell[1]][cell[0]].element.setAttribute('style', '');
         }
     }
-    obj.setStyle(o, null, null, null, ignoreHistoryAndEvents);
+    obj.setStyle(o, null, null, null as any, ignoreHistoryAndEvents);
 };

@@ -91,7 +91,7 @@ const updateMergedCell = function (this: Worksheet, cellName: string) {
     const obj = this;
 
     const cell = getIdFromColumnName(cellName, true);
-    const colspan = obj.options.mergeCells[cellName][0];
+    const colspan = obj.options.mergeCells![cellName][0];
 
     let visible = 0;
     for (let x = cell[0]; x < cell[0] + colspan; x++) {
@@ -177,7 +177,7 @@ export const getMerge: WorksheetMethod<'getMerge'> = function (cellName) {
  * @param rowspan
  * @param ignoreHistoryAndEvents
  */
-export const setMerge = function (this: Worksheet, cellName: string, colspan: any, rowspan: any, ignoreHistoryAndEvents?: any): void {
+export const setMerge = function (this: Worksheet, cellName: string, colspan: any, rowspan: any, ignoreHistoryAndEvents?: any): null | undefined {
     const obj = this;
 
     let test: string | false = false;
@@ -253,7 +253,7 @@ export const setMerge = function (this: Worksheet, cellName: string, colspan: an
                 if (!(cell[0] == x && cell[1] == y)) {
                     data.push(obj.options.data[y][x]);
                     updateCell.call(obj, x, y, '', true);
-                    (obj.options.mergeCells[cellName] as MergeInfo)[2].push(obj.records[y][x].element);
+                    (obj.options.mergeCells[cellName] as MergeInfo)[2]!.push(obj.records[y][x].element);
                     obj.records[y][x].element.style.display = 'none';
                     obj.records[y][x].element = obj.records[cell[1]][cell[0]].element;
                 }
@@ -302,7 +302,7 @@ export const removeMerge = function (this: Worksheet, cellName: string, data: an
         for (j = 0; j < info[1]; j++) {
             for (i = 0; i < info[0]; i++) {
                 if (j > 0 || i > 0) {
-                    obj.records[cell[1] + j][cell[0] + i].element = info[2][index];
+                    obj.records[cell[1] + j][cell[0] + i].element = info[2]![index];
                     obj.records[cell[1] + j][cell[0] + i].element.style.display = obj.headers[cell[0] + i].style.display == 'none' ? 'none' : '';
                     // Recover data
                     if (data && data[index]) {
@@ -314,7 +314,7 @@ export const removeMerge = function (this: Worksheet, cellName: string, data: an
         }
 
         // Update selection
-        updateSelection.call(obj, obj.records[cell[1]][cell[0]].element, obj.records[cell[1] + j - 1][cell[0] + i - 1].element);
+        updateSelection.call(obj, obj.records[cell[1]][cell[0]].element, obj.records[cell[1] + j! - 1][cell[0] + i! - 1].element);
 
         if (!keepOptions) {
             delete obj.options.mergeCells[cellName];

@@ -45,7 +45,7 @@ const historyProcessRow = function (this: Worksheet, type: any, historyRecord: a
         const numOfRows = historyRecord.numOfRows;
         // Remove nodes
         for (let j = rowIndex; j < numOfRows + rowIndex; j++) {
-            obj.rows[j].element.parentNode.removeChild(obj.rows[j].element);
+            obj.rows[j].element.parentNode!.removeChild(obj.rows[j].element);
         }
         // Remove references
         obj.records.splice(rowIndex, numOfRows);
@@ -85,8 +85,8 @@ const historyProcessRow = function (this: Worksheet, type: any, historyRecord: a
     }
 
     // Respect pagination
-    if (obj.options.pagination > 0) {
-        obj.page(obj.pageNumber);
+    if (obj.options.pagination! > 0) {
+        obj.page(obj.pageNumber!);
     }
 
     updateTableReferences.call(obj);
@@ -106,14 +106,14 @@ const historyProcessColumn = function (this: Worksheet, type: any, historyRecord
 
         obj.options.columns.splice(columnIndex, numOfColumns);
         for (let i = columnIndex; i < numOfColumns + columnIndex; i++) {
-            obj.headers[i].parentNode.removeChild(obj.headers[i]);
-            obj.cols[i].colElement.parentNode.removeChild(obj.cols[i].colElement);
+            obj.headers[i].parentNode!.removeChild(obj.headers[i]);
+            obj.cols[i].colElement.parentNode!.removeChild(obj.cols[i].colElement);
         }
         obj.headers.splice(columnIndex, numOfColumns);
         obj.cols.splice(columnIndex, numOfColumns);
         for (let j = 0; j < historyRecord.data.length; j++) {
             for (let i = columnIndex; i < numOfColumns + columnIndex; i++) {
-                obj.records[j][i].element.parentNode.removeChild(obj.records[j][i].element);
+                obj.records[j][i].element.parentNode!.removeChild(obj.records[j][i].element);
             }
             obj.records[j].splice(columnIndex, numOfColumns);
             obj.options.data[j].splice(columnIndex, numOfColumns);

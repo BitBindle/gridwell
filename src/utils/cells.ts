@@ -14,7 +14,7 @@ export const setReadOnly = function (this: Worksheet, cell: string | HTMLElement
     if (typeof cell === 'string') {
         const coords = getCoordsFromCellName(cell);
 
-        record = obj.records[coords[1]][coords[0]];
+        record = obj.records[coords![1]!][coords![0]];
     } else {
         const x = parseInt(cell.getAttribute('data-x'));
         const y = parseInt(cell.getAttribute('data-y'));
@@ -40,8 +40,8 @@ export const isReadOnly = function (this: Worksheet, x: number | string, y?: num
     if (typeof x === 'string' && typeof y === 'undefined') {
         const coords = getCoordsFromCellName(x);
 
-        [x, y] = coords;
+        [x, y] = coords as [number, number];
     }
 
-    return obj.records[y][x as number].element.classList.contains('readonly');
+    return obj.records[y!][x as number].element.classList.contains('readonly');
 };
