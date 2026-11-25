@@ -100,3 +100,11 @@ held, the cells of the area that the corner fills, is `worksheet.selection.fill`
 `worksheet.selection.range` is `null` before a cell is selected, where `worksheet.selectedCell` was undefined, and
 `worksheet.selection.highlighted` is an empty array before the first selection. `getSelection()`, `getSelected()`,
 `updateSelectionFromCoords()`, `resetSelection()` and the selection events work as before.
+
+## The formula chain is an object
+
+`worksheet.formula`, the list of the cells whose formulas refer to each cell, is now `worksheet.formulas.chain`. It is
+an object, where `worksheet.formula` was an array used as an object, so it has no `length` and no array methods. An
+entry that a reference loop ended is an empty array, where it was an empty text. `worksheet.formulas.add(cell,
+dependent)` adds to the chain, and `worksheet.formulas.rename(references)` renames its cells. `executeFormula()` and the
+calculation of formulas work as before.

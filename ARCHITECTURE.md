@@ -65,7 +65,11 @@ what it changes, and lists its breaking changes in UPGRADING.md.
    bounds, the highlighted cells, the cells of the fill area, the active cell and the focus state have moved;
    `updateSelection`, `resetSelection` and the accessibility functions stay in `utils/` for the same reason as `undo`
    and `redo`.
-6. **Formulas.** The formula chain, the results and the footer formulas move into `components/Formulas.ts`.
+6. **Formulas.** The formula chain, the results and the footer formulas move into `components/Formulas.ts`. The chain
+   was the only formula state: `executeFormula` keeps the results of one calculation in local variables, and the footer
+   formulas are calculated from `options.footers` each time. The chain has moved, with adding to it and renaming its
+   cells; `executeFormula`, `updateFormulaChain` and the footers stay in `utils/` for the same reason as `undo` and
+   `redo`.
 7. **The rest of the worksheet state**, one component at a time: merges, filters and search, pagination and lazy
    loading, frozen columns, columns and rows.
 8. **Events.** `events.ts` splits by input under `events/`, and the handlers route through the spreadsheet.

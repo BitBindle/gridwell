@@ -1,6 +1,7 @@
 import type jspreadsheet from './jspreadsheet';
 import { Clipboard } from './components/Clipboard.js';
 import { Editor } from './components/Editor.js';
+import { Formulas } from './components/Formulas.js';
 import { History } from './components/History.js';
 import { Selection } from './components/Selection.js';
 import type { Spreadsheet, WorksheetState } from './types/internal';
@@ -29,11 +30,10 @@ export class Worksheet {
             this.element = element as Worksheet['element'];
         }
         this.filters = [];
-        // The formula chain by cell name. setData also starts it as an array, which the code uses as an object.
-        this.formula = [] as unknown as Worksheet['formula'];
         this.history = new History();
         this.clipboard = new Clipboard();
         this.editor = new Editor();
         this.selection = new Selection();
+        this.formulas = new Formulas();
     }
 }

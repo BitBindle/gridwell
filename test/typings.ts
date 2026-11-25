@@ -165,3 +165,8 @@ if (worksheet.editor.isOpen()) {
 }
 // @ts-expect-error The cell is editor.cell
 void worksheet.edition;
+
+// The formula chain is in formulas.chain
+assertType<Equals<typeof worksheet.formulas.chain, Record<string, string[]>>>();
+// @ts-expect-error The chain is formulas.chain
+void worksheet.formula;

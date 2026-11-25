@@ -205,13 +205,7 @@ export const executeFormula: WorksheetMethod<'executeFormula'> = function (expre
             if (tokens) {
                 for (let i = 0; i < tokens.length; i++) {
                     // Keep chain
-                    if (!obj.formula[tokens[i]]) {
-                        obj.formula[tokens[i]] = [];
-                    }
-                    // Is already in the register
-                    if (obj.formula[tokens[i]].indexOf(parentId) < 0) {
-                        obj.formula[tokens[i]].push(parentId);
-                    }
+                    obj.formulas.add(tokens[i], parentId);
 
                     // Do not calculate again. The formula engine reads the values of the references itself.
                     if (!formulaEngine && typeof (globalThis as unknown as Record<string, unknown>)[tokens[i]] === 'undefined') {
@@ -923,17 +917,17 @@ export const updateFormulaChain = function (this: Worksheet, x: number, y: numbe
     const obj = this;
 
     const cellId = getColumnNameFromId([x, y]);
-    if (obj.formula[cellId] && obj.formula[cellId].length > 0) {
+    if (obj.formulas.chain[cellId] && obj.formulas.chain[cellId].length > 0) {
         if (chainLoopProtection[cellId]) {
             obj.records[y][x].element.innerHTML = '#ERROR';
-            // An empty text has no length either, so the chain ends here, and executeFormula replaces it with a list
-            obj.formula[cellId] = '' as unknown as string[];
+            // The chain ends here
+            obj.formulas.chain[cellId] = [];
         } else {
             // Protection
             chainLoopProtection[cellId] = true;
 
-            for (let i = 0; i < obj.formula[cellId].length; i++) {
-                const cell = getIdFromColumnName(obj.formula[cellId][i], true);
+            for (let i = 0; i < obj.formulas.chain[cellId].length; i++) {
+                const cell = getIdFromColumnName(obj.formulas.chain[cellId][i], true);
                 // Update cell
                 const value = '' + obj.options.data[cell[1]][cell[0]];
                 if (value.substr(0, 1) == '=') {
@@ -941,7 +935,7 @@ export const updateFormulaChain = function (this: Worksheet, x: number, y: numbe
                 } else {
                     // No longer a formula, remove from the chain
                     // This changes nothing: Object.keys returns a new array (issue #43)
-                    Object.keys(obj.formula)[i] = null!;
+                    Object.keys(obj.formulas.chain)[i] = null!;
                 }
                 updateFormulaChain.call(obj, cell[0], cell[1], records);
             }
@@ -1015,28 +1009,7 @@ const updateFormulas = function (this: Worksheet, referencesToUpdate: Record<str
     }
 
     // Update formula chain
-    // A list used as an object, with the cell names as keys
-    const formula = [] as unknown as Worksheet['formula'];
-    const keys = Object.keys(obj.formula);
-    for (let j = 0; j < keys.length; j++) {
-        // Current key and values
-        let key = keys[j];
-        const value = obj.formula[key];
-        // Update key
-        if (referencesToUpdate[key]) {
-            key = referencesToUpdate[key];
-        }
-        // Update values
-        formula[key] = [];
-        for (let i = 0; i < value.length; i++) {
-            let letter = value[i];
-            if (referencesToUpdate[letter]) {
-                letter = referencesToUpdate[letter];
-            }
-            formula[key].push(letter);
-        }
-    }
-    obj.formula = formula;
+    obj.formulas.rename(referencesToUpdate);
 };
 
 /**
