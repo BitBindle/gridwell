@@ -116,7 +116,8 @@ export const setStyle = function (
                 // Split into a new variable, so that the styles the application gave stay as they are
                 let property = style[j];
                 if (typeof property == 'string') {
-                    property = property.split(':');
+                    // Split at the first colon only, because a value can have colons, for example url(http://...)
+                    property = property.split(/:(.*)/);
                 }
                 // Apply value
                 if (property[0].trim()) {

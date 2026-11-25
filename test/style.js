@@ -64,4 +64,21 @@ describe('Style', () => {
         expect(instance[0].getStyle('A1', 'color')).to.equal('red');
         expect(instance[0].getStyle('A1', 'font-weight')).to.equal('bold');
     });
+
+    it('setStyle keeps a value that has a colon', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [2, 2] }],
+        });
+
+        // No space after the colons: jsdom drops a value that starts with a space, which browsers trim
+        instance[0].setStyle({ A1: 'background-image:url(http://example.com/a.png);color:red' });
+        expect(instance[0].getStyle('A1', 'background-image')).to.equal('url(http://example.com/a.png)');
+        expect(instance[0].getStyle('A1', 'color')).to.equal('red');
+
+        // Undo and redo read the style from the history
+        instance[0].undo();
+        expect(instance[0].getStyle('A1', 'background-image')).to.equal('');
+        instance[0].redo();
+        expect(instance[0].getStyle('A1', 'background-image')).to.equal('url(http://example.com/a.png)');
+    });
 });
