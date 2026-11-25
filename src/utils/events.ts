@@ -889,7 +889,7 @@ const defaultContextMenu = function (worksheet: Worksheet, x: number, y: number,
             items.push({
                 title: jSuites.translate('Insert a new column before'),
                 onclick: function () {
-                    worksheet.insertColumn(1, parseInt(x), 1 as any);
+                    worksheet.insertColumn(1, parseInt(x), 1);
                 },
             });
         }
@@ -898,7 +898,7 @@ const defaultContextMenu = function (worksheet: Worksheet, x: number, y: number,
             items.push({
                 title: jSuites.translate('Insert a new column after'),
                 onclick: function () {
-                    worksheet.insertColumn(1, parseInt(x), 0 as any);
+                    worksheet.insertColumn(1, parseInt(x), 0);
                 },
             });
         }

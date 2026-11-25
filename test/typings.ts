@@ -66,3 +66,7 @@ library(document.createElement('div'), {
 
 // A context menu line has no title
 const contextMenuItems: jspreadsheet.ContextMenuItem[] = [{ title: 'Copy', onclick: () => {} }, { type: 'line' }];
+
+// insertBefore is read as true or false, so both a boolean and a number work
+worksheet.insertRow(1, 0, true);
+worksheet.insertColumn(1, 0, 1);

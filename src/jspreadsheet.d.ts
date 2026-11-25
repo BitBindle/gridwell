@@ -1905,10 +1905,10 @@ declare namespace jspreadsheet {
          * This method returns false if the {@link SpreadsheetOptions.onbeforeinsertcolumn} event returns false or if the "This action will destroy any existing merged cells. Are you sure?" dialog receives a negative response.
          * @param mixed - Number of columns to insert. It can also be an array of values, but in this case, only one column is inserted, whose data is based on the array items. Default: 1.
          * @param columnNumber - Index of the column used as reference for the insertion. Default: last column.
-         * @param insertBefore - Insert new columns before or after the reference column. Default: false.
+         * @param insertBefore - Insert new columns before (a truthy value) or after the reference column. Default: false.
          * @param properties - New column properties.
          */
-        insertColumn: (mixed?: number | CellValue[], columnNumber?: number, insertBefore?: boolean, properties?: Column[]) => false | undefined;
+        insertColumn: (mixed?: number | CellValue[], columnNumber?: number, insertBefore?: boolean | number, properties?: Column[]) => false | undefined;
 
         /**
          * Insert one or more rows.
@@ -1916,9 +1916,9 @@ declare namespace jspreadsheet {
          * This method returns false if the {@link SpreadsheetOptions.onbeforeinsertrow} event returns false or if the "This action will destroy any existing merged cells. Are you sure?" or "This action will clear your search results. Are you sure?" dialogs receive a negative response.
          * @param mixed - Number of rows to insert. It can also be an array of values, but in this case, only one row is inserted, whose data is based on the array items. Default: 1.
          * @param rowNumber - Index of the row used as reference for the insertion. Default: last row.
-         * @param insertBefore - Insert new rows before or after the reference row. Default: false.
+         * @param insertBefore - Insert new rows before (a truthy value) or after the reference row. Default: false.
          */
-        insertRow: (mixed?: number | CellValue[], rowNumber?: number, insertBefore?: number) => false | undefined;
+        insertRow: (mixed?: number | CellValue[], rowNumber?: number, insertBefore?: boolean | number) => false | undefined;
 
         /**
          * Check if a cell is read only.

@@ -92,7 +92,7 @@ export const createRow = function (this: Worksheet, j: number, data: jspreadshee
  * @param insertBefore
  * @return void
  */
-export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumber, insertBefore: any) {
+export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumber, insertBefore) {
     const obj = this;
 
     // Configuration
