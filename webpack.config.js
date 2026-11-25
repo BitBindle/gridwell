@@ -1,11 +1,12 @@
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
 
 class MyPlugin {
     apply(compiler) {
         compiler.hooks.emit.tap('MyPlugin', (compilation) => {
             // Get the bundled file name
-            const fileName = Object.keys(compilation.assets)[0];
+            const fileName = 'index.js';
 
             // Get the bundled file content
             const fileContent = compilation.assets[fileName].source();
@@ -97,6 +98,16 @@ const webpack = {
 
 if (isProduction) {
     webpack.plugins.push(new MyPlugin());
+    // The type definitions and stylesheets are maintained by hand in src and shipped next to the bundle
+    webpack.plugins.push(
+        new CopyPlugin({
+            patterns: [
+                { from: 'src/index.d.ts', to: 'index.d.ts' },
+                { from: 'src/jspreadsheet.css', to: 'jspreadsheet.css' },
+                { from: 'src/jspreadsheet.themes.css', to: 'jspreadsheet.themes.css' },
+            ],
+        })
+    );
     webpack.plugins.push(
         new MiniCssExtractPlugin({
             filename: 'jspreadsheet.css',
