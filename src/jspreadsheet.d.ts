@@ -1656,11 +1656,16 @@ declare namespace jspreadsheet {
         /**
          * Get the full or partial table data.
          * @param highlighted - If true, get only data from highlighted cells. If false, get data from all cells. Default: false.
-         * @param processed - If false, the return is constructed using the innerHTML of the cells. Otherwise, it is constructed using the {@link WorksheetOptions.data} property. Default: false.
-         * @param delimiter - Column delimiter. If this property is specified, the result will be formatted like a csv.
-         * @param asJson - If this property is true, the result will be formatted as json.
+         * @param processed - If true, the return is constructed using the innerHTML of the cells. Otherwise, it is constructed using the {@link WorksheetOptions.data} property. Default: false.
+         * @param delimiter - Column delimiter. If this property is specified, the result is text formatted like a csv, with a line break after each row.
+         * @param asJson - If this property is true and there is no delimiter, each row is an object with the column indexes as keys.
          */
-        getData: (highlighted?: boolean, processed?: boolean, delimiter?: string, asJson?: boolean) => CellValue[][];
+        getData: {
+            (highlighted?: boolean, processed?: boolean, delimiter?: undefined | null, asJson?: false): CellValue[][];
+            (highlighted: boolean | undefined, processed: boolean | undefined, delimiter: string, asJson?: boolean): string;
+            (highlighted: boolean | undefined, processed: boolean | undefined, delimiter: undefined | null, asJson: true): Record<number, CellValue>[];
+            (highlighted?: boolean, processed?: boolean, delimiter?: string | null, asJson?: boolean): CellValue[][] | Record<number, CellValue>[] | string;
+        };
 
         /**
          * Get data from a range.
