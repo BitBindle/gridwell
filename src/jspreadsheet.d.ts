@@ -243,8 +243,8 @@ declare namespace jspreadsheet {
     interface ToolbarSelectItem extends ToolbarItemBase {
         type: 'select';
 
-        /** Defines the icon (from material icons). */
-        content: string;
+        /** Defines the icon (from material icons). Without it, the item shows the selected option. */
+        content?: string;
 
         /**
          * Event called when the item picker value is changed.
@@ -304,6 +304,15 @@ declare namespace jspreadsheet {
      * Item that makes up the toolbar configuration array. This item may have properties not described here. For more information, read the jSuites toolbar documentation.
      */
     type ToolbarItem = ToolbarIconItem | ToolbarSelectItem | ToolbarColorItem | ToolbarDivisorItem;
+
+    /**
+     * The settings of the toolbar: the items, and the other options of the jSuites toolbar. For more information, read the jSuites toolbar documentation.
+     */
+    interface ToolbarOptions {
+        items: ToolbarItem[];
+
+        [property: string]: unknown;
+    }
 
     interface NestedHeaderCell {
         id?: string;
@@ -972,8 +981,11 @@ declare namespace jspreadsheet {
          */
         hideTabs?: boolean;
 
-        /** Add custom toolbars. */
-        toolbar?: boolean | ToolbarItem[] | ((defaultToolbar: ToolbarItem[]) => ToolbarItem[]) | Record<string, any>;
+        /**
+         * Add custom toolbars: true for the default toolbar, the items, or the toolbar settings. A function gets the
+         * settings of the default toolbar and returns the settings to use.
+         */
+        toolbar?: boolean | ToolbarItem[] | ToolbarOptions | ((defaultToolbar: ToolbarOptions) => ToolbarOptions);
 
         /**
          * Worksheet settings.
@@ -1429,9 +1441,9 @@ declare namespace jspreadsheet {
 
         /**
          * Method called before the toolbar is displayed. If this method returns anything other than a falsy value, that value overrides the toolbar settings.
-         * @param defaultToolbar
+         * @param toolbar - The toolbar settings.
          */
-        toolbar?: (defaultToolbar: ToolbarItem[]) => ToolbarItem[] | null | undefined;
+        toolbar?: (toolbar: ToolbarOptions) => ToolbarOptions | null | undefined;
     }
 
     interface SpreadsheetInstance {

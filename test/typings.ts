@@ -103,3 +103,11 @@ assertType<Equals<Handler<'onupdateresult'>, [instance: jspreadsheet.WorksheetIn
 
 // onbeforesave gets the values of a row by column name, or by index for a column without a name
 assertType<Equals<Handler<'onbeforesave'>[2], { row: number; data: Record<string, jspreadsheet.CellValue> }[]>>();
+
+// A toolbar function gets the settings of the default toolbar, with the items, and returns settings
+assertType<Equals<Parameters<Extract<jspreadsheet.SpreadsheetOptions['toolbar'], (...args: never[]) => unknown>>[0], jspreadsheet.ToolbarOptions>>();
+assertType<Equals<ReturnType<Extract<jspreadsheet.SpreadsheetOptions['toolbar'], (...args: never[]) => unknown>>, jspreadsheet.ToolbarOptions>>();
+assertType<Equals<Parameters<NonNullable<jspreadsheet.Plugin['toolbar']>>[0], jspreadsheet.ToolbarOptions>>();
+
+// A select item can do without an icon
+const fontItem: jspreadsheet.ToolbarItem = { type: 'select', options: ['Arial', 'Verdana'] };

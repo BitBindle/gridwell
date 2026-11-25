@@ -55,4 +55,35 @@ describe('Toolbar', () => {
             expect(instance[0].getCell('A1').style.fontFamily.trim()).to.equal('');
         });
     });
+
+    describe('Settings', () => {
+        it('gives a toolbar function and the toolbar of a plugin the settings with the items', async () => {
+            const calls = [];
+            jspreadsheet(root, {
+                worksheets: [{ minDimensions: [3, 3] }],
+                toolbar: function (toolbar) {
+                    calls.push(['option', Array.isArray(toolbar.items)]);
+                    toolbar.items = toolbar.items.filter((item) => item.content === 'undo' || item.content === 'redo');
+                    return toolbar;
+                },
+                plugins: {
+                    test: function () {
+                        return {
+                            toolbar: function (toolbar) {
+                                calls.push(['plugin', toolbar.items.length]);
+                            },
+                        };
+                    },
+                },
+            });
+
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            expect(calls).to.eql([
+                ['option', true],
+                ['plugin', 2],
+            ]);
+            expect(root.querySelectorAll('.jss_toolbar .jtoolbar-item').length).to.equal(2);
+        });
+    });
 });
