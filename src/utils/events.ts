@@ -1273,7 +1273,7 @@ export const cutControls = function (e?: any) {
 };
 
 const copyControls = function (e?: any) {
-    if (libraryBase.jspreadsheet.current && (copyControls as any).enabled) {
+    if (libraryBase.jspreadsheet.current) {
         if (!libraryBase.jspreadsheet.current.edition) {
             copy.call(libraryBase.jspreadsheet.current, true);
         }
