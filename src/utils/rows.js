@@ -6,6 +6,7 @@ import { isRowMerged } from './merges.js';
 import { conditionalSelectionUpdate, getSelectedRows, updateCornerPosition } from './selection.js';
 import { setHistory } from './history.js';
 import { getColumnNameFromId } from './internalHelpers.js';
+import { setRowRole } from './accessibility.js';
 
 /**
  * Create row
@@ -74,6 +75,9 @@ export const createRow = function (j, data) {
             obj.options.columns[i].render(obj.records[j][i].element, data[i], parseInt(i), parseInt(j), obj, obj.options.columns[i]);
         }
     }
+
+    // Role and position for assistive technology
+    setRowRole.call(obj, row.element, j);
 
     // Add row to the table body
     return row;

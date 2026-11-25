@@ -10,6 +10,7 @@ import { updateFreezePosition } from './events.js';
 import { updatePagination } from './pagination.js';
 import { setFooter } from './footer.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
+import { updateGridSize, updateRowIndex } from './accessibility.js';
 
 export const updateTable = function () {
     const obj = this;
@@ -508,6 +509,7 @@ export const createCell = function (i, j, value, silent) {
     }
     td.setAttribute('data-x', i);
     td.setAttribute('data-y', j);
+    td.setAttribute('aria-colindex', i + 2);
 
     if (obj.headers[i].style.display === 'none') {
         td.style.display = 'none';
@@ -998,6 +1000,7 @@ export const updateTableReferences = function () {
         if (x != i) {
             // Update coords
             obj.headers[i].setAttribute('data-x', i);
+            obj.headers[i].setAttribute('aria-colindex', i + 2);
             // Title
             if (!obj.headers[i].getAttribute('title')) {
                 obj.headers[i].innerHTML = getColumnName(i);
@@ -1014,6 +1017,7 @@ export const updateTableReferences = function () {
                 // Update coords
                 obj.rows[j].element.setAttribute('data-y', j);
                 obj.rows[j].element.children[0].setAttribute('data-y', j);
+                updateRowIndex.call(obj, obj.rows[j].element, j);
                 // Row number
                 obj.rows[j].element.children[0].innerHTML = j + 1;
             }
@@ -1028,6 +1032,7 @@ export const updateTableReferences = function () {
     const updatePosition = function (x, y, i, j) {
         if (x != i) {
             obj.records[j][i].element.setAttribute('data-x', i);
+            obj.records[j][i].element.setAttribute('aria-colindex', i + 2);
         }
         if (y != j) {
             obj.records[j][i].element.setAttribute('data-y', j);
@@ -1084,6 +1089,7 @@ export const updateTableReferences = function () {
                     x = parseInt(obj.options.mergeCells[columnIdFrom][2][j].getAttribute('data-x'));
                     y = parseInt(obj.options.mergeCells[columnIdFrom][2][j].getAttribute('data-y'));
                     obj.options.mergeCells[columnIdFrom][2][j].setAttribute('data-x', x + mergeCellUpdates[keys[i]][1]);
+                    obj.options.mergeCells[columnIdFrom][2][j].setAttribute('aria-colindex', x + mergeCellUpdates[keys[i]][1] + 2);
                     obj.options.mergeCells[columnIdFrom][2][j].setAttribute('data-y', y + mergeCellUpdates[keys[i]][2]);
                 }
 
@@ -1098,6 +1104,9 @@ export const updateTableReferences = function () {
 
     // Update meta data
     updateMeta.call(obj, affectedTokens);
+
+    // Update the size of the grid
+    updateGridSize.call(obj);
 
     // Refresh selection
     refreshSelection.call(obj);
