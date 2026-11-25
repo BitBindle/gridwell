@@ -910,6 +910,12 @@ declare namespace jspreadsheet {
          */
         tabs?: boolean;
 
+        /**
+         * If true, the worksheet tabs are hidden with any number of worksheets. The worksheets stay and openWorksheet still opens them.
+         * @default false
+         */
+        hideTabs?: boolean;
+
         /** Add custom toolbars. */
         toolbar?: boolean | ToolbarItem[] | ((defaultToolbar: ToolbarItem[]) => ToolbarItem[]) | Record<string, any>;
 

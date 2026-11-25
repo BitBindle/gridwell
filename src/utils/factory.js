@@ -7,6 +7,7 @@ import { hideToolbar, showToolbar, updateToolbar } from './toolbar.js';
 import { buildWorksheet, createWorksheetObj, getNextDefaultWorksheetName } from './worksheets.js';
 import dispatch from './dispatch.js';
 import { createFromTable } from './helpers.js';
+import { createTabs } from './tabs.js';
 import { getSpreadsheetConfig, setConfig } from './config.js';
 
 const factory = function () {};
@@ -55,7 +56,10 @@ const createWorksheets = async function (spreadsheet, options, el) {
 
         if (options.tabs == true) {
             tabsOptions.allowCreate = true;
-        } else {
+        }
+
+        // Hide the tab headers with any number of worksheets, for example when the application shows its own tabs
+        if (options.hideTabs == true) {
             tabsOptions.hideHeaders = true;
         }
 
@@ -77,7 +81,7 @@ const createWorksheets = async function (spreadsheet, options, el) {
         el.classList.add('jss_spreadsheet');
         el.tabIndex = 0;
 
-        const tabs = jSuites.tabs(el, tabsOptions);
+        const tabs = createTabs(el, tabsOptions);
 
         const spreadsheetStyles = options.style;
         delete options.style;
