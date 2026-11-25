@@ -277,8 +277,8 @@ declare namespace jspreadsheet {
          */
         render?: (option: string, pickerInstance: Record<string, any>) => string;
 
-        /** Initial value of the selectbox. */
-        value?: string;
+        /** The index in {@link ToolbarSelectItem.options} of the option that the item shows first. */
+        value?: number | string;
 
         /** Item width. */
         width?: string;

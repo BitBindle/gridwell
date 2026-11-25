@@ -111,3 +111,6 @@ assertType<Equals<Parameters<NonNullable<jspreadsheet.Plugin['toolbar']>>[0], js
 
 // A select item can do without an icon
 const fontItem: jspreadsheet.ToolbarItem = { type: 'select', options: ['Arial', 'Verdana'] };
+
+// The value of a select item is the index of the option it shows first
+const alignItem: jspreadsheet.ToolbarItem = { type: 'select', options: ['top', 'middle', 'bottom'], value: 1 };
