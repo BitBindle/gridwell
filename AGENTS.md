@@ -19,15 +19,15 @@ The source is TypeScript (see [Type checking](#type-checking)). The modules were
 
 No `package-lock.json` is committed, so use `npm install`.
 
-| Task                    | Command                                                          |
-| ----------------------- | ---------------------------------------------------------------- |
-| Dev server (port 8000)  | `npm start` (entry `src/test.js`, page `public/index.html`)      |
-| Build `dist/`           | `npm run build`                                                  |
-| All tests               | `npm test` (builds first, then runs mocha)                       |
-| One test file           | `npx mocha --require=mocha.config.js test/data.js` (build first) |
-| Lint / format check     | `npm run lint`, `npm run prettier`                               |
-| Type check              | `npm run typecheck`                                              |
-| Fix lint and formatting | `npm run format`                                                 |
+| Task                    | Command                                                            |
+| ----------------------- | ------------------------------------------------------------------ |
+| Dev server (port 8000)  | `npm start` (entry `src/test.js`, page `public/index.html`)        |
+| Build `dist/`           | `npm run build`                                                    |
+| All tests               | `npm test` (builds first, then runs mocha)                         |
+| One test file           | `npx mocha --require=mocha.config.js test/data.js` (build first)   |
+| Lint / format check     | `npm run lint` (also checks for import cycles), `npm run prettier` |
+| Type check              | `npm run typecheck`                                                |
+| Fix lint and formatting | `npm run format`                                                   |
 
 Building and testing do not change the source. CI checks the formatting and lint separately, so run `npm run format` before you commit.
 
@@ -40,7 +40,7 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 -   `src/components/*.ts`: the components of a worksheet, one class per feature, each owning its state (`History`, `Clipboard`, `Editor`, `Selection`, `Formulas`, `View`, `Pointer`). See [ARCHITECTURE.md](ARCHITECTURE.md).
 -   `src/utils/factory.ts`: builds the spreadsheet and its worksheets. `spreadsheetPublicMethods` lists the methods of a spreadsheet.
 -   `src/utils/worksheets.ts`: builds a worksheet's DOM. `worksheetPublicMethods` lists the methods of a worksheet.
--   `src/utils/*.ts`: one module per feature (`columns`, `rows`, `selection`, `editor`, `history`, `merges`, `accessibility`, …). `internal.ts` is the largest and most connected.
+-   `src/utils/*.ts`: one module per feature (`columns`, `rows`, `selection`, `editor`, `history`, `merges`, `accessibility`, …). `internal.ts` is the largest and most connected. `values.ts` has the value that a cell shows (`parseValue`, `executeFormula`, `getCellColumnIndex`), which many modules need.
 -   `src/events/*.ts`: the document event handlers, one module per input (`mouse`, `keyboard`, `touch`, `clipboard`, `contextMenu`, `scroll`, `focus`). `index.ts` adds and removes them (`setEvents`, `destroyEvents`), and `helpers.ts` finds the worksheet and the cell of an event target.
 -   `src/jspreadsheet.d.ts`: the public typings, copied unchanged to `dist/index.d.ts`.
 -   `src/types/`: types for the type check only, not published (see [Type checking](#type-checking)).
@@ -58,7 +58,7 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 -   **The worksheet is `this`.** Most functions start with `const obj = this` and are called with `fn.call(worksheet, ...)`. The public methods are these functions, put on `Worksheet.prototype` from `worksheetPublicMethods` (and on `Spreadsheet.prototype` from `spreadsheetPublicMethods`). They are not bound: they need the worksheet as `this`.
 -   **One global active worksheet.** `libraryBase.jspreadsheet.current` is the worksheet that keyboard and clipboard events go to. A press (`mouse.ts`, `touch.ts`), the focus moving into a worksheet (`focus.ts`) and `buildWorksheet` set it. A key on an element outside the spreadsheet does not go to it while no editor is open.
 -   **Events** go through `dispatch.call(obj, 'oneventname', ...args)`. `dispatch` calls the spreadsheet's `config.onevent`, then the specific handler in `config`, then each plugin's `onevent`, and returns the last result. Returning `false` from an `onbefore…` handler cancels the action.
--   **Circular imports** exist (4 run-time cycles, for example `internal → pagination → selection`). They work because imported functions are only called at runtime. Do not call an imported function at the top level of a module.
+-   **No import cycles.** The modules under `src/` do not import each other in a cycle at run time. `npm run lint` runs `check-cycles.cjs`, which fails on a cycle; type-only imports do not count. When a new import would close a cycle, move the function that both modules need into a module that imports neither, as `values.ts` (the value that a cell shows), `fill.ts` (the fill with the selection corner) and `activeWorksheet.ts` (the worksheet that a spreadsheet shows) did.
 
 ## Adding or changing a public method
 

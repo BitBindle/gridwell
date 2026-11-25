@@ -89,6 +89,12 @@ what it changes, and lists its breaking changes in UPGRADING.md.
    `dragging`, `cursor`, `corner`), and the header or row number that a press selected into `Selection` (`column`,
    `row`).
 9. **No import cycles.** The last cycles go, and `npm run lint` checks for new ones.
+   Done. Two groups of modules were left: `helpers ↔ internalHelpers`, and `internal`, `selection`, `footer`,
+   `pagination`, `freezePosition` and `toolbar`. Three moves broke them: the value that a cell shows (`parseValue`,
+   `executeFormula` and the functions they need) went to `utils/values.ts`, the fill with the selection corner
+   (`copyData`) to `utils/fill.ts`, and the worksheet that a spreadsheet shows (`getWorksheetActive`,
+   `getWorksheetInstance`) to `utils/activeWorksheet.ts`. None of these imports the module it left. `check-cycles.cjs`
+   finds the cycles with the TypeScript parser, so the check needs no new package.
 10. **The public typings.** The fields that only the library uses leave `WorksheetInstance`; the typings describe the
     classes.
 
