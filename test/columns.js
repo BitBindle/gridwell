@@ -718,3 +718,28 @@ describe('Delete columns with the keyboard', () => {
         ]);
     });
 });
+
+describe('Image columns', () => {
+    it('shows a cell whose value is not text, and an image for image data', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        [5, 'data:image/png;base64,iVBORw0KGgo='],
+                        [true, 'a'],
+                    ],
+                    columns: [{ type: 'image' }, { type: 'image' }],
+                },
+            ],
+        })[0];
+
+        expect(worksheet.getCell('A1').querySelector('img')).to.equal(null);
+        expect(worksheet.getCell('A2').querySelector('img')).to.equal(null);
+        expect(worksheet.getCell('B1').querySelector('img').getAttribute('src')).to.equal('data:image/png;base64,iVBORw0KGgo=');
+        expect(worksheet.getCell('B2').querySelector('img')).to.equal(null);
+        expect(worksheet.getData()).to.eql([
+            [5, 'data:image/png;base64,iVBORw0KGgo='],
+            [true, 'a'],
+        ]);
+    });
+});

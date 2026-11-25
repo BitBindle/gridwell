@@ -588,7 +588,8 @@ export const createCell = function (this: Worksheet, i: number, j: number, value
                 td.textContent = value;
             }
         } else if (column && column.type == 'image') {
-            if (value && value.substr(0, 10) == 'data:image') {
+            // The value can be a number or a boolean
+            if (value && ('' + value).substr(0, 10) == 'data:image') {
                 const img = document.createElement('img');
                 img.src = value;
                 td.appendChild(img);
