@@ -42,7 +42,7 @@ export class Worksheet {
         this.selection = new Selection(this);
         this.formulas = new Formulas(this);
         this.view = new View(this);
-        this.pointer = new Pointer();
+        this.pointer = new Pointer(this);
         this.cells = new Cells(this);
         this.styles = new Styles(this);
         this.comments = new Comments(this);

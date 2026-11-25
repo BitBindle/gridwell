@@ -1,5 +1,4 @@
 import libraryBase from '../utils/libraryBase.js';
-import { copyData } from '../utils/fill.js';
 import { setWidth } from '../utils/columns.js';
 import { moveRow, setHeight } from '../utils/rows.js';
 import { getElement, getIndex } from './helpers.js';
@@ -156,7 +155,7 @@ const endFill = function (this: Worksheet) {
         // Data to be copied
         if (obj.selection.fill.length > 0) {
             // Copy data
-            copyData.call(obj, obj.selection.fill[0], obj.selection.fill[obj.selection.fill.length - 1]);
+            obj.pointer.fill(obj.selection.fill[0], obj.selection.fill[obj.selection.fill.length - 1]);
 
             // Remove selection
             obj.selection.clearFill();
@@ -768,7 +767,7 @@ const fillDown = function (this: Worksheet) {
         const x2 = parseInt(last.getAttribute('data-x'));
         const y2 = obj.records.length - 1;
         // Execute copy
-        copyData.call(obj, obj.records[y1][x1].element, obj.records[y2][x2].element);
+        obj.pointer.fill(obj.records[y1][x1].element, obj.records[y2][x2].element);
     }
 };
 
