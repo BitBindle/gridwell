@@ -1552,7 +1552,7 @@ declare namespace jspreadsheet {
         content: HTMLDivElement;
 
         /**
-         * Copies or cuts the contents of selected cells in the worksheet.
+         * Copies or cuts the contents of selected cells in the worksheet. Does nothing when no cell is selected.
          * @param cut - If true, the operation is cut, if not, it is copy.
          */
         copy: (cut?: boolean) => void;
@@ -2049,7 +2049,7 @@ declare namespace jspreadsheet {
         parent: SpreadsheetInstance;
 
         /**
-         * Pastes content into one or more cells.
+         * Pastes content into one or more cells. When the selection is larger than the content, the content is repeated over the selection.
          * @param x - Column index of the cell from which the content will be pasted.
          * @param y - Row index of the cell from which the content will be pasted.
          * @param data - Content to be pasted.

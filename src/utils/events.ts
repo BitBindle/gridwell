@@ -1290,7 +1290,8 @@ const touchEndControls = function (e: TargetEvent<TouchEvent>) {
 
 export const cutControls = function (e?: TargetEvent<ClipboardEvent>) {
     if (libraryBase.jspreadsheet.current) {
-        if (!libraryBase.jspreadsheet.current.edition) {
+        // Without a selection, there is nothing to cut
+        if (!libraryBase.jspreadsheet.current.edition && libraryBase.jspreadsheet.current.selectedCell) {
             copy.call(libraryBase.jspreadsheet.current, true, undefined, undefined, undefined, undefined, true);
             if (libraryBase.jspreadsheet.current.options.editable != false) {
                 libraryBase.jspreadsheet.current.setValue(
