@@ -37,6 +37,21 @@ describe('Selection with the mouse', () => {
         expect(worksheet.selectedCell).to.eql([1, 1, 2, 2]);
     });
 
+    it('extends the selection to column 0 and row 0 when the mouse moves over them', async () => {
+        const worksheet = await load({ worksheets: [{ minDimensions: [3, 3] }] });
+
+        press(worksheet.records[1][1].element);
+        worksheet.records[0][0].element.dispatchEvent(new window.MouseEvent('mouseover', { bubbles: true, buttons: 1 }));
+        expect(worksheet.selectedCell).to.eql([1, 1, 0, 0]);
+    });
+
+    it('sorts by column 0 after a double click on its header', async () => {
+        const worksheet = await load({ worksheets: [{ data: [['b'], ['a']] }] });
+
+        worksheet.headers[0].dispatchEvent(new window.MouseEvent('dblclick', { bubbles: true }));
+        expect(worksheet.getData()).to.eql([['a'], ['b']]);
+    });
+
     it('gives numbers to onbeforepaste after a mouse selection', async () => {
         const coords = [];
         const worksheet = await load({

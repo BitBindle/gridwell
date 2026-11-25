@@ -1025,7 +1025,7 @@ export const updateTableReferences = function (this: Worksheet) {
 
     // Update headers
     for (let i = 0; i < obj.headers.length; i++) {
-        const x: any = obj.headers[i].getAttribute('data-x');
+        const x = parseInt(obj.headers[i].getAttribute('data-x'));
 
         if (x != i) {
             // Update coords
@@ -1041,7 +1041,7 @@ export const updateTableReferences = function (this: Worksheet) {
     // Update all rows
     for (let j = 0; j < obj.rows.length; j++) {
         if (obj.rows[j]) {
-            const y: any = obj.rows[j].element.getAttribute('data-y');
+            const y = parseInt(obj.rows[j].element.getAttribute('data-y'));
 
             if (y != j) {
                 // Update coords
@@ -1081,8 +1081,8 @@ export const updateTableReferences = function (this: Worksheet) {
         for (let i = 0; i < obj.records[0].length; i++) {
             if (obj.records[j][i]) {
                 // Current values
-                const x: any = obj.records[j][i].element.getAttribute('data-x');
-                const y: any = obj.records[j][i].element.getAttribute('data-y');
+                const x = parseInt(obj.records[j][i].element.getAttribute('data-x'));
+                const y = parseInt(obj.records[j][i].element.getAttribute('data-y'));
 
                 // Update column
                 if (obj.records[j][i].element.getAttribute('data-merged')) {
@@ -1092,8 +1092,8 @@ export const updateTableReferences = function (this: Worksheet) {
                         if (columnIdFrom == columnIdTo) {
                             mergeCellUpdates[columnIdFrom] = false;
                         } else {
-                            const totalX = parseInt(i - x);
-                            const totalY = parseInt(j - y);
+                            const totalX = i - x;
+                            const totalY = j - y;
                             mergeCellUpdates[columnIdFrom] = [columnIdTo, totalX, totalY];
                         }
                     }

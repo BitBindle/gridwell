@@ -30,8 +30,7 @@ export const updateCornerPosition = function (this: Worksheet) {
     } else {
         // Get last cell
         const last = obj.highlighted[obj.highlighted.length - 1].element;
-        // Text, compared with a number below
-        const lastX: any = last.getAttribute('data-x');
+        const lastX = parseInt(last.getAttribute('data-x'));
 
         const contentRect = obj.content.getBoundingClientRect();
         const x1 = contentRect.left;
@@ -150,14 +149,14 @@ export const resetSelection = function (this: Worksheet, blur?: boolean) {
 export const updateSelection = function (this: Worksheet, el1: HTMLElement, el2?: HTMLElement, origin?: Event) {
     const obj = this;
 
-    // The code uses the text as numbers
-    const x1: any = el1.getAttribute('data-x');
-    const y1: any = el1.getAttribute('data-y');
+    // Both elements are cells, which have data-x and data-y
+    const x1 = parseInt(el1.getAttribute('data-x'));
+    const y1 = parseInt(el1.getAttribute('data-y'));
 
     let x2, y2;
     if (el2) {
-        x2 = el2.getAttribute('data-x');
-        y2 = el2.getAttribute('data-y');
+        x2 = parseInt(el2.getAttribute('data-x'));
+        y2 = parseInt(el2.getAttribute('data-y'));
     } else {
         x2 = x1;
         y2 = y1;
