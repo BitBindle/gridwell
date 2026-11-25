@@ -662,6 +662,34 @@ describe('Keyboard focus', () => {
         expect(document.activeElement).to.equal(worksheet.records[0][1].element);
     });
 
+    it('Send the keys to the grid that has the focus', async () => {
+        const first = document.createElement('div');
+        const second = document.createElement('div');
+        root.appendChild(first);
+        root.appendChild(second);
+        const a = jspreadsheet(first, { worksheets: [{ data: createData(3, 3) }] })[0];
+        const b = jspreadsheet(second, { worksheets: [{ data: createData(3, 3) }] })[0];
+        // The spreadsheets add their document listeners after they build their worksheets
+        await wait();
+
+        a.records[0][0].element.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, buttons: 1, which: 1 }));
+        document.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+
+        expect(a.selection.range).to.eql([0, 0, 0, 0]);
+
+        // Tab moves the focus to the tab stop of the second grid
+        b.records[0][0].element.focus();
+
+        expect(a.selection.range).to.equal(null);
+        expect(b.selection.range).to.eql([0, 0, 0, 0]);
+
+        keydown(b.records[0][0].element, 'ArrowDown', 40);
+
+        expect(a.selection.range).to.equal(null);
+        expect(b.selection.range).to.eql([0, 1, 0, 1]);
+        expect(document.activeElement).to.equal(b.records[1][0].element);
+    });
+
     it('Move the focus in a shadow root', async () => {
         const host = document.createElement('div');
         document.body.appendChild(host);

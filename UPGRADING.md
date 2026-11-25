@@ -124,3 +124,11 @@ until the worksheet had pagination. `worksheet.view.results` is `null` from the 
 `openFilter()`, `resetFilters()`, `page()` and the `onupdateresult` and `onchangepage` events work as before.
 The search input, the filter row and the pagination controls stay on the worksheet (`searchInput`, `filter`,
 `pagination`).
+
+## The keys go to the grid that has the focus
+
+The keys go to the active worksheet, `jspreadsheet.current`. A press on a worksheet made it the active worksheet, and
+now the focus does too: when the focus moves into another worksheet, for example with Tab, that worksheet becomes the
+active worksheet. The worksheet that was active closes its editor and loses its selection, as after a press on the
+other worksheet, and a focused cell becomes the selection of a worksheet without one. The focus on the tabs or the
+toolbar of a spreadsheet changes nothing.
