@@ -117,9 +117,9 @@ const parseNumber = function (this: Worksheet, value: any, columnNumber: number)
 export const executeFormula: WorksheetMethod<'executeFormula'> = function (expression, x, y) {
     const obj = this;
 
-    // Arrays used as maps, as before
-    const formulaResults: any = [];
-    const formulaLoopProtection: any = [];
+    // The results and the formulas in progress, by cell name
+    const formulaResults: Record<string, any> = {};
+    const formulaLoopProtection: Record<string, boolean> = {};
 
     // A formula engine of the application calculates the formula in place of the formula plugin
     const formulaEngine = typeof obj.parent.config.formulaEngine === 'function' ? obj.parent.config.formulaEngine : null;
@@ -893,7 +893,8 @@ const secureFormula = function (oldValue: string) {
 /**
  * Update all related cells in the chain
  */
-let chainLoopProtection: any = [];
+// The cells in progress, by cell name
+let chainLoopProtection: Record<string, boolean> = {};
 
 export const updateFormulaChain = function (this: Worksheet, x: number, y: number, records: HistoryCellChange[]) {
     const obj = this;
@@ -923,7 +924,7 @@ export const updateFormulaChain = function (this: Worksheet, x: number, y: numbe
         }
     }
 
-    chainLoopProtection = [];
+    chainLoopProtection = {};
 };
 
 /**
@@ -1055,10 +1056,10 @@ export const updateTableReferences = function (this: Worksheet) {
         }
     }
 
-    // Regular cells affected by this change
-    // Arrays used as maps, as before
-    const affectedTokens: any = [];
-    const mergeCellUpdates: any = [];
+    // Regular cells affected by this change: the new cell name by the old one
+    const affectedTokens: Record<string, string> = {};
+    // The merged cells affected by this change: false, or the new cell name and the column and row offsets
+    const mergeCellUpdates: Record<string, false | [string, number, number]> = {};
 
     // Update cell
     const updatePosition = function (x: number, y: number, i: number, j: number) {
@@ -1109,20 +1110,21 @@ export const updateTableReferences = function (this: Worksheet) {
     const keys = Object.keys(mergeCellUpdates);
     if (keys.length) {
         for (let i = 0; i < keys.length; i++) {
-            if (mergeCellUpdates[keys[i]]) {
+            const update = mergeCellUpdates[keys[i]];
+            if (update) {
                 const info = getIdFromColumnName(keys[i], true);
                 let x = info[0];
                 let y = info[1];
-                updatePosition(x, y, x + mergeCellUpdates[keys[i]][1], y + mergeCellUpdates[keys[i]][2]);
+                updatePosition(x, y, x + update[1], y + update[2]);
 
                 const columnIdFrom = keys[i];
-                const columnIdTo = mergeCellUpdates[keys[i]][0];
+                const columnIdTo = update[0];
                 for (let j = 0; j < (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]!.length; j++) {
                     x = parseInt((obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].getAttribute('data-x'));
                     y = parseInt((obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].getAttribute('data-y'));
-                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-x', x + mergeCellUpdates[keys[i]][1]);
-                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('aria-colindex', x + mergeCellUpdates[keys[i]][1] + 2);
-                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-y', y + mergeCellUpdates[keys[i]][2]);
+                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-x', x + update[1]);
+                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('aria-colindex', x + update[1] + 2);
+                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-y', y + update[2]);
                 }
 
                 obj.options.mergeCells![columnIdTo] = obj.options.mergeCells![columnIdFrom];
