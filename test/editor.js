@@ -299,4 +299,70 @@ describe('The editor of a worksheet', () => {
         expect(worksheet.editor.x).to.equal(0);
         expect(worksheet.editor.y).to.equal(1);
     });
+
+    it('saves the value typed in the text editor', () => {
+        const worksheet = create();
+        const cell = worksheet.getCell('A1');
+
+        worksheet.openEditor(cell);
+        cell.children[0].value = 'x';
+        worksheet.closeEditor(cell, true);
+
+        expect(worksheet.getValue('A1')).to.equal('x');
+        expect(cell.classList.contains('editor')).to.equal(false);
+        expect(worksheet.history.records.length).to.equal(1);
+    });
+
+    it('opens the text editor without the value when empty is true', () => {
+        const worksheet = create();
+        const cell = worksheet.getCell('A1');
+
+        worksheet.openEditor(cell, true);
+
+        expect(cell.children[0].value).to.equal('');
+    });
+
+    it('saves 0 for an empty numeric cell, or an empty value with allowEmpty', () => {
+        const worksheet = create({ columns: [{ type: 'numeric' }, { type: 'numeric', allowEmpty: true }], data: [[1, 2]] });
+
+        worksheet.openEditor(worksheet.getCell('A1'));
+        worksheet.getCell('A1').children[0].value = '';
+        worksheet.closeEditor(worksheet.getCell('A1'), true);
+
+        worksheet.openEditor(worksheet.getCell('B1'));
+        worksheet.getCell('B1').children[0].value = '';
+        worksheet.closeEditor(worksheet.getCell('B1'), true);
+
+        expect(worksheet.options.data[0]).to.deep.equal([0, '']);
+    });
+
+    it('toggles a checkbox when its editor opens', () => {
+        const worksheet = create({ columns: [{ type: 'checkbox' }], data: [[false]] });
+
+        worksheet.openEditor(worksheet.getCell('A1'));
+
+        expect(worksheet.options.data[0][0]).to.equal(true);
+    });
+
+    it('dispatches the events of the edition', () => {
+        const events = [];
+        // The events are options of the spreadsheet
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b']] }],
+            oneditionstart: (instance, cell, x, y) => events.push(['start', x, y]),
+            oncreateeditor: (instance, cell, x, y) => events.push(['create', x, y]),
+            oneditionend: (instance, cell, x, y, value, save) => events.push(['end', x, y, value, save]),
+        })[0];
+        const cell = worksheet.getCell('B1');
+
+        worksheet.openEditor(cell);
+        cell.children[0].value = 'z';
+        worksheet.closeEditor(cell, true);
+
+        expect(events).to.deep.equal([
+            ['start', 1, 0],
+            ['create', 1, 0],
+            ['end', 1, 0, 'z', true],
+        ]);
+    });
 });
