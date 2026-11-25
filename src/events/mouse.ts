@@ -1,4 +1,3 @@
-import { closeEditor, openEditor } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
 import { resetSelection, selectAll, updateCornerPosition, updateSelectionFromCoords } from '../utils/selection.js';
 import { copyData } from '../utils/fill.js';
@@ -344,7 +343,7 @@ const pressCell = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
 
     // Jclose
     if (e.target.classList.contains('jclose') && e.target.clientWidth - e.offsetX < 50 && e.offsetY < 50) {
-        closeEditor.call(obj, obj.editor.cell!, true);
+        obj.editor.close(obj.editor.cell!, true);
     } else {
         const position = getCellPosition(e.target);
         if (position) {
@@ -353,7 +352,7 @@ const pressCell = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
             // Close edition
             if (obj.editor.isOpen()) {
                 if (obj.editor.x != columnId || obj.editor.y != rowId) {
-                    closeEditor.call(obj, obj.editor.cell, true);
+                    obj.editor.close(obj.editor.cell, true);
                 }
             }
 
@@ -400,7 +399,7 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
         if (previous != jssTable[0].jssWorksheet) {
             if (previous) {
                 if (previous.editor.isOpen()) {
-                    closeEditor.call(previous, previous.editor.cell, true);
+                    previous.editor.close(previous.editor.cell, true);
                 }
                 previous.resetSelection();
             }
@@ -409,7 +408,7 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
     } else {
         if (previous) {
             if (previous.editor.isOpen()) {
-                closeEditor.call(previous, previous.editor.cell, true);
+                previous.editor.close(previous.editor.cell, true);
             }
 
             if (!e.target.closest('.jss_object')) {
@@ -805,7 +804,7 @@ export const doubleClickControls = function (e: TargetEvent<MouseEvent>) {
                 if (!current.editor.isOpen()) {
                     const cell = getCell(e.target);
                     if (cell && cell.classList.contains('highlight')) {
-                        openEditor.call(current, cell as HTMLTableCellElement, undefined, e);
+                        current.editor.open(cell as HTMLTableCellElement, undefined, e);
                     }
                 }
             }

@@ -1,4 +1,3 @@
-import { closeEditor } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
 import { getIndex } from './helpers.js';
 import type { TargetEvent, Worksheet } from '../types/internal';
@@ -23,7 +22,7 @@ export const focusInControls = function (e: TargetEvent<FocusEvent>) {
     const previous = libraryBase.jspreadsheet.current;
     if (previous) {
         if (previous.editor.isOpen()) {
-            closeEditor.call(previous, previous.editor.cell, true);
+            previous.editor.close(previous.editor.cell, true);
         }
         previous.resetSelection();
     }

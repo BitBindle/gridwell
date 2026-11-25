@@ -199,6 +199,9 @@ that changes it.
     Done. The functions of the five modules are methods of `worksheet.view`, with the same names, except
     `quantiyOfPages`, which is `countPages` in the class. The public methods keep their names.
 23. **The editor.** `editor.ts` moves into `Editor`.
+    Done. `worksheet.editor` opens the editor of the column type (`open`, with the private `openCustom`,
+    `toggleCheckbox`, `openDropdown`, `openPicker`, `openHtml`, `openImage` and `openText`), closes it and saves the
+    value (`close`), and toggles the highlighted checkboxes (`setCheckRadioValue`). `openEditor` and `closeEditor` call it.
 24. **The clipboard.** `copyPaste.ts` moves into `Clipboard`.
 25. **The selection.** `selection.ts`, the moves of `keys.ts` and the accessibility code that follows the selection move
     into `Selection`; the fill with the selection corner (`fill.ts`) into `Pointer`.
