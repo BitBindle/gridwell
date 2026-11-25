@@ -65,7 +65,8 @@ export const getDefault = function (this: Spreadsheet) {
 
             const cells = worksheet.getSelected(true);
             if (cells) {
-                const value = !e ? '' : d;
+                // e is the key of the option as text, and the first option is Default
+                const value = e === '0' ? '' : d;
 
                 worksheet.setStyle(
                     Object.fromEntries(
