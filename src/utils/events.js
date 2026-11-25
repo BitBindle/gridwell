@@ -1600,12 +1600,26 @@ export const scrollControls = function (e) {
         updateFreezePosition.call(obj);
     }
 
-    // Close editor
+    // Close a floating editor. The text editor is inside the cell and scrolls with it.
     if (obj.options.lazyLoading == true || obj.options.tableOverflow == true) {
-        if (obj.edition && e.target.className.substr(0, 9) != 'jdropdown') {
+        if (obj.edition && hasFloatingEditor.call(obj, obj.edition[2]) && e.target.className.substr(0, 9) != 'jdropdown') {
             closeEditor.call(obj, obj.edition[0], true);
         }
     }
+};
+
+/**
+ * Check if the editor of a column floats over the page. It does not move with the cell.
+ */
+const hasFloatingEditor = function (x) {
+    const obj = this;
+
+    const column = obj.options.columns && obj.options.columns[x];
+    if (!column || !column.type) {
+        return false;
+    }
+
+    return typeof column.type === 'object' || ['dropdown', 'calendar', 'color', 'html', 'image'].indexOf(column.type) >= 0;
 };
 
 export const setEvents = function (root) {
