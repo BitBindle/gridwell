@@ -24,12 +24,12 @@ export const updateCornerPosition = function (this: Worksheet) {
     const obj = this;
 
     // If any selected cells
-    if (!obj.highlighted || !obj.highlighted.length) {
+    if (!obj.selection.highlighted || !obj.selection.highlighted.length) {
         obj.corner.style.top = '-2000px';
         obj.corner.style.left = '-2000px';
     } else {
         // Get last cell
-        const last = obj.highlighted[obj.highlighted.length - 1].element;
+        const last = obj.selection.highlighted[obj.selection.highlighted.length - 1].element;
         const lastX = parseInt(last.getAttribute('data-x'));
 
         const contentRect = obj.content.getBoundingClientRect();
@@ -75,29 +75,29 @@ export const resetSelection = function (this: Worksheet, blur?: boolean) {
     let previousStatus;
 
     // Remove style
-    if (!obj.highlighted || !obj.highlighted.length) {
+    if (!obj.selection.highlighted || !obj.selection.highlighted.length) {
         previousStatus = 0;
     } else {
         previousStatus = 1;
 
-        for (let i = 0; i < obj.highlighted.length; i++) {
-            obj.highlighted[i].element.classList.remove('highlight');
-            obj.highlighted[i].element.classList.remove('highlight-left');
-            obj.highlighted[i].element.classList.remove('highlight-right');
-            obj.highlighted[i].element.classList.remove('highlight-top');
-            obj.highlighted[i].element.classList.remove('highlight-bottom');
-            obj.highlighted[i].element.classList.remove('highlight-selected');
-            obj.highlighted[i].element.removeAttribute('aria-selected');
+        for (let i = 0; i < obj.selection.highlighted.length; i++) {
+            obj.selection.highlighted[i].element.classList.remove('highlight');
+            obj.selection.highlighted[i].element.classList.remove('highlight-left');
+            obj.selection.highlighted[i].element.classList.remove('highlight-right');
+            obj.selection.highlighted[i].element.classList.remove('highlight-top');
+            obj.selection.highlighted[i].element.classList.remove('highlight-bottom');
+            obj.selection.highlighted[i].element.classList.remove('highlight-selected');
+            obj.selection.highlighted[i].element.removeAttribute('aria-selected');
 
-            const px = parseInt(obj.highlighted[i].element.getAttribute('data-x'));
-            const py = parseInt(obj.highlighted[i].element.getAttribute('data-y'));
+            const px = parseInt(obj.selection.highlighted[i].element.getAttribute('data-x'));
+            const py = parseInt(obj.selection.highlighted[i].element.getAttribute('data-y'));
 
             // Check for merged cells
             let ux, uy;
 
-            if (obj.highlighted[i].element.getAttribute('data-merged')) {
-                const colspan = getMergedColspan.call(obj, obj.highlighted[i].element, px, py);
-                const rowspan = parseInt(obj.highlighted[i].element.getAttribute('rowspan'));
+            if (obj.selection.highlighted[i].element.getAttribute('data-merged')) {
+                const colspan = getMergedColspan.call(obj, obj.selection.highlighted[i].element, px, py);
+                const rowspan = parseInt(obj.selection.highlighted[i].element.getAttribute('rowspan'));
                 ux = colspan > 0 ? px + (colspan - 1) : px;
                 uy = rowspan > 0 ? py + (rowspan - 1) : py;
             } else {
@@ -122,15 +122,15 @@ export const resetSelection = function (this: Worksheet, blur?: boolean) {
     }
 
     // Reset highlighted cells
-    obj.highlighted = [];
+    obj.selection.highlighted = [];
 
     // The tab stop of the grid stays on the active cell, which is not selected now
-    if (obj.activeCell) {
-        obj.activeCell.setAttribute('aria-selected', 'false');
+    if (obj.selection.activeCell) {
+        obj.selection.activeCell.setAttribute('aria-selected', 'false');
     }
 
     // Reset
-    obj.selectedCell = null;
+    obj.selection.range = null;
 
     // Hide corner
     obj.corner.style.top = '-2000px';
@@ -315,7 +315,7 @@ export const updateSelectionFromCoords = function (
     const previousState = obj.resetSelection();
 
     // Keep selected cell
-    obj.selectedCell = [x1, y1, x2, y2];
+    obj.selection.range = [x1, y1, x2, y2];
 
     // Add selected cell
     if (obj.records[y1][x1]) {
@@ -328,7 +328,7 @@ export const updateSelectionFromCoords = function (
             if (obj.rows[j].element.style.display != 'none' && obj.records[j][i].element.style.display != 'none') {
                 obj.records[j][i].element.classList.add('highlight');
                 obj.records[j][i].element.setAttribute('aria-selected', 'true');
-                obj.highlighted.push(obj.records[j][i]);
+                obj.selection.highlighted.push(obj.records[j][i]);
             }
         }
     }
@@ -363,7 +363,7 @@ export const updateSelectionFromCoords = function (
         }
     }
 
-    obj.selectedContainer = [borderLeft, borderTop!, borderRight, borderBottom!];
+    obj.selection.bounds = [borderLeft, borderTop!, borderRight, borderBottom!];
 
     // The selected cell is the tab stop of the grid
     updateActiveCell.call(obj, x1, y1, origin);
@@ -390,13 +390,13 @@ export const updateSelectionFromCoords = function (
 export const getSelectedColumns: WorksheetMethod<'getSelectedColumns'> = function (visibleOnly) {
     const obj = this;
 
-    if (!obj.selectedCell) {
+    if (!obj.selection.range) {
         return [];
     }
 
     const result = [];
 
-    for (let i = Math.min(obj.selectedCell[0], obj.selectedCell[2]); i <= Math.max(obj.selectedCell[0], obj.selectedCell[2]); i++) {
+    for (let i = Math.min(obj.selection.range[0], obj.selection.range[2]); i <= Math.max(obj.selection.range[0], obj.selection.range[2]); i++) {
         if (!visibleOnly || obj.headers[i].style.display != 'none') {
             result.push(i);
         }
@@ -411,29 +411,9 @@ export const getSelectedColumns: WorksheetMethod<'getSelectedColumns'> = functio
 export const refreshSelection = function (this: Worksheet) {
     const obj = this;
 
-    if (obj.selectedCell) {
-        obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+    if (obj.selection.range) {
+        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
     }
-};
-
-/**
- * Remove copy selection
- *
- * @return void
- */
-export const removeCopySelection = function (this: Worksheet) {
-    const obj = this;
-
-    // Remove current selection
-    for (let i = 0; i < obj.selection.length; i++) {
-        obj.selection[i].classList.remove('selection');
-        obj.selection[i].classList.remove('selection-left');
-        obj.selection[i].classList.remove('selection-right');
-        obj.selection[i].classList.remove('selection-top');
-        obj.selection[i].classList.remove('selection-bottom');
-    }
-
-    obj.selection = [];
 };
 
 const doubleDigitFormat = function (v: number | string) {
@@ -454,7 +434,7 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
     const data = obj.getData(true, false);
 
     // Selected cells. The corner is only there when cells are selected.
-    const h = obj.selectedContainer!;
+    const h = obj.selection.bounds!;
 
     // Cells
     const x1 = parseInt(o.getAttribute('data-x'));
@@ -519,7 +499,7 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
                 breakControl == false
             ) {
                 // Stop if contains value
-                if (!obj.selection.length) {
+                if (!obj.selection.fill.length) {
                     if (obj.options.data[j][i] != '') {
                         breakControl = true;
                         continue;
@@ -604,7 +584,7 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
     obj.history.add({
         action: 'setValue',
         records: records,
-        selection: obj.selectedCell,
+        selection: obj.selection.range && [...obj.selection.range],
     });
 
     // Update table with custom configuration if applicable
@@ -632,12 +612,18 @@ export const conditionalSelectionUpdate = function (this: Worksheet, type: 0 | 1
     const obj = this;
 
     if (type == 1) {
-        if (obj.selectedCell && ((o >= obj.selectedCell[1] && o <= obj.selectedCell[3]) || (d >= obj.selectedCell[1] && d <= obj.selectedCell[3]))) {
+        if (
+            obj.selection.range &&
+            ((o >= obj.selection.range[1] && o <= obj.selection.range[3]) || (d >= obj.selection.range[1] && d <= obj.selection.range[3]))
+        ) {
             obj.resetSelection();
             return;
         }
     } else {
-        if (obj.selectedCell && ((o >= obj.selectedCell[0] && o <= obj.selectedCell[2]) || (d >= obj.selectedCell[0] && d <= obj.selectedCell[2]))) {
+        if (
+            obj.selection.range &&
+            ((o >= obj.selection.range[0] && o <= obj.selection.range[2]) || (d >= obj.selection.range[0] && d <= obj.selection.range[2]))
+        ) {
             obj.resetSelection();
             return;
         }
@@ -652,13 +638,13 @@ export const conditionalSelectionUpdate = function (this: Worksheet, type: 0 | 1
 export const getSelectedRows: WorksheetMethod<'getSelectedRows'> = function (visibleOnly) {
     const obj = this;
 
-    if (!obj.selectedCell) {
+    if (!obj.selection.range) {
         return [];
     }
 
     const result = [];
 
-    for (let i = Math.min(obj.selectedCell[1], obj.selectedCell[3]); i <= Math.max(obj.selectedCell[1], obj.selectedCell[3]); i++) {
+    for (let i = Math.min(obj.selection.range[1], obj.selection.range[3]); i <= Math.max(obj.selection.range[1], obj.selection.range[3]); i++) {
         if (!visibleOnly || obj.rows[i].element.style.display != 'none') {
             result.push(i);
         }
@@ -670,30 +656,22 @@ export const getSelectedRows: WorksheetMethod<'getSelectedRows'> = function (vis
 export const selectAll: WorksheetMethod<'selectAll'> = function () {
     const obj = this;
 
-    if (!obj.selectedCell) {
-        obj.selectedCell = [] as unknown as [number, number, number, number];
-    }
-
-    obj.selectedCell[0] = 0;
-    obj.selectedCell[1] = 0;
-    obj.selectedCell[2] = obj.headers.length - 1;
-    obj.selectedCell[3] = obj.records.length - 1;
-
-    obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+    // updateSelectionFromCoords sets the range, unless onbeforeselection cancels the selection
+    obj.updateSelectionFromCoords(0, 0, obj.headers.length - 1, obj.records.length - 1);
 };
 
 export const getSelection: WorksheetMethod<'getSelection'> = function () {
     const obj = this;
 
-    if (!obj.selectedCell) {
+    if (!obj.selection.range) {
         return null;
     }
 
     return [
-        Math.min(obj.selectedCell[0], obj.selectedCell[2]),
-        Math.min(obj.selectedCell[1], obj.selectedCell[3]),
-        Math.max(obj.selectedCell[0], obj.selectedCell[2]),
-        Math.max(obj.selectedCell[1], obj.selectedCell[3]),
+        Math.min(obj.selection.range[0], obj.selection.range[2]),
+        Math.min(obj.selection.range[1], obj.selection.range[3]),
+        Math.max(obj.selection.range[0], obj.selection.range[2]),
+        Math.max(obj.selection.range[1], obj.selection.range[3]),
     ];
 };
 

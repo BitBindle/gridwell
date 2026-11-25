@@ -191,13 +191,13 @@ export const setMerge = function (
     let test: string | false = false;
 
     if (!cellName) {
-        if (!obj.highlighted.length) {
+        if (!obj.selection.highlighted.length) {
             alert(jSuites.translate('No cells selected'));
             return null;
         } else {
             // The highlighted items are cell records, not td elements
-            const first = obj.highlighted[0].element;
-            const last = obj.highlighted[obj.highlighted.length - 1].element;
+            const first = obj.selection.highlighted[0].element;
+            const last = obj.selection.highlighted[obj.selection.highlighted.length - 1].element;
             const x1 = parseInt(first.getAttribute('data-x'));
             const y1 = parseInt(first.getAttribute('data-y'));
             const x2 = parseInt(last.getAttribute('data-x'));

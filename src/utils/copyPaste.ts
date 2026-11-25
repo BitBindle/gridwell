@@ -167,16 +167,16 @@ export const copy = function (
     // Create a hidden textarea to copy the values
     if (!returnData) {
         // Without a selection, no cell is highlighted: copy nothing and keep the clipboard
-        if (!obj.selectedCell) {
+        if (!obj.selection.range) {
             return;
         }
 
         // Paste event
         const selectedRange: [number, number, number, number] = [
-            Math.min(obj.selectedCell[0], obj.selectedCell[2]),
-            Math.min(obj.selectedCell[1], obj.selectedCell[3]),
-            Math.max(obj.selectedCell[0], obj.selectedCell[2]),
-            Math.max(obj.selectedCell[1], obj.selectedCell[3]),
+            Math.min(obj.selection.range[0], obj.selection.range[2]),
+            Math.min(obj.selection.range[1], obj.selection.range[3]),
+            Math.max(obj.selection.range[0], obj.selection.range[2]),
+            Math.max(obj.selection.range[1], obj.selection.range[3]),
         ];
 
         const result = dispatch.call(obj, 'oncopy', obj, selectedRange, strLabel, isCut);
@@ -201,8 +201,8 @@ export const copy = function (
         obj.clipboard.clearBorder();
 
         // Border
-        if (obj.highlighted) {
-            obj.clipboard.showBorder(obj.highlighted);
+        if (obj.selection.highlighted) {
+            obj.clipboard.showBorder(obj.selection.highlighted);
         }
     }
 
@@ -233,8 +233,8 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data) {
     let rows: jspreadsheet.CellValue[][] = parseCSV(data, '\t');
 
     // The end of the selection, to repeat the data over it. Without a selection, the data is pasted once.
-    const ex = obj.selectedCell ? obj.selectedCell[2] : x;
-    const ey = obj.selectedCell ? obj.selectedCell[3] : y;
+    const ex = obj.selection.range ? obj.selection.range[2] : x;
+    const ey = obj.selection.range ? obj.selection.range[3] : y;
 
     const w = ex - x + 1;
     const h = ey - y + 1;
@@ -404,7 +404,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data) {
         obj.history.add({
             action: 'setValue',
             records: records,
-            selection: obj.selectedCell,
+            selection: obj.selection.range && [...obj.selection.range],
             newStyle: newStyle,
             oldStyle: oldStyle,
         });

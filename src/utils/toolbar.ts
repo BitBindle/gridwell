@@ -212,12 +212,12 @@ export const getDefault = function (this: Spreadsheet) {
         onclick: function () {
             const worksheet = getActive();
 
-            if (worksheet.selectedCell && confirm(jSuites.translate('The merged cells will retain the value of the top-left cell only. Are you sure?'))) {
+            if (worksheet.selection.range && confirm(jSuites.translate('The merged cells will retain the value of the top-left cell only. Are you sure?'))) {
                 const selectedRange = [
-                    Math.min(worksheet.selectedCell[0], worksheet.selectedCell[2]),
-                    Math.min(worksheet.selectedCell[1], worksheet.selectedCell[3]),
-                    Math.max(worksheet.selectedCell[0], worksheet.selectedCell[2]),
-                    Math.max(worksheet.selectedCell[1], worksheet.selectedCell[3]),
+                    Math.min(worksheet.selection.range[0], worksheet.selection.range[2]),
+                    Math.min(worksheet.selection.range[1], worksheet.selection.range[3]),
+                    Math.max(worksheet.selection.range[0], worksheet.selection.range[2]),
+                    Math.max(worksheet.selection.range[1], worksheet.selection.range[3]),
                 ];
 
                 const cell = getCellNameFromCoords(selectedRange[0], selectedRange[1]);
@@ -260,12 +260,12 @@ export const getDefault = function (this: Spreadsheet) {
         onchange: function (a: HTMLElement, b: BorderPicker, c: string, d: string) {
             const worksheet = getActive();
 
-            if (worksheet.selectedCell) {
+            if (worksheet.selection.range) {
                 const selectedRange = [
-                    Math.min(worksheet.selectedCell[0], worksheet.selectedCell[2]),
-                    Math.min(worksheet.selectedCell[1], worksheet.selectedCell[3]),
-                    Math.max(worksheet.selectedCell[0], worksheet.selectedCell[2]),
-                    Math.max(worksheet.selectedCell[1], worksheet.selectedCell[3]),
+                    Math.min(worksheet.selection.range[0], worksheet.selection.range[2]),
+                    Math.min(worksheet.selection.range[1], worksheet.selection.range[3]),
+                    Math.max(worksheet.selection.range[0], worksheet.selection.range[2]),
+                    Math.max(worksheet.selection.range[1], worksheet.selection.range[3]),
                 ];
 
                 const type = d;

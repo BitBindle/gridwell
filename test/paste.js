@@ -23,7 +23,7 @@ describe('Paste', () => {
 
         const pasteText = '0-0\t0-1\t0-2\t0-3\n1-0\t1-1\t1-2\t1-3\n2-0\t2-1\t2-2\t2-3\n3-0\t3-1\t3-2\t3-3';
         sheet.updateSelectionFromCoords(0, 0, 0, 0);
-        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], pasteText);
+        sheet.paste(sheet.selection.range[0], sheet.selection.range[1], pasteText);
 
         expect(sheet.getData()).to.eql([
             ['0-0', '0-1', '0-2', '0-3'],
@@ -44,7 +44,7 @@ describe('Paste', () => {
 
         const pasteText = '0-0\t0-1\t0-2\t0-3\n1-0\t1-1\t1-2\t1-3\n2-0\t2-1\t2-2\t2-3\n3-0\t3-1\t3-2\t3-3';
         sheet.updateSelectionFromCoords(3, 3, 3, 3);
-        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], pasteText);
+        sheet.paste(sheet.selection.range[0], sheet.selection.range[1], pasteText);
 
         expect(sheet.getData()).to.eql([
             ['Mazda', 2001, 2000, 1, '', '', ''],
@@ -68,7 +68,7 @@ describe('Paste', () => {
 
         const pasteText = '0-0\t0-1';
         sheet.updateSelectionFromCoords(0, 0, 4, 0);
-        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], pasteText);
+        sheet.paste(sheet.selection.range[0], sheet.selection.range[1], pasteText);
 
         expect(sheet.getData()).to.eql([
             ['0-0', '0-1', '0-0', '0-1'],
@@ -89,7 +89,7 @@ describe('Paste', () => {
 
         const pasteText = '0-0\n1-0';
         sheet.updateSelectionFromCoords(0, 0, 0, 4);
-        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], pasteText);
+        sheet.paste(sheet.selection.range[0], sheet.selection.range[1], pasteText);
 
         expect(sheet.getData()).to.eql([
             ['0-0', 2001, 2000, 1],
@@ -110,7 +110,7 @@ describe('Paste', () => {
 
         const pasteText = '0-0\t0-1\n1-0\t1-1';
         sheet.updateSelectionFromCoords(1, 0, 1, 3);
-        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], pasteText);
+        sheet.paste(sheet.selection.range[0], sheet.selection.range[1], pasteText);
 
         expect(sheet.getData()).to.eql([
             ['Mazda', '0-0', '0-1', 1],
@@ -137,7 +137,7 @@ describe('Paste', () => {
 
         const pasteText = '0-0\t0-1\n1-0\t1-1';
         sheet.updateSelectionFromCoords(1, 0, 1, 0);
-        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], pasteText);
+        sheet.paste(sheet.selection.range[0], sheet.selection.range[1], pasteText);
 
         expect(sheet.getData()).to.eql([
             ['Mazda', '0-0', 2000, '0-1'],
@@ -159,7 +159,7 @@ describe('Paste', () => {
         const pasteText = '0-0\t0-1\n1-0\t1-1';
         sheet.hideRow(1);
         sheet.updateSelectionFromCoords(1, 0, 1, 0);
-        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], pasteText);
+        sheet.paste(sheet.selection.range[0], sheet.selection.range[1], pasteText);
 
         expect(sheet.getData()).to.eql([
             ['Mazda', '0-0', '0-1', 1],
@@ -187,7 +187,7 @@ describe('Paste', () => {
         sheet.hideRow(0);
         sheet.hideColumn(0);
         sheet.updateSelectionFromCoords(2, 2, 2, 2);
-        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], sheet.clipboard.data);
+        sheet.paste(sheet.selection.range[0], sheet.selection.range[1], sheet.clipboard.data);
 
         expect(sheet.getData()).to.eql([
             [1, 2, '', ''],
@@ -257,7 +257,7 @@ describe('Paste', () => {
             )
             .join('\n');
         sheet.updateSelectionFromCoords(3, 3, 3, 3);
-        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], pasteText);
+        sheet.paste(sheet.selection.range[0], sheet.selection.range[1], pasteText);
         expect(count.onbeforechange).to.eql(20000);
         expect(count.onbeforeinsertcolumn).to.eql(1);
         expect(count.onbeforeinsertrow).to.eql(1);
@@ -289,7 +289,7 @@ describe('Paste', () => {
         const pasteText = '0-0\t0-1\t0-2\t0-3\n1-0\t1-1\t1-2\t1-3\n2-0\t2-1\t2-2\t2-3\n3-0\t3-1\t3-2\t3-3';
         sheet.hideRow(2);
         sheet.updateSelectionFromCoords(1, 1, 1, 1);
-        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], pasteText);
+        sheet.paste(sheet.selection.range[0], sheet.selection.range[1], pasteText);
         expect(sheet.getData()).to.eql([
             ['Mazda', 2001, 2000, 1, '', ''],
             ['Peugeot', '0-0', 5000, '0-1', '0-2', '0-3'],
@@ -420,7 +420,7 @@ describe('Paste', () => {
 
         const pasteText = '0-0\t0-1\t0-2\t0-3\n1-0\t1-1\t1-2\t1-3\n2-0\t2-1\t2-2\t2-3\n3-0\t3-1\t3-2\t';
         sheet.updateSelectionFromCoords(0, 0, 0, 0);
-        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], pasteText);
+        sheet.paste(sheet.selection.range[0], sheet.selection.range[1], pasteText);
 
         expect(sheet.getData()).to.eql([
             ['0-0', '0-1', '0-2', '0-3'],
@@ -441,7 +441,7 @@ describe('Paste', () => {
 
         const pasteText = '0-0\t\n' + '1-0\t1-1\t1-2\t1-3\n' + '2-0\n' + '3-0\t3-1\t3-2\t';
         sheet.updateSelectionFromCoords(0, 0, 0, 0);
-        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], pasteText);
+        sheet.paste(sheet.selection.range[0], sheet.selection.range[1], pasteText);
 
         expect(sheet.getData()).to.eql([
             ['0-0', '', '', ''],

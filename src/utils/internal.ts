@@ -832,8 +832,8 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
         }
 
         // Accessible name of the active cell
-        if (obj.activeCell && obj.records[y] && obj.records[y][x] && obj.records[y][x].element === obj.activeCell) {
-            setCellLabel.call(obj, obj.activeCell);
+        if (obj.selection.activeCell && obj.records[y] && obj.records[y][x] && obj.records[y][x].element === obj.selection.activeCell) {
+            setCellLabel.call(obj, obj.selection.activeCell);
         }
 
         // On change. updateCell has read obj.records[y][x] already, so the cell is there.
@@ -1191,7 +1191,7 @@ export const updateScroll = function (this: Worksheet, direction: 0 | 1 | 2 | 3)
     const h1 = contentRect.height;
 
     // Direction Left or Up
-    const reference = obj.records[obj.selectedCell![3]][obj.selectedCell![2]].element;
+    const reference = obj.records[obj.selection.range![3]][obj.selection.range![2]].element;
 
     // Reference
     const referenceRect = reference.getBoundingClientRect();
@@ -1235,7 +1235,7 @@ export const updateScroll = function (this: Worksheet, direction: 0 | 1 | 2 | 3)
 
     // Left position check - TODO: change that to the bottom border of the element
     if (
-        (frozen && obj.selectedCell![2] < obj.options.freezeColumns!) ||
+        (frozen && obj.selection.range![2] < obj.options.freezeColumns!) ||
         (!underFreezed && x > obj.content.scrollLeft + freezed && x < obj.content.scrollLeft + w1)
     ) {
         // In the viewport

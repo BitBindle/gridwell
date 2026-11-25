@@ -35,7 +35,7 @@ describe('Touch controls', () => {
         tap(worksheet.records[1][1].element);
         tap(control);
 
-        expect(worksheet.selectedCell.map(Number)).to.eql([1, 1, 1, 1]);
+        expect(worksheet.selection.range.map(Number)).to.eql([1, 1, 1, 1]);
     });
 
     it('keeps the selection when a tap is on a child element of a jss_object control', async () => {
@@ -47,7 +47,7 @@ describe('Touch controls', () => {
         tap(worksheet.records[1][1].element);
         tap(control.querySelector('span'));
 
-        expect(worksheet.selectedCell.map(Number)).to.eql([1, 1, 1, 1]);
+        expect(worksheet.selection.range.map(Number)).to.eql([1, 1, 1, 1]);
     });
 
     it('selects no cell of the worksheet when a tap is on a cell of a jss_object table', async () => {
@@ -59,7 +59,7 @@ describe('Touch controls', () => {
         tap(worksheet.records[1][1].element);
         tap(control.querySelector('td'));
 
-        expect(worksheet.selectedCell.map(Number)).to.eql([1, 1, 1, 1]);
+        expect(worksheet.selection.range.map(Number)).to.eql([1, 1, 1, 1]);
     });
 
     it('resets the selection when a tap is outside the worksheet and outside a jss_object control', async () => {
@@ -69,6 +69,6 @@ describe('Touch controls', () => {
         tap(worksheet.records[1][1].element);
         tap(control);
 
-        expect(worksheet.selectedCell).to.equal(null);
+        expect(worksheet.selection.range).to.equal(null);
     });
 });

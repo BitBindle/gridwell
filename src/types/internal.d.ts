@@ -11,6 +11,7 @@ import type { Worksheet } from '../Worksheet';
 import type { Clipboard } from '../components/Clipboard';
 import type { Editor } from '../components/Editor';
 import type { History } from '../components/History';
+import type { Selection } from '../components/Selection';
 
 /** The classes. Their fields are in WorksheetState and SpreadsheetState below. */
 export type { Spreadsheet, Worksheet };
@@ -47,11 +48,7 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
 
     editor: Editor;
 
-    /** The cell that has the roving tabindex (the tab stop of the grid). */
-    activeCell?: HTMLTableCellElement | null;
-
-    /** Whether the keyboard focus is in the grid or in its editor. */
-    focusInGrid?: boolean;
+    selection: Selection;
 
     /** The select for the number of rows per page, when the worksheet has pagination options. */
     paginationDropdown?: HTMLSelectElement;
@@ -153,7 +150,7 @@ export interface Library extends jspreadsheet.JSpreadsheet {
 
 /** A worksheet that has a selection. The functions that move the selection assume one. */
 export interface SelectedWorksheet extends Worksheet {
-    selectedCell: [number, number, number, number];
+    selection: Selection & { range: [number, number, number, number] };
 }
 
 /**
@@ -216,7 +213,7 @@ export type WorksheetHistoryRecord =
     | {
           action: 'setValue';
           records: HistoryCellChange[];
-          selection: Worksheet['selectedCell'];
+          selection: Selection['range'];
           /** The style that a paste set and the style it replaced. A paste stores both. */
           newStyle?: Record<string, string>;
           oldStyle?: Record<string, string>;

@@ -2,6 +2,7 @@ import type jspreadsheet from './jspreadsheet';
 import { Clipboard } from './components/Clipboard.js';
 import { Editor } from './components/Editor.js';
 import { History } from './components/History.js';
+import { Selection } from './components/Selection.js';
 import type { Spreadsheet, WorksheetState } from './types/internal';
 
 /**
@@ -33,6 +34,6 @@ export class Worksheet {
         this.history = new History();
         this.clipboard = new Clipboard();
         this.editor = new Editor();
-        this.selection = [];
+        this.selection = new Selection();
     }
 }
