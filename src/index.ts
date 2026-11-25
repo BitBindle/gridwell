@@ -8,11 +8,11 @@ import { destroyEvents } from './utils/events.js';
 import * as helpers from './utils/helpers.js';
 import dispatch from './utils/dispatch.js';
 import version from './utils/version.js';
-import type { Library } from './types/internal';
+import type { Library, Spreadsheet, Worksheet } from './types/internal';
 
-libraryBase.jspreadsheet = function (el: any, options: any) {
+libraryBase.jspreadsheet = function (el: HTMLDivElement | HTMLTableElement, options: jspreadsheet.SpreadsheetOptions) {
     try {
-        const worksheets: any[] = [];
+        const worksheets: Worksheet[] = [];
 
         // Create spreadsheet
         Factory.spreadsheet(el, options, worksheets).then((spreadsheet) => {
@@ -26,9 +26,10 @@ libraryBase.jspreadsheet = function (el: any, options: any) {
     } catch (e) {
         console.error(e);
     }
-} as Library;
+    // The other properties are added below. Factory.spreadsheet is async, so it never throws here and the function always returns the worksheets.
+} as unknown as Library;
 
-libraryBase.jspreadsheet.getWorksheetInstanceByName = function (worksheetName: any, namespace: any): any {
+libraryBase.jspreadsheet.getWorksheetInstanceByName = function (worksheetName: string | null | undefined, namespace: string) {
     const targetSpreadsheet = libraryBase.jspreadsheet.spreadsheet.find((spreadsheet) => {
         return spreadsheet.config.namespace === namespace;
     });
@@ -51,13 +52,17 @@ libraryBase.jspreadsheet.getWorksheetInstanceByName = function (worksheetName: a
 };
 
 // Define dictionary
-libraryBase.jspreadsheet.setDictionary = function (o: any) {
+libraryBase.jspreadsheet.setDictionary = function (o: Record<string, string>) {
     jSuites.setDictionary(o);
 };
 
-libraryBase.jspreadsheet.destroy = function (element: any, destroyEventHandlers?: boolean) {
+// destroy empties the spreadsheet property of the element
+libraryBase.jspreadsheet.destroy = function (
+    element: Omit<jspreadsheet.JspreadsheetInstanceElement, 'spreadsheet'> & { spreadsheet: jspreadsheet.SpreadsheetInstance | null },
+    destroyEventHandlers?: boolean
+) {
     if (element.spreadsheet) {
-        const spreadsheetIndex = libraryBase.jspreadsheet.spreadsheet.indexOf(element.spreadsheet);
+        const spreadsheetIndex = libraryBase.jspreadsheet.spreadsheet.indexOf(element.spreadsheet as Spreadsheet);
         libraryBase.jspreadsheet.spreadsheet.splice(spreadsheetIndex, 1);
 
         const root = element.spreadsheet.config.root || document;
@@ -83,14 +88,14 @@ libraryBase.jspreadsheet.current = null;
 
 libraryBase.jspreadsheet.spreadsheet = [];
 
-libraryBase.jspreadsheet.helpers = {} as any;
+libraryBase.jspreadsheet.helpers = {} as jspreadsheet.JssHelpers;
 
 libraryBase.jspreadsheet.version = function () {
     return version;
 };
 
 Object.entries(helpers).forEach(([key, value]) => {
-    (libraryBase.jspreadsheet.helpers as any)[key] = value;
+    (libraryBase.jspreadsheet.helpers as unknown as Record<string, unknown>)[key] = value;
 });
 
 export default libraryBase.jspreadsheet;
