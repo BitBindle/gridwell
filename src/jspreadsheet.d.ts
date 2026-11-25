@@ -1626,6 +1626,11 @@ declare namespace jspreadsheet {
         toolbar?: (toolbar: ToolbarOptions) => ToolbarOptions | null | undefined;
     }
 
+    /**
+     * A spreadsheet: an instance of the Spreadsheet class, which holds the worksheets, the toolbar and the settings. The
+     * methods are on the prototype, so they need the spreadsheet as `this`. The fields that only the library uses are
+     * not declared here.
+     */
     interface SpreadsheetInstance {
         /**
          * Spreadsheet settings.
@@ -1706,28 +1711,18 @@ declare namespace jspreadsheet {
         worksheets: WorksheetInstance[];
     }
 
+    /**
+     * A worksheet: an instance of the Worksheet class, one table of a spreadsheet. `jspreadsheet()` returns the
+     * worksheets. The methods are on the prototype, so they need the worksheet as `this`. The fields that only the
+     * library uses, such as the col tags and the selection corner, are not declared here.
+     */
     interface WorksheetInstance {
-        ads: HTMLDivElement;
-
         /**
          * Close a cell editor. Does nothing when the cell is not the cell being edited.
          * @param cell - HTML td tag whose editor must be closed.
          * @param save - Whether or not to save editor content in cell.
          */
         closeEditor: (cell: HTMLTableCellElement, save: boolean) => void;
-
-        /**
-         * List of "col" tags for this spreadsheet's table
-         */
-        cols: {
-            colElement: HTMLTableColElement;
-            x: number;
-        }[];
-
-        /**
-         * Colgroup tag for this spreadsheet's table
-         */
-        colgroupContainer: HTMLElement;
 
         content: HTMLDivElement;
 
@@ -1736,11 +1731,6 @@ declare namespace jspreadsheet {
          * @param cut - If true, the operation is cut, if not, it is copy.
          */
         copy: (cut?: boolean) => void;
-
-        /**
-         * HTML element that sits in the lower-right corner of selections.
-         */
-        corner: HTMLDivElement;
 
         /**
          * Create a new worksheet.
@@ -2017,11 +2007,6 @@ declare namespace jspreadsheet {
          * Get the index of the currently active worksheet
          */
         getWorksheetActive: () => number;
-
-        /**
-         * HTML element that corresponds to the header row.
-         */
-        headerContainer: HTMLTableRowElement;
 
         /**
          * List of cells that make up the header.
@@ -2581,27 +2566,12 @@ declare namespace jspreadsheet {
         helpers: JssHelpers;
 
         /**
-         * Internal method.
-         */
-        isMouseAction: boolean;
-
-        /**
          * Defines translations.
          * @param o - Translations.
          */
         setDictionary: (o: Record<string, string>) => void;
 
         spreadsheet: SpreadsheetInstance[];
-
-        /**
-         * Internal method.
-         */
-        timeControl: null | number;
-
-        /**
-         * Internal method.
-         */
-        timeControlLoading: null | number;
 
         /**
          * Basic version information.
