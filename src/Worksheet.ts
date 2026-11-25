@@ -3,6 +3,7 @@ import { Cells } from './components/Cells.js';
 import { Clipboard } from './components/Clipboard.js';
 import { Columns } from './components/Columns.js';
 import { Comments } from './components/Comments.js';
+import { Data } from './components/Data.js';
 import { Editor } from './components/Editor.js';
 import { Formulas } from './components/Formulas.js';
 import { History } from './components/History.js';
@@ -52,6 +53,7 @@ export class Worksheet {
         this.merges = new Merges(this);
         this.columns = new Columns(this);
         this.rowManager = new Rows(this);
+        this.data = new Data(this);
         this.lastScrollLeft = 0;
     }
 }

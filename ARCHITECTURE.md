@@ -227,6 +227,8 @@ that changes it.
     (`getHeight`, `setHeight`, `getData`, `setData`) and shows or hides the index column (`showIndex`, `hideIndex`). It
     is not `worksheet.rows`, because that is the list of row records, which applications use.
 28. **The data.** `Data` (`data.ts`: getting and setting the data and the values).
+    Done. `worksheet.data` gets and sets all the data (`get`, `set`), the data of a range (`getFromRange`) and the value
+    of a cell (`getValue`, `getValueFromCoords`, `setValue`, `setValueFromCoords`). The data stays in `options.data`.
 29. **History.** Applying a record to undo or redo it (`history.ts`) moves into `History`. It comes last because it calls
     every other feature.
 30. **The toolbar.** `toolbar.ts` becomes the class `Toolbar` of the spreadsheet, as `Tabs` did.
