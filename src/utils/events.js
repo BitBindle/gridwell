@@ -1287,6 +1287,13 @@ const isCtrl = function (e) {
 };
 
 const keyDownControls = function (e) {
+    // Keys on the worksheet tabs and on the button to add a worksheet do not go to the grid
+    const keyPath = typeof e.composedPath === 'function' ? e.composedPath() : [];
+    const keyTarget = keyPath.length ? keyPath[0] : e.target;
+    if (keyTarget && typeof keyTarget.closest === 'function' && keyTarget.closest('.jss_spreadsheet > .jtabs-headers-container')) {
+        return;
+    }
+
     if (libraryBase.jspreadsheet.current) {
         if (libraryBase.jspreadsheet.current.edition) {
             const current = libraryBase.jspreadsheet.current;

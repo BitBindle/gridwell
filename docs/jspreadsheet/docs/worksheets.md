@@ -45,7 +45,8 @@ You can customize spreadsheet and worksheet behaviour using the following settin
 
 | Property                         | Description                                                                                        |
 |----------------------------------|----------------------------------------------------------------------------------------------------|
-| `tabs: boolean\|object`          | Enables tabs for worksheet navigation and allows users to create new worksheets. Default: `false`. |
+| `tabs: boolean`                  | Enables tabs for worksheet navigation and allows users to create new worksheets. Default: `false`. |
+| `hideTabs: boolean`              | Hides the worksheet tabs with any number of worksheets, for example when the application shows its own tabs. `openWorksheet` still opens a worksheet. Default: `false`. |
 | `allowDeleteWorksheet: boolean`  | Enables the delete worksheet option in the context menu. Default: `true`.                          |
 | `allowRenameWorksheet: boolean`  | Enables the rename worksheet option in the context menu. Default: `true`.                          |
 | `allowMoveWorksheet: boolean`    | Enables drag-and-drop functionality for rearranging worksheets. Default: `true`.                   |
@@ -53,7 +54,7 @@ You can customize spreadsheet and worksheet behaviour using the following settin
 
 {.green}
 > ##### Tabs
-> The `tabs` object uses the same properties as the `jSuites.tabs` plugin, allowing you to customize the position and behaviour of the worksheet tabs. For more details, visit the: [Tabs Plugin](https://jsuites.net/docs/javascript-tabs)
+> The worksheet tabs show when the spreadsheet has two or more worksheets, or when `tabs` is `true`. With `tabs: true`, a button adds a new worksheet. The tabs use the keyboard interaction of the [WAI-ARIA tabs pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/): the arrow keys, Home and End move between the tabs. Use `hideTabs: true` to hide them.
 
  
 #### Quick example
@@ -64,12 +65,7 @@ You can customize spreadsheet and worksheet behaviour using the following settin
 
 <script>
 jspreadsheet(document.getElementById('spreadsheet'), {
-    tabs: {
-        allowCreate: true,
-        allowChangePosition: true,
-        animation: true,
-        position: "bottom",
-    },
+    tabs: true,
     worksheets: [{
         minDimensions: [8,8],
     }],
@@ -85,16 +81,9 @@ import "jspreadsheet-ce/dist/jspreadsheet.css";
 export default function App() {
     // Spreadsheet array of worksheets
     const spreadsheet = useRef();
-    // Tabs
-    const tabs = {
-        allowCreate: true,
-        allowChangePosition: true,
-        animation: true,
-        position: "bottom",
-    };
     // Render component
     return (
-        <Spreadsheet ref={spreadsheet} tabs={tabs}>
+        <Spreadsheet ref={spreadsheet} tabs>
             <Worksheet minDimensions={[6,6]} />
             <Worksheet minDimensions={[6,6]} />
         </Spreadsheet>
@@ -120,13 +109,7 @@ export default {
     },
     data() {
         return {
-            // Tabs customizations
-            tabs: {
-                allowCreate: true,
-                allowChangePosition: true,
-                animation: true,
-                position: "bottom",
-            }
+            tabs: true
         };
     }
 }
@@ -134,12 +117,7 @@ export default {
 ```
 ```angularjs
 jspreadsheet(document.getElementById('spreadsheet'), {
-    tabs: {
-        allowCreate: true,
-        allowChangePosition: true,
-        animation: true,
-        position: "bottom",
-    },
+    tabs: true,
     worksheets: [{
         minDimensions: [8,8],
     }],
