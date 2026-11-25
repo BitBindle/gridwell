@@ -222,6 +222,10 @@ that changes it.
     gets and sets their widths, titles and data (`getWidth`, `setWidth`, `getHeader`, `getHeaders`, `setHeader`,
     `getData`, `setData`), and places the frozen columns (`getIndexWidth`, `getFreezeWidth`, `updateFreezePosition`).
 27. **Rows.** `Rows` (`rows.ts`).
+    Done. `worksheet.rowManager` creates a row (`create`), inserts, moves, deletes, shows and hides the rows (`insert`,
+    with the private `getInserted` and `add`, `move`, `delete`, `show`, `hide`), gets and sets their heights and data
+    (`getHeight`, `setHeight`, `getData`, `setData`) and shows or hides the index column (`showIndex`, `hideIndex`). It
+    is not `worksheet.rows`, because that is the list of row records, which applications use.
 28. **The data.** `Data` (`data.ts`: getting and setting the data and the values).
 29. **History.** Applying a record to undo or redo it (`history.ts`) moves into `History`. It comes last because it calls
     every other feature.

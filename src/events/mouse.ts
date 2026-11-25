@@ -1,5 +1,4 @@
 import libraryBase from '../utils/libraryBase.js';
-import { moveRow, setHeight } from '../utils/rows.js';
 import { getElement, getIndex } from './helpers.js';
 import type { TargetEvent, Worksheet } from '../types/internal';
 
@@ -84,7 +83,7 @@ const endResize = function (this: Worksheet) {
         obj.rows[resizing.row].element.children[0].classList.remove('resizing');
         // setHeight parses the height, and it ignores a missing attribute (NaN) as it ignored null
         const newHeight = parseInt(obj.rows[resizing.row].element.getAttribute('height'));
-        setHeight.call(obj, resizing.row, newHeight, resizing.height);
+        obj.rowManager.setHeight(resizing.row, newHeight, resizing.height);
         // Remove border
         resizing.element.classList.remove('resizing');
     }
@@ -133,7 +132,7 @@ const endDrag = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
                 position = parseInt((dragging.element.previousSibling as HTMLElement).getAttribute('data-y'));
             }
 
-            moveRow.call(obj, dragging.row, position, true);
+            obj.rowManager.move(dragging.row, position, true);
         }
         dragging.element.classList.remove('dragging');
     }
