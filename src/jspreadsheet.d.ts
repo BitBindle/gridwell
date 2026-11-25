@@ -2426,10 +2426,15 @@ declare namespace jspreadsheet {
 
         /**
          * Get a worksheet instance by name and namespace.
-         * @param worksheetName - Name of the searched worksheet. If null or undefined, the method returns the found namespace.
+         *
+         * Returns undefined when the namespace has no worksheet with this name, and an empty object when no spreadsheet has the namespace.
+         * @param worksheetName - Name of the searched worksheet. If null or undefined, the method returns the worksheets of the namespace by name.
          * @param namespace - Namespace name.
          */
-        getWorksheetInstanceByName: (worksheetName: string | null | undefined, namespace: string) => WorksheetInstance | Record<string, WorksheetInstance>;
+        getWorksheetInstanceByName: (
+            worksheetName: string | null | undefined,
+            namespace: string
+        ) => WorksheetInstance | Record<string, WorksheetInstance> | undefined;
 
         helpers: JssHelpers;
 

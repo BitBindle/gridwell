@@ -70,3 +70,7 @@ const contextMenuItems: jspreadsheet.ContextMenuItem[] = [{ title: 'Copy', oncli
 // insertBefore is read as true or false, so both a boolean and a number work
 worksheet.insertRow(1, 0, true);
 worksheet.insertColumn(1, 0, 1);
+
+// A worksheet name that the namespace does not have gives undefined
+const worksheetByName = library.getWorksheetInstanceByName('Countries', 'namespace');
+assertType<Equals<typeof worksheetByName, jspreadsheet.WorksheetInstance | Record<string, jspreadsheet.WorksheetInstance> | undefined>>();
