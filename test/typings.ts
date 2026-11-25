@@ -28,3 +28,11 @@ declare const spreadsheet: jspreadsheet.SpreadsheetInstance;
 // The factory gives each spreadsheet getConfig
 const config = spreadsheet.getConfig();
 assertType<Equals<typeof config, jspreadsheet.SpreadsheetOptions>>();
+
+declare const library: jspreadsheet.JSpreadsheet;
+
+// version returns the version information, which has no type
+const versionInfo = library.version();
+assertType<Equals<typeof versionInfo.version, string>>();
+// @ts-expect-error The version information has no type property
+const versionType = versionInfo.type;

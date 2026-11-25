@@ -85,10 +85,9 @@ libraryBase.jspreadsheet.spreadsheet = [];
 
 libraryBase.jspreadsheet.helpers = {} as any;
 
-// The public typings declare version as an object, but it is a function that returns the object
 libraryBase.jspreadsheet.version = function () {
     return version;
-} as any;
+};
 
 Object.entries(helpers).forEach(([key, value]) => {
     (libraryBase.jspreadsheet.helpers as any)[key] = value;

@@ -2317,7 +2317,6 @@ declare namespace jspreadsheet {
         host: string;
         license: string;
         print: () => [string];
-        type: string;
         version: string;
     };
 
