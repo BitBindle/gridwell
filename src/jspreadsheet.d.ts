@@ -1612,7 +1612,7 @@ declare namespace jspreadsheet {
         dispatch: (event: string, ...args: unknown[]) => any;
 
         /**
-         * Simulates the action of the "arrow down" key.
+         * Simulates the action of the "arrow down" key. Does nothing when no cell is selected.
          * @param shiftKey - If true, the method simulates the action of the "arrow down" key while the Shift key is pressed.
          * @param ctrlKey - If true, the method simulates the action of the "arrow down" key while the Ctrl key is pressed.
          */
@@ -1659,7 +1659,7 @@ declare namespace jspreadsheet {
         filters: (string[] | null)[];
 
         /**
-         * Simulates the action of the Home key.
+         * Simulates the action of the Home key. Does nothing when no cell is selected.
          * @param shiftKey - If true, the method simulates the action of the Home key while the Shift key is pressed.
          * @param ctrlKey - If true, the method simulates the action of the Home key while the Ctrl key is pressed.
          */
@@ -1960,14 +1960,14 @@ declare namespace jspreadsheet {
         isReadOnly(cellName: string): boolean;
 
         /**
-         * Simulates the action of the End key.
+         * Simulates the action of the End key. Does nothing when no cell is selected.
          * @param shiftKey - If true, the method simulates the action of the End key while the Shift key is pressed.
          * @param ctrlKey - If true, the method simulates the action of the End key while the Ctrl key is pressed.
          */
         last: (shiftKey?: boolean, ctrlKey?: boolean) => void;
 
         /**
-         * Simulates the action of the "arrow left" key.
+         * Simulates the action of the "arrow left" key. Does nothing when no cell is selected.
          * @param shiftKey - If true, the method simulates the action of the "arrow left" key while the Shift key is pressed.
          * @param ctrlKey - If true, the method simulates the action of the "arrow left" key while the Ctrl key is pressed.
          */
@@ -2116,7 +2116,7 @@ declare namespace jspreadsheet {
         results: null | number[];
 
         /**
-         * Simulates the action of the "arrow right" key.
+         * Simulates the action of the "arrow right" key. Does nothing when no cell is selected.
          * @param shiftKey - If true, the method simulates the action of the "arrow right" key while the Shift key is pressed.
          * @param ctrlKey - If true, the method simulates the action of the "arrow right" key while the Ctrl key is pressed.
          */
@@ -2349,7 +2349,7 @@ declare namespace jspreadsheet {
         undo: () => void;
 
         /**
-         * Simulates the action of the "arrow up" key.
+         * Simulates the action of the "arrow up" key. Does nothing when no cell is selected.
          * @param shiftKey - If true, the method simulates the action of the "arrow up" key while the Shift key is pressed.
          * @param ctrlKey - If true, the method simulates the action of the "arrow up" key while the Ctrl key is pressed.
          */

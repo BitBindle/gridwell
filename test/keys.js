@@ -106,3 +106,48 @@ describe('Toggle a checkbox with the space key', () => {
         ]);
     });
 });
+
+describe('Moving the selection without a selection', () => {
+    it('does nothing in up, down, left, right, first and last', () => {
+        const events = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b'],
+                        ['c', 'd'],
+                    ],
+                },
+            ],
+            onselection: () => events.push('onselection'),
+        })[0];
+
+        for (const method of ['up', 'down', 'left', 'right', 'first', 'last']) {
+            worksheet[method]();
+            worksheet[method](true, true);
+        }
+
+        expect(worksheet.getSelection()).to.equal(null);
+        expect(events).to.deep.equal([]);
+    });
+
+    it('does nothing after resetSelection', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b'],
+                        ['c', 'd'],
+                    ],
+                },
+            ],
+        })[0];
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+        worksheet.resetSelection();
+
+        worksheet.down();
+        worksheet.right();
+
+        expect(worksheet.getSelection()).to.equal(null);
+    });
+});
