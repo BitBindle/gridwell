@@ -181,6 +181,10 @@ that changes it.
     Done.
 19. **The data of the cells.** `Styles` (`style.ts`), `Comments` (`comments.ts`), `Meta` (`meta.ts`) and `Cells`
     (`cells.ts`: finding a cell, its label, read-only).
+    Done. The four modules are the components `worksheet.styles`, `worksheet.comments`, `worksheet.meta` and
+    `worksheet.cells`. The methods have shorter names in their class (`setStyle` is `styles.set`, `getCellFromCoords` is
+    `cells.getFromCoords`), and the public methods call them. The references rename the cells of the meta information
+    with `obj.meta.update`.
 20. **Merges.** `Merges` (`merges.ts`).
 21. **Formulas.** The references (`references.ts`), the footers (`footer.ts`) and the calculation of a formula
     (`executeFormula` and what only it uses in `values.ts`) move into `Formulas`.

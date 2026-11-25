@@ -35,24 +35,19 @@ import { deleteRow, getHeight, getRowData, hideRow, insertRow, moveRow, setHeigh
 import { destroyMerge, getMerge, removeMerge, setMerge } from './merges.js';
 import { resetSearch, search } from './search.js';
 import { getHeader, getHeaders, setHeader } from './headers.js';
-import { getStyle, resetStyle, setStyle } from './style.js';
 import { page, quantiyOfPages, whichPage } from './pagination.js';
 import { download } from './download.js';
 import { down, first, last, left, right, up } from './keys.js';
 import { createNestedHeader } from './headers.js';
-import { getCell, getCellFromCoords, getLabel } from './cells.js';
 import { hideIndex, showIndex } from './rows.js';
 import { executeFormula } from './values.js';
 import { getWorksheetActive } from './activeWorksheet.js';
-import { getComments, setComments } from './comments.js';
 import { orderBy } from './orderBy.js';
 import { getWorksheetConfig, setConfig } from './config.js';
-import { getMeta, setMeta } from './meta.js';
 import { closeEditor, openEditor } from './editor.js';
 import dispatch from './dispatch.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import { copy, paste } from './copyPaste.js';
-import { isReadOnly, setReadOnly } from './cells.js';
 import { openFilter, resetFilters } from './filter.js';
 import { redo, undo } from './history.js';
 import { setGridFocusEvents, setGridLabels, setGridRoles } from './accessibility.js';
@@ -715,7 +710,12 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
     ['getHeader', getHeader],
     ['getHeaders', getHeaders],
     ['setHeader', setHeader],
-    ['getStyle', getStyle],
+    [
+        'getStyle',
+        function (this: Worksheet, cell?: string | number[], key?: string) {
+            return this.styles.get(cell, key);
+        },
+    ],
     [
         'setStyle',
         function (
@@ -726,10 +726,15 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             forceOverwrite: boolean,
             ignoreHistoryAndEvents?: boolean
         ) {
-            return setStyle.call(this, cell, property, value, forceOverwrite, ignoreHistoryAndEvents);
+            return this.styles.set(cell, property, value, forceOverwrite, ignoreHistoryAndEvents);
         },
     ],
-    ['resetStyle', resetStyle],
+    [
+        'resetStyle',
+        function (this: Worksheet, o: Record<string, string | string[]>, ignoreHistoryAndEvents?: boolean) {
+            return this.styles.reset(o, ignoreHistoryAndEvents);
+        },
+    ],
     ['insertColumn', insertColumn],
     ['moveColumn', moveColumn],
     ['deleteColumn', deleteColumn],
@@ -738,23 +743,53 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
     ['whichPage', whichPage],
     ['page', page],
     ['download', download],
-    ['getComments', getComments],
-    ['setComments', setComments],
+    [
+        'getComments',
+        function (this: Worksheet, cell?: string | number[]) {
+            return this.comments.get(cell);
+        },
+    ],
+    [
+        'setComments',
+        function (this: Worksheet, cellId: string | Record<string, string | null | undefined>, comments?: string | null) {
+            return this.comments.set(cellId, comments);
+        },
+    ],
     ['orderBy', orderBy],
     ['undo', undo],
     ['redo', redo],
-    ['getCell', getCell],
-    ['getCellFromCoords', getCellFromCoords],
-    ['getLabel', getLabel],
+    [
+        'getCell',
+        function (this: Worksheet, x: number, y: number) {
+            return this.cells.get(x, y);
+        },
+    ],
+    [
+        'getCellFromCoords',
+        function (this: Worksheet, x: number, y: number) {
+            return this.cells.getFromCoords(x, y);
+        },
+    ],
+    [
+        'getLabel',
+        function (this: Worksheet, x: number, y: number) {
+            return this.cells.getLabel(x, y);
+        },
+    ],
     ['getConfig', getWorksheetConfig],
     ['setConfig', setConfig],
     [
         'getMeta',
         function (this: Worksheet, cell: string) {
-            return getMeta.call(this, cell);
+            return this.meta.get(cell);
         },
     ],
-    ['setMeta', setMeta],
+    [
+        'setMeta',
+        function (this: Worksheet, o: string | Record<string, jspreadsheet.MetaInformation>, k?: string, v?: string) {
+            return this.meta.set(o, k, v);
+        },
+    ],
     ['showColumn', showColumn],
     ['hideColumn', hideColumn],
     ['showIndex', showIndex],
@@ -781,8 +816,18 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
     ['quantiyOfPages', quantiyOfPages],
     ['getRange', getRange],
     ['isSelected', isSelected],
-    ['setReadOnly', setReadOnly],
-    ['isReadOnly', isReadOnly],
+    [
+        'setReadOnly',
+        function (this: Worksheet, cell: string | HTMLElement, state: boolean) {
+            return this.cells.setReadOnly(cell, state);
+        },
+    ],
+    [
+        'isReadOnly',
+        function (this: Worksheet, x: number | string, y?: number) {
+            return this.cells.isReadOnly(x, y);
+        },
+    ],
     ['getHighlighted', getHighlighted],
     // The public dispatch takes any event name, and dispatch is typed for the events of the library
     ['dispatch', dispatch as (this: Worksheet, ...args: never[]) => unknown],

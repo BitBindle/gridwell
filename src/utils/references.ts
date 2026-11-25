@@ -1,6 +1,5 @@
 import { refreshSelection } from './selection.js';
 import { getColumnName } from './helpers.js';
-import { updateMeta } from './meta.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { updateGridSize, updateRowIndex, updateTabStop } from './accessibility.js';
 import { updateCell } from './render.js';
@@ -239,7 +238,7 @@ export const updateTableReferences = function (this: Worksheet) {
     updateFormulas.call(obj, affectedTokens);
 
     // Update meta data
-    updateMeta.call(obj, affectedTokens);
+    obj.meta.update(affectedTokens);
 
     // Update the size of the grid
     updateGridSize.call(obj);
