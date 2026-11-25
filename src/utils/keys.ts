@@ -36,7 +36,13 @@ const upGet = function (this: Worksheet, x: number, y: number) {
     return y;
 };
 
-const upVisible = function (this: SelectedWorksheet, group: any, direction: any) {
+/** The corner of the selection that moves: 0 for the cell in selectedCell[0] and [1], 1 for the cell in [2] and [3]. */
+type Corner = 0 | 1;
+
+/** 0 moves to the last visible cell in that direction (with Ctrl), 1 moves to the next visible cell. */
+type Step = 0 | 1;
+
+const upVisible = function (this: SelectedWorksheet, group: Corner, direction: Step) {
     const obj = this;
 
     let x, y;
@@ -136,7 +142,7 @@ export const rightGet = function (this: Worksheet, x: number, y: number) {
     return x;
 };
 
-const rightVisible = function (this: SelectedWorksheet, group: any, direction: any) {
+const rightVisible = function (this: SelectedWorksheet, group: Corner, direction: Step) {
     const obj = this;
 
     let x, y;
@@ -210,7 +216,7 @@ export const downGet = function (this: Worksheet, x: number, y: number) {
     return y;
 };
 
-const downVisible = function (this: SelectedWorksheet, group: any, direction: any) {
+const downVisible = function (this: SelectedWorksheet, group: Corner, direction: Step) {
     const obj = this;
 
     let x, y;
@@ -308,7 +314,7 @@ const leftGet = function (this: Worksheet, x: number, y: number) {
     return x;
 };
 
-const leftVisible = function (this: SelectedWorksheet, group: any, direction: any) {
+const leftVisible = function (this: SelectedWorksheet, group: Corner, direction: Step) {
     const obj = this;
 
     let x, y;
