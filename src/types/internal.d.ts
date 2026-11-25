@@ -99,7 +99,7 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
 export interface SpreadsheetState extends jspreadsheet.SpreadsheetInstance {
     worksheets: Worksheet[];
 
-    /** The tabs of the worksheets, which createTabs keeps on the element. */
+    /** The tabs of the worksheets, which the Tabs constructor keeps on the element. */
     element: jspreadsheet.JspreadsheetInstanceElement & { tabs?: Tabs };
 
     /** The jsuites context menu, which jsuites keeps on its element. */

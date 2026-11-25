@@ -174,3 +174,10 @@ so JavaScript code works as before, but TypeScript code that reads them no longe
 Code that still needs one of these fields can cast the worksheet, for example `(worksheet as any).corner`, but the
 fields can change in any version. `WorksheetInstance` and `SpreadsheetInstance` are the types of the `Worksheet` and
 `Spreadsheet` instances.
+
+## The methods of the tabs are on the prototype
+
+`spreadsheet.element.tabs`, the tabs of the worksheets, is now an instance of a class, and its methods (`open`,
+`create`, `remove`, `getActive` and the others) are on the prototype, as for the worksheets. A method taken off the
+object needs the object as `this`: use `() => tabs.open(1)` instead of `const open = tabs.open`. `Object.keys(tabs)` no
+longer includes the methods. Assigning a method to the object still replaces it, also for the calls that the tabs make.
