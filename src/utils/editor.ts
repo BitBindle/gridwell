@@ -29,18 +29,20 @@ type EditorElement = HTMLInputElement & {
 export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, e) {
     const obj = this;
 
-    // Get cell position. The code uses the text as numbers.
-    const y: any = cell.getAttribute('data-y');
-    const x: any = cell.getAttribute('data-x');
+    // Get cell position. The edition keeps the text of data-x and data-y.
+    const yText = cell.getAttribute('data-y')!;
+    const xText = cell.getAttribute('data-x')!;
+    const y = parseInt(yText);
+    const x = parseInt(xText);
 
     // Column options
     const column = obj.options.columns && obj.options.columns[getCellColumnIndex.call(obj, x, y)];
 
     // On edition start
-    dispatch.call(obj, 'oneditionstart', obj, cell, parseInt(x), parseInt(y));
+    dispatch.call(obj, 'oneditionstart', obj, cell, x, y);
 
     // Accessible name of the editor
-    const label = getLabelText.call(obj.parent, 'editCell', getColumnNameFromId([parseInt(x), parseInt(y)]));
+    const label = getLabelText.call(obj.parent, 'editCell', getColumnNameFromId([x, y]));
 
     // Overflow
     if (x > 0) {
@@ -80,7 +82,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
         // Do nothing
     } else {
         // Holder
-        obj.edition = [obj.records[y][x].element, obj.records[y][x].element.innerHTML, x, y];
+        obj.edition = [obj.records[y][x].element, obj.records[y][x].element.innerHTML, xText, yText];
 
         // If there is a custom editor for it
         if (column && typeof column.type === 'object') {
@@ -89,10 +91,10 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
             cell.removeAttribute('aria-label');
 
             // Custom editors. The code expects a custom editor to have openEditor and closeEditor.
-            column.type.openEditor!(cell, obj.options.data[y][x], parseInt(x), parseInt(y), obj, column, e);
+            column.type.openEditor!(cell, obj.options.data[y][x], x, y, obj, column, e);
 
             // On edition start
-            dispatch.call(obj, 'oncreateeditor', obj, cell, parseInt(x), parseInt(y), null, column);
+            dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
         } else {
             // Native functions
             if (column && column.type == 'hidden') {
@@ -116,7 +118,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 let source;
 
                 if (typeof column.filter == 'function') {
-                    source = column.filter(obj.element, cell, x, y, column.source);
+                    source = column.filter(obj.element, cell, xText, yText, column.source);
                 } else {
                     source = column.source;
                 }
@@ -133,7 +135,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 const editor = createEditor('div');
 
                 // On edition start
-                dispatch.call(obj, 'oncreateeditor', obj, cell, parseInt(x), parseInt(y), null, column);
+                dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
 
                 // The jsuites typings say that the width is a number, but it takes CSS text
                 const options: any = {
@@ -166,7 +168,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 // Create editor
                 const editor = createEditor('input');
 
-                dispatch.call(obj, 'oncreateeditor', obj, cell, parseInt(x), parseInt(y), null, column);
+                dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
 
                 // The input converts the value to text
                 editor.value = value as string;
@@ -207,7 +209,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 // Create editor
                 const editor = createEditor('div');
 
-                dispatch.call(obj, 'oncreateeditor', obj, cell, parseInt(x), parseInt(y), null, column);
+                dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
 
                 editor.style.position = 'relative';
                 const div = document.createElement('div');
@@ -243,7 +245,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 // Create editor
                 const editor = createEditor('div');
 
-                dispatch.call(obj, 'oncreateeditor', obj, cell, parseInt(x), parseInt(y), null, column);
+                dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
 
                 editor.style.position = 'relative';
                 const div = document.createElement('div');
@@ -275,7 +277,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                     editor = createEditor('input');
                 }
 
-                dispatch.call(obj, 'oncreateeditor', obj, cell, parseInt(x), parseInt(y), null, column);
+                dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
 
                 editor.focus();
                 // The input converts the value to text
@@ -443,8 +445,8 @@ export const setCheckRadioValue = function (this: Worksheet) {
     const records = [];
     const keys = Object.keys(obj.highlighted);
     for (let i = 0; i < keys.length; i++) {
-        const x: any = obj.highlighted[i].element.getAttribute('data-x');
-        const y: any = obj.highlighted[i].element.getAttribute('data-y');
+        const x = parseInt(obj.highlighted[i].element.getAttribute('data-x'));
+        const y = parseInt(obj.highlighted[i].element.getAttribute('data-y'));
 
         const column = obj.options.columns[getCellColumnIndex.call(obj, x, y)];
         if (column.type == 'checkbox' || column.type == 'radio') {

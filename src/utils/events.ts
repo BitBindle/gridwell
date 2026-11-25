@@ -17,6 +17,14 @@ import { getIndexWidth } from './freeze.js';
 import type { TargetEvent, Worksheet } from '../types/internal';
 
 // The element of the worksheet that contains the element, which keeps the worksheet, and the section: 1 for the header, 2 for the body
+/**
+ * The index in the data-x or data-y attribute of an element, or null when the element has none
+ */
+const getIndex = function (element: Element, name: 'data-x' | 'data-y') {
+    const text = element.getAttribute(name);
+    return text ? parseInt(text) : null;
+};
+
 const getElement = function (element: HTMLElement): [Worksheet['element'] | 0 | null, number] {
     let jssSection = 0;
     let jssElement: Worksheet['element'] | 0 | null = 0;
@@ -57,7 +65,7 @@ const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
         // Update cell size
         if (libraryBase.jspreadsheet.current.resizing) {
             // Columns to be updated
-            if (libraryBase.jspreadsheet.current.resizing.column) {
+            if (libraryBase.jspreadsheet.current.resizing.column != null) {
                 // New width
                 const newWidth = parseInt(
                     libraryBase.jspreadsheet.current.cols[libraryBase.jspreadsheet.current.resizing.column].colElement.getAttribute('width')
@@ -106,9 +114,9 @@ const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
         } else if (libraryBase.jspreadsheet.current.dragging) {
             // Reset dragging helper
             if (libraryBase.jspreadsheet.current.dragging) {
-                if (libraryBase.jspreadsheet.current.dragging.column) {
+                if (libraryBase.jspreadsheet.current.dragging.column != null) {
                     // Target
-                    const columnId = e.target.getAttribute('data-x');
+                    const columnId = getIndex(e.target, 'data-x');
                     // Remove move style
                     libraryBase.jspreadsheet.current.headers[libraryBase.jspreadsheet.current.dragging.column].classList.remove('dragging');
                     for (let j = 0; j < libraryBase.jspreadsheet.current.rows.length; j++) {
@@ -121,7 +129,7 @@ const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
                         libraryBase.jspreadsheet.current.headers[i].classList.remove('dragging-right');
                     }
                     // Update position
-                    if (columnId) {
+                    if (columnId != null) {
                         if (libraryBase.jspreadsheet.current.dragging.column != libraryBase.jspreadsheet.current.dragging.destination) {
                             libraryBase.jspreadsheet.current.moveColumn(
                                 libraryBase.jspreadsheet.current.dragging.column,
@@ -229,8 +237,9 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
         } else {
             // Header found
             if (jssTable[1] == 1) {
-                const columnId: any = e.target.getAttribute('data-x');
-                if (columnId) {
+                const columnText = e.target.getAttribute('data-x');
+                if (columnText) {
+                    const columnId = parseInt(columnText);
                     // Update cursor
                     const info = e.target.getBoundingClientRect();
                     if (libraryBase.jspreadsheet.current.options.columnResize != false && info.width - e.offsetX < 6) {
@@ -271,7 +280,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                     } else {
                         let o, d;
 
-                        if (libraryBase.jspreadsheet.current.selectedHeader && (e.shiftKey || e.ctrlKey)) {
+                        if (libraryBase.jspreadsheet.current.selectedHeader != null && (e.shiftKey || e.ctrlKey)) {
                             o = libraryBase.jspreadsheet.current.selectedHeader;
                             d = columnId;
                         } else {
@@ -319,7 +328,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                     }
                 }
             } else {
-                libraryBase.jspreadsheet.current.selectedHeader = false;
+                libraryBase.jspreadsheet.current.selectedHeader = null;
             }
 
             // Body found
@@ -381,7 +390,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                             const x = element.getAttribute('data-x');
                             const y = element.getAttribute('data-y');
                             if (x && y) {
-                                return [x, y];
+                                return [parseInt(x), parseInt(y)];
                             } else {
                                 if (element.parentNode) {
                                     return getCellCoords(element.parentNode as HTMLElement);
@@ -391,11 +400,15 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
 
                         const position = getCellCoords(e.target);
                         if (position) {
-                            const columnId: any = position[0];
-                            const rowId: any = position[1];
+                            const columnId = position[0];
+                            const rowId = position[1];
                             // Close edition
                             if (libraryBase.jspreadsheet.current.edition) {
-                                if (libraryBase.jspreadsheet.current.edition[2] != columnId || libraryBase.jspreadsheet.current.edition[3] != rowId) {
+                                // The edition keeps the text of data-x and data-y
+                                if (
+                                    parseInt(libraryBase.jspreadsheet.current.edition[2]) != columnId ||
+                                    parseInt(libraryBase.jspreadsheet.current.edition[3]) != rowId
+                                ) {
                                     closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition[0], true);
                                 }
                             }
@@ -423,7 +436,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                     }
                 }
             } else {
-                libraryBase.jspreadsheet.current.selectedRow = false;
+                libraryBase.jspreadsheet.current.selectedRow = null;
             }
 
             // Pagination
@@ -470,7 +483,7 @@ const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
         if (libraryBase.jspreadsheet.isMouseAction == true) {
             // Resizing is ongoing
             if (libraryBase.jspreadsheet.current.resizing) {
-                if (libraryBase.jspreadsheet.current.resizing.column) {
+                if (libraryBase.jspreadsheet.current.resizing.column != null) {
                     const width = e.pageX - libraryBase.jspreadsheet.current.resizing.mousePosition;
 
                     if (libraryBase.jspreadsheet.current.resizing.width + width > 0) {
@@ -490,9 +503,9 @@ const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
                     }
                 }
             } else if (libraryBase.jspreadsheet.current.dragging) {
-                if (libraryBase.jspreadsheet.current.dragging.column) {
-                    const columnId: any = e.target.getAttribute('data-x');
-                    if (columnId) {
+                if (libraryBase.jspreadsheet.current.dragging.column != null) {
+                    const columnId = getIndex(e.target, 'data-x');
+                    if (columnId != null) {
                         if (isColMerged.call(libraryBase.jspreadsheet.current, columnId).length) {
                             console.error('Jspreadsheet: This column is part of a merged cell.');
                         } else {
@@ -502,20 +515,20 @@ const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
                             }
 
                             if (libraryBase.jspreadsheet.current.dragging.column == columnId) {
-                                libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId);
+                                libraryBase.jspreadsheet.current.dragging.destination = columnId;
                             } else {
                                 if (e.target.clientWidth / 2 > e.offsetX) {
                                     if (libraryBase.jspreadsheet.current.dragging.column < columnId) {
-                                        libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId) - 1;
+                                        libraryBase.jspreadsheet.current.dragging.destination = columnId - 1;
                                     } else {
-                                        libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId);
+                                        libraryBase.jspreadsheet.current.dragging.destination = columnId;
                                     }
                                     libraryBase.jspreadsheet.current.headers[columnId].classList.add('dragging-left');
                                 } else {
                                     if (libraryBase.jspreadsheet.current.dragging.column < columnId) {
-                                        libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId);
+                                        libraryBase.jspreadsheet.current.dragging.destination = columnId;
                                     } else {
-                                        libraryBase.jspreadsheet.current.dragging.destination = parseInt(columnId) + 1;
+                                        libraryBase.jspreadsheet.current.dragging.destination = columnId + 1;
                                     }
                                     libraryBase.jspreadsheet.current.headers[columnId].classList.add('dragging-right');
                                 }
@@ -523,8 +536,8 @@ const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
                         }
                     }
                 } else {
-                    const rowId: any = e.target.getAttribute('data-y');
-                    if (rowId) {
+                    const rowId = getIndex(e.target, 'data-y');
+                    if (rowId != null) {
                         if (isRowMerged.call(libraryBase.jspreadsheet.current, rowId).length) {
                             console.error('Jspreadsheet: This row is part of a merged cell.');
                         } else {
@@ -541,8 +554,8 @@ const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
                 }
             }
         } else {
-            const x: any = e.target.getAttribute('data-x');
-            const y: any = e.target.getAttribute('data-y');
+            const x = e.target.getAttribute('data-x');
+            const y = e.target.getAttribute('data-y');
             const rect = e.target.getBoundingClientRect();
 
             if (libraryBase.jspreadsheet.current.cursor) {
@@ -668,15 +681,15 @@ const mouseOverControls = function (e: TargetEvent<MouseEvent>) {
                 }
             }
 
-            let columnId: any = e.target.getAttribute('data-x');
-            const rowId: any = e.target.getAttribute('data-y');
+            let columnId = getIndex(e.target, 'data-x');
+            const rowId = getIndex(e.target, 'data-y');
             if (libraryBase.jspreadsheet.current.resizing || libraryBase.jspreadsheet.current.dragging) {
                 // ignore
             } else {
                 // Header found
                 if (jssTable[1] == 1) {
-                    if (libraryBase.jspreadsheet.current.selectedHeader) {
-                        columnId = e.target.getAttribute('data-x');
+                    if (libraryBase.jspreadsheet.current.selectedHeader != null) {
+                        columnId = getIndex(e.target, 'data-x');
                         const o = libraryBase.jspreadsheet.current.selectedHeader;
                         const d = columnId;
                         // Update selection
@@ -703,7 +716,7 @@ const mouseOverControls = function (e: TargetEvent<MouseEvent>) {
                     } else {
                         // Do not select edtion is in progress
                         if (!libraryBase.jspreadsheet.current.edition) {
-                            if (columnId && rowId) {
+                            if (columnId != null && rowId != null) {
                                 if (libraryBase.jspreadsheet.current.selectedCorner) {
                                     updateCopySelection.call(libraryBase.jspreadsheet.current, columnId, rowId);
                                 } else {
@@ -741,24 +754,26 @@ const doubleClickControls = function (e: TargetEvent<MouseEvent>) {
             // Any selected cells
             if (libraryBase.jspreadsheet.current.highlighted.length > 0) {
                 // Copy from this
-                const x1 = libraryBase.jspreadsheet.current.highlighted[0].element.getAttribute('data-x');
+                const x1 = parseInt(libraryBase.jspreadsheet.current.highlighted[0].element.getAttribute('data-x'));
                 const y1 =
                     parseInt(
                         libraryBase.jspreadsheet.current.highlighted[libraryBase.jspreadsheet.current.highlighted.length - 1].element.getAttribute('data-y')
                     ) + 1;
                 // Until this
-                const x2 = libraryBase.jspreadsheet.current.highlighted[libraryBase.jspreadsheet.current.highlighted.length - 1].element.getAttribute('data-x');
+                const x2 = parseInt(
+                    libraryBase.jspreadsheet.current.highlighted[libraryBase.jspreadsheet.current.highlighted.length - 1].element.getAttribute('data-x')
+                );
                 const y2 = libraryBase.jspreadsheet.current.records.length - 1;
                 // Execute copy
                 copyData.call(
                     libraryBase.jspreadsheet.current,
-                    libraryBase.jspreadsheet.current.records[y1 as any][x1 as any].element,
-                    libraryBase.jspreadsheet.current.records[y2][x2 as any].element
+                    libraryBase.jspreadsheet.current.records[y1][x1].element,
+                    libraryBase.jspreadsheet.current.records[y2][x2].element
                 );
             }
         } else if (e.target.classList.contains('jss_column_filter')) {
             // Column
-            const columnId: any = e.target.getAttribute('data-x');
+            const columnId = parseInt(e.target.getAttribute('data-x'));
             // Open filter
             openFilter.call(libraryBase.jspreadsheet.current, columnId);
         } else {
@@ -768,9 +783,9 @@ const doubleClickControls = function (e: TargetEvent<MouseEvent>) {
             // Double click over header
             if (jssTable[1] == 1 && libraryBase.jspreadsheet.current.options.columnSorting != false) {
                 // Check valid column header coords
-                const columnId: any = e.target.getAttribute('data-x');
-                if (columnId) {
-                    (libraryBase.jspreadsheet.current.orderBy as any)(parseInt(columnId));
+                const columnId = getIndex(e.target, 'data-x');
+                if (columnId != null) {
+                    (libraryBase.jspreadsheet.current.orderBy as any)(columnId);
                 }
             }
 
@@ -1223,10 +1238,10 @@ const touchStartControls = function (e: TargetEvent<TouchEvent>) {
 
     if (libraryBase.jspreadsheet.current && jssTable[0]) {
         if (!libraryBase.jspreadsheet.current.edition) {
-            const columnId: any = e.target.getAttribute('data-x');
-            const rowId: any = e.target.getAttribute('data-y');
+            const columnId = getIndex(e.target, 'data-x');
+            const rowId = getIndex(e.target, 'data-y');
 
-            if (columnId && rowId) {
+            if (columnId != null && rowId != null) {
                 updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, columnId, rowId, undefined, undefined, e);
 
                 if (libraryBase.jspreadsheet.current.options.editable == false) {
@@ -1402,7 +1417,7 @@ const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
                                 libraryBase.jspreadsheet.current.deleteRow();
                             }
                         }
-                    } else if (libraryBase.jspreadsheet.current.selectedHeader) {
+                    } else if (libraryBase.jspreadsheet.current.selectedHeader != null) {
                         if (libraryBase.jspreadsheet.current.options.allowDeleteColumn != false) {
                             if (confirm(jSuites.translate('Are you sure to delete the selected columns?'))) {
                                 libraryBase.jspreadsheet.current.deleteColumn();
