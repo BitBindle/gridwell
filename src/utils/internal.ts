@@ -12,7 +12,7 @@ import { setFooter } from './footer.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { setCellLabel, updateGridSize, updateRowIndex, updateTabStop } from './accessibility.js';
 import type { HistoryCellChange, MergeInfo, Spreadsheet, Worksheet, WorksheetMethod } from '../types/internal';
-import type { CalendarFunctions, MaskFunctions, MaskOptions } from '../types/jsuites';
+import type { MaskOptions } from '../types/jsuites';
 
 export const updateTable = function (this: Worksheet) {
     const obj = this;
@@ -401,7 +401,7 @@ export const parseValue = function (this: Worksheet, i: number, j: number, value
                 value = Number(value);
             }
             // Process the decimals to match the mask
-            let masked = (jSuites.mask as unknown as MaskFunctions).render(value, opt, true);
+            let masked = jSuites.mask.render(value, opt, true);
             // Negative indication
             if (cell) {
                 if (opt.mask) {
@@ -565,20 +565,14 @@ export const createCell = function (this: Worksheet, i: number, j: number, value
             // Try formatted date
             let formatted = null;
             if (!validDate(value)) {
-                const tmp = (jSuites.calendar as unknown as CalendarFunctions).extractDateFromString(
-                    value,
-                    (column.options && column.options.format) || 'YYYY-MM-DD'
-                );
+                const tmp = jSuites.calendar.extractDateFromString(value, (column.options && column.options.format) || 'YYYY-MM-DD');
                 if (tmp) {
                     formatted = tmp;
                 }
             }
             // Create calendar cell
             // textContent converts a number of hours to text
-            td.textContent = (jSuites.calendar as unknown as CalendarFunctions).getDateString(
-                formatted ? formatted : value,
-                column.options && column.options.format
-            ) as string;
+            td.textContent = jSuites.calendar.getDateString(formatted ? formatted : value, column.options && column.options.format) as string;
         } else if (column && column.type == 'dropdown') {
             // Create dropdown cell
             td.classList.add('jss_dropdown');
@@ -741,10 +735,7 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
                 // Try formatted date
                 let formatted = null;
                 if (!validDate(value)) {
-                    const tmp = (jSuites.calendar as unknown as CalendarFunctions).extractDateFromString(
-                        value,
-                        (column.options && column.options.format) || 'YYYY-MM-DD'
-                    );
+                    const tmp = jSuites.calendar.extractDateFromString(value, (column.options && column.options.format) || 'YYYY-MM-DD');
                     if (tmp) {
                         formatted = tmp;
                     }
@@ -752,7 +743,7 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
                 // Update data and cell
                 obj.options.data[y][x] = value;
                 // textContent converts a number of hours to text
-                obj.records[y][x].element.textContent = (jSuites.calendar as unknown as CalendarFunctions).getDateString(
+                obj.records[y][x].element.textContent = jSuites.calendar.getDateString(
                     formatted ? formatted : value,
                     column.options && column.options.format
                 ) as string;

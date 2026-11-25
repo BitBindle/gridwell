@@ -9,7 +9,6 @@ import { hash, removeCopyingSelection, updateSelectionFromCoords } from './selec
 import { getColumnNameFromId } from './internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
-import type { CalendarFunctions } from '../types/jsuites';
 
 /**
  * Copy method
@@ -362,7 +361,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data) {
 
                 if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].type == 'calendar') {
                     // The jsuites typings miss extractDateFromString
-                    value = (jSuites.calendar as unknown as CalendarFunctions).extractDateFromString(
+                    value = jSuites.calendar.extractDateFromString(
                         value,
                         (obj.options.columns[i].options && obj.options.columns[i].options.format) || 'YYYY-MM-DD'
                     );

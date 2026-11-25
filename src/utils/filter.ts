@@ -75,9 +75,8 @@ export const openFilter: WorksheetMethod<'openFilter'> = function (columnId) {
             },
         };
 
-        // Dynamic dropdown. The jsuites typings want a number for width and text for value, but the dropdown takes any CSS width,
-        // and a list or null for the value of a dropdown with multiple.
-        jSuites.dropdown(div, opt as unknown as Parameters<typeof jSuites.dropdown>[1]);
+        // Dynamic dropdown
+        jSuites.dropdown(div, opt);
     }
 };
 
