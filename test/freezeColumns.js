@@ -123,6 +123,16 @@ describe('Freeze columns with a hidden index column', () => {
         expect(worksheet.records[1][0].element.style.left).to.equal('849px');
     });
 
+    it('moves a frozen cell with the scroll when the cell to its left has a width style', () => {
+        const worksheet = scrolledWorksheet(0);
+        worksheet.setStyle('A2', 'width', '80px');
+
+        scroll(worksheet, 900);
+
+        expect(worksheet.records[1][0].element.style.width).to.equal('80px');
+        expect(worksheet.records[1][1].element.style.left).to.equal('849px');
+    });
+
     it('puts the frozen cells at the left border of the content when hideIndex is called after the scroll', () => {
         const worksheet = scrolledWorksheet(0);
 

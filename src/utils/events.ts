@@ -1598,7 +1598,8 @@ export const updateFreezePosition = function (this: Worksheet) {
             obj.headers[i].style.left = width + 'px';
             for (let j = 0; j < obj.rows.length; j++) {
                 if (obj.rows[j] && obj.records[j][i]) {
-                    const shifted = scrollLeft + ((i > 0 ? obj.records[j][i - 1].element.style.width : 0) as any) - indexWidth - 1 + 'px';
+                    // The cells are relative, so all the frozen cells move by the same distance as the scroll
+                    const shifted = scrollLeft - indexWidth - 1 + 'px';
                     obj.records[j][i].element.classList.add('jss_freezed');
                     if (isLast || wasLast) {
                         obj.records[j][i].element.classList.toggle('jss_freezed_last', isLast);
