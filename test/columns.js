@@ -642,3 +642,57 @@ describe('Drag a column header', () => {
         expect(worksheet.getHeaders(true)).to.eql(['C0', 'C1', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C2', 'C11']);
     });
 });
+
+describe('Delete columns with the keyboard', () => {
+    // The spreadsheet adds its event handlers after a promise
+    const load = (options) =>
+        new Promise((resolve) => {
+            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+        });
+
+    const mouse = (element, type) => {
+        const event = new window.MouseEvent(type, { bubbles: true, buttons: 1 });
+        Object.defineProperty(event, 'offsetX', { value: 0 });
+        Object.defineProperty(event, 'offsetY', { value: 0 });
+        element.dispatchEvent(event);
+    };
+
+    let confirm;
+    beforeEach(() => {
+        confirm = global.confirm;
+    });
+    afterEach(() => {
+        global.confirm = confirm;
+    });
+
+    it('deletes the column whose header was pressed', async () => {
+        const worksheet = await load({
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b', 'c'],
+                        ['d', 'e', 'f'],
+                    ],
+                    columnResize: false,
+                    columnDrag: false,
+                },
+            ],
+        });
+
+        const messages = [];
+        global.confirm = (message) => {
+            messages.push(message);
+            return true;
+        };
+
+        mouse(worksheet.headers[1], 'mousedown');
+        mouse(worksheet.headers[1], 'mouseup');
+        document.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, key: 'Delete', keyCode: 46, which: 46 }));
+
+        expect(messages).to.eql(['Are you sure to delete the selected columns?']);
+        expect(worksheet.getData()).to.eql([
+            ['a', 'c'],
+            ['d', 'f'],
+        ]);
+    });
+});

@@ -423,7 +423,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                     }
                 }
             } else {
-                libraryBase.jspreadsheet.current.selectedRow = false;
+                libraryBase.jspreadsheet.current.selectedRow = null;
             }
 
             // Pagination
