@@ -271,6 +271,22 @@ describe('Dispatch events', () => {
         expect(createdOptions.worksheetName).to.equal('Second');
         expect(createdOptions).to.equal(worksheet.parent.worksheets[1].options);
     });
+
+    it('gives onresizerow the old height as a number after the row was resized with the mouse', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [2, 2] }],
+            onresizerow: function (instance, row, newHeight, oldHeight) {
+                calls.push([row, newHeight, oldHeight]);
+            },
+        })[0];
+
+        // A resize with the mouse leaves the height attribute on the row
+        worksheet.rows[0].element.setAttribute('height', 40);
+        worksheet.setHeight(0, 50);
+
+        expect(calls).to.eql([[0, 50, 40]]);
+    });
 });
 
 describe('Destroy', () => {

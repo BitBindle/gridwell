@@ -530,7 +530,8 @@ export const setHeight = function (this: Worksheet, row: number, height: number,
     if (height > 0) {
         // Oldwidth
         if (!oldHeight) {
-            oldHeight = obj.rows[row].element.getAttribute('height');
+            // A resize with the mouse leaves the height attribute
+            oldHeight = parseInt(obj.rows[row].element.getAttribute('height'));
 
             if (!oldHeight) {
                 const rect = obj.rows[row].element.getBoundingClientRect();
