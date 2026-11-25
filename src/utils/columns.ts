@@ -73,6 +73,170 @@ export const createCellHeader = function (this: Worksheet, colNumber: number) {
 };
 
 /**
+ * The columns that insertColumn inserts, with their position, their options and their data, for the events.
+ */
+const getInsertedColumns = function (
+    this: Worksheet,
+    mixed: number | jspreadsheet.CellValue[] | undefined,
+    columnNumber: number,
+    numOfColumns: number,
+    insertBefore: boolean,
+    properties: jspreadsheet.Column[]
+) {
+    const obj = this;
+
+    const columns = [];
+
+    if (!Array.isArray(mixed)) {
+        for (let i = 0; i < numOfColumns; i++) {
+            const column = {
+                column: columnNumber + i + (insertBefore ? 0 : 1),
+                options: Object.assign({}, properties[i]),
+            };
+
+            columns.push(column);
+        }
+    } else {
+        const data = [];
+
+        for (let i = 0; i < obj.options.data.length; i++) {
+            data.push(i < mixed.length ? mixed[i] : '');
+        }
+
+        const column = {
+            column: columnNumber + (insertBefore ? 0 : 1),
+            options: Object.assign({}, properties[0]),
+            data,
+        };
+
+        columns.push(column);
+    }
+
+    return columns;
+};
+
+/**
+ * Create the headers and the columns of the new columns, and put them in the head of the table.
+ */
+const addColumnHeaders = function (this: Worksheet, columnIndex: number, numOfColumns: number) {
+    const obj = this;
+
+    const historyHeaders = [];
+    const historyColgroup = [];
+
+    for (let col = columnIndex; col < numOfColumns + columnIndex; col++) {
+        createCellHeader.call(obj, col);
+        obj.headerContainer.insertBefore(obj.headers[col], obj.headerContainer.children[col + 1]);
+        obj.colgroupContainer.insertBefore(obj.cols[col].colElement, obj.colgroupContainer.children[col + 1]);
+
+        historyHeaders.push(obj.headers[col]);
+        historyColgroup.push(obj.cols[col]);
+    }
+
+    return { historyHeaders, historyColgroup };
+};
+
+/**
+ * Add an empty cell for each new column to the footers.
+ */
+const addColumnFooters = function (this: Worksheet, columnIndex: number, numOfColumns: number) {
+    const obj = this;
+
+    const historyFooters: string[][] = [];
+
+    if (obj.options.footers) {
+        for (let j = 0; j < obj.options.footers.length; j++) {
+            historyFooters[j] = [];
+            for (let i = 0; i < numOfColumns; i++) {
+                historyFooters[j].push('');
+            }
+            obj.options.footers[j].splice(columnIndex, 0, ...historyFooters[j]);
+        }
+    }
+
+    return historyFooters;
+};
+
+/**
+ * Create the cells of the new columns in each row, with the data or empty.
+ */
+const addColumnCells = function (this: Worksheet, columnIndex: number, numOfColumns: number, data: jspreadsheet.CellValue[]) {
+    const obj = this;
+
+    const historyRecords: { element: HTMLTableCellElement; x: number; y: number }[][] = [];
+    const historyData: jspreadsheet.CellValue[][] = [];
+
+    for (let row = 0; row < obj.options.data.length; row++) {
+        // Keep the current data
+        const currentData = obj.options.data[row].splice(columnIndex);
+        const currentRecord = obj.records[row].splice(columnIndex);
+
+        // History
+        historyData[row] = [];
+        historyRecords[row] = [];
+
+        for (let col = columnIndex; col < numOfColumns + columnIndex; col++) {
+            // New value
+            const value = data[row] ? data[row] : '';
+            obj.options.data[row][col] = value;
+            // New cell
+            const td = createCell.call(obj, col, row, obj.options.data[row][col]);
+            // updateTableReferences adds x
+            obj.records[row][col] = {
+                element: td,
+                y: row,
+            } as Worksheet['records'][number][number];
+            // Add cell to the row
+            if (obj.rows[row]) {
+                obj.rows[row].element.insertBefore(td, obj.rows[row].element.children[col + 1]);
+            }
+
+            if (obj.options.columns && obj.options.columns[col] && typeof obj.options.columns[col].render === 'function') {
+                // The test above makes it a function, which TypeScript does not narrow through the index
+                (obj.options.columns[col].render as NonNullable<jspreadsheet.BaseColumn['render']>)(
+                    td,
+                    value,
+                    parseInt(col),
+                    parseInt(row),
+                    obj,
+                    obj.options.columns[col]
+                );
+            }
+
+            // Record History
+            historyData[row].push(value);
+            historyRecords[row].push({ element: td, x: col, y: row });
+        }
+
+        // Copy the data back to the main data
+        Array.prototype.push.apply(obj.options.data[row], currentData);
+        Array.prototype.push.apply(obj.records[row], currentRecord);
+    }
+
+    return { historyRecords, historyData };
+};
+
+/**
+ * Widen the last nested header of each row over the new columns.
+ */
+const widenNestedHeaders = function (this: Worksheet, columnIndex: number, numOfColumns: number) {
+    const obj = this;
+
+    if (obj.options.nestedHeaders && obj.options.nestedHeaders.length > 0 && obj.options.nestedHeaders[0] && obj.options.nestedHeaders[0][0]) {
+        for (let j = 0; j < obj.options.nestedHeaders.length; j++) {
+            const colspan = parseInt(obj.options.nestedHeaders[j][obj.options.nestedHeaders[j].length - 1].colspan) + numOfColumns;
+            obj.options.nestedHeaders[j][obj.options.nestedHeaders[j].length - 1].colspan = colspan;
+            obj.thead.children[j].children[obj.thead.children[j].children.length - 1].setAttribute('colspan', colspan);
+            const o: (string | number)[] = obj.thead.children[j].children[obj.thead.children[j].children.length - 1].getAttribute('data-column')!.split(',');
+            for (let col = columnIndex; col < numOfColumns + columnIndex; col++) {
+                o.push(col);
+            }
+            obj.thead.children[j].children[obj.thead.children[j].children.length - 1].setAttribute('data-column', o.join(','));
+        }
+    }
+};
+
+/**
  * Insert a new column
  *
  * @param mixed - num of columns to be added or data to be added in one single column
@@ -130,32 +294,7 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
             }
         }
 
-        const columns = [];
-
-        if (!Array.isArray(mixed)) {
-            for (let i = 0; i < numOfColumns; i++) {
-                const column = {
-                    column: columnNumber + i + (insertBefore ? 0 : 1),
-                    options: Object.assign({}, properties[i]),
-                };
-
-                columns.push(column);
-            }
-        } else {
-            const data = [];
-
-            for (let i = 0; i < obj.options.data.length; i++) {
-                data.push(i < mixed.length ? mixed[i] : '');
-            }
-
-            const column = {
-                column: columnNumber + (insertBefore ? 0 : 1),
-                options: Object.assign({}, properties[0]),
-                data,
-            };
-
-            columns.push(column);
-        }
+        const columns = getInsertedColumns.call(obj, mixed, columnNumber, numOfColumns, insertBefore, properties);
 
         // Onbeforeinsertcolumn
         if (dispatch.call(obj, 'onbeforeinsertcolumn', obj, columns) === false) {
@@ -181,81 +320,14 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
         const currentHeaders = obj.headers.splice(columnIndex);
         const currentColgroup = obj.cols.splice(columnIndex);
 
-        // History
-        const historyHeaders = [];
-        const historyColgroup = [];
-        const historyRecords: { element: HTMLTableCellElement; x: number; y: number }[][] = [];
-        const historyData: jspreadsheet.CellValue[][] = [];
-        const historyFooters: string[][] = [];
-
         // Add new headers
-        for (let col = columnIndex; col < numOfColumns + columnIndex; col++) {
-            createCellHeader.call(obj, col);
-            obj.headerContainer.insertBefore(obj.headers[col], obj.headerContainer.children[col + 1]);
-            obj.colgroupContainer.insertBefore(obj.cols[col].colElement, obj.colgroupContainer.children[col + 1]);
-
-            historyHeaders.push(obj.headers[col]);
-            historyColgroup.push(obj.cols[col]);
-        }
+        const { historyHeaders, historyColgroup } = addColumnHeaders.call(obj, columnIndex, numOfColumns);
 
         // Add new footer cells
-        if (obj.options.footers) {
-            for (let j = 0; j < obj.options.footers.length; j++) {
-                historyFooters[j] = [];
-                for (let i = 0; i < numOfColumns; i++) {
-                    historyFooters[j].push('');
-                }
-                obj.options.footers[j].splice(columnIndex, 0, ...historyFooters[j]);
-            }
-        }
+        const historyFooters = addColumnFooters.call(obj, columnIndex, numOfColumns);
 
         // Adding visual columns
-        for (let row = 0; row < obj.options.data.length; row++) {
-            // Keep the current data
-            const currentData = obj.options.data[row].splice(columnIndex);
-            const currentRecord = obj.records[row].splice(columnIndex);
-
-            // History
-            historyData[row] = [];
-            historyRecords[row] = [];
-
-            for (let col = columnIndex; col < numOfColumns + columnIndex; col++) {
-                // New value
-                const value = data[row] ? data[row] : '';
-                obj.options.data[row][col] = value;
-                // New cell
-                const td = createCell.call(obj, col, row, obj.options.data[row][col]);
-                // updateTableReferences adds x
-                obj.records[row][col] = {
-                    element: td,
-                    y: row,
-                } as Worksheet['records'][number][number];
-                // Add cell to the row
-                if (obj.rows[row]) {
-                    obj.rows[row].element.insertBefore(td, obj.rows[row].element.children[col + 1]);
-                }
-
-                if (obj.options.columns && obj.options.columns[col] && typeof obj.options.columns[col].render === 'function') {
-                    // The test above makes it a function, which TypeScript does not narrow through the index
-                    (obj.options.columns[col].render as NonNullable<jspreadsheet.BaseColumn['render']>)(
-                        td,
-                        value,
-                        parseInt(col),
-                        parseInt(row),
-                        obj,
-                        obj.options.columns[col]
-                    );
-                }
-
-                // Record History
-                historyData[row].push(value);
-                historyRecords[row].push({ element: td, x: col, y: row });
-            }
-
-            // Copy the data back to the main data
-            Array.prototype.push.apply(obj.options.data[row], currentData);
-            Array.prototype.push.apply(obj.records[row], currentRecord);
-        }
+        const { historyRecords, historyData } = addColumnCells.call(obj, columnIndex, numOfColumns, data);
 
         Array.prototype.push.apply(obj.headers, currentHeaders);
         Array.prototype.push.apply(obj.cols, currentColgroup);
@@ -271,20 +343,7 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
         }
 
         // Adjust nested headers
-        if (obj.options.nestedHeaders && obj.options.nestedHeaders.length > 0 && obj.options.nestedHeaders[0] && obj.options.nestedHeaders[0][0]) {
-            for (let j = 0; j < obj.options.nestedHeaders.length; j++) {
-                const colspan = parseInt(obj.options.nestedHeaders[j][obj.options.nestedHeaders[j].length - 1].colspan) + numOfColumns;
-                obj.options.nestedHeaders[j][obj.options.nestedHeaders[j].length - 1].colspan = colspan;
-                obj.thead.children[j].children[obj.thead.children[j].children.length - 1].setAttribute('colspan', colspan);
-                const o: (string | number)[] = obj.thead.children[j].children[obj.thead.children[j].children.length - 1]
-                    .getAttribute('data-column')!
-                    .split(',');
-                for (let col = columnIndex; col < numOfColumns + columnIndex; col++) {
-                    o.push(col);
-                }
-                obj.thead.children[j].children[obj.thead.children[j].children.length - 1].setAttribute('data-column', o.join(','));
-            }
-        }
+        widenNestedHeaders.call(obj, columnIndex, numOfColumns);
 
         // Keep history
         obj.history.add({
