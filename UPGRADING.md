@@ -154,3 +154,23 @@ The keys on an element outside the spreadsheet, such as an input or a button nex
 grid when no editor is open. Before, only the keys on a `jss_object` control stayed out of the grid, and typing in an
 input after Tab out of the grid opened the editor of the selected cell. The keys with the focus on the body still go
 to the grid.
+
+## The typings declare only the public fields
+
+The TypeScript typings no longer declare the fields that only the library uses. The fields are still on the worksheet,
+so JavaScript code works as before, but TypeScript code that reads them no longer compiles:
+
+| Field                             | Instead                                   |
+| --------------------------------- | ----------------------------------------- |
+| `worksheet.cols`                  | `getWidth()` and `setWidth()`             |
+| `worksheet.colgroupContainer`     | `getWidth()` and `setWidth()`             |
+| `worksheet.corner`                | none: the corner is part of the selection |
+| `worksheet.headerContainer`       | `worksheet.headers`, the header cells     |
+| `worksheet.ads`                   | none                                      |
+| `jspreadsheet.timeControl`        | none                                      |
+| `jspreadsheet.timeControlLoading` | none                                      |
+| `jspreadsheet.isMouseAction`      | none: the library never set it            |
+
+Code that still needs one of these fields can cast the worksheet, for example `(worksheet as any).corner`, but the
+fields can change in any version. `WorksheetInstance` and `SpreadsheetInstance` are the types of the `Worksheet` and
+`Spreadsheet` instances.

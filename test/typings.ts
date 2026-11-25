@@ -190,3 +190,15 @@ void worksheet.resizing;
 void worksheet.dragging;
 // @ts-expect-error The element is pointer.cursor
 void worksheet.cursor;
+
+// The fields that only the library uses are not public
+// @ts-expect-error The col tags are internal
+void worksheet.cols;
+// @ts-expect-error The colgroup is internal
+void worksheet.colgroupContainer;
+// @ts-expect-error The selection corner is internal
+void worksheet.corner;
+// @ts-expect-error The header row is internal; the header cells are headers
+void worksheet.headerContainer;
+// @ts-expect-error The link below the table is internal
+void worksheet.ads;

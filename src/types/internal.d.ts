@@ -59,6 +59,24 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
 
     pointer: Pointer;
 
+    /** The div that holds the link to the Jspreadsheet site, below the table. */
+    ads: HTMLDivElement;
+
+    /** The col tags of the table, one for each column, with the index of the column. */
+    cols: {
+        colElement: HTMLTableColElement;
+        x: number;
+    }[];
+
+    /** The colgroup tag of the table, which holds the col tags. */
+    colgroupContainer: HTMLElement;
+
+    /** The square in the lower-right corner of the selection, which fills the cells it is dragged over. */
+    corner: HTMLDivElement;
+
+    /** The row of the thead that holds the headers of the columns. */
+    headerContainer: HTMLTableRowElement;
+
     /** The select for the number of rows per page, when the worksheet has pagination options. */
     paginationDropdown?: HTMLSelectElement;
 
@@ -145,6 +163,12 @@ export interface Library extends jspreadsheet.JSpreadsheet {
     current: Worksheet | null;
 
     spreadsheet: Spreadsheet[];
+
+    /** The timer of a long press on a touch screen, which opens the context menu, and of the search as the user types. */
+    timeControl: null | number;
+
+    /** The timer that loads more rows when the content scrolls near its top or its end, with lazyLoading. */
+    timeControlLoading: null | number;
 }
 
 /** A worksheet that has a selection. The functions that move the selection assume one. */

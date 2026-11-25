@@ -97,6 +97,10 @@ what it changes, and lists its breaking changes in UPGRADING.md.
    finds the cycles with the TypeScript parser, so the check needs no new package.
 10. **The public typings.** The fields that only the library uses leave `WorksheetInstance`; the typings describe the
     classes.
+    Done. `ads`, `cols`, `colgroupContainer`, `corner` and `headerContainer` left `WorksheetInstance`, and
+    `timeControl` and `timeControlLoading` left `JSpreadsheet`: they are in `WorksheetState` and `Library`
+    (`src/types/internal.d.ts`). `isMouseAction` went, as nothing set it. `WorksheetInstance` and `SpreadsheetInstance`
+    say that they are the instances of the classes. Only the typings changed: the fields are still on the worksheet.
 
 ## Rules for each step
 
