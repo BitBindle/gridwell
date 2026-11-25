@@ -14,12 +14,13 @@ import { moveRow, setHeight } from './rows.js';
 import version from './version.js';
 import { getCellNameFromCoords } from './helpers.js';
 import { getIndexWidth } from './freeze.js';
+import type { Worksheet } from '../types/internal';
 
-const getElement = function (element) {
+const getElement = function (element: HTMLElement) {
     let jssSection = 0;
-    let jssElement = 0;
+    let jssElement: any = 0;
 
-    function path(element) {
+    function path(element: any) {
         if (element.className) {
             if (element.classList.contains('jss_container')) {
                 jssElement = element;
@@ -49,7 +50,7 @@ const getElement = function (element) {
     return [jssElement, jssElement ? jssSection : 0];
 };
 
-const mouseUpControls = function (e) {
+const mouseUpControls = function (e: any) {
     if (libraryBase.jspreadsheet.current) {
         // Update cell size
         if (libraryBase.jspreadsheet.current.resizing) {
@@ -88,7 +89,7 @@ const mouseUpControls = function (e) {
             } else {
                 // Remove Class
                 libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.children[0].classList.remove('resizing');
-                let newHeight = libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.getAttribute('height');
+                let newHeight: any = libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.getAttribute('height');
                 setHeight.call(
                     libraryBase.jspreadsheet.current,
                     libraryBase.jspreadsheet.current.resizing.row,
@@ -175,7 +176,7 @@ const mouseUpControls = function (e) {
     libraryBase.jspreadsheet.isMouseAction = false;
 };
 
-const mouseDownControls = function (e) {
+const mouseDownControls = function (this: Worksheet, e: any) {
     e = e || window.event;
 
     let mouseButton;
@@ -374,22 +375,22 @@ const mouseDownControls = function (e) {
                     if (e.target.classList.contains('jclose') && e.target.clientWidth - e.offsetX < 50 && e.offsetY < 50) {
                         closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition[0], true);
                     } else {
-                        const getCellCoords = function (element) {
+                        const getCellCoords = function (element: HTMLElement) {
                             const x = element.getAttribute('data-x');
                             const y = element.getAttribute('data-y');
                             if (x && y) {
                                 return [x, y];
                             } else {
                                 if (element.parentNode) {
-                                    return getCellCoords(element.parentNode);
+                                    return getCellCoords(element.parentNode as HTMLElement);
                                 }
                             }
                         };
 
                         const position = getCellCoords(e.target);
                         if (position) {
-                            const columnId = position[0];
-                            const rowId = position[1];
+                            const columnId: any = position[0];
+                            const rowId: any = position[1];
                             // Close edition
                             if (libraryBase.jspreadsheet.current.edition) {
                                 if (libraryBase.jspreadsheet.current.edition[2] != columnId || libraryBase.jspreadsheet.current.edition[3] != rowId) {
@@ -446,7 +447,7 @@ const mouseDownControls = function (e) {
 };
 
 // Mouse move controls
-const mouseMoveControls = function (e) {
+const mouseMoveControls = function (e: any) {
     e = e || window.event;
 
     let mouseButton;
@@ -578,7 +579,7 @@ const mouseMoveControls = function (e) {
  * @param int x, y
  * @return void
  */
-const updateCopySelection = function (x3, y3) {
+const updateCopySelection = function (this: Worksheet, x3: number, y3: number) {
     const obj = this;
 
     // Remove selection
@@ -636,7 +637,7 @@ const updateCopySelection = function (x3, y3) {
     }
 };
 
-const mouseOverControls = function (e) {
+const mouseOverControls = function (e: any) {
     e = e || window.event;
 
     let mouseButton;
@@ -730,7 +731,7 @@ const mouseOverControls = function (e) {
     }
 };
 
-const doubleClickControls = function (e) {
+const doubleClickControls = function (this: Worksheet, e: any) {
     // Jss is selected
     if (libraryBase.jspreadsheet.current) {
         // Corner action
@@ -749,8 +750,8 @@ const doubleClickControls = function (e) {
                 // Execute copy
                 copyData.call(
                     libraryBase.jspreadsheet.current,
-                    libraryBase.jspreadsheet.current.records[y1][x1].element,
-                    libraryBase.jspreadsheet.current.records[y2][x2].element
+                    libraryBase.jspreadsheet.current.records[y1 as any][x1 as any].element,
+                    libraryBase.jspreadsheet.current.records[y2][x2 as any].element
                 );
             }
         } else if (e.target.classList.contains('jss_column_filter')) {
@@ -767,27 +768,27 @@ const doubleClickControls = function (e) {
                 // Check valid column header coords
                 const columnId = e.target.getAttribute('data-x');
                 if (columnId) {
-                    libraryBase.jspreadsheet.current.orderBy(parseInt(columnId));
+                    (libraryBase.jspreadsheet.current.orderBy as any)(parseInt(columnId));
                 }
             }
 
             // Double click over body
             if (jssTable[1] == 2 && libraryBase.jspreadsheet.current.options.editable != false) {
                 if (!libraryBase.jspreadsheet.current.edition) {
-                    const getCellCoords = function (element) {
+                    const getCellCoords = function (element: HTMLElement) {
                         if (element.parentNode) {
                             const x = element.getAttribute('data-x');
                             const y = element.getAttribute('data-y');
                             if (x && y) {
                                 return element;
                             } else {
-                                return getCellCoords(element.parentNode);
+                                return getCellCoords(element.parentNode as HTMLElement);
                             }
                         }
                     };
                     const cell = getCellCoords(e.target);
                     if (cell && cell.classList.contains('highlight')) {
-                        openEditor.call(libraryBase.jspreadsheet.current, cell, undefined, e);
+                        openEditor.call(libraryBase.jspreadsheet.current, cell as HTMLTableCellElement, undefined, e);
                     }
                 }
             }
@@ -795,7 +796,7 @@ const doubleClickControls = function (e) {
     }
 };
 
-const pasteControls = function (e) {
+const pasteControls = function (e?: any) {
     // A paste on a control with the class jss_object outside the worksheet goes to that control
     if (e && e.target && typeof e.target.closest === 'function' && !getElement(e.target)[0] && e.target.closest('.jss_object')) {
         return;
@@ -812,12 +813,12 @@ const pasteControls = function (e) {
                         e.clipboardData.getData('text')
                     );
                     e.preventDefault();
-                } else if (window.clipboardData) {
+                } else if ((window as any).clipboardData) {
                     paste.call(
                         libraryBase.jspreadsheet.current,
                         libraryBase.jspreadsheet.current.selectedCell[0],
                         libraryBase.jspreadsheet.current.selectedCell[1],
-                        window.clipboardData.getData('text')
+                        (window as any).clipboardData.getData('text')
                     );
                 }
             }
@@ -825,7 +826,7 @@ const pasteControls = function (e) {
     }
 };
 
-const getRole = function (element) {
+const getRole = function (element: HTMLElement) {
     if (element.classList.contains('jss_selectall')) {
         return 'select-all';
     }
@@ -875,7 +876,7 @@ const getRole = function (element) {
     return 'applications';
 };
 
-const defaultContextMenu = function (worksheet, x, y, role) {
+const defaultContextMenu = function (worksheet: Worksheet, x: number, y: number, role: any): any[] {
     const items = [];
 
     if (role === 'header') {
@@ -884,7 +885,7 @@ const defaultContextMenu = function (worksheet, x, y, role) {
             items.push({
                 title: jSuites.translate('Insert a new column before'),
                 onclick: function () {
-                    worksheet.insertColumn(1, parseInt(x), 1);
+                    worksheet.insertColumn(1, parseInt(x), 1 as any);
                 },
             });
         }
@@ -893,7 +894,7 @@ const defaultContextMenu = function (worksheet, x, y, role) {
             items.push({
                 title: jSuites.translate('Insert a new column after'),
                 onclick: function () {
-                    worksheet.insertColumn(1, parseInt(x), 0);
+                    worksheet.insertColumn(1, parseInt(x), 0 as any);
                 },
             });
         }
@@ -1058,7 +1059,7 @@ const defaultContextMenu = function (worksheet, x, y, role) {
     return items;
 };
 
-const getElementIndex = function (element) {
+const getElementIndex = function (element: HTMLElement) {
     const parentChildren = element.parentElement.children;
 
     for (let i = 0; i < parentChildren.length; i++) {
@@ -1072,7 +1073,7 @@ const getElementIndex = function (element) {
     return -1;
 };
 
-const contextMenuControls = function (e) {
+const contextMenuControls = function (e: any) {
     e = e || window.event;
 
     let mouseButton;
@@ -1089,7 +1090,7 @@ const contextMenuControls = function (e) {
         if (libraryBase.jspreadsheet.current.edition) {
             e.preventDefault();
         } else {
-            spreadsheet.contextMenu.contextmenu.close();
+            (spreadsheet.contextMenu as any).contextmenu.close();
 
             if (libraryBase.jspreadsheet.current) {
                 const role = getRole(e.target);
@@ -1190,7 +1191,7 @@ const contextMenuControls = function (e) {
                 }
 
                 // The id is depending on header and body
-                spreadsheet.contextMenu.contextmenu.open(e, items);
+                (spreadsheet.contextMenu as any).contextmenu.open(e, items);
                 // Avoid the real one
                 e.preventDefault();
             }
@@ -1198,7 +1199,7 @@ const contextMenuControls = function (e) {
     }
 };
 
-const touchStartControls = function (e) {
+const touchStartControls = function (e: any) {
     const jssTable = getElement(e.target);
 
     if (jssTable[0]) {
@@ -1242,7 +1243,7 @@ const touchStartControls = function (e) {
     }
 };
 
-const touchEndControls = function (e) {
+const touchEndControls = function (e: any) {
     // Clear any time control
     if (libraryBase.jspreadsheet.timeControl) {
         clearTimeout(libraryBase.jspreadsheet.timeControl);
@@ -1255,7 +1256,7 @@ const touchEndControls = function (e) {
     }
 };
 
-export const cutControls = function (e) {
+export const cutControls = function (e?: any) {
     if (libraryBase.jspreadsheet.current) {
         if (!libraryBase.jspreadsheet.current.edition) {
             copy.call(libraryBase.jspreadsheet.current, true, undefined, undefined, undefined, undefined, true);
@@ -1271,8 +1272,8 @@ export const cutControls = function (e) {
     }
 };
 
-const copyControls = function (e) {
-    if (libraryBase.jspreadsheet.current && copyControls.enabled) {
+const copyControls = function (e?: any) {
+    if (libraryBase.jspreadsheet.current && (copyControls as any).enabled) {
         if (!libraryBase.jspreadsheet.current.edition) {
             copy.call(libraryBase.jspreadsheet.current, true);
         }
@@ -1283,7 +1284,7 @@ const isMac = function () {
     return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 };
 
-const isCtrl = function (e) {
+const isCtrl = function (e: any) {
     if (isMac()) {
         return e.metaKey;
     } else {
@@ -1291,7 +1292,7 @@ const isCtrl = function (e) {
     }
 };
 
-const keyDownControls = function (e) {
+const keyDownControls = function (this: Worksheet, e: any) {
     // Keys on the worksheet tabs and on the button to add a worksheet do not go to the grid
     const keyPath = typeof e.composedPath === 'function' ? e.composedPath() : [];
     const keyTarget = keyPath.length ? keyPath[0] : e.target;
@@ -1311,7 +1312,8 @@ const keyDownControls = function (e) {
 
         if (libraryBase.jspreadsheet.current.edition) {
             const current = libraryBase.jspreadsheet.current;
-            const column = current.options.columns && current.options.columns[getCellColumnIndex.call(current, current.edition[2], current.edition[3])];
+            const column =
+                current.options.columns && current.options.columns[getCellColumnIndex.call(current, current.edition[2] as any, current.edition[3] as any)];
 
             if (e.which == 27) {
                 // Escape
@@ -1331,17 +1333,19 @@ const keyDownControls = function (e) {
                     if (
                         (libraryBase.jspreadsheet.current.options.wordWrap == true ||
                             (column && column.wordWrap == true) ||
-                            (libraryBase.jspreadsheet.current.options.data[libraryBase.jspreadsheet.current.edition[3]][
-                                libraryBase.jspreadsheet.current.edition[2]
+                            (libraryBase.jspreadsheet.current.options.data[libraryBase.jspreadsheet.current.edition[3] as any][
+                                libraryBase.jspreadsheet.current.edition[2] as any
                             ] &&
-                                libraryBase.jspreadsheet.current.options.data[libraryBase.jspreadsheet.current.edition[3]][
-                                    libraryBase.jspreadsheet.current.edition[2]
-                                ].length > 200)) &&
+                                (
+                                    libraryBase.jspreadsheet.current.options.data[libraryBase.jspreadsheet.current.edition[3] as any][
+                                        libraryBase.jspreadsheet.current.edition[2] as any
+                                    ] as string
+                                ).length > 200)) &&
                         e.altKey
                     ) {
                         // Add new line to the editor
-                        const editorTextarea = libraryBase.jspreadsheet.current.edition[0].children[0];
-                        let editorValue = libraryBase.jspreadsheet.current.edition[0].children[0].value;
+                        const editorTextarea = libraryBase.jspreadsheet.current.edition[0].children[0] as HTMLTextAreaElement;
+                        let editorValue = (libraryBase.jspreadsheet.current.edition[0].children[0] as HTMLTextAreaElement).value;
                         const editorIndexOf = editorTextarea.selectionStart;
                         editorValue = editorValue.slice(0, editorIndexOf) + '\n' + editorValue.slice(editorIndexOf);
                         editorTextarea.value = editorValue;
@@ -1349,15 +1353,15 @@ const keyDownControls = function (e) {
                         editorTextarea.selectionStart = editorIndexOf + 1;
                         editorTextarea.selectionEnd = editorIndexOf + 1;
                     } else {
-                        libraryBase.jspreadsheet.current.edition[0].children[0].blur();
+                        (libraryBase.jspreadsheet.current.edition[0].children[0] as HTMLElement).blur();
                     }
                 }
             } else if (e.which == 9) {
                 // Tab
-                if (column && ['calendar', 'html'].includes(column.type)) {
+                if (column && ['calendar', 'html'].includes(column.type as string)) {
                     closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition[0], true);
                 } else {
-                    libraryBase.jspreadsheet.current.edition[0].children[0].blur();
+                    (libraryBase.jspreadsheet.current.edition[0].children[0] as HTMLElement).blur();
                 }
             }
         }
@@ -1527,7 +1531,7 @@ const keyDownControls = function (e) {
     }
 };
 
-export const wheelControls = function (e) {
+export const wheelControls = function (this: Worksheet, e?: any) {
     const obj = this;
 
     if (obj.options.lazyLoading == true) {
@@ -1557,7 +1561,7 @@ export const wheelControls = function (e) {
 
 let scrollLeft = 0;
 
-export const updateFreezePosition = function () {
+export const updateFreezePosition = function (this: Worksheet) {
     const obj = this;
 
     const scrollLeft = obj.content.scrollLeft;
@@ -1594,7 +1598,7 @@ export const updateFreezePosition = function () {
             obj.headers[i].style.left = width + 'px';
             for (let j = 0; j < obj.rows.length; j++) {
                 if (obj.rows[j] && obj.records[j][i]) {
-                    const shifted = scrollLeft + (i > 0 ? obj.records[j][i - 1].element.style.width : 0) - indexWidth - 1 + 'px';
+                    const shifted = scrollLeft + ((i > 0 ? obj.records[j][i - 1].element.style.width : 0) as any) - indexWidth - 1 + 'px';
                     obj.records[j][i].element.classList.add('jss_freezed');
                     if (isLast || wasLast) {
                         obj.records[j][i].element.classList.toggle('jss_freezed_last', isLast);
@@ -1620,7 +1624,7 @@ export const updateFreezePosition = function () {
     updateCornerPosition.call(obj);
 };
 
-export const scrollControls = function (e) {
+export const scrollControls = function (this: Worksheet, e: any) {
     const obj = this;
 
     wheelControls.call(obj);
@@ -1632,7 +1636,7 @@ export const scrollControls = function (e) {
 
     // Close a floating editor. The text editor is inside the cell and scrolls with it.
     if (obj.options.lazyLoading == true || obj.options.tableOverflow == true) {
-        if (obj.edition && hasFloatingEditor.call(obj, obj.edition[2]) && e.target.className.substr(0, 9) != 'jdropdown') {
+        if (obj.edition && hasFloatingEditor.call(obj, obj.edition[2] as any) && e.target.className.substr(0, 9) != 'jdropdown') {
             closeEditor.call(obj, obj.edition[0], true);
         }
     }
@@ -1641,7 +1645,7 @@ export const scrollControls = function (e) {
 /**
  * Check if the editor of a column floats over the page. It does not move with the cell.
  */
-const hasFloatingEditor = function (x) {
+const hasFloatingEditor = function (this: Worksheet, x: number) {
     const obj = this;
 
     const column = obj.options.columns && obj.options.columns[x];
@@ -1652,7 +1656,7 @@ const hasFloatingEditor = function (x) {
     return typeof column.type === 'object' || ['dropdown', 'calendar', 'color', 'html', 'image'].indexOf(column.type) >= 0;
 };
 
-export const setEvents = function (root) {
+export const setEvents = function (root: any) {
     destroyEvents(root);
     root.addEventListener('mouseup', mouseUpControls);
     root.addEventListener('mousedown', mouseDownControls);
@@ -1668,7 +1672,7 @@ export const setEvents = function (root) {
     document.addEventListener('keydown', keyDownControls);
 };
 
-export const destroyEvents = function (root) {
+export const destroyEvents = function (root: any) {
     root.removeEventListener('mouseup', mouseUpControls);
     root.removeEventListener('mousedown', mouseDownControls);
     root.removeEventListener('mousemove', mouseMoveControls);

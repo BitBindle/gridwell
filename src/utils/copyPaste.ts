@@ -19,12 +19,12 @@ import type { Worksheet, WorksheetMethod } from '../types/internal';
 export const copy = function (
     this: Worksheet,
     highlighted: boolean,
-    delimiter: string,
-    returnData: any,
-    includeHeaders: boolean,
-    download: any,
-    isCut: any,
-    processed: boolean
+    delimiter?: string,
+    returnData?: any,
+    includeHeaders?: boolean,
+    download?: any,
+    isCut?: any,
+    processed?: boolean
 ) {
     const obj = this;
 

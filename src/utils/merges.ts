@@ -178,7 +178,7 @@ export const getMerge: WorksheetMethod<'getMerge'> = function (cellName) {
  * @param rowspan
  * @param ignoreHistoryAndEvents
  */
-export const setMerge = function (this: Worksheet, cellName: string, colspan: any, rowspan: any, ignoreHistoryAndEvents: any): void {
+export const setMerge = function (this: Worksheet, cellName: string, colspan: any, rowspan: any, ignoreHistoryAndEvents?: any): void {
     const obj = this;
 
     let test: string | false = false;
@@ -285,7 +285,7 @@ export const setMerge = function (this: Worksheet, cellName: string, colspan: an
  * Remove merge by cellname
  * @param cellName
  */
-export const removeMerge = function (this: Worksheet, cellName: string, data: any, keepOptions: boolean) {
+export const removeMerge = function (this: Worksheet, cellName: string, data: any, keepOptions?: boolean) {
     const obj = this;
 
     if (obj.options.mergeCells && obj.options.mergeCells[cellName]) {
@@ -335,7 +335,7 @@ export const removeMerge = function (this: Worksheet, cellName: string, data: an
 /**
  * Remove all merged cells
  */
-export const destroyMerge = function (this: Worksheet, keepOptions: boolean) {
+export const destroyMerge = function (this: Worksheet, keepOptions?: boolean) {
     const obj = this;
 
     // Remove any merged cells

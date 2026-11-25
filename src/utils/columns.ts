@@ -578,7 +578,7 @@ export const getWidth: WorksheetMethod<'getWidth'> = function (column) {
  * @param int new column width
  * @param int old column width
  */
-export const setWidth = function (this: Worksheet, column: any, width: number, oldWidth: any) {
+export const setWidth = function (this: Worksheet, column: any, width: number, oldWidth?: any) {
     const obj = this;
 
     if (width) {

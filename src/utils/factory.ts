@@ -9,23 +9,24 @@ import dispatch from './dispatch.js';
 import { createFromTable } from './helpers.js';
 import { createTabs } from './tabs.js';
 import { getSpreadsheetConfig, setConfig } from './config.js';
+import type { Spreadsheet, Worksheet } from '../types/internal';
 
 const factory = function () {};
 
-const createWorksheets = async function (spreadsheet, options, el) {
+const createWorksheets = async function (spreadsheet: Spreadsheet, options: any, el: HTMLElement) {
     // Create worksheets
     let o = options.worksheets;
     if (o) {
-        let tabsOptions = {
+        let tabsOptions: any = {
             animation: true,
-            onbeforecreate: function (element, title) {
+            onbeforecreate: function (element: any, title: any) {
                 if (title) {
                     return title;
                 } else {
                     return getNextDefaultWorksheetName(spreadsheet);
                 }
             },
-            oncreate: function (element, newTabContent) {
+            oncreate: function (element: any, newTabContent: any) {
                 if (!spreadsheet.creationThroughJss) {
                     const worksheetName = element.tabs.headers.children[element.tabs.headers.children.length - 2].innerHTML;
 
@@ -47,7 +48,7 @@ const createWorksheets = async function (spreadsheet, options, el) {
                     dispatch.call(newWorksheet, 'oncreateworksheet', newWorksheet, options, spreadsheet.worksheets.length - 1);
                 });
             },
-            onchange: function (element, instance, tabIndex) {
+            onchange: function (element: any, instance: any, tabIndex: number) {
                 if (spreadsheet.worksheets.length != 0 && spreadsheet.worksheets[tabIndex]) {
                     updateToolbar(spreadsheet.worksheets[tabIndex]);
                 }
@@ -104,7 +105,7 @@ const createWorksheets = async function (spreadsheet, options, el) {
                 history: [],
                 selection: [],
                 historyIndex: -1,
-            });
+            } as any);
 
             await buildWorksheet.call(spreadsheet.worksheets[i]);
         }
@@ -113,7 +114,7 @@ const createWorksheets = async function (spreadsheet, options, el) {
     }
 };
 
-factory.spreadsheet = async function (el, options, worksheets) {
+factory.spreadsheet = async function (el: any, options: any, worksheets: Worksheet[]) {
     if (el.tagName == 'TABLE') {
         if (!options) {
             options = {};
@@ -138,7 +139,7 @@ factory.spreadsheet = async function (el, options, worksheets) {
         config: options,
         element: el,
         el,
-    };
+    } as Spreadsheet;
 
     // Contextmenu container
     spreadsheet.contextMenu = document.createElement('div');
@@ -151,13 +152,13 @@ factory.spreadsheet = async function (el, options, worksheets) {
     spreadsheet.getConfig = getSpreadsheetConfig.bind(spreadsheet);
     spreadsheet.setConfig = setConfig.bind(spreadsheet);
 
-    spreadsheet.setPlugins = function (newPlugins) {
+    spreadsheet.setPlugins = function (newPlugins: any) {
         if (!spreadsheet.plugins) {
             spreadsheet.plugins = {};
         }
 
         if (typeof newPlugins == 'object') {
-            Object.entries(newPlugins).forEach(function ([pluginName, plugin]) {
+            Object.entries(newPlugins).forEach(function ([pluginName, plugin]: [string, any]) {
                 spreadsheet.plugins[pluginName] = plugin.call(libraryBase.jspreadsheet, spreadsheet, {}, spreadsheet.config);
             });
         }
@@ -173,9 +174,9 @@ factory.spreadsheet = async function (el, options, worksheets) {
     // Create element
     jSuites.contextmenu(spreadsheet.contextMenu, {
         onclick: function () {
-            spreadsheet.contextMenu.contextmenu.close(false);
+            (spreadsheet.contextMenu as any).contextmenu.close(false);
         },
-    });
+    } as any);
 
     // Fullscreen
     if (spreadsheet.config.fullscreen == true) {
@@ -196,9 +197,9 @@ factory.spreadsheet = async function (el, options, worksheets) {
     return spreadsheet;
 };
 
-factory.worksheet = function (spreadsheet, options, position) {
+factory.worksheet = function (spreadsheet: Spreadsheet, options: any, position?: number) {
     // Worksheet object
-    let w = {
+    let w: any = {
         // Parent of a worksheet is always the spreadsheet
         parent: spreadsheet,
         // Options for this worksheet

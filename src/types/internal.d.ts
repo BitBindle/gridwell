@@ -42,6 +42,22 @@ export interface Worksheet extends jspreadsheet.WorksheetInstance {
 
     /** The footer of the table, when the worksheet has footers. */
     tfoot?: HTMLTableSectionElement;
+
+    /** True while the mouse drags the selection corner. */
+    selectedCorner?: boolean;
+
+    /** The column whose header the mouse selects, or null or false when there is none. It is text from data-x. */
+    selectedHeader?: any;
+
+    /** The row whose number the mouse selects, or null or false when there is none. It is text from data-y. */
+    selectedRow?: any;
+
+    /**
+     * The public typings use unions of the row and column information. The code tests one property and then reads the
+     * others, which the type check cannot follow, so the library sees these as any.
+     */
+    resizing: any;
+    dragging: any;
 }
 
 /**
@@ -55,6 +71,9 @@ export interface Spreadsheet extends jspreadsheet.SpreadsheetInstance {
 
     /** True while createWorksheet adds a tab, so that the tab does not create a second worksheet. */
     creationThroughJss?: boolean;
+
+    /** Returns the spreadsheet settings. The factory sets it, but the public typings do not declare it yet. */
+    getConfig: () => jspreadsheet.SpreadsheetOptions;
 }
 
 /**
