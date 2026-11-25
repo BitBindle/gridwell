@@ -3,7 +3,7 @@ import dispatch from '../utils/dispatch.js';
 import { updateCell } from '../utils/render.js';
 import { getCellColumnIndex, getMask, isFormula } from '../utils/values.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
-import { getLabelText, restoreActiveCell } from '../utils/accessibility.js';
+import { getLabelText } from '../utils/accessibility.js';
 import type { Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
 import type { CellChange } from '../jspreadsheet';
@@ -586,7 +586,7 @@ export class Editor {
         obj.editor.end();
 
         // The cell is a focus target again
-        restoreActiveCell.call(obj, cell);
+        obj.selection.restoreActiveCell(cell);
     }
 
     /**

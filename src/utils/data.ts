@@ -4,7 +4,7 @@ import { updateTable } from './table.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import dispatch from './dispatch.js';
 import { getCoordsFromRange } from './helpers.js';
-import { updateGridSize, updateTabStop } from './accessibility.js';
+import { updateGridSize } from './accessibility.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
 import type { CellChange, CellValue } from '../jspreadsheet';
 
@@ -129,7 +129,7 @@ export const setData: WorksheetMethod<'setData'> = function (data) {
     updateGridSize.call(obj);
 
     // The rows are new, so the tab stop of the grid is new
-    updateTabStop.call(obj);
+    obj.selection.updateTabStop();
 
     // Updata table with custom configurations if applicable
     updateTable.call(obj);

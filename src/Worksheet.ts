@@ -39,7 +39,7 @@ export class Worksheet {
         this.history = new History();
         this.clipboard = new Clipboard(this);
         this.editor = new Editor(this);
-        this.selection = new Selection();
+        this.selection = new Selection(this);
         this.formulas = new Formulas(this);
         this.view = new View(this);
         this.pointer = new Pointer();

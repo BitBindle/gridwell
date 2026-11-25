@@ -1,5 +1,4 @@
 import libraryBase from '../utils/libraryBase.js';
-import { updateCornerPosition } from '../utils/selection.js';
 import { updateFreezePosition } from '../utils/freezePosition.js';
 import type { Worksheet } from '../types/internal';
 
@@ -14,14 +13,14 @@ export const wheelControls = function (this: Worksheet, e?: WheelEvent) {
                         if (obj.content.scrollTop + obj.content.clientHeight > obj.content.scrollHeight - 10) {
                             obj.content.scrollTop = obj.content.scrollTop - obj.content.clientHeight;
                         }
-                        updateCornerPosition.call(obj);
+                        obj.selection.updateCorner();
                     }
                 } else if (obj.content.scrollTop <= obj.content.clientHeight) {
                     if (obj.view.loadUp()) {
                         if (obj.content.scrollTop < 10) {
                             obj.content.scrollTop = obj.content.scrollTop + obj.content.clientHeight;
                         }
-                        updateCornerPosition.call(obj);
+                        obj.selection.updateCorner();
                     }
                 }
 

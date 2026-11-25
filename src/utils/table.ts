@@ -1,4 +1,3 @@
-import { updateCornerPosition } from './selection.js';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -62,6 +61,6 @@ export const updateTable = function (this: Worksheet) {
 
     // Update corner position
     setTimeout(function () {
-        updateCornerPosition.call(obj);
+        obj.selection.updateCorner();
     }, 0);
 };

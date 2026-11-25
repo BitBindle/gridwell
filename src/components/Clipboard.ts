@@ -4,7 +4,6 @@ import dispatch from '../utils/dispatch.js';
 import { updateCell } from '../utils/render.js';
 import { updateTable } from '../utils/table.js';
 import { downGet, rightGet } from '../utils/keys.js';
-import { updateSelectionFromCoords } from '../utils/selection.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
@@ -523,7 +522,7 @@ export class Clipboard {
             const { records, newStyle, oldStyle, lastColumn, lastRow } = this.pasteRows(x, y, rows, style);
 
             // Select the new cells
-            updateSelectionFromCoords.call(obj, x, y, lastColumn, lastRow);
+            obj.selection.updateFromCoords(x, y, lastColumn, lastRow);
 
             // Update history
             obj.history.add({

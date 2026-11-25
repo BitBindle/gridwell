@@ -1,5 +1,4 @@
 import libraryBase from '../utils/libraryBase.js';
-import { resetSelection, selectAll, updateCornerPosition, updateSelectionFromCoords } from '../utils/selection.js';
 import { copyData } from '../utils/fill.js';
 import { setWidth } from '../utils/columns.js';
 import { moveRow, setHeight } from '../utils/rows.js';
@@ -260,7 +259,7 @@ const pressHeader = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
             }
 
             // Update selection
-            updateSelectionFromCoords.call(obj, o, 0, d, obj.options.data.length - 1, e);
+            obj.selection.updateFromCoords(o, 0, d, obj.options.data.length - 1, e);
         }
     } else {
         if ((e.target.parentNode as HTMLElement).classList.contains('jss_nested')) {
@@ -274,7 +273,7 @@ const pressHeader = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
                 c1 = 0;
                 c2 = obj.options.columns.length - 1;
             }
-            updateSelectionFromCoords.call(obj, c1, 0, c2, obj.options.data.length - 1, e);
+            obj.selection.updateFromCoords(c1, 0, c2, obj.options.data.length - 1, e);
         }
     }
 };
@@ -330,7 +329,7 @@ const pressRowNumber = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
         }
 
         // Update selection
-        updateSelectionFromCoords.call(obj, null, o, null, d, e);
+        obj.selection.updateFromCoords(null, o, null, d, e);
     }
 };
 
@@ -359,9 +358,9 @@ const pressCell = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
             if (!obj.editor.isOpen()) {
                 // Update cell selection
                 if (e.shiftKey) {
-                    updateSelectionFromCoords.call(obj, obj.selection.range![0], obj.selection.range![1], columnId, rowId, e);
+                    obj.selection.updateFromCoords(obj.selection.range![0], obj.selection.range![1], columnId, rowId, e);
                 } else {
-                    updateSelectionFromCoords.call(obj, columnId, rowId, undefined, undefined, e);
+                    obj.selection.updateFromCoords(columnId, rowId, undefined, undefined, e);
                 }
             }
 
@@ -412,7 +411,7 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
             }
 
             if (!e.target.closest('.jss_object')) {
-                resetSelection.call(previous, true);
+                previous.selection.reset(true);
                 libraryBase.jspreadsheet.current = null;
             }
         }
@@ -422,7 +421,7 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
 
     if (current && mouseButton == 1) {
         if (e.target.classList.contains('jss_selectall')) {
-            selectAll.call(current);
+            current.selection.selectAll();
         } else if (e.target.classList.contains('jss_corner')) {
             if (current.options.editable != false) {
                 current.pointer.corner = true;
@@ -476,7 +475,7 @@ const moveResize = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
             const tempWidth = resizing.width + width;
             obj.cols[resizing.column].colElement.setAttribute('width', tempWidth);
 
-            updateCornerPosition.call(obj);
+            obj.selection.updateCorner();
         }
     } else {
         const height = e.pageY - resizing.mousePosition;
@@ -485,7 +484,7 @@ const moveResize = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
             const tempHeight = resizing.height + height;
             obj.rows[resizing.row].element.setAttribute('height', tempHeight);
 
-            updateCornerPosition.call(obj);
+            obj.selection.updateCorner();
         }
     }
 };
@@ -692,7 +691,7 @@ const extendSelection = function (this: Worksheet, e: TargetEvent<MouseEvent>, s
                 const o = obj.selection.column;
                 const d = columnId;
                 // Update selection
-                updateSelectionFromCoords.call(obj, o, 0, d, obj.options.data.length - 1, e);
+                obj.selection.updateFromCoords(o, 0, d, obj.options.data.length - 1, e);
             }
         }
 
@@ -703,7 +702,7 @@ const extendSelection = function (this: Worksheet, e: TargetEvent<MouseEvent>, s
                     const o = obj.selection.row;
                     const d = rowId;
                     // Update selection
-                    updateSelectionFromCoords.call(obj, 0, o, obj.options.data[0].length - 1, d, e);
+                    obj.selection.updateFromCoords(0, o, obj.options.data[0].length - 1, d, e);
                 }
             } else {
                 // Do not select edtion is in progress
@@ -713,7 +712,7 @@ const extendSelection = function (this: Worksheet, e: TargetEvent<MouseEvent>, s
                             updateCopySelection.call(obj, columnId, rowId);
                         } else {
                             if (obj.selection.range) {
-                                updateSelectionFromCoords.call(obj, obj.selection.range[0], obj.selection.range[1], columnId, rowId, e);
+                                obj.selection.updateFromCoords(obj.selection.range[0], obj.selection.range[1], columnId, rowId, e);
                             }
                         }
                     }

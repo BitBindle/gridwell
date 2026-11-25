@@ -2,7 +2,6 @@ import jSuites from 'jsuites';
 import libraryBase from '../utils/libraryBase.js';
 import { down, first, last, left, right, up } from '../utils/keys.js';
 import { getCellColumnIndex } from '../utils/values.js';
-import { selectAll } from '../utils/selection.js';
 import { copyControls, cutControls, pasteControls } from './clipboard.js';
 import { getElement, isCtrl } from './helpers.js';
 import type { EditingWorksheet, SelectedWorksheet, TargetEvent } from '../types/internal';
@@ -146,7 +145,7 @@ const shortcutKeys = function (this: SelectedWorksheet, e: TargetEvent<KeyboardE
 
     if (e.which == 65) {
         // Ctrl + A
-        selectAll.call(obj);
+        obj.selection.selectAll();
         e.preventDefault();
     } else if (e.which == 83) {
         // Ctrl + S

@@ -2,9 +2,8 @@ import jSuites from 'jsuites';
 import { getNumberOfColumns } from './columns.js';
 import { createCell } from './render.js';
 import dispatch from './dispatch.js';
-import { conditionalSelectionUpdate, getSelectedRows, updateCornerPosition } from './selection.js';
 import { getColumnNameFromId } from './internalHelpers.js';
-import { setRowRole, updateTabStop } from './accessibility.js';
+import { setRowRole } from './accessibility.js';
 import { updateFreezePosition } from './freezePosition.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
@@ -384,7 +383,7 @@ export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numO
         if (obj.options.allowDeletingAllRows == true || obj.options.data.length > 1) {
             // Delete row definitions
             if (rowNumber == undefined) {
-                const number = getSelectedRows.call(obj);
+                const number = obj.selection.getSelectedRows();
 
                 if (number.length === 0) {
                     rowNumber = obj.options.data.length - 1;
@@ -487,7 +486,7 @@ export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numO
                 }
 
                 // Remove selection
-                conditionalSelectionUpdate.call(obj, 1, rowNumber, rowNumber + numOfRows - 1);
+                obj.selection.conditionalUpdate(1, rowNumber, rowNumber + numOfRows - 1);
 
                 // Keep history
                 obj.history.add({
@@ -596,7 +595,7 @@ export const setHeight = function (this: Worksheet, row: number, height: number,
         dispatch.call(obj, 'onresizerow', obj, row, height, oldHeight);
 
         // Update corner position
-        updateCornerPosition.call(obj);
+        obj.selection.updateCorner();
     }
 };
 
@@ -630,7 +629,7 @@ export const hideRow: WorksheetMethod<'hideRow'> = function (rowNumber) {
     });
 
     // The tab stop of the grid can be in a hidden row
-    updateTabStop.call(obj);
+    obj.selection.updateTabStop();
 };
 
 /**
