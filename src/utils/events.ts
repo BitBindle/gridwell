@@ -1092,7 +1092,7 @@ const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
         if (libraryBase.jspreadsheet.current.edition) {
             e.preventDefault();
         } else {
-            (spreadsheet.contextMenu as any).contextmenu.close();
+            spreadsheet.contextMenu.contextmenu.close();
 
             if (libraryBase.jspreadsheet.current) {
                 const role = getRole(e.target);
@@ -1193,7 +1193,7 @@ const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
                 }
 
                 // The id is depending on header and body
-                (spreadsheet.contextMenu as any).contextmenu.open(e, items);
+                spreadsheet.contextMenu.contextmenu.open(e, items);
                 // Avoid the real one
                 e.preventDefault();
             }

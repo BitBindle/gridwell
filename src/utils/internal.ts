@@ -1432,7 +1432,8 @@ export const getWorksheetActive = function (this: Worksheet | Spreadsheet): numb
     const spreadsheet = this.parent ? this.parent : this;
 
     // The element of a spreadsheet with tabs has the tabs object
-    return (spreadsheet.element as any).tabs ? (spreadsheet.element as any).tabs.getActive() : 0;
+    // getActive returns false only when no tab is open, and a tab is open while the spreadsheet has worksheets
+    return spreadsheet.element.tabs ? (spreadsheet.element.tabs.getActive() as number) : 0;
 };
 
 export const getWorksheetInstance = function (this: Spreadsheet, index?: number) {

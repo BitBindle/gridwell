@@ -5,12 +5,16 @@
  * as `this` a `this: Worksheet` parameter.
  */
 import type jspreadsheet from '../jspreadsheet';
+import type { Tabs } from '../utils/tabs';
 
 /**
  * A worksheet as the library sees it: the public instance and the state that only the library uses.
  */
 export interface Worksheet extends jspreadsheet.WorksheetInstance {
     parent: Spreadsheet;
+
+    /** The events find the worksheet of an element through jssWorksheet. */
+    element: jspreadsheet.JworksheetInstanceElement & { jssWorksheet: Worksheet };
 
     options: Omit<jspreadsheet.WorksheetOptions, 'data' | 'columns' | 'minDimensions'> & {
         /**
@@ -74,6 +78,21 @@ export interface Spreadsheet extends jspreadsheet.SpreadsheetInstance {
     parent?: undefined;
 
     worksheets: Worksheet[];
+
+    /** The tabs of the worksheets, which createTabs keeps on the element. */
+    element: jspreadsheet.JspreadsheetInstanceElement & { tabs?: Tabs };
+
+    /** The jsuites context menu, which jsuites keeps on its element. */
+    contextMenu: HTMLDivElement & {
+        contextmenu: {
+            open(e: MouseEvent, items: jspreadsheet.ContextMenuItem[]): void;
+            /** jsuites takes no argument. The factory passes false, which jsuites ignores. */
+            close(ignored?: boolean): void;
+        };
+    };
+
+    /** The jsuites toolbar, which jsuites keeps on its element. update calls updateState of each item with the worksheet. */
+    toolbar: HTMLDivElement & { toolbar: { update(worksheet: Worksheet): void } };
 
     /** True while createWorksheet adds a tab, so that the tab does not create a second worksheet. */
     creationThroughJss?: boolean;

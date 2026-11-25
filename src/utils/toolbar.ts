@@ -536,7 +536,7 @@ export const createToolbar = function (this: Spreadsheet, toolbar: any) {
 export const updateToolbar = function (worksheet: Worksheet) {
     if (worksheet.parent.toolbar) {
         // jsuites keeps the toolbar instance on the element
-        (worksheet.parent.toolbar as any).toolbar.update(worksheet);
+        worksheet.parent.toolbar.toolbar.update(worksheet);
     }
 };
 
@@ -562,7 +562,11 @@ export const showToolbar = function (this: Spreadsheet) {
             }
         }
 
-        spreadsheet.toolbar = spreadsheet.element.insertBefore(createToolbar.call(spreadsheet, toolbar), spreadsheet.element.children[1]);
+        // jSuites.toolbar in createToolbar added the toolbar instance
+        spreadsheet.toolbar = spreadsheet.element.insertBefore(
+            createToolbar.call(spreadsheet, toolbar),
+            spreadsheet.element.children[1]
+        ) as Spreadsheet['toolbar'];
     }
 };
 

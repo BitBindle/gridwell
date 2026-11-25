@@ -260,7 +260,7 @@ const createTable = function (this: Worksheet) {
     obj.element.appendChild(obj.ads);
     obj.element.classList.add('jss_container');
 
-    (obj.element as any).jssWorksheet = obj;
+    obj.element.jssWorksheet = obj;
     obj.element.jspreadsheet = obj;
 
     // Overflow
@@ -564,20 +564,20 @@ export const createWorksheet: WorksheetMethod<'createWorksheet'> = function (opt
 
     createWorksheetObj.call(obj, options);
 
-    (spreadsheet.element as any).tabs.create(options.worksheetName);
+    spreadsheet.element.tabs!.create(options.worksheetName);
 };
 
 export const openWorksheet: WorksheetMethod<'openWorksheet'> = function (position) {
     const obj = this;
     const spreadsheet = obj.parent;
 
-    (spreadsheet.element as any).tabs.open(position);
+    spreadsheet.element.tabs!.open(position);
 };
 
 export const deleteWorksheet: WorksheetMethod<'deleteWorksheet'> = function (position) {
     const obj = this;
 
-    (obj.parent.element as any).tabs.remove(position);
+    obj.parent.element.tabs!.remove(position);
 
     const removedWorksheet = obj.parent.worksheets.splice(position, 1)[0];
 

@@ -142,7 +142,8 @@ factory.spreadsheet = async function (el: any, options: any, worksheets: Workshe
     } as Spreadsheet;
 
     // Contextmenu container
-    spreadsheet.contextMenu = document.createElement('div');
+    // jSuites.contextmenu adds the contextmenu instance below
+    spreadsheet.contextMenu = document.createElement('div') as Spreadsheet['contextMenu'];
     spreadsheet.contextMenu.className = 'jss_contextmenu';
 
     spreadsheet.getWorksheetActive = getWorksheetActive.bind(spreadsheet);
@@ -174,7 +175,7 @@ factory.spreadsheet = async function (el: any, options: any, worksheets: Workshe
     // Create element
     jSuites.contextmenu(spreadsheet.contextMenu, {
         onclick: function () {
-            (spreadsheet.contextMenu as any).contextmenu.close(false);
+            spreadsheet.contextMenu.contextmenu.close(false);
         },
     } as any);
 
