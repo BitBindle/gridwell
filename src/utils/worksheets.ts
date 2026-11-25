@@ -52,20 +52,11 @@ import { openFilter, resetFilters } from './filter.js';
 import { redo, undo } from './history.js';
 import { setGridFocusEvents, setGridLabels, setGridRoles } from './accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
-import type { Spreadsheet, Worksheet, WorksheetMethod } from '../types/internal';
-
-const setWorksheetFunctions = function (worksheet: Worksheet) {
-    for (let i = 0; i < worksheetPublicMethodsLength; i++) {
-        const [methodName, method] = worksheetPublicMethods[i];
-
-        (worksheet as unknown as Record<string, unknown>)[methodName] = method.bind(worksheet);
-    }
-};
+import { Worksheet } from '../Worksheet.js';
+import type { Spreadsheet, WorksheetMethod } from '../types/internal';
 
 const createTable = function (this: Worksheet) {
     const obj = this;
-
-    setWorksheetFunctions(obj);
 
     // Elements
     obj.table = document.createElement('table');
@@ -544,15 +535,7 @@ export const createWorksheetObj = function (this: Worksheet, options: jspreadshe
         options.worksheetName = getNextDefaultWorksheetName(obj.parent);
     }
 
-    const newWorksheet = {
-        parent: spreadsheet,
-        options: options,
-        filters: [],
-        formula: [],
-        history: [],
-        selection: [],
-        historyIndex: -1,
-    } as unknown as Worksheet;
+    const newWorksheet = new Worksheet(spreadsheet, options);
 
     spreadsheet.config.worksheets.push(newWorksheet.options);
     spreadsheet.worksheets.push(newWorksheet);
@@ -744,4 +727,7 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
     ['resetFilters', resetFilters],
 ];
 
-const worksheetPublicMethodsLength = worksheetPublicMethods.length;
+// The public methods are on the prototype, as the methods of a class: not enumerable, and an instance can replace one
+for (const [methodName, method] of worksheetPublicMethods) {
+    Object.defineProperty(Worksheet.prototype, methodName, { value: method, writable: true, configurable: true });
+}
