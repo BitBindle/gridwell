@@ -66,17 +66,106 @@ describe('Freeze columns', () => {
         expect(worksheet.content.scrollLeft).to.equal(0);
     });
 
-    it('scrolls a frozen column into view when the scroll is too small to freeze it', () => {
+    it('keeps the scroll position when ArrowLeft selects column A at a small scroll and the index column is hidden', () => {
         const worksheet = scrolledWorksheet(40);
         worksheet.hideIndex();
 
-        // At scrollLeft 40 the columns are not frozen, and 40 pixels of column A are to the left of the content
-        worksheet.records[1][0].element.getBoundingClientRect = rect(-40, 30, 100, 25);
+        // Without the index column, the columns are frozen at each scroll, so column A stays at the left of the content
+        worksheet.records[1][0].element.getBoundingClientRect = rect(0, 30, 100, 25);
 
         worksheet.updateSelectionFromCoords(1, 1, 1, 1);
         worksheet.left();
 
         expect(worksheet.selectedCell.map(Number)).to.eql([0, 1, 0, 1]);
-        expect(worksheet.content.scrollLeft).to.equal(0);
+        expect(worksheet.content.scrollLeft).to.equal(40);
+    });
+});
+
+describe('Freeze columns with a hidden index column', () => {
+    const scroll = function (worksheet, scrollLeft) {
+        // The scroll handler compares scrollLeft with the value of the last scroll, so start each test at 0
+        worksheet.content.scrollLeft = 0;
+        worksheet.content.dispatchEvent(new window.Event('scroll'));
+        worksheet.content.scrollLeft = scrollLeft;
+        worksheet.content.dispatchEvent(new window.Event('scroll'));
+    };
+
+    it('puts the frozen cells at the left border of the content when hideIndex hides the index column', () => {
+        const worksheet = scrolledWorksheet(0);
+        worksheet.hideIndex();
+
+        scroll(worksheet, 900);
+
+        expect(worksheet.records[1][0].element.classList.contains('jss_freezed')).to.equal(true);
+        expect(worksheet.records[1][0].element.style.left).to.equal('899px');
+        expect(worksheet.records[1][1].element.style.left).to.equal('899px');
+    });
+
+    it('freezes the columns at a small scroll when hideIndex hides the index column', () => {
+        const worksheet = scrolledWorksheet(0);
+        worksheet.hideIndex();
+
+        scroll(worksheet, 20);
+
+        expect(worksheet.headers[0].classList.contains('jss_freezed')).to.equal(true);
+        expect(worksheet.records[1][0].element.classList.contains('jss_freezed')).to.equal(true);
+        expect(worksheet.records[1][0].element.style.left).to.equal('19px');
+    });
+
+    it('freezes the columns only when the scroll is more than the width of a visible index column', () => {
+        const worksheet = scrolledWorksheet(0);
+
+        scroll(worksheet, 20);
+        expect(worksheet.records[1][0].element.classList.contains('jss_freezed')).to.equal(false);
+
+        scroll(worksheet, 900);
+        expect(worksheet.records[1][0].element.classList.contains('jss_freezed')).to.equal(true);
+        expect(worksheet.records[1][0].element.style.left).to.equal('849px');
+    });
+
+    it('puts the frozen cells at the left border of the content when hideIndex is called after the scroll', () => {
+        const worksheet = scrolledWorksheet(0);
+
+        scroll(worksheet, 900);
+        worksheet.hideIndex();
+
+        expect(worksheet.records[1][0].element.style.left).to.equal('899px');
+        expect(worksheet.records[1][1].element.style.left).to.equal('899px');
+    });
+
+    it('puts the frozen cells to the right of the index column when showIndex is called after the scroll', () => {
+        const worksheet = scrolledWorksheet(0);
+        worksheet.hideIndex();
+
+        scroll(worksheet, 900);
+        worksheet.showIndex();
+
+        expect(worksheet.records[1][0].element.style.left).to.equal('849px');
+        expect(worksheet.records[1][1].element.style.left).to.equal('849px');
+    });
+
+    it('unfreezes the columns when showIndex is called at a small scroll', () => {
+        const worksheet = scrolledWorksheet(0);
+        worksheet.hideIndex();
+
+        scroll(worksheet, 20);
+        worksheet.showIndex();
+
+        expect(worksheet.headers[0].classList.contains('jss_freezed')).to.equal(false);
+        expect(worksheet.records[1][0].element.classList.contains('jss_freezed')).to.equal(false);
+        expect(worksheet.records[1][0].element.style.left).to.equal('');
+    });
+
+    it('hides and shows the index column when the worksheet has fewer columns than freezeColumns', () => {
+        const worksheet = scrolledWorksheet(0);
+        worksheet.deleteColumn(0, 11);
+
+        expect(() => worksheet.hideIndex()).to.not.throw();
+        expect(() => worksheet.showIndex()).to.not.throw();
+
+        // The frozen columns are placed only when the scroll is more than the width of the index column
+        scroll(worksheet, 900);
+        expect(() => worksheet.hideIndex()).to.not.throw();
+        expect(() => worksheet.showIndex()).to.not.throw();
     });
 });
