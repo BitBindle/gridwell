@@ -40,3 +40,7 @@ const versionInfo = library.version();
 assertType<Equals<typeof versionInfo.version, string>>();
 // @ts-expect-error The version information has no type property
 const versionType = versionInfo.type;
+
+// setComments removes the comment of a cell when the comment is a falsy value, null included
+worksheet.setComments('A1', null);
+worksheet.setComments({ A1: 'Comment', B1: null, C1: undefined, D1: '' });

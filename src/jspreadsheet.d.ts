@@ -2116,13 +2116,13 @@ declare namespace jspreadsheet {
          * @param cellId - Name of the cell.
          * @param comments - New comment. If it is a falsy value, the method just uncomments the cell.
          */
-        setComments(cellId: string, comments: string): void;
+        setComments(cellId: string, comments: string | null | undefined): void;
 
         /**
          * Set or remove comments.
          * @param cellId - Object whose keys are cell names and values are cell comments. If the value of a key is a falsy value, the cell comment is removed.
          */
-        setComments(cellId: Record<string, string>): void;
+        setComments(cellId: Record<string, string | null | undefined>): void;
 
         /**
          * Change the worksheet or spreadsheet settings.

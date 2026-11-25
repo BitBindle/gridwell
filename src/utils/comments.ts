@@ -39,7 +39,7 @@ export const getComments = function (this: Worksheet, cell?: string | number[]):
  * @param cellId - The cell name, for example "B3", or the comments by cell name.
  * @param comments - The comment, with a cell name.
  */
-export const setComments = function (this: Worksheet, cellId: string | Record<string, string>, comments?: string) {
+export const setComments = function (this: Worksheet, cellId: string | Record<string, string | null | undefined>, comments?: string | null) {
     const obj = this;
 
     let commentsObj;
