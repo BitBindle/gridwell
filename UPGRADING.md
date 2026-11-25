@@ -125,6 +125,23 @@ until the worksheet had pagination. `worksheet.view.results` is `null` from the 
 The search input, the filter row and the pagination controls stay on the worksheet (`searchInput`, `filter`,
 `pagination`).
 
+## The state of a mouse gesture is in its pointer
+
+The state of a press on a header, a row number or the selection corner is now in `worksheet.pointer`, a `Pointer`
+object, and in `worksheet.selection`:
+
+| Version 5                  | Version 6                    |
+| -------------------------- | ---------------------------- |
+| `worksheet.resizing`       | `worksheet.pointer.resizing` |
+| `worksheet.dragging`       | `worksheet.pointer.dragging` |
+| `worksheet.cursor`         | `worksheet.pointer.cursor`   |
+| `worksheet.selectedCorner` | `worksheet.pointer.corner`   |
+| `worksheet.selectedHeader` | `worksheet.selection.column` |
+| `worksheet.selectedRow`    | `worksheet.selection.row`    |
+
+Each is `null`, or `false` for `corner`, before the first press, where the fields of version 5 were undefined. The
+resize, the move of columns and rows, the fill with the selection corner and their events work as before.
+
 ## The keys go to the grid that has the focus
 
 The keys go to the active worksheet, `jspreadsheet.current`. A press on a worksheet made it the active worksheet, and

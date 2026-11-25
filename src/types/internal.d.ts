@@ -12,6 +12,7 @@ import type { Clipboard } from '../components/Clipboard';
 import type { Editor } from '../components/Editor';
 import type { Formulas } from '../components/Formulas';
 import type { History } from '../components/History';
+import type { Pointer } from '../components/Pointer';
 import type { Selection } from '../components/Selection';
 import type { View } from '../components/View';
 
@@ -56,6 +57,8 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
 
     view: View;
 
+    pointer: Pointer;
+
     /** The select for the number of rows per page, when the worksheet has pagination options. */
     paginationDropdown?: HTMLSelectElement;
 
@@ -70,22 +73,6 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
      * not when the content scrolled up or down.
      */
     lastScrollLeft: number;
-
-    /** True while the mouse drags the selection corner. */
-    selectedCorner?: boolean;
-
-    /** The column whose header the mouse selects, or null when there is none. */
-    selectedHeader?: number | null;
-
-    /** The row whose number the mouse selects, or null when there is none. */
-    selectedRow?: number | null;
-
-    /**
-     * The public typings use unions of the row and column information. Each member here says that the other index is
-     * missing, so that a test of column or row tells the type check which one it is.
-     */
-    resizing: undefined | null | (jspreadsheet.ResizeColumnInfo & { row?: undefined }) | (jspreadsheet.ResizeRowInfo & { column?: undefined });
-    dragging: null | (jspreadsheet.DragColumnInfo & { row?: undefined }) | (jspreadsheet.DragRowInfo & { column?: undefined });
 }
 
 /**

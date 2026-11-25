@@ -217,3 +217,61 @@ describe('The selection of a worksheet', () => {
         expect(worksheets[1].selection.range).to.equal(null);
     });
 });
+
+describe('The pointer of a worksheet', () => {
+    // The spreadsheet adds its event handlers after a promise
+    const load = (options) =>
+        new Promise((resolve) => {
+            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+        });
+    const mouse = (element, type, options) => element.dispatchEvent(new window.MouseEvent(type, { bubbles: true, cancelable: true, buttons: 1, ...options }));
+
+    it('has no gesture before a press', async () => {
+        const worksheet = await load({ worksheets: [{ minDimensions: [3, 3] }] });
+
+        expect(worksheet.pointer.resizing).to.equal(null);
+        expect(worksheet.pointer.dragging).to.equal(null);
+        expect(worksheet.pointer.cursor).to.equal(null);
+        expect(worksheet.pointer.corner).to.equal(false);
+        expect(worksheet.selection.column).to.equal(null);
+        expect(worksheet.selection.row).to.equal(null);
+        // The fields that the pointer and the selection replace
+        expect(worksheet).to.not.have.property('resizing');
+        expect(worksheet).to.not.have.property('dragging');
+        expect(worksheet).to.not.have.property('selectedCorner');
+        expect(worksheet).to.not.have.property('selectedHeader');
+        expect(worksheet).to.not.have.property('selectedRow');
+    });
+
+    it('keeps the drag of the selection corner until the button goes up', async () => {
+        const worksheet = await load({ worksheets: [{ minDimensions: [3, 3] }] });
+
+        mouse(worksheet.records[0][0].element, 'mousedown');
+        mouse(document, 'mouseup');
+        mouse(worksheet.corner, 'mousedown');
+
+        expect(worksheet.pointer.corner).to.equal(true);
+
+        mouse(document, 'mouseup');
+
+        expect(worksheet.pointer.corner).to.equal(false);
+    });
+
+    it('keeps the header and the row number that a press selected first', async () => {
+        // jsdom gives the headers no size, so a press is at their edge, which resizes or drags unless that is off
+        const worksheet = await load({ worksheets: [{ minDimensions: [3, 3], columnResize: false, columnDrag: false, rowResize: false, rowDrag: false }] });
+
+        mouse(worksheet.headers[1], 'mousedown');
+        mouse(document, 'mouseup');
+
+        expect(worksheet.selection.column).to.equal(1);
+        expect(worksheet.selection.range).to.eql([1, 0, 1, 2]);
+
+        mouse(worksheet.rows[2].element.children[0], 'mousedown');
+        mouse(document, 'mouseup');
+
+        expect(worksheet.selection.row).to.equal(2);
+        expect(worksheet.selection.column).to.equal(null);
+        expect(worksheet.selection.range).to.eql([0, 2, 2, 2]);
+    });
+});

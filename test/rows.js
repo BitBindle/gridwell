@@ -259,13 +259,13 @@ describe('Drag a row', () => {
 
         const rowNumber = worksheet.rows[0].element.children[0];
         mouse(rowNumber, 'mousedown');
-        expect(worksheet.dragging).to.not.equal(null);
+        expect(worksheet.pointer.dragging).to.not.equal(null);
         mouse(rowNumber, 'mouseup');
 
         window.removeEventListener('error', onerror);
 
         expect(errors).to.eql([]);
-        expect(worksheet.dragging).to.equal(null);
+        expect(worksheet.pointer.dragging).to.equal(null);
         expect(worksheet.getData()).to.eql([['a']]);
     });
 });

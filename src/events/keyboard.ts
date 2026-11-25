@@ -113,13 +113,13 @@ export const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
             } else if (e.which == 46 || e.which == 8) {
                 // Delete
                 if (libraryBase.jspreadsheet.current.options.editable != false) {
-                    if (libraryBase.jspreadsheet.current.selectedRow != null) {
+                    if (libraryBase.jspreadsheet.current.selection.row != null) {
                         if (libraryBase.jspreadsheet.current.options.allowDeleteRow != false) {
                             if (confirm(jSuites.translate('Are you sure to delete the selected rows?'))) {
                                 libraryBase.jspreadsheet.current.deleteRow();
                             }
                         }
-                    } else if (libraryBase.jspreadsheet.current.selectedHeader != null) {
+                    } else if (libraryBase.jspreadsheet.current.selection.column != null) {
                         if (libraryBase.jspreadsheet.current.options.allowDeleteColumn != false) {
                             if (confirm(jSuites.translate('Are you sure to delete the selected columns?'))) {
                                 libraryBase.jspreadsheet.current.deleteColumn();

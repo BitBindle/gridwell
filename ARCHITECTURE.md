@@ -29,7 +29,7 @@ src/
     Selection.ts      the selected range, the highlight, aria-selected and the roving tabindex
     Formulas.ts       the formula chain and the formula results
     ...
-  events/             the document event handlers, split by input (keyboard, mouse, touch, clipboard, context menu)
+  events/             the document event handlers, split by input (keyboard, mouse, touch, clipboard, context menu, focus)
   utils/              functions without state (cell names, CSV, HTML helpers)
 ```
 
@@ -41,8 +41,8 @@ src/
 -   **Methods are on the prototype.** They are not bound to each instance any more.
 -   **Imports form a tree.** A component imports the types of the others with `import type` and calls them through the
     worksheet at run time. CI fails on an import cycle.
--   **The document events route through the spreadsheet.** The handlers find the worksheet of the event target, instead of
-    reading one global.
+-   **The document events go to the active worksheet.** A press or the focus makes a worksheet the active one, and the
+    handlers act on it. A key on an element outside the spreadsheet does not reach the grid.
 
 ## Steps
 
@@ -77,11 +77,17 @@ what it changes, and lists its breaking changes in UPGRADING.md.
    the frozen columns are in the options, and the columns and rows are the DOM of the worksheet (`headers`, `cols`,
    `rows`, `records`), which `Worksheet` keeps. The state of a mouse drag (`resizing`, `dragging`, `selectedHeader`,
    `selectedRow`, `selectedCorner`, `cursor`) goes with the events in step 8.
-8. **Events.** `events.ts` splits by input under `events/`, and the handlers route through the spreadsheet.
+8. **Events.** `events.ts` splits by input under `events/`, and the active worksheet follows the focus.
    The split is done: `src/events/` has one module per input, and `updateFreezePosition`, which places the frozen
    columns, moved to `utils/freezePosition.ts`, so the modules that change columns no longer import the event handlers.
-   That removed two import cycles. The handlers still read the global active worksheet; routing them through the
-   spreadsheet is the second part of this step.
+   That removed two import cycles.
+   The second part keeps one active worksheet, `jspreadsheet.current`, and makes it follow the user. A drag goes on
+   while the mouse leaves the worksheet, and a key reaches the document from wherever the focus is, so a handler cannot
+   always find the worksheet from the event target; the active worksheet is what they share. Before, only a press set
+   it. Now the focus moving into a worksheet sets it too (`events/focus.ts`), and a key on an element outside the
+   spreadsheet stays out of the grid. The state of a mouse gesture moved into `components/Pointer.ts` (`resizing`,
+   `dragging`, `cursor`, `corner`), and the header or row number that a press selected into `Selection` (`column`,
+   `row`).
 9. **No import cycles.** The last cycles go, and `npm run lint` checks for new ones.
 10. **The public typings.** The fields that only the library uses leave `WorksheetInstance`; the typings describe the
     classes.
