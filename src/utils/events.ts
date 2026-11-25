@@ -1687,5 +1687,6 @@ export const destroyEvents = function (root: any) {
     root.removeEventListener('touchstart', touchStartControls);
     root.removeEventListener('touchend', touchEndControls);
     root.removeEventListener('touchcancel', touchEndControls);
+    root.removeEventListener('touchmove', touchEndControls);
     document.removeEventListener('keydown', keyDownControls);
 };
