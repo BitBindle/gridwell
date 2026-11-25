@@ -548,3 +548,41 @@ describe('Copy and paste without a selection', () => {
         expect(worksheet.getSelection()).to.deep.equal([1, 1, 2, 2]);
     });
 });
+
+describe('Cut', () => {
+    it('keeps the cells when oncopy cancels the cut', () => {
+        const execCommand = document.execCommand;
+        document.execCommand = () => {};
+
+        try {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [{ data: [['a', 'b']] }],
+                oncopy: () => false,
+            })[0];
+            worksheet.updateSelectionFromCoords(0, 0, 1, 0);
+
+            worksheet.copy(true);
+
+            expect(worksheet.getData()).to.deep.equal([['a', 'b']]);
+        } finally {
+            document.execCommand = execCommand;
+        }
+    });
+
+    it('clears the cells after a cut', () => {
+        const execCommand = document.execCommand;
+        document.execCommand = () => {};
+
+        try {
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: [['a', 'b']] }] })[0];
+            worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+
+            worksheet.copy(true);
+
+            expect(worksheet.getData()).to.deep.equal([['', 'b']]);
+            expect(worksheet.data).to.equal('a');
+        } finally {
+            document.execCommand = execCommand;
+        }
+    });
+});

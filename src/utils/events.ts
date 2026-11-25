@@ -1292,8 +1292,9 @@ export const cutControls = function (e?: TargetEvent<ClipboardEvent>) {
     if (libraryBase.jspreadsheet.current) {
         // Without a selection, there is nothing to cut
         if (!libraryBase.jspreadsheet.current.edition && libraryBase.jspreadsheet.current.selectedCell) {
-            copy.call(libraryBase.jspreadsheet.current, true, undefined, undefined, undefined, undefined, true);
-            if (libraryBase.jspreadsheet.current.options.editable != false) {
+            const copied = copy.call(libraryBase.jspreadsheet.current, true, undefined, undefined, undefined, undefined, true);
+            // oncopy can cancel the cut
+            if (copied !== false && libraryBase.jspreadsheet.current.options.editable != false) {
                 libraryBase.jspreadsheet.current.setValue(
                     libraryBase.jspreadsheet.current.highlighted.map(function (record) {
                         return record.element;

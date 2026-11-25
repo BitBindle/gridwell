@@ -692,7 +692,7 @@ declare namespace jspreadsheet {
         oncomments?: (instance: WorksheetInstance, newComments: Record<string, string | null | undefined>, oldComments: Record<string, string | null>) => void;
 
         /**
-         * Occurs when the contents of one or more cells are copied.
+         * Occurs when the contents of one or more cells are copied. Returning false cancels the copy or the cut, and text replaces the copied data.
          * @param instance - Instance of the worksheet where the change occurred.
          * @param selectedRange - Copied cell range.
          * @param copiedData - Data from copied cell range.
