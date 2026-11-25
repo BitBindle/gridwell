@@ -590,12 +590,12 @@ declare namespace jspreadsheet {
          * If it returns a truthy value, that value is persisted instead of the initial value.
          * @param spreadsheetInstance - Spreadsheet instance.
          * @param worksheetInstance - Instance of the worksheet to be saved.
-         * @param data - Changed data.
+         * @param data - The changed rows. The values of a row are by column name, or by column index when the column has no name.
          */
         onbeforesave?: (
             spreadsheetInstance: SpreadsheetInstance,
             worksheetInstance: WorksheetInstance,
-            data: { row: number; data: Record<number, CellValue> }[]
+            data: { row: number; data: Record<string, CellValue> }[]
         ) => any;
 
         /**
@@ -677,10 +677,10 @@ declare namespace jspreadsheet {
         /**
          * Occurs when a comment is changed.
          * @param instance - Instance of the worksheet where the change occurred.
-         * @param newComments - New comments.
-         * @param oldComments - Old comments.
+         * @param newComments - New comments, by cell name, as setComments got them. A falsy value removes the comment.
+         * @param oldComments - Old comments, by cell name.
          */
-        oncomments?: (instance: WorksheetInstance, newComments: Record<string, string | null>, oldComments: Record<string, string | null>) => void;
+        oncomments?: (instance: WorksheetInstance, newComments: Record<string, string | null | undefined>, oldComments: Record<string, string | null>) => void;
 
         /**
          * Occurs when the contents of one or more cells are copied.
@@ -752,7 +752,7 @@ declare namespace jspreadsheet {
          * @param td - Td tag of the cell whose editor was opened.
          * @param colIndex - Column index of the cell whose editor was opened.
          * @param rowIndex - Row index of the cell whose editor was opened.
-         * @param editorValue - Value that was in the editor.
+         * @param editorValue - Value that was in the editor. It is undefined when the value was not saved.
          * @param wasSaved - Whether the value which was in the editor was saved in the cell or not.
          */
         oneditionend?: (
@@ -760,7 +760,7 @@ declare namespace jspreadsheet {
             td: HTMLTableCellElement,
             colIndex: number,
             rowIndex: number,
-            editorValue: CellValue,
+            editorValue: CellValue | undefined,
             wasSaved: boolean
         ) => void;
 
@@ -857,7 +857,7 @@ declare namespace jspreadsheet {
         /**
          * Occurs after a paste action is performed in the javascript table.
          * @param instance - Instance of the worksheet where the change occurred.
-         * @param pastedInfo - Information that was pasted into the worksheet.
+         * @param pastedInfo - The pasted cells, one item for each cell.
          */
         onpaste?: (
             instance: WorksheetInstance,
@@ -865,7 +865,7 @@ declare namespace jspreadsheet {
                 x: number;
                 y: number;
                 value: CellValue;
-            }[][]
+            }[]
         ) => void;
 
         /**
@@ -927,6 +927,13 @@ declare namespace jspreadsheet {
          * @param newOrderValues - The new order of the rows.
          */
         onsort?: (instance: WorksheetInstance, colIndex: number, order: 0 | 1, newOrderValues: number[]) => void;
+
+        /**
+         * Occurs when the rows that a search or a filter shows have changed.
+         * @param instance - Instance of the worksheet.
+         * @param results - Indexes of the rows that are shown, or null when every row is shown.
+         */
+        onupdateresult?: (instance: WorksheetInstance, results: number[] | null) => void;
 
         /**
          * Occurs when a change is undone.

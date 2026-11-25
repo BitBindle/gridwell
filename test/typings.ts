@@ -86,3 +86,20 @@ assertType<Equals<jspreadsheet.DragColumnInfo['column'], number>>();
 assertType<Equals<jspreadsheet.DragRowInfo['row'], number>>();
 assertType<Equals<jspreadsheet.ResizeColumnInfo['column'], number>>();
 assertType<Equals<jspreadsheet.ResizeRowInfo['row'], number>>();
+
+type Handler<E extends keyof jspreadsheet.SpreadsheetOptions> = Parameters<Extract<jspreadsheet.SpreadsheetOptions[E], (...args: never[]) => unknown>>;
+
+// onpaste gets one item for each pasted cell
+assertType<Equals<Handler<'onpaste'>[1], { x: number; y: number; value: jspreadsheet.CellValue }[]>>();
+
+// oneditionend gets undefined as the value when the edit was not saved
+assertType<Equals<Handler<'oneditionend'>[4], jspreadsheet.CellValue | undefined>>();
+
+// oncomments gets the comments as setComments got them, where undefined removes a comment
+assertType<Equals<Handler<'oncomments'>[1], Record<string, string | null | undefined>>>();
+
+// onupdateresult gets the shown rows after a search or a filter
+assertType<Equals<Handler<'onupdateresult'>, [instance: jspreadsheet.WorksheetInstance, results: number[] | null]>>();
+
+// onbeforesave gets the values of a row by column name, or by index for a column without a name
+assertType<Equals<Handler<'onbeforesave'>[2], { row: number; data: Record<string, jspreadsheet.CellValue> }[]>>();
