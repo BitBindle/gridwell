@@ -92,4 +92,40 @@ describe('Editor', () => {
         expect(worksheet.edition).to.equal(null);
         expect(worksheet.getValueFromCoords(1, 0)).to.equal('typed');
     });
+    describe('closeEditor without an open editor', () => {
+        it('does nothing for a cell that is not edited', () => {
+            const events = [];
+            const worksheet = jspreadsheet(root, {
+                worksheets: [{ data: [['a', 'b']] }],
+                oneditionend: () => events.push('oneditionend'),
+            })[0];
+            const cell = worksheet.getCell('A1');
+
+            worksheet.closeEditor(cell, false);
+            worksheet.closeEditor(cell, true);
+
+            // No edition was opened
+            expect(worksheet.edition).to.equal(undefined);
+            expect(cell.textContent).to.equal('a');
+            expect(worksheet.getData()).to.deep.equal([['a', 'b']]);
+            expect(events).to.deep.equal([]);
+        });
+
+        it('keeps the editor of another cell open', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: [['a', 'b']] }] })[0];
+            const a1 = worksheet.getCell('A1');
+            const b1 = worksheet.getCell('B1');
+
+            worksheet.openEditor(a1);
+            worksheet.closeEditor(b1, true);
+
+            expect(worksheet.edition[0]).to.equal(a1);
+            expect(a1.classList.contains('editor')).to.equal(true);
+            expect(b1.textContent).to.equal('b');
+
+            a1.querySelector('input, textarea').value = 'typed';
+            worksheet.closeEditor(a1, true);
+            expect(worksheet.getData()).to.deep.equal([['typed', 'b']]);
+        });
+    });
 });

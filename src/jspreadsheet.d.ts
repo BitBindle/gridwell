@@ -1530,7 +1530,7 @@ declare namespace jspreadsheet {
         ads: HTMLDivElement;
 
         /**
-         * Close a cell editor.
+         * Close a cell editor. Does nothing when the cell is not the cell being edited.
          * @param cell - HTML td tag whose editor must be closed.
          * @param save - Whether or not to save editor content in cell.
          */

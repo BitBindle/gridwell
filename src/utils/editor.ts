@@ -334,6 +334,11 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
 export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save) {
     const obj = this;
 
+    // Only the cell that is being edited has an editor to close
+    if (!obj.edition || obj.edition[0] !== cell) {
+        return;
+    }
+
     const x = parseInt(cell.getAttribute('data-x'));
     const y = parseInt(cell.getAttribute('data-y'));
 
@@ -399,9 +404,9 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
             }
         }
 
-        // Ignore changes if the value is the same. A cell without an open editor throws above (issue #61).
+        // Ignore changes if the value is the same
         if (obj.options.data[y][x] == value) {
-            cell.innerHTML = obj.edition![1];
+            cell.innerHTML = obj.edition[1];
         } else {
             obj.setValue(cell, value);
         }
