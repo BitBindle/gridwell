@@ -17,7 +17,8 @@ import {
     showColumn,
 } from './columns.js';
 import { getData, getDataFromRange, getValue, getValueFromCoords, setData, setValue, setValueFromCoords } from './data.js';
-import { cutControls, scrollControls, wheelControls } from './events.js';
+import { cutControls } from '../events/clipboard.js';
+import { scrollControls, wheelControls } from '../events/scroll.js';
 import {
     getHighlighted,
     getRange,

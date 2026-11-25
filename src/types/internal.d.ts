@@ -65,6 +65,12 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
     /** The footer of the table, when the worksheet has footers. */
     tfoot?: HTMLTableSectionElement;
 
+    /**
+     * The scrollLeft of the content at the last scroll. A scroll places the frozen columns only when scrollLeft changed,
+     * not when the content scrolled up or down.
+     */
+    lastScrollLeft: number;
+
     /** True while the mouse drags the selection corner. */
     selectedCorner?: boolean;
 

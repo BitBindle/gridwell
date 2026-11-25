@@ -79,6 +79,27 @@ describe('Freeze columns', () => {
         expect(worksheet.selection.range.map(Number)).to.eql([0, 1, 0, 1]);
         expect(worksheet.content.scrollLeft).to.equal(40);
     });
+    it('places the frozen columns of each worksheet when two worksheets scroll to the same position', async () => {
+        const data = [];
+        for (let j = 0; j < 3; j++) {
+            data.push(['a', 'b', 'c', 'd']);
+        }
+        const options = { data, freezeColumns: 1, tableOverflow: true };
+        const worksheets = jspreadsheet(root, { worksheets: [options, { ...options }] });
+        await new Promise((resolve) => setTimeout(resolve));
+
+        for (const worksheet of worksheets) {
+            Object.defineProperty(worksheet.content, 'scrollLeft', { value: 0, writable: true });
+        }
+
+        worksheets[0].content.scrollLeft = 200;
+        worksheets[0].content.dispatchEvent(new window.Event('scroll'));
+        worksheets[1].content.scrollLeft = 200;
+        worksheets[1].content.dispatchEvent(new window.Event('scroll'));
+
+        expect(worksheets[0].records[1][0].element.classList.contains('jss_freezed')).to.equal(true);
+        expect(worksheets[1].records[1][0].element.classList.contains('jss_freezed')).to.equal(true);
+    });
 });
 
 describe('Freeze columns with a hidden index column', () => {

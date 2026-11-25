@@ -1,7 +1,7 @@
 import jSuites from 'jsuites';
 
 import libraryBase from './libraryBase.js';
-import { setEvents } from './events.js';
+import { setEvents } from '../events/index.js';
 import { fullscreen, getWorksheetActive } from './internal.js';
 import { hideToolbar, showToolbar, updateToolbar } from './toolbar.js';
 import { buildWorksheet, createWorksheetObj, getNextDefaultWorksheetName } from './worksheets.js';

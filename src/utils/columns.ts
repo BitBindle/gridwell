@@ -5,7 +5,7 @@ import { isColMerged, updateMergedColumns } from './merges.js';
 import { createCell, updateTableReferences } from './internal.js';
 import { conditionalSelectionUpdate, updateCornerPosition } from './selection.js';
 import { setFooter } from './footer.js';
-import { updateFreezePosition } from './events.js';
+import { updateFreezePosition } from './freezePosition.js';
 import { getColumnNameFromId, injectArray } from './internalHelpers.js';
 import { setHeaderRole, updateTabStop } from './accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
