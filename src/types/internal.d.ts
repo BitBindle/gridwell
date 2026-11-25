@@ -15,6 +15,7 @@ import type { Editor } from '../components/Editor';
 import type { Formulas } from '../components/Formulas';
 import type { History } from '../components/History';
 import type { Merges } from '../components/Merges';
+import type { Columns } from '../components/Columns';
 import type { Meta } from '../components/Meta';
 import type { Pointer } from '../components/Pointer';
 import type { Selection } from '../components/Selection';
@@ -78,6 +79,9 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
 
     /** The merged cells. */
     merges: Merges;
+
+    /** Inserts, moves, deletes, hides and shows the columns, and gets and sets their widths, titles and data. */
+    columns: Columns;
 
     /** The div that holds the link to the Jspreadsheet site, below the table. */
     ads: HTMLDivElement;

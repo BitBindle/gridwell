@@ -1,5 +1,4 @@
 import libraryBase from '../utils/libraryBase.js';
-import { updateFreezePosition } from '../utils/freezePosition.js';
 import type { Worksheet } from '../types/internal';
 
 export const wheelControls = function (this: Worksheet, e?: WheelEvent) {
@@ -37,7 +36,7 @@ export const scrollControls = function (this: Worksheet, e: Event) {
 
     if (obj.options.freezeColumns! > 0 && obj.content.scrollLeft != obj.lastScrollLeft) {
         obj.lastScrollLeft = obj.content.scrollLeft;
-        updateFreezePosition.call(obj);
+        obj.columns.updateFreezePosition();
     }
 
     // Close a floating editor. The text editor is inside the cell and scrolls with it.

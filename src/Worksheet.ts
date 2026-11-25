@@ -1,6 +1,7 @@
 import type jspreadsheet from './jspreadsheet';
 import { Cells } from './components/Cells.js';
 import { Clipboard } from './components/Clipboard.js';
+import { Columns } from './components/Columns.js';
 import { Comments } from './components/Comments.js';
 import { Editor } from './components/Editor.js';
 import { Formulas } from './components/Formulas.js';
@@ -48,6 +49,7 @@ export class Worksheet {
         this.comments = new Comments(this);
         this.meta = new Meta(this);
         this.merges = new Merges(this);
+        this.columns = new Columns(this);
         this.lastScrollLeft = 0;
     }
 }

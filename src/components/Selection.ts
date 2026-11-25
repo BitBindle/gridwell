@@ -1,5 +1,4 @@
 import dispatch from '../utils/dispatch.js';
-import { getFreezeWidth, getIndexWidth } from '../utils/freeze.js';
 import { getCellNameFromCoords } from '../utils/helpers.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import { updateToolbar } from '../utils/toolbar.js';
@@ -130,7 +129,7 @@ export class Selection {
             obj.corner.style.left = x + 'px';
 
             if (obj.options.freezeColumns) {
-                const width = getFreezeWidth.call(obj);
+                const width = obj.columns.getFreezeWidth();
                 // Only check if the last column is not part of the merged cells
                 if (lastX > obj.options.freezeColumns - 1 && x2 - x1 + w2 < width) {
                     obj.corner.style.display = 'none';
@@ -1308,11 +1307,11 @@ export class Selection {
         }
 
         // Freeze columns?
-        const freezed = getFreezeWidth.call(obj);
+        const freezed = obj.columns.getFreezeWidth();
 
         // The frozen columns stay at the left of the content only when scrollLeft is more than the width of the index column.
         // Then a cell whose left border is under the frozen columns goes to the right of the frozen columns.
-        const indexWidth = getIndexWidth.call(obj);
+        const indexWidth = obj.columns.getIndexWidth();
         const frozen = freezed > 0 && obj.content.scrollLeft > indexWidth;
         const left = x2 - x1 + obj.content.scrollLeft;
         const underFreezed = frozen && left < obj.content.scrollLeft + freezed;

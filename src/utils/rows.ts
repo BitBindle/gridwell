@@ -1,10 +1,8 @@
 import jSuites from 'jsuites';
-import { getNumberOfColumns } from './columns.js';
 import { createCell } from './render.js';
 import dispatch from './dispatch.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import { setRowRole } from './accessibility.js';
-import { updateFreezePosition } from './freezePosition.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
 
@@ -59,7 +57,7 @@ export const createRow = function (this: Worksheet, j: number, data: jspreadshee
     td.className = 'jss_row';
     row.element.appendChild(td);
 
-    const numberOfColumns = getNumberOfColumns.call(obj);
+    const numberOfColumns = obj.columns.count();
 
     // Data columns
     for (let i = 0; i < numberOfColumns; i++) {
@@ -673,7 +671,7 @@ export const showIndex: WorksheetMethod<'showIndex'> = function () {
 
     // The position of the frozen columns depends on the width of the index column
     if (obj.options.freezeColumns! > 0) {
-        updateFreezePosition.call(obj);
+        obj.columns.updateFreezePosition();
     }
 };
 
@@ -687,6 +685,6 @@ export const hideIndex: WorksheetMethod<'hideIndex'> = function () {
 
     // The position of the frozen columns depends on the width of the index column
     if (obj.options.freezeColumns! > 0) {
-        updateFreezePosition.call(obj);
+        obj.columns.updateFreezePosition();
     }
 };

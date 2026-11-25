@@ -217,6 +217,10 @@ that changes it.
     the cells after a drag or a double click of the corner (`copyData` before).
 26. **Columns.** `Columns` (`columns.ts`, the headers in `headers.ts`, and the frozen columns in `freeze.ts` and
     `freezePosition.ts`).
+    Done. `worksheet.columns` counts the columns (`count`), creates their headers (`createHeader`,
+    `createNestedHeader`), inserts, moves, deletes, shows and hides them (`insert`, `move`, `delete`, `show`, `hide`),
+    gets and sets their widths, titles and data (`getWidth`, `setWidth`, `getHeader`, `getHeaders`, `setHeader`,
+    `getData`, `setData`), and places the frozen columns (`getIndexWidth`, `getFreezeWidth`, `updateFreezePosition`).
 27. **Rows.** `Rows` (`rows.ts`).
 28. **The data.** `Data` (`data.ts`: getting and setting the data and the values).
 29. **History.** Applying a record to undo or redo it (`history.ts`) moves into `History`. It comes last because it calls

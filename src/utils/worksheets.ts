@@ -3,26 +3,11 @@ import jSuites from 'jsuites';
 import libraryBase from './libraryBase.js';
 
 import { parseCSV } from './helpers.js';
-import {
-    createCellHeader,
-    deleteColumn,
-    getColumnData,
-    getNumberOfColumns,
-    getWidth,
-    hideColumn,
-    insertColumn,
-    moveColumn,
-    setColumnData,
-    setWidth,
-    showColumn,
-} from './columns.js';
 import { getData, getDataFromRange, getValue, getValueFromCoords, setData, setValue, setValueFromCoords } from './data.js';
 import { cutControls } from '../events/clipboard.js';
 import { scrollControls, wheelControls } from '../events/scroll.js';
 import { deleteRow, getHeight, getRowData, hideRow, insertRow, moveRow, setHeight, setRowData, showRow } from './rows.js';
-import { getHeader, getHeaders, setHeader } from './headers.js';
 import { download } from './download.js';
-import { createNestedHeader } from './headers.js';
 import { hideIndex, showIndex } from './rows.js';
 import { getWorksheetActive } from './activeWorksheet.js';
 import { getWorksheetConfig, setConfig } from './config.js';
@@ -122,7 +107,7 @@ const createHead = function (this: Worksheet) {
     // Nested
     if (obj.options.nestedHeaders && obj.options.nestedHeaders.length > 0 && obj.options.nestedHeaders[0] && obj.options.nestedHeaders[0][0]) {
         for (let j = 0; j < obj.options.nestedHeaders.length; j++) {
-            obj.thead.appendChild(createNestedHeader.call(obj, obj.options.nestedHeaders[j]));
+            obj.thead.appendChild(obj.columns.createNestedHeader(obj.options.nestedHeaders[j]));
         }
     }
 
@@ -132,11 +117,11 @@ const createHead = function (this: Worksheet) {
     tempCol.classList.add('jss_selectall');
     obj.headerContainer.appendChild(tempCol);
 
-    const numberOfColumns = getNumberOfColumns.call(obj);
+    const numberOfColumns = obj.columns.count();
 
     for (let i = 0; i < numberOfColumns; i++) {
         // Create header
-        createCellHeader.call(obj, i);
+        obj.columns.createHeader(i);
         // Append cell to the container
         obj.headerContainer.appendChild(obj.headers[i]);
         obj.colgroupContainer.appendChild(obj.cols[i].colElement);
@@ -664,11 +649,16 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
     ['getValueFromCoords', getValueFromCoords],
     ['setValue', setValue],
     ['setValueFromCoords', setValueFromCoords],
-    ['getWidth', getWidth],
+    [
+        'getWidth',
+        function (this: Worksheet, column?: number) {
+            return this.columns.getWidth(column);
+        },
+    ],
     [
         'setWidth',
         function (this: Worksheet, column: number | number[], width: number | number[]) {
-            return setWidth.call(this, column, width);
+            return this.columns.setWidth(column, width);
         },
     ],
     ['insertRow', insertRow],
@@ -726,9 +716,24 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.view.resetSearch();
         },
     ],
-    ['getHeader', getHeader],
-    ['getHeaders', getHeaders],
-    ['setHeader', setHeader],
+    [
+        'getHeader',
+        function (this: Worksheet, column: number) {
+            return this.columns.getHeader(column);
+        },
+    ],
+    [
+        'getHeaders',
+        function (this: Worksheet, asArray?: boolean) {
+            return this.columns.getHeaders(asArray);
+        },
+    ],
+    [
+        'setHeader',
+        function (this: Worksheet, column: number, newValue?: string) {
+            return this.columns.setHeader(column, newValue);
+        },
+    ],
     [
         'getStyle',
         function (this: Worksheet, cell?: string | number[], key?: string) {
@@ -754,11 +759,42 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.styles.reset(o, ignoreHistoryAndEvents);
         },
     ],
-    ['insertColumn', insertColumn],
-    ['moveColumn', moveColumn],
-    ['deleteColumn', deleteColumn],
-    ['getColumnData', getColumnData],
-    ['setColumnData', setColumnData],
+    [
+        'insertColumn',
+        function (
+            this: Worksheet,
+            mixed?: number | jspreadsheet.CellValue[],
+            columnNumber?: number,
+            insertBefore?: boolean | number,
+            properties?: jspreadsheet.Column[]
+        ) {
+            return this.columns.insert(mixed, columnNumber, insertBefore, properties);
+        },
+    ],
+    [
+        'moveColumn',
+        function (this: Worksheet, o: number, d: number) {
+            return this.columns.move(o, d);
+        },
+    ],
+    [
+        'deleteColumn',
+        function (this: Worksheet, columnNumber?: number, numOfColumns?: number) {
+            return this.columns.delete(columnNumber, numOfColumns);
+        },
+    ],
+    [
+        'getColumnData',
+        function (this: Worksheet, columnNumber: number, processed?: boolean) {
+            return this.columns.getData(columnNumber, processed);
+        },
+    ],
+    [
+        'setColumnData',
+        function (this: Worksheet, colNumber: number, data: (jspreadsheet.CellValue | null)[], force?: boolean) {
+            return this.columns.setData(colNumber, data, force);
+        },
+    ],
     [
         'whichPage',
         function (this: Worksheet, row: number) {
@@ -824,8 +860,18 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.meta.set(o, k, v);
         },
     ],
-    ['showColumn', showColumn],
-    ['hideColumn', hideColumn],
+    [
+        'showColumn',
+        function (this: Worksheet, colNumber: number | number[]) {
+            return this.columns.show(colNumber);
+        },
+    ],
+    [
+        'hideColumn',
+        function (this: Worksheet, colNumber: number | number[]) {
+            return this.columns.hide(colNumber);
+        },
+    ],
     ['showIndex', showIndex],
     ['hideIndex', hideIndex],
     ['getWorksheetActive', getWorksheetActive],
