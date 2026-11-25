@@ -5,7 +5,8 @@ import dispatch from './dispatch.js';
 import { refreshSelection, updateCornerPosition } from './selection.js';
 import { getColumnName } from './helpers.js';
 import { updateMeta } from './meta.js';
-import { getFreezeWidth } from './freeze.js';
+import { getFreezeWidth, getIndexWidth } from './freeze.js';
+import { updateFreezePosition } from './events.js';
 import { updatePagination } from './pagination.js';
 import { setFooter } from './footer.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
@@ -1074,9 +1075,21 @@ export const updateScroll = function (direction) {
     // Freeze columns?
     const freezed = getFreezeWidth.call(obj);
 
+    // The frozen columns stay at the left of the content only when scrollLeft is more than the width of the index column.
+    // Then a cell whose left border is under the frozen columns goes to the right of the frozen columns.
+    const indexWidth = getIndexWidth.call(obj);
+    const frozen = freezed > 0 && obj.content.scrollLeft > indexWidth;
+    const left = x2 - x1 + obj.content.scrollLeft;
+    const underFreezed = frozen && left < obj.content.scrollLeft + freezed;
+
     // Left position check - TODO: change that to the bottom border of the element
-    if (x > obj.content.scrollLeft + freezed && x < obj.content.scrollLeft + w1) {
+    if (
+        (frozen && obj.selectedCell[2] < obj.options.freezeColumns) ||
+        (!underFreezed && x > obj.content.scrollLeft + freezed && x < obj.content.scrollLeft + w1)
+    ) {
         // In the viewport
+    } else if (underFreezed) {
+        obj.content.scrollLeft = left - freezed - 1 < indexWidth ? 0 : left - freezed - 1;
     } else {
         // Out of viewport
         if (x < obj.content.scrollLeft + 30) {
@@ -1226,6 +1239,11 @@ export const showIndex = function () {
     const obj = this;
 
     obj.table.classList.remove('jss_hidden_index');
+
+    // The position of the frozen columns depends on the width of the index column
+    if (obj.options.freezeColumns > 0) {
+        updateFreezePosition.call(obj);
+    }
 };
 
 /**
@@ -1235,6 +1253,11 @@ export const hideIndex = function () {
     const obj = this;
 
     obj.table.classList.add('jss_hidden_index');
+
+    // The position of the frozen columns depends on the width of the index column
+    if (obj.options.freezeColumns > 0) {
+        updateFreezePosition.call(obj);
+    }
 };
 
 /**

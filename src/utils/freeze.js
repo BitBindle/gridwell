@@ -1,3 +1,8 @@
+// Get the width of the index column. The frozen columns stay at the left of the content when scrollLeft is more than this width.
+export const getIndexWidth = function () {
+    return this.table.classList.contains('jss_hidden_index') ? 0 : 50;
+};
+
 // Get width of all freezed cells together
 export const getFreezeWidth = function () {
     const obj = this;

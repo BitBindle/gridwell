@@ -12,6 +12,7 @@ import { setWidth } from './columns.js';
 import { moveRow, setHeight } from './rows.js';
 import version from './version.js';
 import { getCellNameFromCoords } from './helpers.js';
+import { getIndexWidth } from './freeze.js';
 
 const getElement = function (element) {
     let jssSection = 0;
@@ -1549,13 +1550,16 @@ export const wheelControls = function (e) {
 
 let scrollLeft = 0;
 
-const updateFreezePosition = function () {
+export const updateFreezePosition = function () {
     const obj = this;
 
-    scrollLeft = obj.content.scrollLeft;
+    const scrollLeft = obj.content.scrollLeft;
+    const indexWidth = getIndexWidth.call(obj);
+    // The worksheet can have fewer columns than freezeColumns, for example after deleteColumn
+    const freezeColumns = Math.min(obj.options.freezeColumns, obj.headers.length);
     let width = 0;
-    if (scrollLeft > 50) {
-        for (let i = 0; i < obj.options.freezeColumns; i++) {
+    if (scrollLeft > indexWidth) {
+        for (let i = 0; i < freezeColumns; i++) {
             if (i > 0) {
                 // Must check if the previous column is hidden or not to determin whether the width shoule be added or not!
                 if (!obj.options.columns || !obj.options.columns[i - 1] || obj.options.columns[i - 1].type !== 'hidden') {
@@ -1573,14 +1577,14 @@ const updateFreezePosition = function () {
             obj.headers[i].style.left = width + 'px';
             for (let j = 0; j < obj.rows.length; j++) {
                 if (obj.rows[j] && obj.records[j][i]) {
-                    const shifted = scrollLeft + (i > 0 ? obj.records[j][i - 1].element.style.width : 0) - 51 + 'px';
+                    const shifted = scrollLeft + (i > 0 ? obj.records[j][i - 1].element.style.width : 0) - indexWidth - 1 + 'px';
                     obj.records[j][i].element.classList.add('jss_freezed');
                     obj.records[j][i].element.style.left = shifted;
                 }
             }
         }
     } else {
-        for (let i = 0; i < obj.options.freezeColumns; i++) {
+        for (let i = 0; i < freezeColumns; i++) {
             obj.headers[i].classList.remove('jss_freezed');
             obj.headers[i].style.left = '';
             for (let j = 0; j < obj.rows.length; j++) {
@@ -1602,6 +1606,7 @@ export const scrollControls = function (e) {
     wheelControls.call(obj);
 
     if (obj.options.freezeColumns > 0 && obj.content.scrollLeft != scrollLeft) {
+        scrollLeft = obj.content.scrollLeft;
         updateFreezePosition.call(obj);
     }
 
