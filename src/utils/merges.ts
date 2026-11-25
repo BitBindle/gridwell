@@ -214,8 +214,9 @@ export const setMerge = function (this: Worksheet, cellName: string, colspan: an
     } else if ((!colspan || colspan < 2) && (!rowspan || rowspan < 2)) {
         test = 'Invalid merged properties';
     } else {
-        for (let j = cell[1]; j < cell[1] + rowspan; j++) {
-            for (let i = cell[0]; i < cell[0] + colspan; i++) {
+        // A missing span is one cell
+        for (let j = cell[1]; j < cell[1] + (rowspan || 1); j++) {
+            for (let i = cell[0]; i < cell[0] + (colspan || 1); i++) {
                 if (obj.records[j][i].element.getAttribute('data-merged')) {
                     test = 'There is a conflict with another merged cell';
                 }
