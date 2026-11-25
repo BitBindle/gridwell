@@ -335,20 +335,20 @@ export const updateSelectionFromCoords = function (this: Worksheet, x1: number, 
             obj.cols[i].colElement.style &&
             obj.cols[i].colElement.style.display != 'none'
         ) {
-            // Top border
-            if (obj.records[borderTop] && obj.records[borderTop][i]) {
-                obj.records[borderTop][i].element.classList.add('highlight-top');
+            // Top border. The borders are null when each row of the range is hidden.
+            if (obj.records[borderTop!] && obj.records[borderTop!][i]) {
+                obj.records[borderTop!][i].element.classList.add('highlight-top');
             }
             // Bottom border
-            if (obj.records[borderBottom] && obj.records[borderBottom][i]) {
-                obj.records[borderBottom][i].element.classList.add('highlight-bottom');
+            if (obj.records[borderBottom!] && obj.records[borderBottom!][i]) {
+                obj.records[borderBottom!][i].element.classList.add('highlight-bottom');
             }
             // Add selected from headers
             obj.headers[i].classList.add('selected');
         }
     }
 
-    for (let j = borderTop; j <= borderBottom; j++) {
+    for (let j = borderTop!; j <= borderBottom!; j++) {
         if (obj.rows[j] && obj.rows[j].element.style.display != 'none') {
             // Left border
             obj.records[j][borderLeft].element.classList.add('highlight-left');
@@ -359,7 +359,7 @@ export const updateSelectionFromCoords = function (this: Worksheet, x1: number, 
         }
     }
 
-    obj.selectedContainer = [borderLeft, borderTop, borderRight, borderBottom];
+    obj.selectedContainer = [borderLeft, borderTop!, borderRight, borderBottom!];
 
     // The selected cell is the tab stop of the grid
     updateActiveCell.call(obj, x1, y1, origin);
@@ -448,8 +448,8 @@ export const copyData = function (this: Worksheet, o: any, d: any) {
     // Get data from all selected cells
     const data = obj.getData(true, false);
 
-    // Selected cells
-    const h = obj.selectedContainer;
+    // Selected cells. The corner is only there when cells are selected.
+    const h = obj.selectedContainer!;
 
     // Cells
     const x1 = parseInt(o.getAttribute('data-x'));
@@ -680,7 +680,7 @@ export const selectAll: WorksheetMethod<'selectAll'> = function () {
     const obj = this;
 
     if (!obj.selectedCell) {
-        obj.selectedCell = [] as any;
+        obj.selectedCell = [] as unknown as [number, number, number, number];
     }
 
     obj.selectedCell[0] = 0;

@@ -183,9 +183,9 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
         // History
         const historyHeaders = [];
         const historyColgroup = [];
-        const historyRecords = [];
-        const historyData = [];
-        const historyFooters = [];
+        const historyRecords: { element: HTMLTableCellElement; x: number; y: number }[][] = [];
+        const historyData: any[][] = [];
+        const historyFooters: string[][] = [];
 
         // Add new headers
         for (let col = columnIndex; col < numOfColumns + columnIndex; col++) {
@@ -465,8 +465,8 @@ export const deleteColumn: WorksheetMethod<'deleteColumn'> = function (columnNum
                 for (let col = columnNumber; col < columnNumber + numOfColumns; col++) {
                     obj.cols[col].colElement.className = '';
                     obj.headers[col].className = '';
-                    obj.cols[col].colElement.parentNode.removeChild(obj.cols[col].colElement);
-                    obj.headers[col].parentNode.removeChild(obj.headers[col]);
+                    obj.cols[col].colElement.parentNode!.removeChild(obj.cols[col].colElement);
+                    obj.headers[col].parentNode!.removeChild(obj.headers[col]);
                 }
 
                 const historyHeaders = obj.headers.splice(columnNumber, numOfColumns);
@@ -478,7 +478,7 @@ export const deleteColumn: WorksheetMethod<'deleteColumn'> = function (columnNum
                 for (let row = 0; row < obj.options.data.length; row++) {
                     for (let col = columnNumber; col < columnNumber + numOfColumns; col++) {
                         obj.records[row][col].element.className = '';
-                        obj.records[row][col].element.parentNode.removeChild(obj.records[row][col].element);
+                        obj.records[row][col].element.parentNode!.removeChild(obj.records[row][col].element);
                     }
                 }
 
@@ -668,7 +668,7 @@ export const showColumn: WorksheetMethod<'showColumn'> = function (colNumber) {
     }
 
     // The line of the frozen pane moves when a frozen column is shown or hidden
-    if (colNumber.some((columnIndex) => columnIndex < obj.options.freezeColumns)) {
+    if (colNumber.some((columnIndex) => columnIndex < obj.options.freezeColumns!)) {
         updateFreezePosition.call(obj);
     }
 
@@ -706,7 +706,7 @@ export const hideColumn: WorksheetMethod<'hideColumn'> = function (colNumber) {
     }
 
     // The line of the frozen pane moves when a frozen column is shown or hidden
-    if (colNumber.some((columnIndex) => columnIndex < obj.options.freezeColumns)) {
+    if (colNumber.some((columnIndex) => columnIndex < obj.options.freezeColumns!)) {
         updateFreezePosition.call(obj);
     }
 
@@ -745,7 +745,7 @@ export const setColumnData: WorksheetMethod<'setColumnData'> = function (colNumb
         const columnName = getColumnNameFromId([colNumber, j]);
         // Set value
         if (data[j] != null) {
-            obj.setValue(columnName, data[j], force);
+            obj.setValue(columnName, data[j]!, force);
         }
     }
 };
