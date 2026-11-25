@@ -1,7 +1,7 @@
 import jSuites from 'jsuites';
 import type jspreadsheet from '../jspreadsheet';
-import { Worksheet } from '../Worksheet.js';
-import type { Spreadsheet, Dispatch, EventName } from '../types/internal';
+import { Spreadsheet } from '../Spreadsheet.js';
+import type { Worksheet, Dispatch, EventName } from '../types/internal';
 
 /** The rows that persistence posts to the server, the data of onbeforesave */
 type SaveData = Parameters<NonNullable<jspreadsheet.SpreadsheetOptions['onbeforesave']>>[2];
@@ -80,7 +80,7 @@ const dispatch = function (this: Worksheet | Spreadsheet, event: EventName, ...a
     const obj = this;
     let ret: unknown = null;
 
-    const spreadsheet = obj instanceof Worksheet ? obj.parent : obj;
+    const spreadsheet = obj instanceof Spreadsheet ? obj : obj.parent;
 
     // Dispatch events
     if (!spreadsheet.ignoreEvents) {
