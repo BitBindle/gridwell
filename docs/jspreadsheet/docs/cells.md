@@ -28,6 +28,8 @@ This section outlines methods to facilitate interaction with cells and their att
 
 The following example is a car loan calculation spreadsheet showcasing styles, merged cells, and row properties.
 
+The button has the class `jss_object`. A press on it keeps the selection of the grid. When no editor is open, its keys and a paste on it do not go to the grid.
+
 ```html
 <html>
 <script src="https://bossanova.uk/jspreadsheet/v5/jspreadsheet.js"></script>

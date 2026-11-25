@@ -796,6 +796,11 @@ const doubleClickControls = function (e) {
 };
 
 const pasteControls = function (e) {
+    // A paste on a control with the class jss_object outside the worksheet goes to that control
+    if (e && e.target && typeof e.target.closest === 'function' && !getElement(e.target)[0] && e.target.closest('.jss_object')) {
+        return;
+    }
+
     if (libraryBase.jspreadsheet.current && libraryBase.jspreadsheet.current.selectedCell) {
         if (!libraryBase.jspreadsheet.current.edition) {
             if (libraryBase.jspreadsheet.current.options.editable != false) {
@@ -1295,6 +1300,15 @@ const keyDownControls = function (e) {
     }
 
     if (libraryBase.jspreadsheet.current) {
+        // Keys on a control with the class jss_object outside the worksheet, for example a button next to the grid, also in
+        // an open shadow root, do not go to the grid. An editor can have a jss_object control, so this applies only when no
+        // editor is open.
+        if (!libraryBase.jspreadsheet.current.edition) {
+            if (keyTarget && typeof keyTarget.closest === 'function' && !getElement(keyTarget)[0] && keyTarget.closest('.jss_object')) {
+                return;
+            }
+        }
+
         if (libraryBase.jspreadsheet.current.edition) {
             const current = libraryBase.jspreadsheet.current;
             const column = current.options.columns && current.options.columns[getCellColumnIndex.call(current, current.edition[2], current.edition[3])];
