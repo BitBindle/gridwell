@@ -231,6 +231,9 @@ that changes it.
     of a cell (`getValue`, `getValueFromCoords`, `setValue`, `setValueFromCoords`). The data stays in `options.data`.
 29. **History.** Applying a record to undo or redo it (`history.ts`) moves into `History`. It comes last because it calls
     every other feature.
+    Done. `worksheet.history.undo` and `worksheet.history.redo` apply a record, with the private `processRow` and
+    `processColumn` for the records that insert or delete rows and columns. `History` gets its worksheet in its
+    constructor, as the other components do.
 30. **The toolbar.** `toolbar.ts` becomes the class `Toolbar` of the spreadsheet, as `Tabs` did.
 
 ## Rules for each step

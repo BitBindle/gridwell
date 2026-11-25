@@ -39,7 +39,7 @@ export class Worksheet {
             // buildWorksheet adds jssWorksheet
             this.element = element as Worksheet['element'];
         }
-        this.history = new History();
+        this.history = new History(this);
         this.clipboard = new Clipboard(this);
         this.editor = new Editor(this);
         this.selection = new Selection(this);
