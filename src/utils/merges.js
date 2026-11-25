@@ -1,7 +1,7 @@
 import jSuites from 'jsuites';
 
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
-import { updateCell } from './internal.js';
+import { renderCell, updateCell } from './internal.js';
 import { setHistory } from './history.js';
 import dispatch from './dispatch.js';
 import { updateSelection } from './selection.js';
@@ -78,6 +78,66 @@ export const isRowMerged = function (y, insertBefore) {
     }
 
     return rows;
+};
+
+/**
+ * Update the first cell of a merged range for the columns that are hidden.
+ * The record of each cell of a merged range points to the element of the first cell.
+ * So the first cell is hidden only when each column of the range is hidden,
+ * and its colspan is the number of columns of the range that are not hidden.
+ */
+const updateMergedCell = function (cellName) {
+    const obj = this;
+
+    const cell = getIdFromColumnName(cellName, true);
+    const colspan = obj.options.mergeCells[cellName][0];
+
+    let visible = 0;
+    for (let x = cell[0]; x < cell[0] + colspan; x++) {
+        if (obj.headers[x].style.display != 'none') {
+            visible++;
+        }
+    }
+
+    const element = obj.records[cell[1]][cell[0]].element;
+    if (visible == 0) {
+        element.style.display = 'none';
+    } else {
+        element.style.display = '';
+        if (colspan > 1) {
+            element.setAttribute('colspan', visible);
+        }
+    }
+
+    // A first cell in a column with the type hidden shows the range with the options of another column
+    if (obj.options.columns && obj.options.columns[cell[0]] && obj.options.columns[cell[0]].type == 'hidden') {
+        renderCell.call(obj, cell[0], cell[1]);
+    }
+};
+
+/**
+ * Update the first cell of each merged range that covers one of the columns.
+ */
+export const updateMergedColumns = function (columns) {
+    const obj = this;
+
+    if (!obj.options.mergeCells) {
+        return;
+    }
+
+    const keys = Object.keys(obj.options.mergeCells);
+    for (let i = 0; i < keys.length; i++) {
+        const cell = getIdFromColumnName(keys[i], true);
+        const colspan = obj.options.mergeCells[keys[i]][0];
+
+        for (let j = 0; j < columns.length; j++) {
+            const x = parseInt(columns[j]);
+            if (x >= cell[0] && x < cell[0] + colspan) {
+                updateMergedCell.call(obj, keys[i]);
+                break;
+            }
+        }
+    }
 };
 
 /**
@@ -200,6 +260,8 @@ export const setMerge = function (cellName, colspan, rowspan, ignoreHistoryAndEv
                 }
             }
         }
+        // A column of the range can be hidden
+        updateMergedCell.call(obj, cellName);
         // In the initialization is not necessary keep the history
         updateSelection.call(obj, obj.records[cell[1]][cell[0]].element);
 
@@ -230,6 +292,8 @@ export const removeMerge = function (cellName, data, keepOptions) {
         obj.records[cell[1]][cell[0]].element.removeAttribute('colspan');
         obj.records[cell[1]][cell[0]].element.removeAttribute('rowspan');
         obj.records[cell[1]][cell[0]].element.removeAttribute('data-merged');
+        // Each cell is visible when its column is visible
+        obj.records[cell[1]][cell[0]].element.style.display = obj.headers[cell[0]].style.display == 'none' ? 'none' : '';
         const info = obj.options.mergeCells[cellName];
 
         let index = 0;
@@ -240,7 +304,7 @@ export const removeMerge = function (cellName, data, keepOptions) {
             for (i = 0; i < info[0]; i++) {
                 if (j > 0 || i > 0) {
                     obj.records[cell[1] + j][cell[0] + i].element = info[2][index];
-                    obj.records[cell[1] + j][cell[0] + i].element.style.display = '';
+                    obj.records[cell[1] + j][cell[0] + i].element.style.display = obj.headers[cell[0] + i].style.display == 'none' ? 'none' : '';
                     // Recover data
                     if (data && data[index]) {
                         updateCell.call(obj, cell[0] + i, cell[1] + j, data[index]);
@@ -255,6 +319,11 @@ export const removeMerge = function (cellName, data, keepOptions) {
 
         if (!keepOptions) {
             delete obj.options.mergeCells[cellName];
+        }
+
+        // A first cell in a column with the type hidden uses the options of its own column again
+        if (obj.options.columns && obj.options.columns[cell[0]] && obj.options.columns[cell[0]].type == 'hidden') {
+            renderCell.call(obj, cell[0], cell[1]);
         }
 
         dispatch.call(obj, 'onunmerge', obj, cellName, beforeMerges);

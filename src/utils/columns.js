@@ -2,7 +2,7 @@ import jSuites from 'jsuites';
 import dispatch from './dispatch.js';
 import { getColumnName } from './helpers.js';
 import { setHistory } from './history.js';
-import { isColMerged } from './merges.js';
+import { isColMerged, updateMergedColumns } from './merges.js';
 import { createCell, updateTableReferences } from './internal.js';
 import { conditionalSelectionUpdate, updateCornerPosition } from './selection.js';
 import { setFooter } from './footer.js';
@@ -657,6 +657,8 @@ export const showColumn = function (colNumber) {
         }
     }
 
+    updateMergedColumns.call(obj, colNumber);
+
     // Update footers
     if (obj.options.footers) {
         setFooter.call(obj);
@@ -687,6 +689,8 @@ export const hideColumn = function (colNumber) {
             obj.records[j][columnIndex].element.style.display = 'none';
         }
     }
+
+    updateMergedColumns.call(obj, colNumber);
 
     // Update footers
     if (obj.options.footers) {
