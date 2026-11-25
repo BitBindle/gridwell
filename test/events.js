@@ -253,3 +253,37 @@ describe('Dispatch events', () => {
         expect(worksheet.getData()).to.eql([['a']]);
     });
 });
+
+describe('Destroy', () => {
+    it('removes every event handler that the spreadsheet added to its root', async () => {
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+
+        const added = [];
+        const removed = [];
+        const addEventListener = container.addEventListener;
+        const removeEventListener = container.removeEventListener;
+        container.addEventListener = function (type, handler, options) {
+            added.push([type, handler]);
+            return addEventListener.call(this, type, handler, options);
+        };
+        container.removeEventListener = function (type, handler, options) {
+            removed.push([type, handler]);
+            return removeEventListener.call(this, type, handler, options);
+        };
+
+        await load({ root: container, worksheets: [{ minDimensions: [3, 3] }] });
+        removed.length = 0;
+
+        jspreadsheet.destroy(root, true);
+        container.remove();
+
+        expect(added.length).to.be.above(0);
+        for (const [type, handler] of added) {
+            expect(
+                removed.some(([t, h]) => t === type && h === handler),
+                type
+            ).to.equal(true);
+        }
+    });
+});

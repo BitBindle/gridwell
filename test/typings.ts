@@ -40,3 +40,37 @@ const versionInfo = library.version();
 assertType<Equals<typeof versionInfo.version, string>>();
 // @ts-expect-error The version information has no type property
 const versionType = versionInfo.type;
+
+// setComments removes the comment of a cell when the comment is a falsy value, null included
+worksheet.setComments('A1', null);
+worksheet.setComments({ A1: 'Comment', B1: null, C1: undefined, D1: '' });
+
+declare const shadowRoot: ShadowRoot;
+
+// root, plugins and style are spreadsheet options. A number in a worksheet style is the index of a spreadsheet style.
+const pluginFactory = function (spreadsheetInstance: jspreadsheet.SpreadsheetInstance, options: object, spreadsheetConfig: jspreadsheet.SpreadsheetOptions) {
+    return {
+        getConfig: () => spreadsheetConfig,
+        onevent: () => {},
+        persistence: () => {},
+        contextMenu: (instance: jspreadsheet.WorksheetInstance, x: number | null, y: number | null, e: PointerEvent, items: jspreadsheet.ContextMenuItem[]) =>
+            items,
+    } as unknown as jspreadsheet.Plugin;
+};
+library(document.createElement('div'), {
+    root: shadowRoot,
+    plugins: { pluginFactory },
+    style: ['background-color: orange;'],
+    worksheets: [{ style: { A1: 0, B1: 'font-weight: bold;' } }],
+});
+
+// A context menu line has no title
+const contextMenuItems: jspreadsheet.ContextMenuItem[] = [{ title: 'Copy', onclick: () => {} }, { type: 'line' }];
+
+// insertBefore is read as true or false, so both a boolean and a number work
+worksheet.insertRow(1, 0, true);
+worksheet.insertColumn(1, 0, 1);
+
+// A worksheet name that the namespace does not have gives undefined
+const worksheetByName = library.getWorksheetInstanceByName('Countries', 'namespace');
+assertType<Equals<typeof worksheetByName, jspreadsheet.WorksheetInstance | Record<string, jspreadsheet.WorksheetInstance> | undefined>>();

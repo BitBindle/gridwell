@@ -11,7 +11,8 @@ import { updatePagination } from './pagination.js';
 import { setFooter } from './footer.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { setCellLabel, updateGridSize, updateRowIndex, updateTabStop } from './accessibility.js';
-import type { MergeInfo, Spreadsheet, Worksheet, WorksheetMethod } from '../types/internal';
+import type { HistoryCellChange, MergeInfo, Spreadsheet, Worksheet, WorksheetMethod } from '../types/internal';
+import type { CalendarFunctions, MaskFunctions, MaskOptions } from '../types/jsuites';
 
 export const updateTable = function (this: Worksheet) {
     const obj = this;
@@ -382,7 +383,7 @@ export const renderCell = function (this: Worksheet, x: number, y: number) {
     }
 };
 
-export const parseValue = function (this: Worksheet, i: number, j: number, value: any, cell?: any) {
+export const parseValue = function (this: Worksheet, i: number, j: number, value: any, cell?: HTMLElement) {
     const obj = this;
 
     if (('' + value).substr(0, 1) == '=' && obj.parent.config.parseFormulas != false) {
@@ -399,7 +400,7 @@ export const parseValue = function (this: Worksheet, i: number, j: number, value
                 value = Number(value);
             }
             // Process the decimals to match the mask
-            let masked = (jSuites.mask as any).render(value, opt, true);
+            let masked = (jSuites.mask as unknown as MaskFunctions).render(value, opt, true);
             // Negative indication
             if (cell) {
                 if (opt.mask) {
@@ -498,7 +499,7 @@ const stripScript = function (a: any) {
     return b.innerHTML;
 };
 
-export const createCell = function (this: Worksheet, i: number, j: number, value: any, silent?: any) {
+export const createCell = function (this: Worksheet, i: number, j: number, value: any, silent?: boolean) {
     const obj = this;
 
     // Column options
@@ -563,13 +564,20 @@ export const createCell = function (this: Worksheet, i: number, j: number, value
             // Try formatted date
             let formatted = null;
             if (!validDate(value)) {
-                const tmp = (jSuites.calendar as any).extractDateFromString(value, (column.options && column.options.format) || 'YYYY-MM-DD');
+                const tmp = (jSuites.calendar as unknown as CalendarFunctions).extractDateFromString(
+                    value,
+                    (column.options && column.options.format) || 'YYYY-MM-DD'
+                );
                 if (tmp) {
                     formatted = tmp;
                 }
             }
             // Create calendar cell
-            td.textContent = (jSuites.calendar as any).getDateString(formatted ? formatted : value, column.options && column.options.format);
+            // textContent converts a number of hours to text
+            td.textContent = (jSuites.calendar as unknown as CalendarFunctions).getDateString(
+                formatted ? formatted : value,
+                column.options && column.options.format
+            ) as string;
         } else if (column && column.type == 'dropdown') {
             // Create dropdown cell
             td.classList.add('jss_dropdown');
@@ -701,7 +709,9 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
         };
 
         // A custom editor can have setValue, which is not in the public typings
-        const editor: any = column && typeof column.type === 'object' ? column.type : null;
+        const editor = (column && typeof column.type === 'object' ? column.type : null) as
+            | (jspreadsheet.CustomEditor & { setValue?: (cell: HTMLTableCellElement, value: jspreadsheet.CellValue) => void })
+            | null;
         if (editor) {
             // Update data and cell
             obj.options.data[y][x] = value;
@@ -730,17 +740,21 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
                 // Try formatted date
                 let formatted = null;
                 if (!validDate(value)) {
-                    const tmp = (jSuites.calendar as any).extractDateFromString(value, (column.options && column.options.format) || 'YYYY-MM-DD');
+                    const tmp = (jSuites.calendar as unknown as CalendarFunctions).extractDateFromString(
+                        value,
+                        (column.options && column.options.format) || 'YYYY-MM-DD'
+                    );
                     if (tmp) {
                         formatted = tmp;
                     }
                 }
                 // Update data and cell
                 obj.options.data[y][x] = value;
-                obj.records[y][x].element.textContent = (jSuites.calendar as any).getDateString(
+                // textContent converts a number of hours to text
+                obj.records[y][x].element.textContent = (jSuites.calendar as unknown as CalendarFunctions).getDateString(
                     formatted ? formatted : value,
                     column.options && column.options.format
-                );
+                ) as string;
             } else if (column && column.type == 'color') {
                 // Update color
                 obj.options.data[y][x] = value;
@@ -817,7 +831,7 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
 /**
  * The value is a formula
  */
-export const isFormula = function (value: any) {
+export const isFormula = function (value: unknown) {
     const v = ('' + value)[0];
     return v == '=' || v == '#' ? true : false;
 };
@@ -825,9 +839,9 @@ export const isFormula = function (value: any) {
 /**
  * Get the mask in the jSuites.mask format
  */
-export const getMask = function (o: any): any {
+export const getMask = function (o: Worksheet['options']['columns'][number]): MaskOptions | null {
     if (o.format || o.mask || o.locale) {
-        const opt: any = {};
+        const opt: MaskOptions = {};
         if (o.mask) {
             opt.mask = o.mask;
         } else if (o.format) {
@@ -852,7 +866,7 @@ export const getMask = function (o: any): any {
 /**
  * Secure formula
  */
-const secureFormula = function (oldValue: any) {
+const secureFormula = function (oldValue: string) {
     let newValue = '';
     let inside = 0;
 
@@ -880,7 +894,7 @@ const secureFormula = function (oldValue: any) {
  */
 let chainLoopProtection: any = [];
 
-export const updateFormulaChain = function (this: Worksheet, x: number, y: number, records: any) {
+export const updateFormulaChain = function (this: Worksheet, x: number, y: number, records: HistoryCellChange[]) {
     const obj = this;
 
     const cellId = getColumnNameFromId([x, y]);
@@ -914,7 +928,7 @@ export const updateFormulaChain = function (this: Worksheet, x: number, y: numbe
 /**
  * Update formula
  */
-export const updateFormula = function (formula: any, referencesToUpdate: any) {
+export const updateFormula = function (formula: string, referencesToUpdate: Record<string, string>) {
     const testLetter = /[A-Z]/;
     const testNumber = /[0-9]/;
 
@@ -956,7 +970,7 @@ export const updateFormula = function (formula: any, referencesToUpdate: any) {
 /**
  * Update formulas
  */
-const updateFormulas = function (this: Worksheet, referencesToUpdate: any) {
+const updateFormulas = function (this: Worksheet, referencesToUpdate: Record<string, string>) {
     const obj = this;
 
     // Update formulas
@@ -1138,7 +1152,7 @@ export const updateTableReferences = function (this: Worksheet) {
 /**
  * Update scroll position based on the selection
  */
-export const updateScroll = function (this: Worksheet, direction: any) {
+export const updateScroll = function (this: Worksheet, direction: 0 | 1 | 2 | 3) {
     const obj = this;
 
     // Jspreadsheet Container information
@@ -1323,7 +1337,7 @@ export const getLabel = function (this: Worksheet, x: number, y: number) {
  * use programmatically : table.fullscreen(); or table.fullscreen(true); or table.fullscreen(false);
  * @Param {boolean} activate
  */
-export const fullscreen = function (this: Spreadsheet, activate: any) {
+export const fullscreen = function (this: Spreadsheet, activate?: boolean) {
     const spreadsheet = this;
 
     // If activate not defined, get reverse options.fullscreen
@@ -1375,7 +1389,8 @@ export const hideIndex: WorksheetMethod<'hideIndex'> = function () {
 /**
  * Create a nested header object
  */
-export const createNestedHeader = function (this: Worksheet, nestedInformation: any) {
+// The row of nested headers keeps its element
+export const createNestedHeader = function (this: Worksheet, nestedInformation: jspreadsheet.NestedHeaderCell[] & { element?: HTMLTableRowElement }) {
     const obj = this;
 
     const tr = document.createElement('tr');
@@ -1400,8 +1415,8 @@ export const createNestedHeader = function (this: Worksheet, nestedInformation: 
             nestedInformation[i].id = '';
         }
 
-        // Number of columns
-        let numberOfColumns = nestedInformation[i].colspan;
+        // Number of columns. colspan, title and id have default values above.
+        let numberOfColumns = nestedInformation[i].colspan!;
 
         // Classes container
         const column = [];
@@ -1417,10 +1432,10 @@ export const createNestedHeader = function (this: Worksheet, nestedInformation: 
         // Created the nested cell
         const td = document.createElement('td');
         td.setAttribute('data-column', column.join(','));
-        td.setAttribute('colspan', nestedInformation[i].colspan);
+        td.setAttribute('colspan', nestedInformation[i].colspan!);
         td.setAttribute('align', nestedInformation[i].align || 'center');
-        td.setAttribute('id', nestedInformation[i].id);
-        td.textContent = nestedInformation[i].title;
+        td.setAttribute('id', nestedInformation[i].id!);
+        td.textContent = nestedInformation[i].title!;
         tr.appendChild(td);
     }
 
@@ -1432,7 +1447,8 @@ export const getWorksheetActive = function (this: Worksheet | Spreadsheet): numb
     const spreadsheet = this.parent ? this.parent : this;
 
     // The element of a spreadsheet with tabs has the tabs object
-    return (spreadsheet.element as any).tabs ? (spreadsheet.element as any).tabs.getActive() : 0;
+    // getActive returns false only when no tab is open, and a tab is open while the spreadsheet has worksheets
+    return spreadsheet.element.tabs ? (spreadsheet.element.tabs.getActive() as number) : 0;
 };
 
 export const getWorksheetInstance = function (this: Spreadsheet, index?: number) {

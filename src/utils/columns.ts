@@ -51,8 +51,8 @@ export const createCellHeader = function (this: Worksheet, colNumber: number) {
         obj.headers[colNumber].setAttribute('title', obj.headers[colNumber].innerText);
     }
     // id is not in the public typings of a column
-    if (obj.options.columns && obj.options.columns[colNumber] && (obj.options.columns[colNumber] as any).id) {
-        obj.headers[colNumber].setAttribute('id', (obj.options.columns[colNumber] as any).id);
+    if (obj.options.columns && obj.options.columns[colNumber] && obj.options.columns[colNumber].id) {
+        obj.headers[colNumber].setAttribute('id', obj.options.columns[colNumber].id);
     }
 
     // Width control
@@ -307,7 +307,7 @@ export const moveColumn: WorksheetMethod<'moveColumn'> = function (o, d) {
     const obj = this;
 
     if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
-        let insertBefore;
+        let insertBefore: 0 | 1;
         if (o > d) {
             insertBefore = 1;
         } else {
@@ -575,7 +575,7 @@ export const getWidth: WorksheetMethod<'getWidth'> = function (column) {
  * @param int new column width
  * @param int old column width
  */
-export const setWidth = function (this: Worksheet, column: any, width: number, oldWidth?: any) {
+export const setWidth = function (this: Worksheet, column: number | number[], width: number | number[], oldWidth?: number | number[]) {
     const obj = this;
 
     if (width) {
@@ -584,12 +584,13 @@ export const setWidth = function (this: Worksheet, column: any, width: number, o
             if (!oldWidth) {
                 oldWidth = [];
             }
-            // Set width
+            // Set width. An array of columns has an array of old widths.
             for (let i = 0; i < column.length; i++) {
-                if (!oldWidth[i]) {
-                    oldWidth[i] = parseInt(obj.cols[column[i]].colElement.getAttribute('width'));
+                if (!(oldWidth as number[])[i]) {
+                    (oldWidth as number[])[i] = parseInt(obj.cols[column[i]].colElement.getAttribute('width'));
                 }
-                const w = Array.isArray(width) && width[i] ? width[i] : width;
+                // w is the whole array when the array of widths has no value for this column (issue #47)
+                const w = (Array.isArray(width) && width[i] ? width[i] : width) as number;
                 obj.cols[column[i]].colElement.setAttribute('width', w);
 
                 if (!obj.options.columns) {
@@ -607,8 +608,8 @@ export const setWidth = function (this: Worksheet, column: any, width: number, o
             if (!oldWidth) {
                 oldWidth = parseInt(obj.cols[column].colElement.getAttribute('width'));
             }
-            // Set width
-            obj.cols[column].colElement.setAttribute('width', width);
+            // Set width. One column has one width.
+            obj.cols[column].colElement.setAttribute('width', width as number);
 
             if (!obj.options.columns) {
                 obj.options.columns = [];
@@ -618,7 +619,7 @@ export const setWidth = function (this: Worksheet, column: any, width: number, o
                 obj.options.columns[column] = {};
             }
 
-            obj.options.columns[column].width = width;
+            obj.options.columns[column].width = width as number;
         }
 
         // Keeping history of changes

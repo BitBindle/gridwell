@@ -333,8 +333,17 @@ declare namespace jspreadsheet {
 
     type MetaInformation = Record<string, any>;
 
-    type ContextMenuItem = {
-        type?: 'line' | 'divisor' | 'default';
+    type ContextMenuItem =
+        | {
+              /** A line between the items. It needs no title. */
+              type: 'line' | 'divisor';
+              title?: string;
+          }
+        | ContextMenuOption;
+
+    /** An item of the context menu that the user can choose. */
+    type ContextMenuOption = {
+        type?: 'default';
         title: string;
         icon?: string;
         id?: string;
@@ -365,6 +374,21 @@ declare namespace jspreadsheet {
          * @default true
          */
         about?: boolean;
+
+        /**
+         * Spreadsheet plugins. Each function is called with the spreadsheet, an empty object and the spreadsheet options, and returns the plugin.
+         */
+        plugins?: Record<string, PluginFactory>;
+
+        /**
+         * Node for binding the javascript events and reading the text selection. This property is normally used when JSS is running as a web component, with its shadow root.
+         */
+        root?: HTMLElement | ShadowRoot;
+
+        /**
+         * Styles that the worksheets refer to by index: a number in {@link WorksheetOptions.style} is the index of a style in this list.
+         */
+        style?: string[];
 
         /**
          * Allow table export as csv.
@@ -1167,11 +1191,13 @@ declare namespace jspreadsheet {
 
         /**
          * Spreadsheet plugins.
+         * @deprecated The worksheet options do not load plugins. Use {@link SpreadsheetOptions.plugins}.
          */
-        plugins?: Record<string, () => Plugin>;
+        plugins?: Record<string, PluginFactory>;
 
         /**
-         * DOM element for binding the javascript events. This property is normally used when JSS is running as a web component.
+         * DOM element for binding the javascript events.
+         * @deprecated The worksheet options do not bind events. Use {@link SpreadsheetOptions.root}.
          */
         root?: HTMLElement;
 
@@ -1209,9 +1235,9 @@ declare namespace jspreadsheet {
         selectionCopy?: boolean;
 
         /**
-         * Cell styles.
+         * Cell styles, by cell name. A number is the index of a style in {@link SpreadsheetOptions.style}.
          */
-        style?: Record<string, string>;
+        style?: Record<string, string | number>;
 
         /**
          * Set the max height of the table.
@@ -1332,6 +1358,11 @@ declare namespace jspreadsheet {
          */
         width: number;
     }
+
+    /**
+     * Creates a plugin. The spreadsheet calls it with itself, an empty object and the spreadsheet options.
+     */
+    type PluginFactory = (spreadsheet: SpreadsheetInstance, options: object, config: SpreadsheetOptions) => Plugin;
 
     interface Plugin {
         /**
@@ -1458,7 +1489,7 @@ declare namespace jspreadsheet {
          * Add new plugins to the spreadsheet.
          * @param plugins - New plugins.
          */
-        setPlugins: (plugins: Record<string, () => Plugin>) => void;
+        setPlugins: (plugins: Record<string, PluginFactory>) => void;
 
         /**
          * Show the toolbar using the current settings.
@@ -1874,10 +1905,10 @@ declare namespace jspreadsheet {
          * This method returns false if the {@link SpreadsheetOptions.onbeforeinsertcolumn} event returns false or if the "This action will destroy any existing merged cells. Are you sure?" dialog receives a negative response.
          * @param mixed - Number of columns to insert. It can also be an array of values, but in this case, only one column is inserted, whose data is based on the array items. Default: 1.
          * @param columnNumber - Index of the column used as reference for the insertion. Default: last column.
-         * @param insertBefore - Insert new columns before or after the reference column. Default: false.
+         * @param insertBefore - Insert new columns before (a truthy value) or after the reference column. Default: false.
          * @param properties - New column properties.
          */
-        insertColumn: (mixed?: number | CellValue[], columnNumber?: number, insertBefore?: boolean, properties?: Column[]) => false | undefined;
+        insertColumn: (mixed?: number | CellValue[], columnNumber?: number, insertBefore?: boolean | number, properties?: Column[]) => false | undefined;
 
         /**
          * Insert one or more rows.
@@ -1885,9 +1916,9 @@ declare namespace jspreadsheet {
          * This method returns false if the {@link SpreadsheetOptions.onbeforeinsertrow} event returns false or if the "This action will destroy any existing merged cells. Are you sure?" or "This action will clear your search results. Are you sure?" dialogs receive a negative response.
          * @param mixed - Number of rows to insert. It can also be an array of values, but in this case, only one row is inserted, whose data is based on the array items. Default: 1.
          * @param rowNumber - Index of the row used as reference for the insertion. Default: last row.
-         * @param insertBefore - Insert new rows before or after the reference row. Default: false.
+         * @param insertBefore - Insert new rows before (a truthy value) or after the reference row. Default: false.
          */
-        insertRow: (mixed?: number | CellValue[], rowNumber?: number, insertBefore?: number) => false | undefined;
+        insertRow: (mixed?: number | CellValue[], rowNumber?: number, insertBefore?: boolean | number) => false | undefined;
 
         /**
          * Check if a cell is read only.
@@ -2116,13 +2147,13 @@ declare namespace jspreadsheet {
          * @param cellId - Name of the cell.
          * @param comments - New comment. If it is a falsy value, the method just uncomments the cell.
          */
-        setComments(cellId: string, comments: string): void;
+        setComments(cellId: string, comments: string | null | undefined): void;
 
         /**
          * Set or remove comments.
          * @param cellId - Object whose keys are cell names and values are cell comments. If the value of a key is a falsy value, the cell comment is removed.
          */
-        setComments(cellId: Record<string, string>): void;
+        setComments(cellId: Record<string, string | null | undefined>): void;
 
         /**
          * Change the worksheet or spreadsheet settings.
@@ -2395,10 +2426,15 @@ declare namespace jspreadsheet {
 
         /**
          * Get a worksheet instance by name and namespace.
-         * @param worksheetName - Name of the searched worksheet. If null or undefined, the method returns the found namespace.
+         *
+         * Returns undefined when the namespace has no worksheet with this name, and an empty object when no spreadsheet has the namespace.
+         * @param worksheetName - Name of the searched worksheet. If null or undefined, the method returns the worksheets of the namespace by name.
          * @param namespace - Namespace name.
          */
-        getWorksheetInstanceByName: (worksheetName: string | null | undefined, namespace: string) => WorksheetInstance | Record<string, WorksheetInstance>;
+        getWorksheetInstanceByName: (
+            worksheetName: string | null | undefined,
+            namespace: string
+        ) => WorksheetInstance | Record<string, WorksheetInstance> | undefined;
 
         helpers: JssHelpers;
 

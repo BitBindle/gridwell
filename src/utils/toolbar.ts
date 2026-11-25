@@ -3,7 +3,13 @@ import { getCellNameFromCoords } from './helpers.js';
 import { getWorksheetInstance } from './internal.js';
 import type { Spreadsheet, Worksheet } from '../types/internal';
 
-const setItemStatus = function (toolbarItem: any, worksheet: Worksheet) {
+/** A jsuites color picker. jsuites also keeps it on its element as `color`. */
+type ColorPicker = ReturnType<typeof jSuites.color>;
+
+/** The border select keeps the thickness, the color and the style that the user chose on its picker instance. */
+type BorderPicker = { thickness?: number; color?: string; style?: string };
+
+const setItemStatus = function (toolbarItem: HTMLElement, worksheet: Worksheet) {
     if (worksheet.options.editable != false) {
         toolbarItem.classList.remove('jtoolbar-disabled');
     } else {
@@ -57,26 +63,27 @@ export const getDefault = function (this: Spreadsheet) {
         type: 'select',
         width: '120px',
         options: ['Default', 'Verdana', 'Arial', 'Courier New'],
-        render: function (e: any) {
+        render: function (e: string) {
             return '<span style="font-family:' + e + '">' + e + '</span>';
         },
-        onchange: function (a: any, b: any, c: any, d: any, e: any) {
+        onchange: function (a: HTMLElement, b: object, c: string, d: string, e: string) {
             const worksheet = getActive();
 
             const cells = worksheet.getSelected(true);
             if (cells) {
-                const value = !e ? '' : d;
+                // e is the key of the option as text, and the first option is Default
+                const value = e === '0' ? '' : d;
 
                 worksheet.setStyle(
                     Object.fromEntries(
-                        cells.map(function (cellName: any) {
+                        cells.map(function (cellName: string) {
                             return [cellName, 'font-family: ' + value];
                         })
                     )
                 );
             }
         },
-        updateState: function (a: any, b: any, toolbarItem: any) {
+        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -86,24 +93,24 @@ export const getDefault = function (this: Spreadsheet) {
         width: '48px',
         content: 'format_size',
         options: ['x-small', 'small', 'medium', 'large', 'x-large'],
-        render: function (e: any) {
+        render: function (e: string) {
             return '<span style="font-size:' + e + '">' + e + '</span>';
         },
-        onchange: function (a: any, b: any, c: any, value: any) {
+        onchange: function (a: HTMLElement, b: object, c: string, value: string) {
             const worksheet = getActive();
 
             const cells = worksheet.getSelected(true);
             if (cells) {
                 worksheet.setStyle(
                     Object.fromEntries(
-                        cells.map(function (cellName: any) {
+                        cells.map(function (cellName: string) {
                             return [cellName, 'font-size: ' + value];
                         })
                     )
                 );
             }
         },
-        updateState: function (a: any, b: any, toolbarItem: any) {
+        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -111,24 +118,24 @@ export const getDefault = function (this: Spreadsheet) {
     items.push({
         type: 'select',
         options: ['left', 'center', 'right', 'justify'],
-        render: function (e: any) {
+        render: function (e: string) {
             return '<i class="material-icons">format_align_' + e + '</i>';
         },
-        onchange: function (a: any, b: any, c: any, value: any) {
+        onchange: function (a: HTMLElement, b: object, c: string, value: string) {
             const worksheet = getActive();
 
             const cells = worksheet.getSelected(true);
             if (cells) {
                 worksheet.setStyle(
                     Object.fromEntries(
-                        cells.map(function (cellName: any) {
+                        cells.map(function (cellName: string) {
                             return [cellName, 'text-align: ' + value];
                         })
                     )
                 );
             }
         },
-        updateState: function (a: any, b: any, toolbarItem: any) {
+        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -142,14 +149,14 @@ export const getDefault = function (this: Spreadsheet) {
             if (cells) {
                 worksheet.setStyle(
                     Object.fromEntries(
-                        cells.map(function (cellName: any) {
+                        cells.map(function (cellName: string) {
                             return [cellName, 'font-weight:bold'];
                         })
                     )
                 );
             }
         },
-        updateState: function (a: any, b: any, toolbarItem: any) {
+        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -158,7 +165,7 @@ export const getDefault = function (this: Spreadsheet) {
         type: 'color',
         content: 'format_color_text',
         k: 'color',
-        updateState: function (a: any, b: any, toolbarItem: any) {
+        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -167,7 +174,7 @@ export const getDefault = function (this: Spreadsheet) {
         type: 'color',
         content: 'format_color_fill',
         k: 'background-color',
-        updateState: function (a: any, b: any, toolbarItem: any, d: any) {
+        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement, d: Worksheet) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -177,25 +184,26 @@ export const getDefault = function (this: Spreadsheet) {
     items.push({
         type: 'select',
         options: ['vertical_align_top', 'vertical_align_center', 'vertical_align_bottom'],
-        render: function (e: any) {
+        render: function (e: string) {
             return '<i class="material-icons">' + e + '</i>';
         },
         value: 1,
-        onchange: function (a: any, b: any, c: any, d: any, value: any) {
+        onchange: function (a: HTMLElement, b: object, c: string, d: string, value: string) {
             const worksheet = getActive();
 
             const cells = worksheet.getSelected(true);
             if (cells) {
                 worksheet.setStyle(
                     Object.fromEntries(
-                        cells.map(function (cellName: any) {
-                            return [cellName, 'vertical-align: ' + verticalAlign[value]];
+                        cells.map(function (cellName: string) {
+                            // The key is the index of the option as text
+                            return [cellName, 'vertical-align: ' + (verticalAlign as unknown as Record<string, string>)[value]];
                         })
                     )
                 );
             }
         },
-        updateState: function (a: any, b: any, toolbarItem: any) {
+        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -227,7 +235,7 @@ export const getDefault = function (this: Spreadsheet) {
                 }
             }
         },
-        updateState: function (a: any, b: any, toolbarItem: any) {
+        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -247,11 +255,11 @@ export const getDefault = function (this: Spreadsheet) {
             'border_clear',
         ],
         columns: 5,
-        render: function (e: any) {
+        render: function (e: string) {
             return '<i class="material-icons">' + e + '</i>';
         },
         right: true,
-        onchange: function (a: any, b: any, c: any, d: any) {
+        onchange: function (a: HTMLElement, b: BorderPicker, c: string, d: string) {
             const worksheet = getActive();
 
             if (worksheet.selectedCell) {
@@ -338,7 +346,7 @@ export const getDefault = function (this: Spreadsheet) {
                 }
             }
         },
-        onload: function (a: any, b: any) {
+        onload: function (a: HTMLElement, b: BorderPicker) {
             // Border color
             const container = document.createElement('div');
             let div = document.createElement('div');
@@ -346,8 +354,8 @@ export const getDefault = function (this: Spreadsheet) {
 
             const colorPicker = jSuites.color(div, {
                 closeOnChange: false,
-                onchange: function (o: any, v: any) {
-                    o.parentNode.children[1].style.color = v;
+                onchange: function (o: HTMLElement, v: string) {
+                    (o.parentNode!.children[1] as HTMLElement).style.color = v;
                     b.color = v;
                 },
             } as any);
@@ -365,10 +373,10 @@ export const getDefault = function (this: Spreadsheet) {
             jSuites.picker(div, {
                 type: 'select',
                 data: [1, 2, 3, 4, 5],
-                render: function (e: any) {
+                render: function (e: number) {
                     return '<div style="height: ' + e + 'px; width: 30px; background-color: black;"></div>';
                 },
-                onchange: function (a: any, k: any, c: any, d: any) {
+                onchange: function (a: HTMLElement, k: object, c: number, d: number) {
                     b.thickness = d;
                 },
                 width: '50px',
@@ -379,13 +387,13 @@ export const getDefault = function (this: Spreadsheet) {
             jSuites.picker(borderStylePicker, {
                 type: 'select',
                 data: ['solid', 'dotted', 'dashed', 'double'],
-                render: function (e: any) {
+                render: function (e: string) {
                     if (e === 'double') {
                         return '<div style="width: 30px; border-top: 3px ' + e + ' black;"></div>';
                     }
                     return '<div style="width: 30px; border-top: 2px ' + e + ' black;"></div>';
                 },
-                onchange: function (a: any, k: any, c: any, d: any) {
+                onchange: function (a: HTMLElement, k: object, c: string, d: string) {
                     b.style = d;
                 },
                 width: '50px',
@@ -396,7 +404,7 @@ export const getDefault = function (this: Spreadsheet) {
             div.style.flex = '1';
             a.children[1].appendChild(div);
         },
-        updateState: function (a: any, b: any, toolbarItem: any) {
+        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -408,7 +416,7 @@ export const getDefault = function (this: Spreadsheet) {
     items.push({
         content: 'fullscreen',
         tooltip: 'Toggle Fullscreen',
-        onclick: function (a: any, b: any, c: any) {
+        onclick: function (a: HTMLElement, b: object, c: HTMLElement) {
             if (c.children[0].textContent === 'fullscreen') {
                 spreadsheet.fullscreen(true);
                 c.children[0].textContent = 'fullscreen_exit';
@@ -417,7 +425,7 @@ export const getDefault = function (this: Spreadsheet) {
                 c.children[0].textContent = 'fullscreen';
             }
         },
-        updateState: function (a: any, b: any, c: any, d: any) {
+        updateState: function (a: HTMLElement, b: object, c: HTMLElement, d: Worksheet) {
             if (d.parent.config.fullscreen === true) {
                 c.children[0].textContent = 'fullscreen_exit';
             } else {
@@ -451,14 +459,14 @@ const adjustToolbarSettingsForJSuites = function (this: Spreadsheet, toolbar: an
                 delete items[i].v;
 
                 if (items[i].k && !items[i].onchange) {
-                    items[i].onchange = function (el: any, config: any, value: any) {
+                    items[i].onchange = function (el: HTMLElement, config: object, value: string) {
                         const worksheet = getWorksheetInstance.call(spreadsheet);
 
                         const cells = worksheet.getSelected(true);
 
                         worksheet.setStyle(
                             Object.fromEntries(
-                                cells.map(function (cellName: any) {
+                                cells.map(function (cellName: string) {
                                     return [cellName, items[i].k + ': ' + value];
                                 })
                             )
@@ -469,28 +477,28 @@ const adjustToolbarSettingsForJSuites = function (this: Spreadsheet, toolbar: an
         } else if (items[i].type == 'color') {
             items[i].type = 'i';
 
-            items[i].onclick = function (a: any, b: any, c: any) {
+            items[i].onclick = function (a: HTMLElement, b: object, c: HTMLElement & { color?: ColorPicker }) {
                 if (!c.color) {
                     jSuites.color(c, {
-                        onchange: function (o: any, v: any) {
+                        onchange: function (o: HTMLElement, v: string) {
                             const worksheet = getWorksheetInstance.call(spreadsheet);
 
                             const cells = worksheet.getSelected(true);
 
                             worksheet.setStyle(
                                 Object.fromEntries(
-                                    cells.map(function (cellName: any) {
+                                    cells.map(function (cellName: string) {
                                         return [cellName, items[i].k + ': ' + v];
                                     })
                                 )
                             );
                         },
-                        onopen: function (o: any) {
+                        onopen: function (o: HTMLElement & { color: ColorPicker }) {
                             o.color.select('');
                         },
                     } as any);
 
-                    c.color.open();
+                    c.color!.open();
                 }
             };
         }
@@ -528,7 +536,7 @@ export const createToolbar = function (this: Spreadsheet, toolbar: any) {
 export const updateToolbar = function (worksheet: Worksheet) {
     if (worksheet.parent.toolbar) {
         // jsuites keeps the toolbar instance on the element
-        (worksheet.parent.toolbar as any).toolbar.update(worksheet);
+        worksheet.parent.toolbar.toolbar.update(worksheet);
     }
 };
 
@@ -554,7 +562,11 @@ export const showToolbar = function (this: Spreadsheet) {
             }
         }
 
-        spreadsheet.toolbar = spreadsheet.element.insertBefore(createToolbar.call(spreadsheet, toolbar), spreadsheet.element.children[1]);
+        // jSuites.toolbar in createToolbar added the toolbar instance
+        spreadsheet.toolbar = spreadsheet.element.insertBefore(
+            createToolbar.call(spreadsheet, toolbar),
+            spreadsheet.element.children[1]
+        ) as Spreadsheet['toolbar'];
     }
 };
 

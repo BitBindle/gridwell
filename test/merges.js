@@ -331,4 +331,33 @@ describe('Merge tests', () => {
 
         expect(instance[0].getMerge('B2')).to.eql([2, 2]);
     });
+
+    it('setMerge with one span finds a conflict with another merge', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [
+                {
+                    minDimensions: [3, 3],
+                    mergeCells: { A2: [2, 2] },
+                },
+            ],
+        });
+
+        const alerts = [];
+        // The library calls the global alert
+        const alert = global.alert;
+        global.alert = (message) => alerts.push(message);
+
+        try {
+            instance[0].setMerge('A1', undefined, 2);
+        } finally {
+            global.alert = alert;
+        }
+
+        expect(alerts).to.eql(['There is a conflict with another merged cell']);
+        expect(instance[0].getMerge()).to.eql({ A2: [2, 2] });
+
+        // One span without a conflict still merges
+        instance[0].setMerge('B1', 2);
+        expect(instance[0].getMerge('B1')).to.eql([2, 1]);
+    });
 });

@@ -12,7 +12,7 @@ import type { Worksheet, WorksheetMethod } from '../types/internal';
 /**
  * Create row
  */
-export const createRow = function (this: Worksheet, j: number, data: any) {
+export const createRow = function (this: Worksheet, j: number, data: jspreadsheet.CellValue[]) {
     const obj = this;
 
     // Create container
@@ -92,7 +92,7 @@ export const createRow = function (this: Worksheet, j: number, data: any) {
  * @param insertBefore
  * @return void
  */
-export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumber, insertBefore: any) {
+export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumber, insertBefore) {
     const obj = this;
 
     // Configuration
@@ -248,11 +248,11 @@ export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumbe
  *
  * @return void
  */
-export const moveRow = function (this: Worksheet, o: any, d: any, ignoreDom?: any) {
+export const moveRow = function (this: Worksheet, o: number, d: number, ignoreDom?: boolean) {
     const obj = this;
 
     if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
-        let insertBefore;
+        let insertBefore: 0 | 1;
 
         if (o > d) {
             insertBefore = 1;
@@ -479,7 +479,7 @@ export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numO
  * @param row - row number (first row is: 0)
  * @return height - current row height
  */
-export const getHeight = function (this: Worksheet, row: any) {
+export const getHeight = function (this: Worksheet, row?: number | string | HTMLElement): string[] | string {
     const obj = this;
 
     let data;
@@ -496,10 +496,11 @@ export const getHeight = function (this: Worksheet, row: any) {
     } else {
         // In case the row is an object
         if (typeof row == 'object') {
-            row = row.getAttribute('data-y');
+            row = row.getAttribute('data-y')!;
         }
 
-        data = obj.rows[row].element.style.height;
+        // data-y is the row number as text, which works as an index
+        data = obj.rows[row as number].element.style.height;
     }
 
     return data;
@@ -512,7 +513,8 @@ export const getHeight = function (this: Worksheet, row: any) {
  * @param height - new row height
  * @param oldHeight - old row height
  */
-export const setHeight = function (this: Worksheet, row: any, height: number, oldHeight?: any) {
+// oldHeight is the height attribute as text, or the measured height
+export const setHeight = function (this: Worksheet, row: number, height: number, oldHeight?: number | string | null) {
     const obj = this;
 
     if (height > 0) {

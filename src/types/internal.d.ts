@@ -5,12 +5,16 @@
  * as `this` a `this: Worksheet` parameter.
  */
 import type jspreadsheet from '../jspreadsheet';
+import type { Tabs } from '../utils/tabs';
 
 /**
  * A worksheet as the library sees it: the public instance and the state that only the library uses.
  */
 export interface Worksheet extends jspreadsheet.WorksheetInstance {
     parent: Spreadsheet;
+
+    /** The events find the worksheet of an element through jssWorksheet. */
+    element: jspreadsheet.JworksheetInstanceElement & { jssWorksheet: Worksheet };
 
     options: Omit<jspreadsheet.WorksheetOptions, 'data' | 'columns' | 'minDimensions'> & {
         /**
@@ -30,6 +34,9 @@ export interface Worksheet extends jspreadsheet.WorksheetInstance {
 
     /** The public typings allow text, but the library only stores numbers. */
     selectedCell: undefined | null | [number, number, number, number];
+
+    /** The public typings allow any record. The library stores the records in WorksheetHistoryRecord. */
+    history: WorksheetHistoryRecord[];
 
     /** The cell that has the roving tabindex (the tab stop of the grid). */
     activeCell?: HTMLTableCellElement | null;
@@ -72,6 +79,21 @@ export interface Spreadsheet extends jspreadsheet.SpreadsheetInstance {
 
     worksheets: Worksheet[];
 
+    /** The tabs of the worksheets, which createTabs keeps on the element. */
+    element: jspreadsheet.JspreadsheetInstanceElement & { tabs?: Tabs };
+
+    /** The jsuites context menu, which jsuites keeps on its element. */
+    contextMenu: HTMLDivElement & {
+        contextmenu: {
+            open(e: MouseEvent, items: jspreadsheet.ContextMenuItem[]): void;
+            /** jsuites takes no argument. The factory passes false, which jsuites ignores. */
+            close(ignored?: boolean): void;
+        };
+    };
+
+    /** The jsuites toolbar, which jsuites keeps on its element. update calls updateState of each item with the worksheet. */
+    toolbar: HTMLDivElement & { toolbar: { update(worksheet: Worksheet): void } };
+
     /** True while createWorksheet adds a tab, so that the tab does not create a second worksheet. */
     creationThroughJss?: boolean;
 }
@@ -104,3 +126,73 @@ export interface Library extends jspreadsheet.JSpreadsheet {
 export interface SelectedWorksheet extends Worksheet {
     selectedCell: [number, number, number, number];
 }
+
+/**
+ * A DOM event whose target the code reads as an element. The handlers are on the document and on the elements of the
+ * spreadsheet, and the code reads the target without a check, as it did in JavaScript.
+ */
+export type TargetEvent<E extends Event = Event> = E & { target: HTMLElement };
+
+/** A cell that a setValue record of the history changed. */
+export type HistoryCellChange = {
+    x: number;
+    y: number;
+    col: number;
+    row: number;
+    /** Missing when the cell did not change, for example because it is read-only. */
+    value?: jspreadsheet.CellValue;
+    oldValue?: jspreadsheet.CellValue;
+};
+
+/**
+ * A record of the undo history, by its action. Undo and redo read the fields of the action. Type aliases, not
+ * interfaces, so that a record is a public HistoryRecord too.
+ */
+export type WorksheetHistoryRecord =
+    | {
+          action: 'insertColumn' | 'deleteColumn';
+          columnNumber: number;
+          numOfColumns: number;
+          /** insertColumn keeps its argument. deleteColumn stores 1, so that undo inserts the columns before columnNumber. */
+          insertBefore: boolean | number | undefined;
+          /** deleteColumn stores undefined when the worksheet has no column options, which setup always gives it. */
+          columns: Worksheet['options']['columns'] | undefined;
+          headers: Worksheet['headers'];
+          cols: Worksheet['cols'];
+          records: Worksheet['records'];
+          footers: string[][];
+          data: jspreadsheet.CellValue[][];
+      }
+    | {
+          action: 'insertRow' | 'deleteRow';
+          rowNumber: number;
+          numOfRows: number;
+          /** insertRow keeps its argument. deleteRow stores 1, so that undo inserts the rows before rowNumber. */
+          insertBefore: boolean | number | undefined;
+          rowRecords: Worksheet['records'];
+          rowData: jspreadsheet.CellValue[][];
+          rowNode: Worksheet['rows'];
+      }
+    | { action: 'moveColumn' | 'moveRow'; oldValue: number; newValue: number }
+    | { action: 'setWidth'; column: number | number[]; oldValue: number | number[]; newValue: number | number[] }
+    | {
+          action: 'setHeight';
+          row: number;
+          /** The height attribute of the row as text, or the measured height when the row has no attribute. */
+          oldValue: number | string;
+          newValue: number;
+      }
+    | { action: 'setHeader'; column: number; oldValue: string; newValue: string }
+    | { action: 'setComments'; oldValue: Record<string, string | null>; newValue: Record<string, string | null | undefined> }
+    | {
+          action: 'setValue';
+          records: HistoryCellChange[];
+          selection: Worksheet['selectedCell'];
+          /** The style that a paste set and the style it replaced. A paste stores both. */
+          newStyle?: Record<string, string>;
+          oldStyle?: Record<string, string>;
+      }
+    | { action: 'setMerge'; column: string; colspan: number; rowspan: number; data: jspreadsheet.CellValue[] }
+    | { action: 'orderBy'; rows: number[]; column: number; order: boolean | number }
+    /** The styles by cell name, each as 'property:value' entries joined with ';' */
+    | { action: 'setStyle'; oldValue: Record<string, string>; newValue: Record<string, string> };

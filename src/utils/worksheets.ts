@@ -51,6 +51,7 @@ import { isReadOnly, setReadOnly } from './cells.js';
 import { openFilter, resetFilters } from './filter.js';
 import { redo, undo } from './history.js';
 import { setGridFocusEvents, setGridLabels, setGridRoles } from './accessibility.js';
+import type jspreadsheet from '../jspreadsheet';
 import type { Spreadsheet, Worksheet, WorksheetMethod } from '../types/internal';
 
 const setWorksheetFunctions = function (worksheet: Worksheet) {
@@ -133,7 +134,8 @@ const createTable = function (this: Worksheet) {
 
     // Colsgroup
     obj.colgroupContainer = document.createElement('colgroup');
-    let tempCol: any = document.createElement('col');
+    // A col, then the select-all cell of the header
+    let tempCol: HTMLElement = document.createElement('col');
     tempCol.setAttribute('width', '50');
     obj.colgroupContainer.appendChild(tempCol);
 
@@ -260,18 +262,18 @@ const createTable = function (this: Worksheet) {
     obj.element.appendChild(obj.ads);
     obj.element.classList.add('jss_container');
 
-    (obj.element as any).jssWorksheet = obj;
+    obj.element.jssWorksheet = obj;
     obj.element.jspreadsheet = obj;
 
     // Overflow
     if (obj.options.tableOverflow == true) {
         if (obj.options.tableHeight) {
-            (obj.content.style as any)['overflow-y'] = 'auto';
-            (obj.content.style as any)['box-shadow'] = 'rgb(221 221 221) 2px 2px 5px 0.1px';
+            (obj.content.style as unknown as Record<string, string>)['overflow-y'] = 'auto';
+            (obj.content.style as unknown as Record<string, string>)['box-shadow'] = 'rgb(221 221 221) 2px 2px 5px 0.1px';
             obj.content.style.maxHeight = typeof obj.options.tableHeight === 'string' ? obj.options.tableHeight : obj.options.tableHeight + 'px';
         }
         if (obj.options.tableWidth) {
-            (obj.content.style as any)['overflow-x'] = 'auto';
+            (obj.content.style as unknown as Record<string, string>)['overflow-x'] = 'auto';
             obj.content.style.width = typeof obj.options.tableWidth === 'string' ? obj.options.tableWidth : obj.options.tableWidth + 'px';
         }
     }
@@ -564,20 +566,20 @@ export const createWorksheet: WorksheetMethod<'createWorksheet'> = function (opt
 
     createWorksheetObj.call(obj, options);
 
-    (spreadsheet.element as any).tabs.create(options.worksheetName);
+    spreadsheet.element.tabs!.create(options.worksheetName);
 };
 
 export const openWorksheet: WorksheetMethod<'openWorksheet'> = function (position) {
     const obj = this;
     const spreadsheet = obj.parent;
 
-    (spreadsheet.element as any).tabs.open(position);
+    spreadsheet.element.tabs!.open(position);
 };
 
 export const deleteWorksheet: WorksheetMethod<'deleteWorksheet'> = function (position) {
     const obj = this;
 
-    (obj.parent.element as any).tabs.remove(position);
+    obj.parent.element.tabs!.remove(position);
 
     const removedWorksheet = obj.parent.worksheets.splice(position, 1)[0];
 
@@ -611,7 +613,7 @@ const worksheetPublicMethods: [string, (...args: any[]) => any][] = [
     ['getWidth', getWidth],
     [
         'setWidth',
-        function (this: Worksheet, column: any, width: number) {
+        function (this: Worksheet, column: number | number[], width: number | number[]) {
             return setWidth.call(this, column, width);
         },
     ],
@@ -630,7 +632,7 @@ const worksheetPublicMethods: [string, (...args: any[]) => any][] = [
     ['getHeight', getHeight],
     [
         'setHeight',
-        function (this: Worksheet, row: any, height: number) {
+        function (this: Worksheet, row: number, height: number) {
             return setHeight.call(this, row, height);
         },
     ],
@@ -649,7 +651,7 @@ const worksheetPublicMethods: [string, (...args: any[]) => any][] = [
     ],
     [
         'removeMerge',
-        function (this: Worksheet, cellName: string, data: any) {
+        function (this: Worksheet, cellName: string, data?: jspreadsheet.CellValue[]) {
             return removeMerge.call(this, cellName, data);
         },
     ],
@@ -661,8 +663,15 @@ const worksheetPublicMethods: [string, (...args: any[]) => any][] = [
     ['getStyle', getStyle],
     [
         'setStyle',
-        function (this: Worksheet, cell: any, property: any, value: any, forceOverwrite: boolean) {
-            return setStyle.call(this, cell, property, value, forceOverwrite);
+        function (
+            this: Worksheet,
+            cell: string | Record<string, string | string[]>,
+            property: string | null | undefined,
+            value: string | null | undefined,
+            forceOverwrite: boolean,
+            ignoreHistoryAndEvents?: boolean
+        ) {
+            return setStyle.call(this, cell, property, value, forceOverwrite, ignoreHistoryAndEvents);
         },
     ],
     ['resetStyle', resetStyle],

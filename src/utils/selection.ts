@@ -70,7 +70,7 @@ export const updateCornerPosition = function (this: Worksheet) {
     updateToolbar(obj);
 };
 
-export const resetSelection = function (this: Worksheet, blur?: any) {
+export const resetSelection = function (this: Worksheet, blur?: boolean) {
     const obj = this;
 
     let previousStatus;
@@ -147,11 +147,12 @@ export const resetSelection = function (this: Worksheet, blur?: any) {
 /**
  * Update selection based on two cells
  */
-export const updateSelection = function (this: Worksheet, el1: any, el2?: any, origin?: any) {
+export const updateSelection = function (this: Worksheet, el1: HTMLElement, el2?: HTMLElement, origin?: Event) {
     const obj = this;
 
-    const x1 = el1.getAttribute('data-x');
-    const y1 = el1.getAttribute('data-y');
+    // The code uses the text as numbers
+    const x1: any = el1.getAttribute('data-x');
+    const y1: any = el1.getAttribute('data-y');
 
     let x2, y2;
     if (el2) {
@@ -176,7 +177,15 @@ export const removeCopyingSelection = function () {
     }
 };
 
-export const updateSelectionFromCoords = function (this: Worksheet, x1: number, y1: number, x2?: number, y2?: number, origin?: any) {
+// A null x1 selects the rows from y1 to y2, and a null y1 selects the columns from x1 to x2
+export const updateSelectionFromCoords = function (
+    this: Worksheet,
+    x1: number | null,
+    y1: number | null,
+    x2?: number | null,
+    y2?: number | null,
+    origin?: Event
+) {
     const obj = this;
 
     // select column
@@ -431,7 +440,7 @@ export const removeCopySelection = function (this: Worksheet) {
     obj.selection = [];
 };
 
-const doubleDigitFormat = function (v: any) {
+const doubleDigitFormat = function (v: number | string) {
     v = '' + v;
     if (v.length == 1) {
         v = '0' + v;
@@ -442,7 +451,7 @@ const doubleDigitFormat = function (v: any) {
 /**
  * Helper function to copy data using the corner icon
  */
-export const copyData = function (this: Worksheet, o: any, d: any) {
+export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElement) {
     const obj = this;
 
     // Get data from all selected cells
@@ -637,7 +646,8 @@ export const hash = function (str: string) {
 /**
  * Move coords to A1 in case overlaps with an excluded cell
  */
-export const conditionalSelectionUpdate = function (this: Worksheet, type: any, o: any, d: any) {
+// type is 1 for rows and 0 for columns
+export const conditionalSelectionUpdate = function (this: Worksheet, type: 0 | 1, o: number, d: number) {
     const obj = this;
 
     if (type == 1) {
@@ -706,8 +716,8 @@ export const getSelection: WorksheetMethod<'getSelection'> = function () {
     ];
 };
 
-// The public typings say that element is an array, but it is a cell
-export const getSelected = function (this: Worksheet, columnNameOnly?: boolean): any[] {
+// The names of the cells, or their records. The public typings have an overload for each.
+export const getSelected = function (this: Worksheet, columnNameOnly?: boolean): (string | Worksheet['records'][number][number])[] {
     const obj = this;
 
     const selectedRange = getSelection.call(obj);

@@ -327,7 +327,7 @@ export const setGridFocusEvents = function (this: Worksheet) {
  * the grid, or when the focus fell from the grid to the body, for example after lazy loading removed the focused row.
  * A selection does not take the focus from other parts of the page.
  */
-export const updateActiveCell = function (this: Worksheet, x: number, y: number, origin: any) {
+export const updateActiveCell = function (this: Worksheet, x: number, y: number, origin: Event | undefined) {
     const obj = this;
 
     const td = obj.records[y] && obj.records[y][x] && obj.records[y][x].element;
@@ -338,7 +338,7 @@ export const updateActiveCell = function (this: Worksheet, x: number, y: number,
     setActiveCell.call(obj, td);
 
     const active = getActiveElement.call(obj);
-    const pointer = origin && origin.target && origin.target.nodeType === 1 && obj.table.contains(origin.target);
+    const pointer = origin && origin.target && (origin.target as Node).nodeType === 1 && obj.table.contains(origin.target as Node);
     const inGrid = pointer || (!!active && (active === obj.parent.element || active === obj.textarea || obj.table.contains(active)));
     const dropped = isFocusLost() && libraryBase.jspreadsheet.current === obj;
     // The focus was in the grid at the last selection
