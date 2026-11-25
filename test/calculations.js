@@ -25,6 +25,35 @@ describe('Calculations', () => {
         expect(test[0].getValue('B5', true)).to.equal('5');
     });
 
+    it('keeps the backslashes and line breaks of a referenced text cell', () => {
+        const texts = ['temp\\', 'line one\nline two', 'a\\tb'];
+        let test = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: texts.map((text, i) => [text, '=A' + (i + 1)]),
+                },
+            ],
+        });
+
+        expect(test[0].getValue('B1', true)).to.equal(texts[0]);
+        expect(test[0].getValue('B2', true)).to.equal(texts[1]);
+        expect(test[0].getValue('B3', true)).to.equal(texts[2]);
+    });
+
+    it('keeps the quotes and backslashes of a referenced text cell', () => {
+        const text = 'Say "hi" \\ bye';
+        let test = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [[text, '=A1', '=B1']],
+                },
+            ],
+        });
+
+        expect(test[0].getValue('B1', true)).to.equal(text);
+        expect(test[0].getValue('C1', true)).to.equal(text);
+    });
+
     it('Keeps special characters inside string literals', () => {
         let test = jspreadsheet(root, {
             worksheets: [
