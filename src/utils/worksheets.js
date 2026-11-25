@@ -50,6 +50,7 @@ import { copy, paste } from './copyPaste.js';
 import { isReadOnly, setReadOnly } from './cells.js';
 import { openFilter, resetFilters } from './filter.js';
 import { redo, undo } from './history.js';
+import { setGridRoles } from './accessibility.js';
 
 const setWorksheetFunctions = function (worksheet) {
     for (let i = 0; i < worksheetPublicMethodsLength; i++) {
@@ -190,6 +191,7 @@ const createTable = function () {
     obj.table.appendChild(obj.colgroupContainer);
     obj.table.appendChild(obj.thead);
     obj.table.appendChild(obj.tbody);
+    setGridRoles.call(obj);
 
     if (!obj.options.textOverflow) {
         obj.table.classList.add('jss_overflow');

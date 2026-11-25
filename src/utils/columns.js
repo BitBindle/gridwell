@@ -8,6 +8,7 @@ import { conditionalSelectionUpdate, updateCornerPosition } from './selection.js
 import { setFooter } from './footer.js';
 import { updateFreezePosition } from './events.js';
 import { getColumnNameFromId, injectArray } from './internalHelpers.js';
+import { setHeaderRole } from './accessibility.js';
 
 export const getNumberOfColumns = function () {
     const obj = this;
@@ -43,6 +44,7 @@ export const createCellHeader = function (colNumber) {
         (obj.options.columns && obj.options.columns[colNumber] && obj.options.columns[colNumber].title) || getColumnName(colNumber);
 
     obj.headers[colNumber].setAttribute('data-x', colNumber);
+    setHeaderRole(obj.headers[colNumber], colNumber);
     obj.headers[colNumber].style.textAlign = colAlign;
     if (obj.options.columns && obj.options.columns[colNumber] && obj.options.columns[colNumber].title) {
         obj.headers[colNumber].setAttribute('title', obj.headers[colNumber].innerText);

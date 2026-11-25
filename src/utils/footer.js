@@ -1,4 +1,5 @@
 import { parseValue } from './internal.js';
+import { updateGridSize } from './accessibility.js';
 
 export const setFooter = function (data) {
     const obj = this;
@@ -47,5 +48,8 @@ export const setFooter = function (data) {
                 td.style.display = obj.cols[i].colElement.style.display;
             }
         }
+
+        // Update the size of the grid
+        updateGridSize.call(obj);
     }
 };
