@@ -6,7 +6,7 @@ import type { SelectedWorksheet, Worksheet, WorksheetMethod } from '../types/int
  * Whether the worksheet has a selection
  */
 const hasSelection = function (obj: Worksheet): obj is SelectedWorksheet {
-    return obj.selectedCell ? true : false;
+    return obj.selection.range ? true : false;
 };
 
 /**
@@ -15,11 +15,11 @@ const hasSelection = function (obj: Worksheet): obj is SelectedWorksheet {
 const toFirstCell = function (this: SelectedWorksheet) {
     const obj = this;
 
-    const element = obj.records[obj.selectedCell[1]][obj.selectedCell[0]].element;
+    const element = obj.records[obj.selection.range[1]][obj.selection.range[0]].element;
 
     if (element.getAttribute('data-merged')) {
-        obj.selectedCell[0] = parseInt(element.getAttribute('data-x'));
-        obj.selectedCell[1] = parseInt(element.getAttribute('data-y'));
+        obj.selection.range[0] = parseInt(element.getAttribute('data-x'));
+        obj.selection.range[1] = parseInt(element.getAttribute('data-y'));
     }
 };
 
@@ -43,7 +43,7 @@ const upGet = function (this: Worksheet, x: number, y: number) {
     return y;
 };
 
-/** The corner of the selection that moves: 0 for the cell in selectedCell[0] and [1], 1 for the cell in [2] and [3]. */
+/** The corner of the selection that moves: 0 for the cell in selection.range[0] and [1], 1 for the cell in [2] and [3]. */
 type Corner = 0 | 1;
 
 /** 0 moves to the last visible cell in that direction (with Ctrl), 1 moves to the next visible cell. */
@@ -55,11 +55,11 @@ const upVisible = function (this: SelectedWorksheet, group: Corner, direction: S
     let x, y;
 
     if (group == 0) {
-        x = parseInt(obj.selectedCell[0]);
-        y = parseInt(obj.selectedCell[1]);
+        x = parseInt(obj.selection.range[0]);
+        y = parseInt(obj.selection.range[1]);
     } else {
-        x = parseInt(obj.selectedCell[2]);
-        y = parseInt(obj.selectedCell[3]);
+        x = parseInt(obj.selection.range[2]);
+        y = parseInt(obj.selection.range[3]);
     }
 
     if (direction == 0) {
@@ -74,11 +74,11 @@ const upVisible = function (this: SelectedWorksheet, group: Corner, direction: S
     }
 
     if (group == 0) {
-        obj.selectedCell[0] = x;
-        obj.selectedCell[1] = y;
+        obj.selection.range[0] = x;
+        obj.selection.range[1] = y;
     } else {
-        obj.selectedCell[2] = x;
-        obj.selectedCell[3] = y;
+        obj.selection.range[2] = x;
+        obj.selection.range[3] = y;
     }
 };
 
@@ -91,39 +91,39 @@ export const up: WorksheetMethod<'up'> = function (shiftKey, ctrlKey) {
     }
 
     if (shiftKey) {
-        if (obj.selectedCell[3] > 0) {
+        if (obj.selection.range[3] > 0) {
             upVisible.call(obj, 1, ctrlKey ? 0 : 1);
         }
     } else {
-        if (obj.selectedCell[1] > 0) {
+        if (obj.selection.range[1] > 0) {
             upVisible.call(obj, 0, ctrlKey ? 0 : 1);
         }
         toFirstCell.call(obj);
-        obj.selectedCell[2] = obj.selectedCell[0];
-        obj.selectedCell[3] = obj.selectedCell[1];
+        obj.selection.range[2] = obj.selection.range[0];
+        obj.selection.range[3] = obj.selection.range[1];
     }
 
     // Update selection
-    obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+    obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
 
     // Change page
     if (obj.options.lazyLoading == true) {
-        if (obj.selectedCell[1] == 0 || obj.selectedCell[3] == 0) {
+        if (obj.selection.range[1] == 0 || obj.selection.range[3] == 0) {
             loadPage.call(obj, 0);
-            obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+            obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
         } else {
             if (loadValidation.call(obj)) {
-                obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+                obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
             } else {
                 const item = parseInt((obj.tbody.firstChild as HTMLElement).getAttribute('data-y'));
-                if (obj.selectedCell[1] - item < 30) {
+                if (obj.selection.range[1] - item < 30) {
                     loadUp.call(obj);
-                    obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+                    obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
                 }
             }
         }
     } else if (obj.options.pagination! > 0) {
-        const pageNumber = obj.whichPage(obj.selectedCell[3]);
+        const pageNumber = obj.whichPage(obj.selection.range[3]);
         if (pageNumber != obj.pageNumber) {
             obj.page(pageNumber);
         }
@@ -159,11 +159,11 @@ const rightVisible = function (this: SelectedWorksheet, group: Corner, direction
     let x, y;
 
     if (group == 0) {
-        x = parseInt(obj.selectedCell[0]);
-        y = parseInt(obj.selectedCell[1]);
+        x = parseInt(obj.selection.range[0]);
+        y = parseInt(obj.selection.range[1]);
     } else {
-        x = parseInt(obj.selectedCell[2]);
-        y = parseInt(obj.selectedCell[3]);
+        x = parseInt(obj.selection.range[2]);
+        y = parseInt(obj.selection.range[3]);
     }
 
     if (direction == 0) {
@@ -178,11 +178,11 @@ const rightVisible = function (this: SelectedWorksheet, group: Corner, direction
     }
 
     if (group == 0) {
-        obj.selectedCell[0] = x;
-        obj.selectedCell[1] = y;
+        obj.selection.range[0] = x;
+        obj.selection.range[1] = y;
     } else {
-        obj.selectedCell[2] = x;
-        obj.selectedCell[3] = y;
+        obj.selection.range[2] = x;
+        obj.selection.range[3] = y;
     }
 };
 
@@ -195,19 +195,19 @@ export const right: WorksheetMethod<'right'> = function (shiftKey, ctrlKey) {
     }
 
     if (shiftKey) {
-        if (obj.selectedCell[2] < obj.headers.length - 1) {
+        if (obj.selection.range[2] < obj.headers.length - 1) {
             rightVisible.call(obj, 1, ctrlKey ? 0 : 1);
         }
     } else {
-        if (obj.selectedCell[0] < obj.headers.length - 1) {
+        if (obj.selection.range[0] < obj.headers.length - 1) {
             rightVisible.call(obj, 0, ctrlKey ? 0 : 1);
         }
         toFirstCell.call(obj);
-        obj.selectedCell[2] = obj.selectedCell[0];
-        obj.selectedCell[3] = obj.selectedCell[1];
+        obj.selection.range[2] = obj.selection.range[0];
+        obj.selection.range[3] = obj.selection.range[1];
     }
 
-    obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+    obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
     updateScroll.call(obj, 2);
 };
 
@@ -237,11 +237,11 @@ const downVisible = function (this: SelectedWorksheet, group: Corner, direction:
     let x, y;
 
     if (group == 0) {
-        x = parseInt(obj.selectedCell[0]);
-        y = parseInt(obj.selectedCell[1]);
+        x = parseInt(obj.selection.range[0]);
+        y = parseInt(obj.selection.range[1]);
     } else {
-        x = parseInt(obj.selectedCell[2]);
-        y = parseInt(obj.selectedCell[3]);
+        x = parseInt(obj.selection.range[2]);
+        y = parseInt(obj.selection.range[3]);
     }
 
     if (direction == 0) {
@@ -256,11 +256,11 @@ const downVisible = function (this: SelectedWorksheet, group: Corner, direction:
     }
 
     if (group == 0) {
-        obj.selectedCell[0] = x;
-        obj.selectedCell[1] = y;
+        obj.selection.range[0] = x;
+        obj.selection.range[1] = y;
     } else {
-        obj.selectedCell[2] = x;
-        obj.selectedCell[3] = y;
+        obj.selection.range[2] = x;
+        obj.selection.range[3] = y;
     }
 };
 
@@ -273,38 +273,38 @@ export const down: WorksheetMethod<'down'> = function (shiftKey, ctrlKey) {
     }
 
     if (shiftKey) {
-        if (obj.selectedCell[3] < obj.records.length - 1) {
+        if (obj.selection.range[3] < obj.records.length - 1) {
             downVisible.call(obj, 1, ctrlKey ? 0 : 1);
         }
     } else {
-        if (obj.selectedCell[1] < obj.records.length - 1) {
+        if (obj.selection.range[1] < obj.records.length - 1) {
             downVisible.call(obj, 0, ctrlKey ? 0 : 1);
         }
         toFirstCell.call(obj);
-        obj.selectedCell[2] = obj.selectedCell[0];
-        obj.selectedCell[3] = obj.selectedCell[1];
+        obj.selection.range[2] = obj.selection.range[0];
+        obj.selection.range[3] = obj.selection.range[1];
     }
 
-    obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+    obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
 
     // Change page
     if (obj.options.lazyLoading == true) {
-        if (obj.selectedCell[1] == obj.records.length - 1 || obj.selectedCell[3] == obj.records.length - 1) {
+        if (obj.selection.range[1] == obj.records.length - 1 || obj.selection.range[3] == obj.records.length - 1) {
             loadPage.call(obj, -1);
-            obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+            obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
         } else {
             if (loadValidation.call(obj)) {
-                obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+                obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
             } else {
                 const item = parseInt((obj.tbody.lastChild as HTMLElement).getAttribute('data-y'));
-                if (item - obj.selectedCell[3] < 30) {
+                if (item - obj.selection.range[3] < 30) {
                     loadDown.call(obj);
-                    obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+                    obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
                 }
             }
         }
     } else if (obj.options.pagination! > 0) {
-        const pageNumber = obj.whichPage(obj.selectedCell[3]);
+        const pageNumber = obj.whichPage(obj.selection.range[3]);
         if (pageNumber != obj.pageNumber) {
             obj.page(pageNumber);
         }
@@ -339,11 +339,11 @@ const leftVisible = function (this: SelectedWorksheet, group: Corner, direction:
     let x, y;
 
     if (group == 0) {
-        x = parseInt(obj.selectedCell[0]);
-        y = parseInt(obj.selectedCell[1]);
+        x = parseInt(obj.selection.range[0]);
+        y = parseInt(obj.selection.range[1]);
     } else {
-        x = parseInt(obj.selectedCell[2]);
-        y = parseInt(obj.selectedCell[3]);
+        x = parseInt(obj.selection.range[2]);
+        y = parseInt(obj.selection.range[3]);
     }
 
     if (direction == 0) {
@@ -358,11 +358,11 @@ const leftVisible = function (this: SelectedWorksheet, group: Corner, direction:
     }
 
     if (group == 0) {
-        obj.selectedCell[0] = x;
-        obj.selectedCell[1] = y;
+        obj.selection.range[0] = x;
+        obj.selection.range[1] = y;
     } else {
-        obj.selectedCell[2] = x;
-        obj.selectedCell[3] = y;
+        obj.selection.range[2] = x;
+        obj.selection.range[3] = y;
     }
 };
 
@@ -375,19 +375,19 @@ export const left: WorksheetMethod<'left'> = function (shiftKey, ctrlKey) {
     }
 
     if (shiftKey) {
-        if (obj.selectedCell[2] > 0) {
+        if (obj.selection.range[2] > 0) {
             leftVisible.call(obj, 1, ctrlKey ? 0 : 1);
         }
     } else {
-        if (obj.selectedCell[0] > 0) {
+        if (obj.selection.range[0] > 0) {
             leftVisible.call(obj, 0, ctrlKey ? 0 : 1);
         }
         toFirstCell.call(obj);
-        obj.selectedCell[2] = obj.selectedCell[0];
-        obj.selectedCell[3] = obj.selectedCell[1];
+        obj.selection.range[2] = obj.selection.range[0];
+        obj.selection.range[3] = obj.selection.range[1];
     }
 
-    obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+    obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
     updateScroll.call(obj, 0);
 };
 
@@ -401,32 +401,32 @@ export const first: WorksheetMethod<'first'> = function (shiftKey, ctrlKey) {
 
     if (shiftKey) {
         if (ctrlKey) {
-            obj.selectedCell[3] = 0;
+            obj.selection.range[3] = 0;
         } else {
             leftVisible.call(obj, 1, 0);
         }
     } else {
         if (ctrlKey) {
-            obj.selectedCell[1] = 0;
+            obj.selection.range[1] = 0;
         } else {
             leftVisible.call(obj, 0, 0);
         }
         toFirstCell.call(obj);
-        obj.selectedCell[2] = obj.selectedCell[0];
-        obj.selectedCell[3] = obj.selectedCell[1];
+        obj.selection.range[2] = obj.selection.range[0];
+        obj.selection.range[3] = obj.selection.range[1];
     }
 
     // Change page
-    if (obj.options.lazyLoading == true && (obj.selectedCell[1] == 0 || obj.selectedCell[3] == 0)) {
+    if (obj.options.lazyLoading == true && (obj.selection.range[1] == 0 || obj.selection.range[3] == 0)) {
         loadPage.call(obj, 0);
     } else if (obj.options.pagination! > 0) {
-        const pageNumber = obj.whichPage(obj.selectedCell[3]);
+        const pageNumber = obj.whichPage(obj.selection.range[3]);
         if (pageNumber != obj.pageNumber) {
             obj.page(pageNumber);
         }
     }
 
-    obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+    obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
     updateScroll.call(obj, 1);
 };
 
@@ -440,31 +440,31 @@ export const last: WorksheetMethod<'last'> = function (shiftKey, ctrlKey) {
 
     if (shiftKey) {
         if (ctrlKey) {
-            obj.selectedCell[3] = obj.records.length - 1;
+            obj.selection.range[3] = obj.records.length - 1;
         } else {
             rightVisible.call(obj, 1, 0);
         }
     } else {
         if (ctrlKey) {
-            obj.selectedCell[1] = obj.records.length - 1;
+            obj.selection.range[1] = obj.records.length - 1;
         } else {
             rightVisible.call(obj, 0, 0);
         }
         toFirstCell.call(obj);
-        obj.selectedCell[2] = obj.selectedCell[0];
-        obj.selectedCell[3] = obj.selectedCell[1];
+        obj.selection.range[2] = obj.selection.range[0];
+        obj.selection.range[3] = obj.selection.range[1];
     }
 
     // Change page
-    if (obj.options.lazyLoading == true && (obj.selectedCell[1] == obj.records.length - 1 || obj.selectedCell[3] == obj.records.length - 1)) {
+    if (obj.options.lazyLoading == true && (obj.selection.range[1] == obj.records.length - 1 || obj.selection.range[3] == obj.records.length - 1)) {
         loadPage.call(obj, -1);
     } else if (obj.options.pagination! > 0) {
-        const pageNumber = obj.whichPage(obj.selectedCell[3]);
+        const pageNumber = obj.whichPage(obj.selection.range[3]);
         if (pageNumber != obj.pageNumber) {
             obj.page(pageNumber);
         }
     }
 
-    obj.updateSelectionFromCoords(obj.selectedCell[0], obj.selectedCell[1], obj.selectedCell[2], obj.selectedCell[3]);
+    obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
     updateScroll.call(obj, 3);
 };

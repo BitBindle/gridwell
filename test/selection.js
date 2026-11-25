@@ -31,10 +31,10 @@ describe('Selection with the mouse', () => {
         const worksheet = await load({ worksheets: [{ minDimensions: [3, 3] }] });
 
         press(worksheet.records[1][1].element);
-        expect(worksheet.selectedCell).to.eql([1, 1, 1, 1]);
+        expect(worksheet.selection.range).to.eql([1, 1, 1, 1]);
 
         press(worksheet.records[2][2].element, { shiftKey: true });
-        expect(worksheet.selectedCell).to.eql([1, 1, 2, 2]);
+        expect(worksheet.selection.range).to.eql([1, 1, 2, 2]);
     });
 
     it('extends the selection to column 0 and row 0 when the mouse moves over them', async () => {
@@ -42,7 +42,7 @@ describe('Selection with the mouse', () => {
 
         press(worksheet.records[1][1].element);
         worksheet.records[0][0].element.dispatchEvent(new window.MouseEvent('mouseover', { bubbles: true, buttons: 1 }));
-        expect(worksheet.selectedCell).to.eql([1, 1, 0, 0]);
+        expect(worksheet.selection.range).to.eql([1, 1, 0, 0]);
     });
 
     it('sorts by column 0 after a double click on its header', async () => {
@@ -62,9 +62,98 @@ describe('Selection with the mouse', () => {
         });
 
         press(worksheet.records[1][2].element);
-        worksheet.paste(worksheet.selectedCell[0], worksheet.selectedCell[1], 'a');
+        worksheet.paste(worksheet.selection.range[0], worksheet.selection.range[1], 'a');
 
         expect(coords).to.eql([2, 1]);
         expect(worksheet.getValue('C2')).to.equal('a');
+    });
+});
+
+describe('The selection of a worksheet', () => {
+    const create = () =>
+        jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b', 'c'],
+                        ['d', 'e', 'f'],
+                    ],
+                },
+            ],
+        })[0];
+
+    it('has no range before a cell is selected', () => {
+        const worksheet = create();
+
+        expect(worksheet.selection.range).to.equal(null);
+        expect(worksheet.selection.bounds).to.equal(null);
+        expect(worksheet.selection.highlighted).to.eql([]);
+    });
+
+    it('keeps the range as given and the bounds sorted', () => {
+        const worksheet = create();
+
+        worksheet.updateSelectionFromCoords(2, 1, 1, 0);
+
+        expect(worksheet.selection.range).to.eql([2, 1, 1, 0]);
+        expect(worksheet.selection.bounds).to.eql([1, 0, 2, 1]);
+    });
+
+    it('keeps the records of the highlighted cells', () => {
+        const worksheet = create();
+
+        worksheet.updateSelectionFromCoords(1, 0, 2, 1);
+
+        const cells = worksheet.selection.highlighted.map((record) => [record.x, record.y]);
+        expect(cells).to.have.deep.members([
+            [1, 0],
+            [2, 0],
+            [1, 1],
+            [2, 1],
+        ]);
+        expect(worksheet.selection.highlighted[0].element).to.equal(worksheet.getCell('B1'));
+    });
+
+    it('has no range and no highlighted cells after resetSelection', () => {
+        const worksheet = create();
+
+        worksheet.updateSelectionFromCoords(0, 0, 1, 1);
+        worksheet.resetSelection();
+
+        expect(worksheet.selection.range).to.equal(null);
+        expect(worksheet.selection.highlighted).to.eql([]);
+    });
+
+    it('moves the active cell with the selection', () => {
+        const worksheet = create();
+
+        worksheet.updateSelectionFromCoords(2, 1, 2, 1);
+        expect(worksheet.selection.activeCell).to.equal(worksheet.getCell('C2'));
+
+        worksheet.updateSelectionFromCoords(0, 0, 1, 0);
+        expect(worksheet.selection.activeCell).to.equal(worksheet.getCell('A1'));
+    });
+
+    it('clearFill removes the fill classes and empties the fill cells', () => {
+        const worksheet = create();
+        const cell = worksheet.getCell('A2');
+        cell.classList.add('selection', 'selection-left', 'selection-bottom');
+        worksheet.selection.fill.push(cell);
+
+        worksheet.selection.clearFill();
+
+        expect(worksheet.selection.fill).to.eql([]);
+        expect(cell.className).to.not.match(/selection/);
+    });
+
+    it('is not shared between worksheets', async () => {
+        const worksheets = jspreadsheet(root, { worksheets: [{ data: [['a']] }, { data: [['b']] }] });
+        await new Promise((resolve) => setTimeout(resolve));
+
+        expect(worksheets[0].selection).to.not.equal(worksheets[1].selection);
+
+        worksheets[0].updateSelectionFromCoords(0, 0, 0, 0);
+
+        expect(worksheets[1].selection.range).to.equal(null);
     });
 });

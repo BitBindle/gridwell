@@ -61,7 +61,10 @@ what it changes, and lists its breaking changes in UPGRADING.md.
    have moved; `openEditor`, `closeEditor` and the editor types stay in `utils/editor.ts` for the same reason as `undo`
    and `redo`.
 5. **Selection.** `selectedCell`, `highlighted`, the borders, the active cell and the focus state move into
-   `components/Selection.ts`, together with the accessibility code that follows the selection.
+   `components/Selection.ts`, together with the accessibility code that follows the selection. The range, its
+   bounds, the highlighted cells, the cells of the fill area, the active cell and the focus state have moved;
+   `updateSelection`, `resetSelection` and the accessibility functions stay in `utils/` for the same reason as `undo`
+   and `redo`.
 6. **Formulas.** The formula chain, the results and the footer formulas move into `components/Formulas.ts`.
 7. **The rest of the worksheet state**, one component at a time: merges, filters and search, pagination and lazy
    loading, frozen columns, columns and rows.

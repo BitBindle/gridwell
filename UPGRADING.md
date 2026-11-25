@@ -82,3 +82,21 @@ its column and row as text. It is now `worksheet.editor`:
 `x` and `y` are numbers. `worksheet.editor.cell` is `null` when no editor is open, where `worksheet.edition` was `null`
 or, before the first editor, undefined. `openEditor()`, `closeEditor()`, the editor events and the custom editors work as
 before.
+
+## The selection is an object
+
+The fields of the selection are now in `worksheet.selection`, a `Selection` object. The array that `worksheet.selection`
+held, the cells of the area that the corner fills, is `worksheet.selection.fill`.
+
+| Version 5                     | Version 6                         |
+| ----------------------------- | --------------------------------- |
+| `worksheet.selectedCell`      | `worksheet.selection.range`       |
+| `worksheet.selectedContainer` | `worksheet.selection.bounds`      |
+| `worksheet.highlighted`       | `worksheet.selection.highlighted` |
+| `worksheet.selection`         | `worksheet.selection.fill`        |
+| `worksheet.activeCell`        | `worksheet.selection.activeCell`  |
+| `worksheet.focusInGrid`       | `worksheet.selection.focusInGrid` |
+
+`worksheet.selection.range` is `null` before a cell is selected, where `worksheet.selectedCell` was undefined, and
+`worksheet.selection.highlighted` is an empty array before the first selection. `getSelection()`, `getSelected()`,
+`updateSelectionFromCoords()`, `resetSelection()` and the selection events work as before.

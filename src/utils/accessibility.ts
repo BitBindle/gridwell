@@ -232,7 +232,7 @@ const getFirstVisibleCell = function (this: Worksheet) {
 const setActiveCell = function (this: Worksheet, td: HTMLTableCellElement | null | undefined) {
     const obj = this;
 
-    const previous = obj.activeCell;
+    const previous = obj.selection.activeCell;
     if (previous && previous !== td) {
         previous.tabIndex = -1;
         previous.removeAttribute('aria-label');
@@ -241,7 +241,7 @@ const setActiveCell = function (this: Worksheet, td: HTMLTableCellElement | null
         }
     }
 
-    obj.activeCell = td;
+    obj.selection.activeCell = td || null;
 
     if (td) {
         // The editor of a cell takes the focus, so the cell is not a focus target while the editor is open
@@ -286,14 +286,14 @@ export const updateTabStop = function (this: Worksheet) {
     const obj = this;
 
     let td: HTMLTableCellElement | null | undefined = null;
-    if (obj.selectedCell) {
-        const x = obj.selectedCell[0];
-        const y = obj.selectedCell[1];
+    if (obj.selection.range) {
+        const x = obj.selection.range[0];
+        const y = obj.selection.range[1];
         td = obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : null;
     }
 
     if (!isVisibleCell.call(obj, td)) {
-        td = isVisibleCell.call(obj, obj.activeCell) ? obj.activeCell : getFirstVisibleCell.call(obj);
+        td = isVisibleCell.call(obj, obj.selection.activeCell) ? obj.selection.activeCell : getFirstVisibleCell.call(obj);
     }
 
     setActiveCell.call(obj, td);
@@ -301,7 +301,7 @@ export const updateTabStop = function (this: Worksheet) {
     if (td && !obj.editor.isOpen() && libraryBase.jspreadsheet.current === obj) {
         const active = getActiveElement.call(obj);
         // The focus was in the grid at the last selection
-        const lost = obj.focusInGrid === true && isFocusLost();
+        const lost = obj.selection.focusInGrid === true && isFocusLost();
         const otherCell = !!active && active !== td && active.tagName === 'TD' && obj.tbody.contains(active);
         if (lost || otherCell) {
             td.focus({ preventScroll: true });
@@ -317,7 +317,7 @@ export const setGridFocusEvents = function (this: Worksheet) {
 
     obj.table.addEventListener('focusout', function (e) {
         if (e.relatedTarget && (e.relatedTarget as Node).nodeType === 1 && !obj.parent.element.contains(e.relatedTarget as Node)) {
-            obj.focusInGrid = false;
+            obj.selection.focusInGrid = false;
         }
     });
 };
@@ -342,9 +342,9 @@ export const updateActiveCell = function (this: Worksheet, x: number, y: number,
     const inGrid = pointer || (!!active && (active === obj.parent.element || active === obj.clipboard.textarea || obj.table.contains(active)));
     const dropped = isFocusLost() && libraryBase.jspreadsheet.current === obj;
     // The focus was in the grid at the last selection
-    obj.focusInGrid = inGrid || (dropped && obj.focusInGrid === true);
+    obj.selection.focusInGrid = inGrid || (dropped && obj.selection.focusInGrid === true);
 
-    if (obj.focusInGrid && !obj.editor.isOpen() && active !== td) {
+    if (obj.selection.focusInGrid && !obj.editor.isOpen() && active !== td) {
         td.focus({ preventScroll: true });
     }
 };
@@ -356,7 +356,7 @@ export const updateActiveCell = function (this: Worksheet, x: number, y: number,
 export const restoreActiveCell = function (this: Worksheet, cell: HTMLTableCellElement) {
     const obj = this;
 
-    if (obj.activeCell !== cell) {
+    if (obj.selection.activeCell !== cell) {
         cell.tabIndex = -1;
         return;
     }
@@ -365,7 +365,7 @@ export const restoreActiveCell = function (this: Worksheet, cell: HTMLTableCellE
     setCellLabel.call(obj, cell);
 
     setTimeout(function () {
-        if (isFocusLost() && libraryBase.jspreadsheet.current === obj && obj.activeCell === cell && !obj.editor.isOpen()) {
+        if (isFocusLost() && libraryBase.jspreadsheet.current === obj && obj.selection.activeCell === cell && !obj.editor.isOpen()) {
             cell.focus({ preventScroll: true });
         }
     });

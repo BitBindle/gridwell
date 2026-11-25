@@ -70,9 +70,9 @@ export const loadPage = function (this: Worksheet, pageNumber: number) {
 export const loadValidation = function (this: Worksheet) {
     const obj = this;
 
-    if (obj.selectedCell) {
+    if (obj.selection.range) {
         let currentRow = parseInt((obj.tbody.firstChild as HTMLElement).getAttribute('data-y'));
-        let selectedRow = parseInt(obj.selectedCell[3]);
+        let selectedRow = parseInt(obj.selection.range[3]);
         let total = obj.rows.length;
 
         // With search or filters, the pages are pages of the results
@@ -91,7 +91,7 @@ export const loadValidation = function (this: Worksheet) {
         const totalPages = parseInt(total / 100);
 
         if (currentPage != selectedPage && selectedPage <= totalPages) {
-            if (Array.prototype.indexOf.call(obj.tbody.children, obj.rows[obj.selectedCell[3] as number].element) < 0) {
+            if (Array.prototype.indexOf.call(obj.tbody.children, obj.rows[obj.selection.range[3] as number].element) < 0) {
                 loadPage.call(obj, selectedPage);
                 return true;
             }

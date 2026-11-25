@@ -22,13 +22,13 @@ describe('Lazy loading', () => {
         worksheet.updateSelectionFromCoords(0, 250, 0, 250);
         worksheet.down();
 
-        expect(worksheet.selectedCell.map(Number)).to.eql([0, 251, 0, 251]);
+        expect(worksheet.selection.range.map(Number)).to.eql([0, 251, 0, 251]);
         expect(worksheet.tbody.contains(worksheet.records[251][0].element)).to.equal(true);
 
         worksheet.updateSelectionFromCoords(0, 250, 0, 250);
         worksheet.up();
 
-        expect(worksheet.selectedCell.map(Number)).to.eql([0, 249, 0, 249]);
+        expect(worksheet.selection.range.map(Number)).to.eql([0, 249, 0, 249]);
         expect(worksheet.tbody.contains(worksheet.records[249][0].element)).to.equal(true);
     });
 
@@ -49,7 +49,7 @@ describe('Lazy loading', () => {
         worksheet.updateSelectionFromCoords(0, first + 1, 0, first + 1);
         worksheet.up();
 
-        expect(worksheet.selectedCell.map(Number)).to.eql([0, first, 0, first]);
+        expect(worksheet.selection.range.map(Number)).to.eql([0, first, 0, first]);
     });
 
     it('loads the page of the selected result when the keyboard moves with a search', () => {
@@ -70,13 +70,13 @@ describe('Lazy loading', () => {
         worksheet.updateSelectionFromCoords(0, 300, 0, 300);
         worksheet.down();
 
-        expect(worksheet.selectedCell.map(Number)).to.eql([0, 302, 0, 302]);
+        expect(worksheet.selection.range.map(Number)).to.eql([0, 302, 0, 302]);
         expect(worksheet.tbody.contains(worksheet.records[302][0].element)).to.equal(true);
 
         worksheet.updateSelectionFromCoords(0, 450, 0, 450);
         worksheet.down();
 
-        expect(worksheet.selectedCell.map(Number)).to.eql([0, 452, 0, 452]);
+        expect(worksheet.selection.range.map(Number)).to.eql([0, 452, 0, 452]);
         expect(worksheet.tbody.contains(worksheet.records[452][0].element)).to.equal(true);
     });
 });

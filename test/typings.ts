@@ -90,8 +90,12 @@ worksheet.insertColumn(1, 0, 1);
 const worksheetByName = library.getWorksheetInstanceByName('Countries', 'namespace');
 assertType<Equals<typeof worksheetByName, jspreadsheet.WorksheetInstance | Record<string, jspreadsheet.WorksheetInstance> | undefined>>();
 
-// The selection coordinates are numbers
-assertType<Equals<typeof worksheet.selectedCell, undefined | null | [number, number, number, number]>>();
+// The selection coordinates are numbers, and the range is null when nothing is selected
+assertType<Equals<typeof worksheet.selection.range, null | [number, number, number, number]>>();
+// @ts-expect-error The range is selection.range
+void worksheet.selectedCell;
+// @ts-expect-error The selected cells are selection.highlighted
+void worksheet.highlighted;
 
 // Without a direction, orderBy toggles the direction of the column
 worksheet.orderBy(0);

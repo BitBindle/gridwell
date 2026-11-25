@@ -126,14 +126,14 @@ describe('Worksheet tabs', () => {
         const worksheets = await create({ tabs: true });
 
         selectCell(worksheets[0], 0, 0);
-        expect(worksheets[0].selectedCell.map(Number)).to.eql([0, 0, 0, 0]);
+        expect(worksheets[0].selection.range.map(Number)).to.eql([0, 0, 0, 0]);
 
         const tabs = getTabs();
         tabs[0].focus();
         keyDown(tabs[0], 'ArrowRight');
 
         expect(worksheets[0].getWorksheetActive()).to.eq(1);
-        expect(worksheets[0].selectedCell.map(Number)).to.eql([0, 0, 0, 0]);
+        expect(worksheets[0].selection.range.map(Number)).to.eql([0, 0, 0, 0]);
     });
 
     it('the button to add a worksheet is a button with a name, and Enter and Space reach it', async () => {
@@ -149,7 +149,7 @@ describe('Worksheet tabs', () => {
         add.focus();
         expect(keyDown(add, 'Enter').defaultPrevented).to.eq(false);
         expect(keyDown(add, ' ').defaultPrevented).to.eq(false);
-        expect(worksheets[0].selectedCell.map(Number)).to.eql([0, 0, 0, 0]);
+        expect(worksheets[0].selection.range.map(Number)).to.eql([0, 0, 0, 0]);
         expect(worksheets.length).to.eq(3);
 
         add.click();

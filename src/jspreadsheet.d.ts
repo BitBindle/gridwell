@@ -334,6 +334,37 @@ declare namespace jspreadsheet {
     }
 
     /**
+     * The selection of a worksheet, {@link WorksheetInstance.selection}. {@link WorksheetInstance.updateSelectionFromCoords}
+     * and the other selection methods change it.
+     */
+    interface WorksheetSelection {
+        /**
+         * The selected range, or null when nothing is selected. The column [0] and row [1] of the cell where the
+         * selection starts, and the column [2] and row [3] of the cell where it ends. The end can be left of or above the
+         * start. {@link WorksheetInstance.getSelection} gives it from left to right and top to bottom.
+         */
+        range: [number, number, number, number] | null;
+
+        /** The selected range from left to right and top to bottom, or null before the first selection. */
+        bounds: [number, number, number, number] | null;
+
+        /** The selected cells. */
+        highlighted: { element: HTMLTableCellElement; x: number; y: number }[];
+
+        /** The cells that a drag of the selection corner fills, while the drag goes on. */
+        fill: HTMLTableCellElement[];
+
+        /** The cell that has the roving tabindex, the tab stop of the grid, or null before the grid has one. */
+        activeCell: HTMLTableCellElement | null;
+
+        /** Whether the keyboard focus is in the grid or in its editor. */
+        focusInGrid: boolean;
+
+        /** Remove the fill border from the cells that a drag of the corner was going to fill, and forget them. */
+        clearFill(): void;
+    }
+
+    /**
      * The cell editor of a worksheet, {@link WorksheetInstance.editor}. {@link WorksheetInstance.openEditor} and
      * {@link WorksheetInstance.closeEditor} open and close it.
      */
@@ -1971,15 +2002,6 @@ declare namespace jspreadsheet {
         hideRow: (rowNumber: number | number[]) => void;
 
         /**
-         * List of highlighted cells.
-         */
-        highlighted: {
-            element: HTMLTableCellElement;
-            x: number;
-            y: number;
-        }[];
-
-        /**
          * The undo history of the worksheet.
          */
         history: WorksheetHistory;
@@ -2223,18 +2245,9 @@ declare namespace jspreadsheet {
         selectAll: () => void;
 
         /**
-         * Current selection coordinates.
-         *
-         * The column [0] and row [1] of the cell where the selection starts, and the column [2] and row [3] of the cell where it ends. The end can be left of or above the start.
+         * The selection of the worksheet.
          */
-        selectedCell: undefined | null | [number, number, number, number];
-
-        selectedContainer: undefined | null | [number, number, number, number];
-
-        /**
-         * Cells that currently have "autocomplete selection".
-         */
-        selection: HTMLTableCellElement[];
+        selection: WorksheetSelection;
 
         /**
          * Set the data from one column by index.

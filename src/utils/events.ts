@@ -5,7 +5,7 @@ import libraryBase from './libraryBase.js';
 import { down, first, last, left, right, up } from './keys.js';
 import { isColMerged, isRowMerged } from './merges.js';
 import { getCellColumnIndex } from './internal.js';
-import { copyData, removeCopySelection, resetSelection, selectAll, updateCornerPosition, updateSelectionFromCoords } from './selection.js';
+import { copyData, resetSelection, selectAll, updateCornerPosition, updateSelectionFromCoords } from './selection.js';
 import { copy, paste } from './copyPaste.js';
 import { openFilter } from './filter.js';
 import { loadDown, loadUp } from './lazyLoading.js';
@@ -164,16 +164,16 @@ const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
                 libraryBase.jspreadsheet.current.selectedCorner = false;
 
                 // Data to be copied
-                if (libraryBase.jspreadsheet.current.selection.length > 0) {
+                if (libraryBase.jspreadsheet.current.selection.fill.length > 0) {
                     // Copy data
                     copyData.call(
                         libraryBase.jspreadsheet.current,
-                        libraryBase.jspreadsheet.current.selection[0],
-                        libraryBase.jspreadsheet.current.selection[libraryBase.jspreadsheet.current.selection.length - 1]
+                        libraryBase.jspreadsheet.current.selection.fill[0],
+                        libraryBase.jspreadsheet.current.selection.fill[libraryBase.jspreadsheet.current.selection.fill.length - 1]
                     );
 
                     // Remove selection
-                    removeCopySelection.call(libraryBase.jspreadsheet.current);
+                    libraryBase.jspreadsheet.current.selection.clearFill();
                 }
             }
         }
@@ -417,8 +417,8 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                                 if (e.shiftKey) {
                                     updateSelectionFromCoords.call(
                                         libraryBase.jspreadsheet.current,
-                                        libraryBase.jspreadsheet.current.selectedCell![0],
-                                        libraryBase.jspreadsheet.current.selectedCell![1],
+                                        libraryBase.jspreadsheet.current.selection.range![0],
+                                        libraryBase.jspreadsheet.current.selection.range![1],
                                         columnId,
                                         rowId,
                                         e
@@ -597,13 +597,13 @@ const updateCopySelection = function (this: Worksheet, x3: number, y3: number) {
     const obj = this;
 
     // Remove selection
-    removeCopySelection.call(obj);
+    obj.selection.clearFill();
 
     // Get elements first and last
-    const x1 = obj.selectedContainer![0];
-    const y1 = obj.selectedContainer![1];
-    const x2 = obj.selectedContainer![2];
-    const y2 = obj.selectedContainer![3];
+    const x1 = obj.selection.bounds![0];
+    const y1 = obj.selection.bounds![1];
+    const x2 = obj.selection.bounds![2];
+    const y2 = obj.selection.bounds![3];
 
     if (x3 != null && y3 != null) {
         let px, ux;
@@ -644,7 +644,7 @@ const updateCopySelection = function (this: Worksheet, x3: number, y3: number) {
                     obj.records[j][ux].element.classList.add('selection-right');
 
                     // Persist selected elements
-                    obj.selection.push(obj.records[j][i].element);
+                    obj.selection.fill.push(obj.records[j][i].element);
                 }
             }
         }
@@ -719,11 +719,11 @@ const mouseOverControls = function (e: TargetEvent<MouseEvent>) {
                                 if (libraryBase.jspreadsheet.current.selectedCorner) {
                                     updateCopySelection.call(libraryBase.jspreadsheet.current, columnId, rowId);
                                 } else {
-                                    if (libraryBase.jspreadsheet.current.selectedCell) {
+                                    if (libraryBase.jspreadsheet.current.selection.range) {
                                         updateSelectionFromCoords.call(
                                             libraryBase.jspreadsheet.current,
-                                            libraryBase.jspreadsheet.current.selectedCell[0],
-                                            libraryBase.jspreadsheet.current.selectedCell[1],
+                                            libraryBase.jspreadsheet.current.selection.range[0],
+                                            libraryBase.jspreadsheet.current.selection.range[1],
                                             columnId,
                                             rowId,
                                             e
@@ -751,16 +751,20 @@ const doubleClickControls = function (e: TargetEvent<MouseEvent>) {
         // Corner action
         if (e.target.classList.contains('jss_corner')) {
             // Any selected cells
-            if (libraryBase.jspreadsheet.current.highlighted.length > 0) {
+            if (libraryBase.jspreadsheet.current.selection.highlighted.length > 0) {
                 // Copy from this
-                const x1 = parseInt(libraryBase.jspreadsheet.current.highlighted[0].element.getAttribute('data-x'));
+                const x1 = parseInt(libraryBase.jspreadsheet.current.selection.highlighted[0].element.getAttribute('data-x'));
                 const y1 =
                     parseInt(
-                        libraryBase.jspreadsheet.current.highlighted[libraryBase.jspreadsheet.current.highlighted.length - 1].element.getAttribute('data-y')
+                        libraryBase.jspreadsheet.current.selection.highlighted[
+                            libraryBase.jspreadsheet.current.selection.highlighted.length - 1
+                        ].element.getAttribute('data-y')
                     ) + 1;
                 // Until this
                 const x2 = parseInt(
-                    libraryBase.jspreadsheet.current.highlighted[libraryBase.jspreadsheet.current.highlighted.length - 1].element.getAttribute('data-x')
+                    libraryBase.jspreadsheet.current.selection.highlighted[
+                        libraryBase.jspreadsheet.current.selection.highlighted.length - 1
+                    ].element.getAttribute('data-x')
                 );
                 const y2 = libraryBase.jspreadsheet.current.records.length - 1;
                 // Execute copy
@@ -818,14 +822,14 @@ const pasteControls = function (e?: TargetEvent<ClipboardEvent>) {
         return;
     }
 
-    if (libraryBase.jspreadsheet.current && libraryBase.jspreadsheet.current.selectedCell) {
+    if (libraryBase.jspreadsheet.current && libraryBase.jspreadsheet.current.selection.range) {
         if (!libraryBase.jspreadsheet.current.editor.isOpen()) {
             if (libraryBase.jspreadsheet.current.options.editable != false) {
                 if (e && e.clipboardData) {
                     paste.call(
                         libraryBase.jspreadsheet.current,
-                        libraryBase.jspreadsheet.current.selectedCell[0],
-                        libraryBase.jspreadsheet.current.selectedCell[1],
+                        libraryBase.jspreadsheet.current.selection.range[0],
+                        libraryBase.jspreadsheet.current.selection.range[1],
                         e.clipboardData.getData('text')
                     );
                     e.preventDefault();
@@ -833,8 +837,8 @@ const pasteControls = function (e?: TargetEvent<ClipboardEvent>) {
                     // Internet Explorer has the clipboard on the window
                     paste.call(
                         libraryBase.jspreadsheet.current,
-                        libraryBase.jspreadsheet.current.selectedCell[0],
-                        libraryBase.jspreadsheet.current.selectedCell[1],
+                        libraryBase.jspreadsheet.current.selection.range[0],
+                        libraryBase.jspreadsheet.current.selection.range[1],
                         (window as Window & { clipboardData?: DataTransfer }).clipboardData!.getData('text')
                     );
                 }
@@ -1038,10 +1042,10 @@ const defaultContextMenu = function (worksheet: Worksheet, x: number, y: number,
                 title: jSuites.translate('Paste') + '...',
                 shortcut: 'Ctrl + V',
                 onclick: function () {
-                    if (worksheet.selectedCell) {
+                    if (worksheet.selection.range) {
                         navigator.clipboard.readText().then(function (text) {
                             if (text) {
-                                paste.call(worksheet, worksheet.selectedCell![0], worksheet.selectedCell![1], text);
+                                paste.call(worksheet, worksheet.selection.range![0], worksheet.selection.range![1], text);
                             }
                         });
                     }
@@ -1128,11 +1132,11 @@ const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
                     x = cellElement.getAttribute('data-x');
 
                     if (
-                        !libraryBase.jspreadsheet.current.selectedCell ||
-                        Number(x) < parseInt(libraryBase.jspreadsheet.current.selectedCell[0]) ||
-                        Number(x) > parseInt(libraryBase.jspreadsheet.current.selectedCell[2]) ||
-                        Number(y) < parseInt(libraryBase.jspreadsheet.current.selectedCell[1]) ||
-                        Number(y) > parseInt(libraryBase.jspreadsheet.current.selectedCell[3])
+                        !libraryBase.jspreadsheet.current.selection.range ||
+                        Number(x) < parseInt(libraryBase.jspreadsheet.current.selection.range[0]) ||
+                        Number(x) > parseInt(libraryBase.jspreadsheet.current.selection.range[2]) ||
+                        Number(y) < parseInt(libraryBase.jspreadsheet.current.selection.range[1]) ||
+                        Number(y) > parseInt(libraryBase.jspreadsheet.current.selection.range[3])
                     ) {
                         updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, parseInt(x), parseInt(y), parseInt(x), parseInt(y), e);
                     }
@@ -1144,11 +1148,11 @@ const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
                     }
 
                     if (
-                        !libraryBase.jspreadsheet.current.selectedCell ||
-                        Number(x) < parseInt(libraryBase.jspreadsheet.current.selectedCell[0]) ||
-                        Number(x) > parseInt(libraryBase.jspreadsheet.current.selectedCell[2]) ||
-                        Number(y) < parseInt(libraryBase.jspreadsheet.current.selectedCell[1]) ||
-                        Number(y) > parseInt(libraryBase.jspreadsheet.current.selectedCell[3])
+                        !libraryBase.jspreadsheet.current.selection.range ||
+                        Number(x) < parseInt(libraryBase.jspreadsheet.current.selection.range[0]) ||
+                        Number(x) > parseInt(libraryBase.jspreadsheet.current.selection.range[2]) ||
+                        Number(y) < parseInt(libraryBase.jspreadsheet.current.selection.range[1]) ||
+                        Number(y) > parseInt(libraryBase.jspreadsheet.current.selection.range[3])
                     ) {
                         // A null index selects the whole row or column
                         const column = x == null ? null : parseInt(x);
@@ -1166,11 +1170,11 @@ const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
                     y = getElementIndex(e.target.parentElement!);
 
                     if (
-                        !libraryBase.jspreadsheet.current.selectedCell ||
-                        columns[0] != parseInt(libraryBase.jspreadsheet.current.selectedCell[0]) ||
-                        columns[columns.length - 1] != parseInt(libraryBase.jspreadsheet.current.selectedCell[2]) ||
-                        libraryBase.jspreadsheet.current.selectedCell[1] != null ||
-                        libraryBase.jspreadsheet.current.selectedCell[3] != null
+                        !libraryBase.jspreadsheet.current.selection.range ||
+                        columns[0] != parseInt(libraryBase.jspreadsheet.current.selection.range[0]) ||
+                        columns[columns.length - 1] != parseInt(libraryBase.jspreadsheet.current.selection.range[2]) ||
+                        libraryBase.jspreadsheet.current.selection.range[1] != null ||
+                        libraryBase.jspreadsheet.current.selection.range[3] != null
                     ) {
                         updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, columns[0], null, columns[columns.length - 1], null, e);
                     }
@@ -1287,12 +1291,12 @@ const touchEndControls = function (e: TargetEvent<TouchEvent>) {
 export const cutControls = function (e?: TargetEvent<ClipboardEvent>) {
     if (libraryBase.jspreadsheet.current) {
         // Without a selection, there is nothing to cut
-        if (!libraryBase.jspreadsheet.current.editor.isOpen() && libraryBase.jspreadsheet.current.selectedCell) {
+        if (!libraryBase.jspreadsheet.current.editor.isOpen() && libraryBase.jspreadsheet.current.selection.range) {
             const copied = copy.call(libraryBase.jspreadsheet.current, true, undefined, undefined, undefined, undefined, true);
             // oncopy can cancel the cut
             if (copied !== false && libraryBase.jspreadsheet.current.options.editable != false) {
                 libraryBase.jspreadsheet.current.setValue(
-                    libraryBase.jspreadsheet.current.highlighted.map(function (record) {
+                    libraryBase.jspreadsheet.current.selection.highlighted.map(function (record) {
                         return record.element;
                     }),
                     ''
@@ -1396,7 +1400,7 @@ const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
             }
         }
 
-        if (!libraryBase.jspreadsheet.current.editor.isOpen() && libraryBase.jspreadsheet.current.selectedCell) {
+        if (!libraryBase.jspreadsheet.current.editor.isOpen() && libraryBase.jspreadsheet.current.selection.range) {
             // Which key
             if (e.which == 37) {
                 left.call(libraryBase.jspreadsheet.current, e.shiftKey, e.ctrlKey);
@@ -1434,7 +1438,7 @@ const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
                     } else {
                         // Change value
                         libraryBase.jspreadsheet.current.setValue(
-                            libraryBase.jspreadsheet.current.highlighted.map(function (record) {
+                            libraryBase.jspreadsheet.current.selection.highlighted.map(function (record) {
                                 return record.element;
                             }),
                             ''
@@ -1448,8 +1452,8 @@ const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
                 } else {
                     if (libraryBase.jspreadsheet.current.options.allowInsertRow != false) {
                         if (libraryBase.jspreadsheet.current.options.allowManualInsertRow != false) {
-                            if (libraryBase.jspreadsheet.current.selectedCell[1] == libraryBase.jspreadsheet.current.options.data.length - 1) {
-                                // New record in case selectedCell in the last row
+                            if (libraryBase.jspreadsheet.current.selection.range[1] == libraryBase.jspreadsheet.current.options.data.length - 1) {
+                                // New record in case the selection is in the last row
                                 libraryBase.jspreadsheet.current.insertRow();
                             }
                         }
@@ -1465,8 +1469,8 @@ const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
                 } else {
                     if (libraryBase.jspreadsheet.current.options.allowInsertColumn != false) {
                         if (libraryBase.jspreadsheet.current.options.allowManualInsertColumn != false) {
-                            if (libraryBase.jspreadsheet.current.selectedCell[0] == libraryBase.jspreadsheet.current.options.data[0].length - 1) {
-                                // New record in case selectedCell in the last column
+                            if (libraryBase.jspreadsheet.current.selection.range[0] == libraryBase.jspreadsheet.current.options.data[0].length - 1) {
+                                // New record in case the selection is in the last column
                                 libraryBase.jspreadsheet.current.insertColumn();
                             }
                         }
@@ -1510,10 +1514,10 @@ const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
                         pasteControls();
                     }
                 } else {
-                    if (libraryBase.jspreadsheet.current.selectedCell) {
+                    if (libraryBase.jspreadsheet.current.selection.range) {
                         if (libraryBase.jspreadsheet.current.options.editable != false) {
-                            const rowId = libraryBase.jspreadsheet.current.selectedCell[1];
-                            const columnId = libraryBase.jspreadsheet.current.selectedCell[0];
+                            const rowId = libraryBase.jspreadsheet.current.selection.range[1];
+                            const columnId = libraryBase.jspreadsheet.current.selection.range[0];
                             const column =
                                 libraryBase.jspreadsheet.current.options.columns[getCellColumnIndex.call(libraryBase.jspreadsheet.current, columnId, rowId)];
 

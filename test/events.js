@@ -28,7 +28,7 @@ describe('Mouse events outside the grid', () => {
         press(control.querySelector('span'));
         control.remove();
 
-        expect(worksheet.selectedCell.map(Number)).to.eql([1, 1, 1, 1]);
+        expect(worksheet.selection.range.map(Number)).to.eql([1, 1, 1, 1]);
     });
 
     it('takes a press on a cell of a host table with the class jss_object without an error', async () => {
@@ -49,7 +49,7 @@ describe('Mouse events outside the grid', () => {
         host.remove();
 
         expect(errors).to.eql([]);
-        expect(worksheet.selectedCell.map(Number)).to.eql([1, 1, 1, 1]);
+        expect(worksheet.selection.range.map(Number)).to.eql([1, 1, 1, 1]);
     });
 });
 
@@ -83,7 +83,7 @@ describe('Keys on a jss_object control outside the grid', () => {
         button.remove();
 
         expect(results).to.eql([false, false, false]);
-        expect(worksheet.selectedCell.map(Number)).to.eql([1, 1, 1, 1]);
+        expect(worksheet.selection.range.map(Number)).to.eql([1, 1, 1, 1]);
     });
 
     it('keeps the selection with the keys on a jss_object button in a shadow root', async () => {
@@ -106,7 +106,7 @@ describe('Keys on a jss_object control outside the grid', () => {
             const event = keydown(button, 'ArrowDown', 40);
 
             expect(event.defaultPrevented).to.equal(false);
-            expect(worksheet.selectedCell.map(Number)).to.eql([1, 1, 1, 1]);
+            expect(worksheet.selection.range.map(Number)).to.eql([1, 1, 1, 1]);
         } finally {
             host.remove();
         }
@@ -146,7 +146,7 @@ describe('Keys on a jss_object control outside the grid', () => {
 
             const results = [keydown(container, 'ArrowDown', 40), keydown(container, 'ArrowRight', 39)].map((event) => event.defaultPrevented);
             expect(results).to.eql([true, true]);
-            expect(worksheet.selectedCell.map(Number)).to.eql([2, 2, 2, 2]);
+            expect(worksheet.selection.range.map(Number)).to.eql([2, 2, 2, 2]);
 
             paste(container, 'c');
             expect(worksheet.getValue('C3')).to.equal('c');
@@ -162,7 +162,7 @@ describe('Keys on a jss_object control outside the grid', () => {
 
         const event = keydown(document.body, 'ArrowDown', 40);
         expect(event.defaultPrevented).to.equal(true);
-        expect(worksheet.selectedCell.map(Number)).to.eql([1, 2, 1, 2]);
+        expect(worksheet.selection.range.map(Number)).to.eql([1, 2, 1, 2]);
 
         paste(document.body, 'c');
         expect(worksheet.getValue('B3')).to.equal('c');
@@ -365,7 +365,7 @@ describe('Context menu', () => {
         worksheet.updateSelectionFromCoords(0, 0, 0, 0);
         contextmenu(worksheet.records[2][1].element);
 
-        expect(worksheet.selectedCell).to.eql([1, 2, 1, 2]);
+        expect(worksheet.selection.range).to.eql([1, 2, 1, 2]);
         expect(calls).to.eql([['1', '2', 'cell']]);
     });
 
@@ -378,7 +378,7 @@ describe('Context menu', () => {
         worksheet.updateSelectionFromCoords(0, 0, 2, 2);
         contextmenu(worksheet.records[1][1].element);
 
-        expect(worksheet.selectedCell).to.eql([0, 0, 2, 2]);
+        expect(worksheet.selection.range).to.eql([0, 0, 2, 2]);
     });
 
     it('selects the row of a row number', async () => {
@@ -394,7 +394,7 @@ describe('Context menu', () => {
         worksheet.updateSelectionFromCoords(0, 0, 0, 0);
         contextmenu(worksheet.rows[2].element.children[0]);
 
-        expect(worksheet.selectedCell).to.eql([0, 2, 2, 2]);
+        expect(worksheet.selection.range).to.eql([0, 2, 2, 2]);
         expect(calls).to.eql([[null, '2', 'row']]);
     });
 
@@ -407,6 +407,6 @@ describe('Context menu', () => {
         worksheet.updateSelectionFromCoords(0, 0, 0, 0);
         contextmenu(worksheet.headers[2]);
 
-        expect(worksheet.selectedCell).to.eql([2, 0, 2, 2]);
+        expect(worksheet.selection.range).to.eql([2, 0, 2, 2]);
     });
 });

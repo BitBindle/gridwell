@@ -20,6 +20,6 @@ describe('Touch', () => {
 
         expect(worksheet.editor.cell).to.not.be.ok;
         expect(events).to.eql([]);
-        expect(worksheet.selectedCell.map(Number)).to.eql([1, 1, 1, 1]);
+        expect(worksheet.selection.range.map(Number)).to.eql([1, 1, 1, 1]);
     });
 });

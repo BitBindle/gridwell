@@ -462,10 +462,10 @@ export const setCheckRadioValue = function (this: Worksheet) {
     const obj = this;
 
     const records = [];
-    const keys = Object.keys(obj.highlighted);
+    const keys = Object.keys(obj.selection.highlighted);
     for (let i = 0; i < keys.length; i++) {
-        const x = parseInt(obj.highlighted[i].element.getAttribute('data-x'));
-        const y = parseInt(obj.highlighted[i].element.getAttribute('data-y'));
+        const x = parseInt(obj.selection.highlighted[i].element.getAttribute('data-x'));
+        const y = parseInt(obj.selection.highlighted[i].element.getAttribute('data-y'));
 
         const column = obj.options.columns[getCellColumnIndex.call(obj, x, y)];
         if (column.type == 'checkbox' || column.type == 'radio') {
@@ -479,7 +479,7 @@ export const setCheckRadioValue = function (this: Worksheet) {
         obj.history.add({
             action: 'setValue',
             records: records,
-            selection: obj.selectedCell,
+            selection: obj.selection.range,
         });
 
         // On after changes

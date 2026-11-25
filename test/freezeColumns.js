@@ -36,7 +36,7 @@ describe('Freeze columns', () => {
         worksheet.updateSelectionFromCoords(8, 1, 8, 1);
         worksheet.left();
 
-        expect(worksheet.selectedCell.map(Number)).to.eql([7, 1, 7, 1]);
+        expect(worksheet.selection.range.map(Number)).to.eql([7, 1, 7, 1]);
         expect(worksheet.content.scrollLeft).to.equal(900 - 200 - 1);
     });
 
@@ -49,7 +49,7 @@ describe('Freeze columns', () => {
         worksheet.updateSelectionFromCoords(2, 1, 2, 1);
         worksheet.left();
 
-        expect(worksheet.selectedCell.map(Number)).to.eql([1, 1, 1, 1]);
+        expect(worksheet.selection.range.map(Number)).to.eql([1, 1, 1, 1]);
         expect(worksheet.content.scrollLeft).to.equal(900);
     });
 
@@ -62,7 +62,7 @@ describe('Freeze columns', () => {
         worksheet.updateSelectionFromCoords(1, 1, 1, 1);
         worksheet.right();
 
-        expect(worksheet.selectedCell.map(Number)).to.eql([2, 1, 2, 1]);
+        expect(worksheet.selection.range.map(Number)).to.eql([2, 1, 2, 1]);
         expect(worksheet.content.scrollLeft).to.equal(0);
     });
 
@@ -76,7 +76,7 @@ describe('Freeze columns', () => {
         worksheet.updateSelectionFromCoords(1, 1, 1, 1);
         worksheet.left();
 
-        expect(worksheet.selectedCell.map(Number)).to.eql([0, 1, 0, 1]);
+        expect(worksheet.selection.range.map(Number)).to.eql([0, 1, 0, 1]);
         expect(worksheet.content.scrollLeft).to.equal(40);
     });
 });
