@@ -14,6 +14,15 @@ export interface MaskOptions {
     input?: HTMLElement;
 }
 
+/** jSuites.calendar has these functions, but its typings miss them. */
+export interface CalendarFunctions {
+    /** Read a date from a text in the format. Returns 'YYYY-MM-DD hh:mm:ss', or '' when the text is not a date. */
+    extractDateFromString(date: unknown, format: string): string;
+
+    /** Format a date. With a format that has [h], it returns the number of hours, a number when the value is empty. */
+    getDateString(value: unknown, options?: string | { format?: string; mask?: string }): string | number;
+}
+
 /** jSuites.mask has these functions, but its typings miss them. */
 export interface MaskFunctions {
     /** Format a value with the mask. A blank value (null, undefined or '') is returned as it is. */

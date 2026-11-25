@@ -11,8 +11,8 @@ import { updatePagination } from './pagination.js';
 import { setFooter } from './footer.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { setCellLabel, updateGridSize, updateRowIndex, updateTabStop } from './accessibility.js';
-import type { MergeInfo, Spreadsheet, Worksheet, WorksheetMethod } from '../types/internal';
-import type { MaskFunctions, MaskOptions } from '../types/jsuites';
+import type { HistoryCellChange, MergeInfo, Spreadsheet, Worksheet, WorksheetMethod } from '../types/internal';
+import type { CalendarFunctions, MaskFunctions, MaskOptions } from '../types/jsuites';
 
 export const updateTable = function (this: Worksheet) {
     const obj = this;
@@ -383,7 +383,7 @@ export const renderCell = function (this: Worksheet, x: number, y: number) {
     }
 };
 
-export const parseValue = function (this: Worksheet, i: number, j: number, value: any, cell?: any) {
+export const parseValue = function (this: Worksheet, i: number, j: number, value: any, cell?: HTMLElement) {
     const obj = this;
 
     if (('' + value).substr(0, 1) == '=' && obj.parent.config.parseFormulas != false) {
@@ -499,7 +499,7 @@ const stripScript = function (a: any) {
     return b.innerHTML;
 };
 
-export const createCell = function (this: Worksheet, i: number, j: number, value: any, silent?: any) {
+export const createCell = function (this: Worksheet, i: number, j: number, value: any, silent?: boolean) {
     const obj = this;
 
     // Column options
@@ -564,13 +564,20 @@ export const createCell = function (this: Worksheet, i: number, j: number, value
             // Try formatted date
             let formatted = null;
             if (!validDate(value)) {
-                const tmp = (jSuites.calendar as any).extractDateFromString(value, (column.options && column.options.format) || 'YYYY-MM-DD');
+                const tmp = (jSuites.calendar as unknown as CalendarFunctions).extractDateFromString(
+                    value,
+                    (column.options && column.options.format) || 'YYYY-MM-DD'
+                );
                 if (tmp) {
                     formatted = tmp;
                 }
             }
             // Create calendar cell
-            td.textContent = (jSuites.calendar as any).getDateString(formatted ? formatted : value, column.options && column.options.format);
+            // textContent converts a number of hours to text
+            td.textContent = (jSuites.calendar as unknown as CalendarFunctions).getDateString(
+                formatted ? formatted : value,
+                column.options && column.options.format
+            ) as string;
         } else if (column && column.type == 'dropdown') {
             // Create dropdown cell
             td.classList.add('jss_dropdown');
@@ -702,7 +709,9 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
         };
 
         // A custom editor can have setValue, which is not in the public typings
-        const editor: any = column && typeof column.type === 'object' ? column.type : null;
+        const editor = (column && typeof column.type === 'object' ? column.type : null) as
+            | (jspreadsheet.CustomEditor & { setValue?: (cell: HTMLTableCellElement, value: jspreadsheet.CellValue) => void })
+            | null;
         if (editor) {
             // Update data and cell
             obj.options.data[y][x] = value;
@@ -731,17 +740,21 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
                 // Try formatted date
                 let formatted = null;
                 if (!validDate(value)) {
-                    const tmp = (jSuites.calendar as any).extractDateFromString(value, (column.options && column.options.format) || 'YYYY-MM-DD');
+                    const tmp = (jSuites.calendar as unknown as CalendarFunctions).extractDateFromString(
+                        value,
+                        (column.options && column.options.format) || 'YYYY-MM-DD'
+                    );
                     if (tmp) {
                         formatted = tmp;
                     }
                 }
                 // Update data and cell
                 obj.options.data[y][x] = value;
-                obj.records[y][x].element.textContent = (jSuites.calendar as any).getDateString(
+                // textContent converts a number of hours to text
+                obj.records[y][x].element.textContent = (jSuites.calendar as unknown as CalendarFunctions).getDateString(
                     formatted ? formatted : value,
                     column.options && column.options.format
-                );
+                ) as string;
             } else if (column && column.type == 'color') {
                 // Update color
                 obj.options.data[y][x] = value;
@@ -881,7 +894,7 @@ const secureFormula = function (oldValue: string) {
  */
 let chainLoopProtection: any = [];
 
-export const updateFormulaChain = function (this: Worksheet, x: number, y: number, records: any) {
+export const updateFormulaChain = function (this: Worksheet, x: number, y: number, records: HistoryCellChange[]) {
     const obj = this;
 
     const cellId = getColumnNameFromId([x, y]);
@@ -1376,7 +1389,8 @@ export const hideIndex: WorksheetMethod<'hideIndex'> = function () {
 /**
  * Create a nested header object
  */
-export const createNestedHeader = function (this: Worksheet, nestedInformation: any) {
+// The row of nested headers keeps its element
+export const createNestedHeader = function (this: Worksheet, nestedInformation: jspreadsheet.NestedHeaderCell[] & { element?: HTMLTableRowElement }) {
     const obj = this;
 
     const tr = document.createElement('tr');
@@ -1401,8 +1415,8 @@ export const createNestedHeader = function (this: Worksheet, nestedInformation: 
             nestedInformation[i].id = '';
         }
 
-        // Number of columns
-        let numberOfColumns = nestedInformation[i].colspan;
+        // Number of columns. colspan, title and id have default values above.
+        let numberOfColumns = nestedInformation[i].colspan!;
 
         // Classes container
         const column = [];
@@ -1418,10 +1432,10 @@ export const createNestedHeader = function (this: Worksheet, nestedInformation: 
         // Created the nested cell
         const td = document.createElement('td');
         td.setAttribute('data-column', column.join(','));
-        td.setAttribute('colspan', nestedInformation[i].colspan);
+        td.setAttribute('colspan', nestedInformation[i].colspan!);
         td.setAttribute('align', nestedInformation[i].align || 'center');
-        td.setAttribute('id', nestedInformation[i].id);
-        td.textContent = nestedInformation[i].title;
+        td.setAttribute('id', nestedInformation[i].id!);
+        td.textContent = nestedInformation[i].title!;
         tr.appendChild(td);
     }
 
