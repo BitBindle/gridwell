@@ -68,9 +68,6 @@ export interface Spreadsheet extends jspreadsheet.SpreadsheetInstance {
 
     /** True while createWorksheet adds a tab, so that the tab does not create a second worksheet. */
     creationThroughJss?: boolean;
-
-    /** Returns the spreadsheet settings. The factory sets it, but the public typings do not declare it yet. */
-    getConfig: () => jspreadsheet.SpreadsheetOptions;
 }
 
 /**

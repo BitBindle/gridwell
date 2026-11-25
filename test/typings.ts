@@ -22,3 +22,9 @@ const selected = worksheet.getSelected();
 assertType<Equals<typeof selected, { element: HTMLTableCellElement; x: number; y: number }[]>>();
 const selectedNames = worksheet.getSelected(true);
 assertType<Equals<typeof selectedNames, string[]>>();
+
+declare const spreadsheet: jspreadsheet.SpreadsheetInstance;
+
+// The factory gives each spreadsheet getConfig
+const config = spreadsheet.getConfig();
+assertType<Equals<typeof config, jspreadsheet.SpreadsheetOptions>>();

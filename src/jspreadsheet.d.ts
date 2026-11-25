@@ -1424,6 +1424,11 @@ declare namespace jspreadsheet {
         fullscreen: (activate?: boolean) => void;
 
         /**
+         * Get the spreadsheet settings.
+         */
+        getConfig: () => SpreadsheetOptions;
+
+        /**
          * Get the index of the currently active worksheet
          */
         getWorksheetActive: () => number;
