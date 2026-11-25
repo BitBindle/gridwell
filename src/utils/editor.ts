@@ -6,7 +6,9 @@ import { setHistory } from './history.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import { getLabelText, restoreActiveCell } from './accessibility.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
-import type { MaskFunctions, MaskOptions } from '../types/jsuites';
+import type { CellChange } from '../jspreadsheet';
+import type { MaskOptions } from '../types/jsuites';
+import type { CalendarOptions, ColorOptions, DropdownOptions } from '../types/jsuites-module';
 
 /**
  * The editor in a cell that is being edited, read as an input because the text editors are inputs or text areas.
@@ -90,7 +92,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
             cell.removeAttribute('tabindex');
             cell.removeAttribute('aria-label');
 
-            // Custom editors. The code expects a custom editor to have openEditor and closeEditor.
+            // Custom editors. The code expects a custom editor to have openEditor and closeEditor (issue #60).
             column.type.openEditor!(cell, obj.options.data[y][x], x, y, obj, column, e);
 
             // On edition start
@@ -107,8 +109,8 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 // Do not keep edition open
                 obj.edition = null;
             } else if (column && column.type == 'dropdown') {
-                // Get current value
-                let value: any = obj.options.data[y][x];
+                // Get current value: the id of an item, or the ids of the items with multiple
+                let value = obj.options.data[y][x] as string | number | string[];
                 if (column.multiple && !Array.isArray(value)) {
                     // A number has no split
                     value = ('' + value).split(column.delimiter || ';');
@@ -137,15 +139,13 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 // On edition start
                 dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
 
-                // The jsuites typings say that the width is a number, but it takes CSS text
-                const options: any = {
+                const options: DropdownOptions = {
                     data: data,
                     multiple: column.multiple ? true : false,
                     autocomplete: column.autocomplete ? true : false,
                     opened: true,
                     value: value,
                     width: '100%',
-                    height: editor.style.minHeight,
                     position: obj.options.tableOverflow == true || obj.parent.config.fullscreen == true ? true : false,
                     onclose: function () {
                         closeEditor.call(obj, cell, true);
@@ -174,14 +174,16 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 editor.value = value as string;
 
                 // The options of the calendar or the color picker
-                const options: any = column.options ? { ...column.options } : {};
+                const options: CalendarOptions & ColorOptions = column.options ? { ...column.options } : {};
 
                 if (obj.options.tableOverflow == true || obj.parent.config.fullscreen == true) {
                     options.position = true;
                 }
-                options.value = obj.options.data[y][x];
+                // The value of a calendar or a color cell is text
+                options.value = obj.options.data[y][x] as string;
                 options.opened = true;
-                options.onclose = function (el: HTMLElement, value: string) {
+                // The color picker gives its instance as the second argument, and the calendar nothing
+                options.onclose = function (el: HTMLElement, value?: unknown) {
                     closeEditor.call(obj, cell, true);
                 };
                 // Current value
@@ -308,7 +310,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                             (editor as EditorElement).mask = opt;
                             // Do not treat the decimals
                             // The jsuites typings miss render and extract
-                            (jSuites.mask as unknown as MaskFunctions).render(value, opt, false);
+                            jSuites.mask.render(value, opt, false);
                         }
                     }
                 }
@@ -345,7 +347,7 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
     if (save == true) {
         // If custom editor
         if (column && typeof column.type === 'object') {
-            // Custom editor
+            // Custom editor. It throws without closeEditor (issue #60).
             value = column.type.closeEditor!(cell, save, parseInt(x), parseInt(y), obj, column);
         } else {
             // Native functions
@@ -387,7 +389,7 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
                     if (opt) {
                         // Keep numeric in the raw data
                         if (value !== '' && !isFormula(value) && typeof value !== 'number') {
-                            const t = (jSuites.mask as unknown as MaskFunctions).extract(value, opt, true);
+                            const t = jSuites.mask.extract(value, opt, true);
                             if (t && t.value !== '') {
                                 value = t.value;
                             }
@@ -397,7 +399,7 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
             }
         }
 
-        // Ignore changes if the value is the same
+        // Ignore changes if the value is the same. A cell without an open editor throws above (issue #61).
         if (obj.options.data[y][x] == value) {
             cell.innerHTML = obj.edition![1];
         } else {
@@ -405,7 +407,7 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
         }
     } else {
         if (column && typeof column.type === 'object') {
-            // Custom editor
+            // Custom editor. It throws without closeEditor (issue #60).
             column.type.closeEditor!(cell, save, parseInt(x), parseInt(y), obj, column);
         } else {
             if (column && column.type == 'dropdown') {
@@ -473,6 +475,7 @@ export const setCheckRadioValue = function (this: Worksheet) {
             };
         });
 
-        dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords);
+        // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
+        dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
     }
 };

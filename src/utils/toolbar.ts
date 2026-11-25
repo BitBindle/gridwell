@@ -1,10 +1,9 @@
 import jSuites from 'jsuites';
 import { getCellNameFromCoords } from './helpers.js';
 import { getWorksheetInstance } from './internal.js';
+import type jspreadsheet from '../jspreadsheet';
 import type { Spreadsheet, Worksheet } from '../types/internal';
-
-/** A jsuites color picker. jsuites also keeps it on its element as `color`. */
-type ColorPicker = ReturnType<typeof jSuites.color>;
+import type { Color } from 'jsuites';
 
 /** The border select keeps the thickness, the color and the style that the user chose on its picker instance. */
 type BorderPicker = { thickness?: number; color?: string; style?: string };
@@ -18,8 +17,7 @@ const setItemStatus = function (toolbarItem: HTMLElement, worksheet: Worksheet) 
 };
 
 export const getDefault = function (this: Spreadsheet) {
-    // The public ToolbarItem type requires content, which the select items here do not have
-    const items: any[] = [];
+    const items: jspreadsheet.ToolbarItem[] = [];
     const spreadsheet = this;
 
     const getActive = function () {
@@ -174,7 +172,7 @@ export const getDefault = function (this: Spreadsheet) {
         type: 'color',
         content: 'format_color_fill',
         k: 'background-color',
-        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement, d: Worksheet) {
+        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement, d: jspreadsheet.WorksheetInstance) {
             setItemStatus(toolbarItem, getActive());
         },
     });
@@ -358,7 +356,7 @@ export const getDefault = function (this: Spreadsheet) {
                     (o.parentNode!.children[1] as HTMLElement).style.color = v;
                     b.color = v;
                 },
-            } as any);
+            });
 
             const i = document.createElement('i');
             i.classList.add('material-icons');
@@ -371,7 +369,6 @@ export const getDefault = function (this: Spreadsheet) {
 
             div = document.createElement('div');
             jSuites.picker(div, {
-                type: 'select',
                 data: [1, 2, 3, 4, 5],
                 render: function (e: number) {
                     return '<div style="height: ' + e + 'px; width: 30px; background-color: black;"></div>';
@@ -380,12 +377,11 @@ export const getDefault = function (this: Spreadsheet) {
                     b.thickness = d;
                 },
                 width: '50px',
-            } as any);
+            });
             a.children[1].appendChild(div);
 
             const borderStylePicker = document.createElement('div');
             jSuites.picker(borderStylePicker, {
-                type: 'select',
                 data: ['solid', 'dotted', 'dashed', 'double'],
                 render: function (e: string) {
                     if (e === 'double') {
@@ -397,7 +393,7 @@ export const getDefault = function (this: Spreadsheet) {
                     b.style = d;
                 },
                 width: '50px',
-            } as any);
+            });
             a.children[1].appendChild(borderStylePicker);
 
             div = document.createElement('div');
@@ -425,7 +421,7 @@ export const getDefault = function (this: Spreadsheet) {
                 c.children[0].textContent = 'fullscreen';
             }
         },
-        updateState: function (a: HTMLElement, b: object, c: HTMLElement, d: Worksheet) {
+        updateState: function (a: HTMLElement, b: object, c: HTMLElement, d: jspreadsheet.WorksheetInstance) {
             if (d.parent.config.fullscreen === true) {
                 c.children[0].textContent = 'fullscreen_exit';
             } else {
@@ -437,10 +433,11 @@ export const getDefault = function (this: Spreadsheet) {
     return items;
 };
 
-const adjustToolbarSettingsForJSuites = function (this: Spreadsheet, toolbar: any) {
+const adjustToolbarSettingsForJSuites = function (this: Spreadsheet, toolbar: jspreadsheet.ToolbarOptions) {
     const spreadsheet = this;
 
-    const items = toolbar.items;
+    // The items are changed in place into items of jSuites.toolbar. A divisor has no other properties.
+    const items = toolbar.items as jspreadsheet.ToolbarItemBase[];
 
     for (let i = 0; i < items.length; i++) {
         // Tooltip
@@ -477,7 +474,7 @@ const adjustToolbarSettingsForJSuites = function (this: Spreadsheet, toolbar: an
         } else if (items[i].type == 'color') {
             items[i].type = 'i';
 
-            items[i].onclick = function (a: HTMLElement, b: object, c: HTMLElement & { color?: ColorPicker }) {
+            items[i].onclick = function (a: HTMLElement, b: object, c: HTMLElement & { color?: Color }) {
                 if (!c.color) {
                     jSuites.color(c, {
                         onchange: function (o: HTMLElement, v: string) {
@@ -493,10 +490,10 @@ const adjustToolbarSettingsForJSuites = function (this: Spreadsheet, toolbar: an
                                 )
                             );
                         },
-                        onopen: function (o: HTMLElement & { color: ColorPicker }) {
+                        onopen: function (o: HTMLElement & { color: Color }) {
                             o.color.select('');
                         },
-                    } as any);
+                    });
 
                     c.color!.open();
                 }
@@ -508,7 +505,7 @@ const adjustToolbarSettingsForJSuites = function (this: Spreadsheet, toolbar: an
 /**
  * Create toolbar
  */
-export const createToolbar = function (this: Spreadsheet, toolbar: any) {
+export const createToolbar = function (this: Spreadsheet, toolbar: jspreadsheet.ToolbarOptions) {
     const spreadsheet = this;
 
     const toolbarElement = document.createElement('div');
@@ -544,7 +541,7 @@ export const showToolbar = function (this: Spreadsheet) {
     const spreadsheet = this;
 
     if (spreadsheet.config.toolbar && !spreadsheet.toolbar) {
-        let toolbar: any;
+        let toolbar: jspreadsheet.ToolbarOptions;
 
         if (Array.isArray(spreadsheet.config.toolbar)) {
             toolbar = {

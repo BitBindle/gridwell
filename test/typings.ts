@@ -27,6 +27,16 @@ assertType<Equals<typeof selectedNames, string[]>>();
 const selection = worksheet.getSelection();
 assertType<Equals<typeof selection, [number, number, number, number] | null>>();
 
+// getMeta returns the meta information of a cell, or null, or the meta information of all cells
+const cellMeta = worksheet.getMeta('A1');
+assertType<Equals<typeof cellMeta, jspreadsheet.MetaInformation | null>>();
+const allMeta = worksheet.getMeta();
+assertType<Equals<typeof allMeta, Record<string, jspreadsheet.MetaInformation> | undefined>>();
+
+// resetStyle takes the new styles by cell name, as setStyle does
+type ResetStyles = Parameters<jspreadsheet.WorksheetInstance['resetStyle']>[0];
+assertType<Equals<ResetStyles, Record<string, string | string[]>>>();
+
 declare const spreadsheet: jspreadsheet.SpreadsheetInstance;
 
 // The factory gives each spreadsheet getConfig
@@ -34,6 +44,11 @@ const config = spreadsheet.getConfig();
 assertType<Equals<typeof config, jspreadsheet.SpreadsheetOptions>>();
 
 declare const library: jspreadsheet.JSpreadsheet;
+
+// invert gives the keys by value
+const inverted = library.helpers.invert({ a: 0, b: 'x' });
+assertType<Equals<typeof inverted, string[] & Record<string, string>>>();
+assertType<Equals<Parameters<typeof library.helpers.getCaretIndex>[0], Node>>();
 
 // version returns the version information, which has no type
 const versionInfo = library.version();
@@ -86,3 +101,38 @@ assertType<Equals<jspreadsheet.DragColumnInfo['column'], number>>();
 assertType<Equals<jspreadsheet.DragRowInfo['row'], number>>();
 assertType<Equals<jspreadsheet.ResizeColumnInfo['column'], number>>();
 assertType<Equals<jspreadsheet.ResizeRowInfo['row'], number>>();
+
+type Handler<E extends keyof jspreadsheet.SpreadsheetOptions> = Parameters<Extract<jspreadsheet.SpreadsheetOptions[E], (...args: never[]) => unknown>>;
+
+// onpaste gets one item for each pasted cell
+assertType<Equals<Handler<'onpaste'>[1], { x: number; y: number; value: jspreadsheet.CellValue }[]>>();
+
+// oneditionend gets undefined as the value when the edit was not saved
+assertType<Equals<Handler<'oneditionend'>[4], jspreadsheet.CellValue | undefined>>();
+
+// setValue without a value gives onbeforechange and onchange undefined as the new value
+assertType<Equals<Handler<'onbeforechange'>[4], jspreadsheet.CellValue | undefined>>();
+assertType<Equals<Handler<'onchange'>[4], jspreadsheet.CellValue | undefined>>();
+
+// oncomments gets the comments as setComments got them, where undefined removes a comment
+assertType<Equals<Handler<'oncomments'>[1], Record<string, string | null | undefined>>>();
+
+// onupdateresult gets the shown rows after a search or a filter
+assertType<Equals<Handler<'onupdateresult'>, [instance: jspreadsheet.WorksheetInstance, results: number[] | null]>>();
+
+// The persistence of a plugin gets the changes as onafterchanges gets them
+assertType<Equals<Parameters<NonNullable<jspreadsheet.Plugin['persistence']>>[2], { data: jspreadsheet.CellChange[] }>>();
+
+// onbeforesave gets the values of a row by column name, or by index for a column without a name
+assertType<Equals<Handler<'onbeforesave'>[2], { row: number; data: Record<string, jspreadsheet.CellValue> }[]>>();
+
+// A toolbar function gets the settings of the default toolbar, with the items, and returns settings
+assertType<Equals<Parameters<Extract<jspreadsheet.SpreadsheetOptions['toolbar'], (...args: never[]) => unknown>>[0], jspreadsheet.ToolbarOptions>>();
+assertType<Equals<ReturnType<Extract<jspreadsheet.SpreadsheetOptions['toolbar'], (...args: never[]) => unknown>>, jspreadsheet.ToolbarOptions>>();
+assertType<Equals<Parameters<NonNullable<jspreadsheet.Plugin['toolbar']>>[0], jspreadsheet.ToolbarOptions>>();
+
+// A select item can do without an icon
+const fontItem: jspreadsheet.ToolbarItem = { type: 'select', options: ['Arial', 'Verdana'] };
+
+// The value of a select item is the index of the option it shows first
+const alignItem: jspreadsheet.ToolbarItem = { type: 'select', options: ['top', 'middle', 'bottom'], value: 1 };

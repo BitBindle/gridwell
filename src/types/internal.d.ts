@@ -95,6 +95,9 @@ export interface Spreadsheet extends jspreadsheet.SpreadsheetInstance {
     creationThroughJss?: boolean;
 }
 
+/** A merged range in options.mergeCells: the colspan, the rowspan and, after setMerge, the cells that the range hides. */
+export type MergeInfo = [number, number, HTMLTableCellElement[]?];
+
 /**
  * The type of a function that implements a public worksheet method, with the worksheet as `this`.
  *
@@ -102,12 +105,32 @@ export interface Spreadsheet extends jspreadsheet.SpreadsheetInstance {
  *
  * The parameters get their types from WorksheetInstance in src/jspreadsheet.d.ts, so the code and the public typings agree.
  */
-/** A merged range in options.mergeCells: the colspan, the rowspan and, after setMerge, the cells that the range hides. */
-export type MergeInfo = [number, number, HTMLTableCellElement[]?];
-
 export type WorksheetMethod<K extends keyof jspreadsheet.WorksheetInstance> = jspreadsheet.WorksheetInstance[K] extends (...args: infer A) => infer R
     ? (this: Worksheet, ...args: A) => R
     : never;
+
+/** The handlers of the events in SpreadsheetOptions, by event name. onevent gets every event, so it is not an event. */
+export type EventHandlers = {
+    [K in Exclude<keyof jspreadsheet.SpreadsheetOptions, 'onevent'> as K extends `on${string}` ? K : never]-?: Extract<
+        jspreadsheet.SpreadsheetOptions[K],
+        (...args: never[]) => unknown
+    >;
+};
+
+/** The name of an event that dispatch can trigger. */
+export type EventName = keyof EventHandlers;
+
+/**
+ * dispatch, typed by event: the arguments are those of the handler that SpreadsheetOptions declares for the event, and
+ * the result is what that handler returns. null means that no handler ran. onevent and the onevent of plugins can also
+ * return any value, so a caller still checks what it gets.
+ *
+ * The code calls it as dispatch.call(worksheet, 'onchange', ...), so call is typed too.
+ */
+export interface Dispatch {
+    <E extends EventName>(this: Worksheet | Spreadsheet, event: E, ...args: Parameters<EventHandlers[E]>): ReturnType<EventHandlers[E]> | null;
+    call<E extends EventName>(thisArg: Worksheet | Spreadsheet, event: E, ...args: Parameters<EventHandlers[E]>): ReturnType<EventHandlers[E]> | null;
+}
 
 /**
  * The jspreadsheet function, with the state the library keeps on it.
@@ -175,8 +198,8 @@ export type WorksheetHistoryRecord =
     | {
           action: 'setHeight';
           row: number;
-          /** The height attribute of the row as text, or the measured height when the row has no attribute. */
-          oldValue: number | string;
+          /** The height attribute of the row, or the measured height when the row has no attribute. */
+          oldValue: number;
           newValue: number;
       }
     | { action: 'setHeader'; column: number; oldValue: string; newValue: string }

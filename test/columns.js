@@ -718,3 +718,48 @@ describe('Delete columns with the keyboard', () => {
         ]);
     });
 });
+
+describe('Image columns', () => {
+    it('shows a cell whose value is not text, and an image for image data', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        [5, 'data:image/png;base64,iVBORw0KGgo='],
+                        [true, 'a'],
+                    ],
+                    columns: [{ type: 'image' }, { type: 'image' }],
+                },
+            ],
+        })[0];
+
+        expect(worksheet.getCell('A1').querySelector('img')).to.equal(null);
+        expect(worksheet.getCell('A2').querySelector('img')).to.equal(null);
+        expect(worksheet.getCell('B1').querySelector('img').getAttribute('src')).to.equal('data:image/png;base64,iVBORw0KGgo=');
+        expect(worksheet.getCell('B2').querySelector('img')).to.equal(null);
+        expect(worksheet.getData()).to.eql([
+            [5, 'data:image/png;base64,iVBORw0KGgo='],
+            [true, 'a'],
+        ]);
+    });
+});
+
+describe('Calendar columns', () => {
+    it('shows a cell whose value is a year, and sets a year as the value', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [['2020'], ['2021-05-01']],
+                    columns: [{ type: 'calendar' }],
+                },
+            ],
+        })[0];
+
+        expect(worksheet.getCell('A1')).to.not.equal(undefined);
+        expect(worksheet.getCell('A2').textContent).to.equal('2021-05-01');
+
+        worksheet.setValueFromCoords(0, 1, '2022');
+
+        expect(worksheet.getData()).to.eql([['2020'], ['2022']]);
+    });
+});

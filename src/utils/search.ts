@@ -3,6 +3,7 @@ import { getIdFromColumnName } from './internalHelpers.js';
 import { updateResult } from './internal.js';
 import { isRowMerged } from './merges.js';
 import type { Worksheet } from '../types/internal';
+import type { CellValue } from '../jspreadsheet';
 
 /**
  * Search
@@ -33,7 +34,7 @@ export const search = function (this: Worksheet, query: string) {
          * @param item - The data of the row.
          * @param index - The row.
          */
-        const search = function (item: any, query: RegExp, index: number) {
+        const search = function (item: CellValue[], query: RegExp, index: number) {
             for (let i = 0; i < item.length; i++) {
                 if (('' + item[i]).toLowerCase().search(query) >= 0 || ('' + obj.records[index][i].element.innerHTML).toLowerCase().search(query) >= 0) {
                     return true;

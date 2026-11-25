@@ -28,7 +28,7 @@ const defaultLabels = {
 /**
  * Text of an accessible name
  */
-export const getLabelText = function (this: Spreadsheet, key: keyof typeof defaultLabels, value?: any) {
+export const getLabelText = function (this: Spreadsheet, key: keyof typeof defaultLabels, value?: string) {
     const spreadsheet = this;
 
     const labels = spreadsheet && spreadsheet.config && spreadsheet.config.labels;
@@ -353,7 +353,7 @@ export const updateActiveCell = function (this: Worksheet, x: number, y: number,
  * After the editor closes, the cell is a focus target again. It gets the focus back when the focus fell to the body
  * with the removed editor.
  */
-export const restoreActiveCell = function (this: Worksheet, cell: any) {
+export const restoreActiveCell = function (this: Worksheet, cell: HTMLTableCellElement) {
     const obj = this;
 
     if (obj.activeCell !== cell) {

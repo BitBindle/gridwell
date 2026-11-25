@@ -7,7 +7,7 @@ import type { Worksheet } from '../types/internal';
  * @param cell - The cell name, for example "B3". Without it, the meta information of all cells.
  * @param key - The key of the information.
  */
-export const getMeta = function (this: Worksheet, cell?: string, key?: string): any {
+export const getMeta = function (this: Worksheet, cell?: string, key?: string) {
     const obj = this;
 
     if (!cell) {
@@ -79,6 +79,6 @@ export const setMeta = function (this: Worksheet, o: string | Record<string, jsp
             }
         }
 
-        dispatch.call(obj, 'onchangemeta', obj, o);
+        dispatch.call(obj, 'onchangemeta', obj, o as Record<string, jspreadsheet.MetaInformation>);
     }
 };

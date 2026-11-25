@@ -9,7 +9,6 @@ import { hash, removeCopyingSelection, updateSelectionFromCoords } from './selec
 import { getColumnNameFromId } from './internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
-import type { CalendarFunctions } from '../types/jsuites';
 
 /**
  * Copy method
@@ -169,7 +168,7 @@ export const copy = function (
     // Create a hidden textarea to copy the values
     if (!returnData) {
         // Paste event. Without a selection, this throws (issue #41).
-        const selectedRange = [
+        const selectedRange: [number, number, number, number] = [
             Math.min(obj.selectedCell![0], obj.selectedCell![2]),
             Math.min(obj.selectedCell![1], obj.selectedCell![3]),
             Math.max(obj.selectedCell![0], obj.selectedCell![2]),
@@ -362,7 +361,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data) {
 
                 if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].type == 'calendar') {
                     // The jsuites typings miss extractDateFromString
-                    value = (jSuites.calendar as unknown as CalendarFunctions).extractDateFromString(
+                    value = jSuites.calendar.extractDateFromString(
                         value,
                         (obj.options.columns[i].options && obj.options.columns[i].options.format) || 'YYYY-MM-DD'
                     );
@@ -453,7 +452,8 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data) {
             };
         });
 
-        dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords);
+        // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
+        dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords as unknown as jspreadsheet.CellChange[]);
     }
 
     removeCopyingSelection();

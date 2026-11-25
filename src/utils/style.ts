@@ -1,7 +1,7 @@
 import dispatch from './dispatch.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { setHistory } from './history.js';
-import type { Worksheet } from '../types/internal';
+import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 /** A style declaration read and written by property name, for example style['color'] */
 type StyleProperties = Record<string, string>;
@@ -152,7 +152,7 @@ export const setStyle = function (
         });
     }
 
-    dispatch.call(obj, 'onchangestyle', obj, newValue);
+    dispatch.call(obj, 'onchangestyle', obj, newValue as unknown as Record<string, string>);
 };
 
 /**
@@ -160,7 +160,7 @@ export const setStyle = function (
  * @param o - The cells, as the keys.
  * @param ignoreHistoryAndEvents - Add no history. The onchangestyle event still occurs.
  */
-export const resetStyle = function (this: Worksheet, o: Record<string, any>, ignoreHistoryAndEvents?: boolean) {
+export const resetStyle: WorksheetMethod<'resetStyle'> = function (o, ignoreHistoryAndEvents) {
     const obj = this;
 
     const keys = Object.keys(o);

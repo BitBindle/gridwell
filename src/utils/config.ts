@@ -1,3 +1,4 @@
+import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, Spreadsheet } from '../types/internal';
 /**
  * Get table config information
@@ -19,7 +20,11 @@ export const getSpreadsheetConfig = function (this: Spreadsheet) {
  * @param config - The options to change.
  * @param spreadsheetLevel - Change the options of the spreadsheet of the worksheet.
  */
-export const setConfig = function (this: Worksheet | Spreadsheet, config: Record<string, any>, spreadsheetLevel?: boolean) {
+export const setConfig = function (
+    this: Worksheet | Spreadsheet,
+    config: jspreadsheet.SpreadsheetOptions | jspreadsheet.WorksheetOptions,
+    spreadsheetLevel?: boolean
+) {
     const obj = this;
 
     const keys = Object.keys(config);
@@ -36,17 +41,18 @@ export const setConfig = function (this: Worksheet | Spreadsheet, config: Record
 
     keys.forEach(function (key) {
         if (spreadsheetLevel) {
-            (spreadsheet.config as Record<string, any>)[key] = config[key];
+            // The options are set by name, and SpreadsheetOptions has no index signature
+            (spreadsheet.config as unknown as Record<string, unknown>)[key] = (config as Record<string, unknown>)[key];
 
             if (key === 'toolbar') {
-                if (config[key] === true) {
+                if ((config as Record<string, unknown>)[key] === true) {
                     spreadsheet.showToolbar();
-                } else if (config[key] === false) {
+                } else if ((config as Record<string, unknown>)[key] === false) {
                     spreadsheet.hideToolbar();
                 }
             }
         } else {
-            ((obj as Worksheet).options as Record<string, any>)[key] = config[key];
+            ((obj as Worksheet).options as Record<string, unknown>)[key] = (config as Record<string, unknown>)[key];
         }
     });
 };

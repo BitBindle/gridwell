@@ -240,6 +240,26 @@ describe('Dispatch events', () => {
         ]);
     });
 
+    it('gives onbeforechange and onchange undefined as the new value when setValue has no value', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b']] }],
+            onbeforechange: function (instance, cell, x, y, value) {
+                calls.push(['onbeforechange', value]);
+            },
+            onchange: function (instance, cell, x, y, value, oldValue) {
+                calls.push(['onchange', value, oldValue]);
+            },
+        })[0];
+
+        worksheet.setValue('A1');
+
+        expect(calls).to.eql([
+            ['onbeforechange', undefined],
+            ['onchange', undefined, 'a'],
+        ]);
+    });
+
     it('returns the result of the handler, so that onbeforeinsertrow can cancel the insertion', () => {
         const worksheet = jspreadsheet(root, {
             worksheets: [{ data: [['a']] }],
@@ -251,6 +271,41 @@ describe('Dispatch events', () => {
         worksheet.insertRow();
 
         expect(worksheet.getData()).to.eql([['a']]);
+    });
+
+    it('gives oncreateworksheet the options of the new worksheet', async () => {
+        let createdOptions = null;
+        const worksheet = await load({
+            worksheets: [{ minDimensions: [2, 2], worksheetName: 'First' }],
+        });
+
+        const created = new Promise((resolve) => {
+            worksheet.parent.config.oncreateworksheet = function (instance, options, index) {
+                createdOptions = options;
+                resolve(index);
+            };
+        });
+        worksheet.createWorksheet({ minDimensions: [3, 3], worksheetName: 'Second' });
+
+        expect(await created).to.equal(1);
+        expect(createdOptions.worksheetName).to.equal('Second');
+        expect(createdOptions).to.equal(worksheet.parent.worksheets[1].options);
+    });
+
+    it('gives onresizerow the old height as a number after the row was resized with the mouse', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [2, 2] }],
+            onresizerow: function (instance, row, newHeight, oldHeight) {
+                calls.push([row, newHeight, oldHeight]);
+            },
+        })[0];
+
+        // A resize with the mouse leaves the height attribute on the row
+        worksheet.rows[0].element.setAttribute('height', 40);
+        worksheet.setHeight(0, 50);
+
+        expect(calls).to.eql([[0, 50, 40]]);
     });
 });
 

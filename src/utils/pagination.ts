@@ -167,8 +167,8 @@ export const page: WorksheetMethod<'page'> = function (pageNumber) {
     // Update corner position
     updateCornerPosition.call(obj);
 
-    // Events
-    dispatch.call(obj, 'onchangepage', obj, pageNumber, oldPage, obj.options.pagination);
+    // Events. setData sets the page number of a worksheet with pagination.
+    dispatch.call(obj, 'onchangepage', obj, pageNumber, oldPage!, obj.options.pagination!);
 };
 
 export const quantiyOfPages: WorksheetMethod<'quantiyOfPages'> = function () {

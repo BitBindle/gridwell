@@ -49,7 +49,7 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: jspr
                 buildWorksheet.call(newWorksheet).then(function () {
                     updateToolbar(newWorksheet);
 
-                    dispatch.call(newWorksheet, 'oncreateworksheet', newWorksheet, options, spreadsheet.worksheets.length - 1);
+                    dispatch.call(newWorksheet, 'oncreateworksheet', newWorksheet, newWorksheet.options, spreadsheet.worksheets.length - 1);
                 });
             },
             onchange: function (element: HTMLElement, instance: Tabs, tabIndex: number) {
@@ -185,12 +185,11 @@ factory.spreadsheet = async function (el: HTMLElement & { spreadsheet?: Spreadsh
     spreadsheet.element.appendChild(spreadsheet.contextMenu);
 
     // Create element
-    // The jsuites typings want items and a null onclick
     jSuites.contextmenu(spreadsheet.contextMenu, {
         onclick: function () {
             spreadsheet.contextMenu.contextmenu.close(false);
         },
-    } as unknown as Parameters<typeof jSuites.contextmenu>[1]);
+    });
 
     // Fullscreen
     if (spreadsheet.config.fullscreen == true) {

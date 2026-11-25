@@ -47,7 +47,8 @@ export const setFooter = function (this: Worksheet, data?: string[][]) {
                     const colAlign = obj.options.columns[i].align || obj.options.defaultColAlign || 'center';
                     td.style.textAlign = colAlign;
                 }
-                td.textContent = parseValue.call(obj, +obj.records.length + i, j, obj.options.footers[j][i]);
+                // The DOM converts a number or a boolean to text
+                td.textContent = parseValue.call(obj, +obj.records.length + i, j, obj.options.footers[j][i]) as string;
 
                 // Hide/Show with hideColumn()/showColumn()
                 td.style.display = obj.cols[i].colElement.style.display;

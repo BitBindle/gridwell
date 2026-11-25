@@ -11,8 +11,9 @@ import { updatePagination } from './pagination.js';
 import { setFooter } from './footer.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { setCellLabel, updateGridSize, updateRowIndex, updateTabStop } from './accessibility.js';
+import type jspreadsheet from '../jspreadsheet';
 import type { HistoryCellChange, MergeInfo, Spreadsheet, Worksheet, WorksheetMethod } from '../types/internal';
-import type { CalendarFunctions, MaskFunctions, MaskOptions } from '../types/jsuites';
+import type { MaskOptions } from '../types/jsuites';
 
 export const updateTable = function (this: Worksheet) {
     const obj = this;
@@ -78,7 +79,7 @@ export const updateTable = function (this: Worksheet) {
 /**
  * Trying to extract a number from a string
  */
-const parseNumber = function (this: Worksheet, value: any, columnNumber: number) {
+const parseNumber = function (this: Worksheet, value: unknown, columnNumber: number) {
     const obj = this;
 
     // Decimal point. Column 0 has one too.
@@ -86,15 +87,16 @@ const parseNumber = function (this: Worksheet, value: any, columnNumber: number)
     const decimal = column && column.decimal ? column.decimal : '.';
 
     // Parse both parts of the number
-    // Text, then its parts
-    let number: any = '' + value;
+    // Text, then its parts, then the digits of the integer part, then the digits as text
+    let number: string | (string | string[] | null)[] = '' + value;
     number = number.split(decimal);
-    number[0] = number[0].match(/[+-]?[0-9]/g);
+    number[0] = (number[0] as string).match(/[+-]?[0-9]/g);
     if (number[0]) {
-        number[0] = number[0].join('');
+        number[0] = (number[0] as string[]).join('');
     }
     if (number[1]) {
-        number[1] = number[1].match(/[0-9]*/g).join('');
+        // The pattern also matches an empty text, so there is a match
+        number[1] = (number[1] as string).match(/[0-9]*/g)!.join('');
     }
 
     // Is a valid number
@@ -118,7 +120,7 @@ export const executeFormula: WorksheetMethod<'executeFormula'> = function (expre
     const obj = this;
 
     // The results and the formulas in progress, by cell name
-    const formulaResults: Record<string, any> = {};
+    const formulaResults: Record<string, unknown> = {};
     const formulaLoopProtection: Record<string, boolean> = {};
 
     // A formula engine of the application calculates the formula in place of the formula plugin
@@ -197,7 +199,7 @@ export const executeFormula: WorksheetMethod<'executeFormula'> = function (expre
             return '#ERROR';
         } else {
             // Expressions to be used in the parsing
-            const formulaExpressions: Record<string, any> = {};
+            const formulaExpressions: Record<string, unknown> = {};
 
             if (tokens) {
                 for (let i = 0; i < tokens.length; i++) {
@@ -215,7 +217,7 @@ export const executeFormula: WorksheetMethod<'executeFormula'> = function (expre
                         // Coords
                         const position = getIdFromColumnName(tokens[i], true);
                         // Get value
-                        let value: any;
+                        let value: unknown;
 
                         if (typeof obj.options.data[position[1]] != 'undefined' && typeof obj.options.data[position[1]][position[0]] != 'undefined') {
                             value = obj.options.data[position[1]][position[0]];
@@ -227,7 +229,7 @@ export const executeFormula: WorksheetMethod<'executeFormula'> = function (expre
                             if (typeof formulaResults[tokens[i]] !== 'undefined') {
                                 value = formulaResults[tokens[i]];
                             } else {
-                                value = execute(value, position[0], position[1]);
+                                value = execute(value as string, position[0], position[1]);
                                 formulaResults[tokens[i]] = value;
                             }
                         }
@@ -384,11 +386,15 @@ export const renderCell = function (this: Worksheet, x: number, y: number) {
     }
 };
 
-export const parseValue = function (this: Worksheet, i: number, j: number, value: any, cell?: HTMLElement) {
+/**
+ * The value that a cell shows: the result of a formula, or the value with the mask of the column. The DOM converts a
+ * number, a boolean or undefined to text.
+ */
+export const parseValue = function (this: Worksheet, i: number, j: number, value: jspreadsheet.CellValue | undefined, cell?: HTMLElement) {
     const obj = this;
 
     if (('' + value).substr(0, 1) == '=' && obj.parent.config.parseFormulas != false) {
-        value = executeFormula.call(obj, value, i, j);
+        value = executeFormula.call(obj, value as string, i, j);
     }
 
     // Column options
@@ -401,7 +407,7 @@ export const parseValue = function (this: Worksheet, i: number, j: number, value
                 value = Number(value);
             }
             // Process the decimals to match the mask
-            let masked = (jSuites.mask as unknown as MaskFunctions).render(value, opt, true);
+            let masked = jSuites.mask.render(value, opt, true);
             // Negative indication
             if (cell) {
                 if (opt.mask) {
@@ -409,7 +415,8 @@ export const parseValue = function (this: Worksheet, i: number, j: number, value
                     if (t[1]) {
                         const t1 = t[1].match(new RegExp('\\[Red\\]', 'gi'));
                         if (t1) {
-                            if (value < 0) {
+                            // A text compares as a number
+                            if ((value as number) < 0) {
                                 cell.classList.add('red');
                             } else {
                                 cell.classList.remove('red');
@@ -417,7 +424,7 @@ export const parseValue = function (this: Worksheet, i: number, j: number, value
                         }
                         const t2 = t[1].match(new RegExp('\\(', 'gi'));
                         if (t2) {
-                            if (value < 0) {
+                            if ((value as number) < 0) {
                                 masked = '(' + masked + ')';
                             }
                         }
@@ -476,13 +483,15 @@ const getDropDownValue = function (this: Worksheet, column: number, key: unknown
     return value.length > 0 ? value.join(displayDelimiter) : '';
 };
 
-const validDate = function (date: any) {
+// The date, then the date as text, then its parts
+const validDate = function (date: jspreadsheet.CellValue | string[] | undefined) {
     date = '' + date;
     if (date.substr(4, 1) == '-' && date.substr(7, 1) == '-') {
         return true;
     } else {
         date = date.split('-');
-        if (date[0].length == 4 && date[0] == Number(date[0]) && date[1].length == 2 && date[1] == Number(date[1])) {
+        // A text without a dash, such as a year, has one part. A part with only digits equals its number.
+        if (date[0].length == 4 && (date[0] as unknown) == Number(date[0]) && date[1] && date[1].length == 2 && (date[1] as unknown) == Number(date[1])) {
             return true;
         }
     }
@@ -490,17 +499,19 @@ const validDate = function (date: any) {
 };
 
 /**
- * Strip tags
+ * Strip tags. a is the HTML, then the scripts in it. The DOM converts a number, a boolean or undefined to text.
  */
-const stripScript = function (a: any) {
+const stripScript = function (a: jspreadsheet.CellValue | undefined | HTMLCollectionOf<HTMLScriptElement>) {
     const b = new Option();
-    b.innerHTML = a;
+    b.innerHTML = a as string;
     let c = null;
-    for (a = b.getElementsByTagName('script'); (c = a[0]); ) c.parentNode.removeChild(c);
+    // A script in b has a parent
+    for (a = b.getElementsByTagName('script'); (c = a[0]); ) c.parentNode!.removeChild(c);
     return b.innerHTML;
 };
 
-export const createCell = function (this: Worksheet, i: number, j: number, value: any, silent?: boolean) {
+// The DOM converts a number or a boolean value to text, so value is cast to text where the DOM takes text
+export const createCell = function (this: Worksheet, i: number, j: number, value: jspreadsheet.CellValue, silent?: boolean) {
     const obj = this;
 
     // Column options
@@ -521,7 +532,7 @@ export const createCell = function (this: Worksheet, i: number, j: number, value
     }
     // Security
     if (('' + value).substr(0, 1) == '=' && obj.options.secureFormulas == true) {
-        const val = secureFormula(value);
+        const val = secureFormula(value as string);
         if (val != value) {
             // Update the data container
             value = val;
@@ -531,9 +542,9 @@ export const createCell = function (this: Worksheet, i: number, j: number, value
     // Custom column
     if (column && typeof column.type === 'object') {
         if (obj.parent.config.parseHTML === true) {
-            td.innerHTML = value;
+            td.innerHTML = value as string;
         } else {
-            td.textContent = value;
+            td.textContent = value as string;
         }
         if (typeof column.type.createCell == 'function') {
             column.type.createCell(td, value, parseInt(i), parseInt(j), obj, column);
@@ -542,7 +553,7 @@ export const createCell = function (this: Worksheet, i: number, j: number, value
         // Hidden column
         if (column && column.type == 'hidden') {
             td.style.display = 'none';
-            td.textContent = value;
+            td.textContent = value as string;
         } else if (column && (column.type == 'checkbox' || column.type == 'radio')) {
             // Create input
             const element = document.createElement('input');
@@ -565,20 +576,14 @@ export const createCell = function (this: Worksheet, i: number, j: number, value
             // Try formatted date
             let formatted = null;
             if (!validDate(value)) {
-                const tmp = (jSuites.calendar as unknown as CalendarFunctions).extractDateFromString(
-                    value,
-                    (column.options && column.options.format) || 'YYYY-MM-DD'
-                );
+                const tmp = jSuites.calendar.extractDateFromString(value, (column.options && column.options.format) || 'YYYY-MM-DD');
                 if (tmp) {
                     formatted = tmp;
                 }
             }
             // Create calendar cell
             // textContent converts a number of hours to text
-            td.textContent = (jSuites.calendar as unknown as CalendarFunctions).getDateString(
-                formatted ? formatted : value,
-                column.options && column.options.format
-            ) as string;
+            td.textContent = jSuites.calendar.getDateString(formatted ? formatted : value, column.options && column.options.format) as string;
         } else if (column && column.type == 'dropdown') {
             // Create dropdown cell
             td.classList.add('jss_dropdown');
@@ -587,16 +592,17 @@ export const createCell = function (this: Worksheet, i: number, j: number, value
             if (column.render == 'square') {
                 const color = document.createElement('div');
                 color.className = 'color';
-                color.style.backgroundColor = value;
+                color.style.backgroundColor = value as string;
                 td.appendChild(color);
             } else {
-                td.style.color = value;
-                td.textContent = value;
+                td.style.color = value as string;
+                td.textContent = value as string;
             }
         } else if (column && column.type == 'image') {
-            if (value && value.substr(0, 10) == 'data:image') {
+            // The value can be a number or a boolean
+            if (value && ('' + value).substr(0, 10) == 'data:image') {
                 const img = document.createElement('img');
-                img.src = value;
+                img.src = value as string;
                 td.appendChild(img);
             }
         } else {
@@ -606,7 +612,7 @@ export const createCell = function (this: Worksheet, i: number, j: number, value
                 if (obj.parent.config.parseHTML === true) {
                     td.innerHTML = stripScript(parseValue.call(this, i, j, value, td));
                 } else {
-                    td.textContent = parseValue.call(this, i, j, value, td);
+                    td.textContent = parseValue.call(this, i, j, value, td) as string;
                 }
             }
         }
@@ -652,10 +658,12 @@ export const createCell = function (this: Worksheet, i: number, j: number, value
  *
  * @param {number} x
  * @param {number} y
- * @param {any} value
+ * @param {CellValue} value
  * @param {boolean} [force]
  */
-export const updateCell = function (this: Worksheet, x: number, y: number, value: any, force?: boolean) {
+// setValue without a value clears the cell, and the data keeps undefined. The DOM converts a number, a boolean or
+// undefined to text, so value is cast to text where the DOM takes text.
+export const updateCell = function (this: Worksheet, x: number, y: number, value: jspreadsheet.CellValue | undefined, force?: boolean) {
     const obj = this;
 
     // Column options
@@ -676,7 +684,7 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
     } else {
         // Security
         if (('' + value).substr(0, 1) == '=' && obj.options.secureFormulas == true) {
-            const val = secureFormula(value);
+            const val = secureFormula(value as string);
             if (val != value) {
                 // Update the data container
                 value = val;
@@ -711,11 +719,11 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
 
         // A custom editor can have setValue, which is not in the public typings
         const editor = (column && typeof column.type === 'object' ? column.type : null) as
-            | (jspreadsheet.CustomEditor & { setValue?: (cell: HTMLTableCellElement, value: jspreadsheet.CellValue) => void })
+            | (jspreadsheet.CustomEditor & { setValue?: (cell: HTMLTableCellElement, value: jspreadsheet.CellValue | undefined) => void })
             | null;
         if (editor) {
             // Update data and cell
-            obj.options.data[y][x] = value;
+            obj.options.data[y][x] = value as jspreadsheet.CellValue;
             if (typeof editor.setValue === 'function') {
                 editor.setValue(obj.records[y][x].element, value);
             }
@@ -735,40 +743,37 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
                 obj.options.data[y][x] = (obj.records[y][x].element.children[0] as HTMLInputElement).checked;
             } else if (column && column.type == 'dropdown') {
                 // Update data and cell
-                obj.options.data[y][x] = value;
+                obj.options.data[y][x] = value as jspreadsheet.CellValue;
                 obj.records[y][x].element.textContent = getDropDownValue.call(obj, c, value);
             } else if (column && column.type == 'calendar') {
                 // Try formatted date
                 let formatted = null;
                 if (!validDate(value)) {
-                    const tmp = (jSuites.calendar as unknown as CalendarFunctions).extractDateFromString(
-                        value,
-                        (column.options && column.options.format) || 'YYYY-MM-DD'
-                    );
+                    const tmp = jSuites.calendar.extractDateFromString(value, (column.options && column.options.format) || 'YYYY-MM-DD');
                     if (tmp) {
                         formatted = tmp;
                     }
                 }
                 // Update data and cell
-                obj.options.data[y][x] = value;
+                obj.options.data[y][x] = value as jspreadsheet.CellValue;
                 // textContent converts a number of hours to text
-                obj.records[y][x].element.textContent = (jSuites.calendar as unknown as CalendarFunctions).getDateString(
+                obj.records[y][x].element.textContent = jSuites.calendar.getDateString(
                     formatted ? formatted : value,
                     column.options && column.options.format
                 ) as string;
             } else if (column && column.type == 'color') {
                 // Update color
-                obj.options.data[y][x] = value;
+                obj.options.data[y][x] = value as jspreadsheet.CellValue;
                 // Render
                 if (column.render == 'square') {
                     const color = document.createElement('div');
                     color.className = 'color';
-                    color.style.backgroundColor = value;
+                    color.style.backgroundColor = value as string;
                     obj.records[y][x].element.textContent = '';
                     obj.records[y][x].element.appendChild(color);
                 } else {
-                    obj.records[y][x].element.style.color = value;
-                    obj.records[y][x].element.textContent = value;
+                    obj.records[y][x].element.style.color = value as string;
+                    obj.records[y][x].element.textContent = value as string;
                 }
             } else if (column && column.type == 'image') {
                 value = '' + value;
@@ -781,7 +786,7 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
                 }
             } else {
                 // Update data and cell
-                obj.options.data[y][x] = value;
+                obj.options.data[y][x] = value as jspreadsheet.CellValue;
                 // Label
                 if (column && column.type == 'html') {
                     obj.records[y][x].element.innerHTML = stripScript(parseValue.call(obj, x, y, value));
@@ -789,7 +794,7 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
                     if (obj.parent.config.parseHTML === true) {
                         obj.records[y][x].element.innerHTML = stripScript(parseValue.call(obj, x, y, value, obj.records[y][x].element));
                     } else {
-                        obj.records[y][x].element.textContent = parseValue.call(obj, x, y, value, obj.records[y][x].element);
+                        obj.records[y][x].element.textContent = parseValue.call(obj, x, y, value, obj.records[y][x].element) as string;
                     }
                 }
                 // Handle big text inside a cell
@@ -814,7 +819,15 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
         }
 
         if (column && typeof column.render === 'function') {
-            column.render(obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : (null as any), value, parseInt(x), parseInt(y), obj, column);
+            // updateCell has read obj.records[y][x] already, so the cell is there
+            column.render(
+                (obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : null) as HTMLTableCellElement,
+                value,
+                parseInt(x),
+                parseInt(y),
+                obj,
+                column
+            );
         }
 
         // Accessible name of the active cell
@@ -822,8 +835,17 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
             setCellLabel.call(obj, obj.activeCell);
         }
 
-        // On change
-        dispatch.call(obj, 'onchange', obj, obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : null, x, y, value, record.oldValue);
+        // On change. updateCell has read obj.records[y][x] already, so the cell is there.
+        dispatch.call(
+            obj,
+            'onchange',
+            obj,
+            (obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : null) as HTMLTableCellElement,
+            x,
+            y,
+            value,
+            record.oldValue
+        );
     }
 
     return record;
@@ -903,7 +925,8 @@ export const updateFormulaChain = function (this: Worksheet, x: number, y: numbe
     if (obj.formula[cellId] && obj.formula[cellId].length > 0) {
         if (chainLoopProtection[cellId]) {
             obj.records[y][x].element.innerHTML = '#ERROR';
-            obj.formula[cellId] = '' as any;
+            // An empty text has no length either, so the chain ends here, and executeFormula replaces it with a list
+            obj.formula[cellId] = '' as unknown as string[];
         } else {
             // Protection
             chainLoopProtection[cellId] = true;
@@ -991,7 +1014,8 @@ const updateFormulas = function (this: Worksheet, referencesToUpdate: Record<str
     }
 
     // Update formula chain
-    const formula: any = [];
+    // A list used as an object, with the cell names as keys
+    const formula = [] as unknown as Worksheet['formula'];
     const keys = Object.keys(obj.formula);
     for (let j = 0; j < keys.length; j++) {
         // Current key and values

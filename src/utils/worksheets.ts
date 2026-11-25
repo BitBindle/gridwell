@@ -732,7 +732,8 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
     ['setReadOnly', setReadOnly],
     ['isReadOnly', isReadOnly],
     ['getHighlighted', getHighlighted],
-    ['dispatch', dispatch],
+    // The public dispatch takes any event name, and dispatch is typed for the events of the library
+    ['dispatch', dispatch as (this: Worksheet, ...args: never[]) => unknown],
     ['down', down],
     ['first', first],
     ['last', last],

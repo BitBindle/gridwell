@@ -243,8 +243,8 @@ declare namespace jspreadsheet {
     interface ToolbarSelectItem extends ToolbarItemBase {
         type: 'select';
 
-        /** Defines the icon (from material icons). */
-        content: string;
+        /** Defines the icon (from material icons). Without it, the item shows the selected option. */
+        content?: string;
 
         /**
          * Event called when the item picker value is changed.
@@ -277,8 +277,8 @@ declare namespace jspreadsheet {
          */
         render?: (option: string, pickerInstance: Record<string, any>) => string;
 
-        /** Initial value of the selectbox. */
-        value?: string;
+        /** The index in {@link ToolbarSelectItem.options} of the option that the item shows first. */
+        value?: number | string;
 
         /** Item width. */
         width?: string;
@@ -304,6 +304,15 @@ declare namespace jspreadsheet {
      * Item that makes up the toolbar configuration array. This item may have properties not described here. For more information, read the jSuites toolbar documentation.
      */
     type ToolbarItem = ToolbarIconItem | ToolbarSelectItem | ToolbarColorItem | ToolbarDivisorItem;
+
+    /**
+     * The settings of the toolbar: the items, and the other options of the jSuites toolbar. For more information, read the jSuites toolbar documentation.
+     */
+    interface ToolbarOptions {
+        items: ToolbarItem[];
+
+        [property: string]: unknown;
+    }
 
     interface NestedHeaderCell {
         id?: string;
@@ -503,14 +512,14 @@ declare namespace jspreadsheet {
          * @param cell - HTML element that represents the cell being changed.
          * @param colIndex - Cell column index being changed.
          * @param rowIndex - Cell row index being changed.
-         * @param newValue - Value being applied to the cell.
+         * @param newValue - Value being applied to the cell. It is undefined when setValue was called without a value.
          */
         onbeforechange?: (
             instance: WorksheetInstance,
             cell: HTMLTableCellElement,
             colIndex: string | number,
             rowIndex: string | number,
-            newValue: CellValue
+            newValue: CellValue | undefined
         ) => undefined | CellValue;
 
         /**
@@ -590,13 +599,13 @@ declare namespace jspreadsheet {
          * If it returns a truthy value, that value is persisted instead of the initial value.
          * @param spreadsheetInstance - Spreadsheet instance.
          * @param worksheetInstance - Instance of the worksheet to be saved.
-         * @param data - Changed data.
+         * @param data - The changed rows. The values of a row are by column name, or by column index when the column has no name.
          */
         onbeforesave?: (
             spreadsheetInstance: SpreadsheetInstance,
             worksheetInstance: WorksheetInstance,
-            data: { row: number; data: Record<number, CellValue> }[]
-        ) => any;
+            data: { row: number; data: Record<string, CellValue> }[]
+        ) => unknown;
 
         /**
          * Occurs before the selection is changed.
@@ -628,7 +637,7 @@ declare namespace jspreadsheet {
          * @param cell - HTML element that represents the cell being changed.
          * @param colIndex - Cell column index being changed.
          * @param rowIndex - Cell row index being changed.
-         * @param newValue - New cell value.
+         * @param newValue - New cell value. It is undefined when setValue was called without a value.
          * @param oldValue - Old cell value.
          */
         onchange?: (
@@ -636,7 +645,7 @@ declare namespace jspreadsheet {
             cell: HTMLTableCellElement,
             colIndex: string | number,
             rowIndex: string | number,
-            newValue: CellValue,
+            newValue: CellValue | undefined,
             oldValue: CellValue
         ) => void;
 
@@ -653,9 +662,9 @@ declare namespace jspreadsheet {
          * Occurs when a "setMeta" is called.
          *
          * @param instance - Instance of the worksheet where the change occurred.
-         * @param cellName - An object with the metadata changes.
+         * @param cellName - The changes of the meta information, by cell name.
          */
-        onchangemeta?: (instance: WorksheetInstance, cellName: Record<string, any>) => void;
+        onchangemeta?: (instance: WorksheetInstance, cellName: Record<string, MetaInformation>) => void;
 
         /**
          * Occurs when the page is changed.
@@ -677,10 +686,10 @@ declare namespace jspreadsheet {
         /**
          * Occurs when a comment is changed.
          * @param instance - Instance of the worksheet where the change occurred.
-         * @param newComments - New comments.
-         * @param oldComments - Old comments.
+         * @param newComments - New comments, by cell name, as setComments got them. A falsy value removes the comment.
+         * @param oldComments - Old comments, by cell name.
          */
-        oncomments?: (instance: WorksheetInstance, newComments: Record<string, string | null>, oldComments: Record<string, string | null>) => void;
+        oncomments?: (instance: WorksheetInstance, newComments: Record<string, string | null | undefined>, oldComments: Record<string, string | null>) => void;
 
         /**
          * Occurs when the contents of one or more cells are copied.
@@ -752,7 +761,7 @@ declare namespace jspreadsheet {
          * @param td - Td tag of the cell whose editor was opened.
          * @param colIndex - Column index of the cell whose editor was opened.
          * @param rowIndex - Row index of the cell whose editor was opened.
-         * @param editorValue - Value that was in the editor.
+         * @param editorValue - Value that was in the editor. It is undefined when the value was not saved.
          * @param wasSaved - Whether the value which was in the editor was saved in the cell or not.
          */
         oneditionend?: (
@@ -760,7 +769,7 @@ declare namespace jspreadsheet {
             td: HTMLTableCellElement,
             colIndex: number,
             rowIndex: number,
-            editorValue: CellValue,
+            editorValue: CellValue | undefined,
             wasSaved: boolean
         ) => void;
 
@@ -780,7 +789,7 @@ declare namespace jspreadsheet {
          * @param event - Name of the event that was called.
          * @param rest - Arguments of the event that was called.
          */
-        onevent?: (event: string, ...rest: any[]) => any;
+        onevent?: (event: string, ...rest: any[]) => unknown;
 
         /**
          * Occurs when the table is focused.
@@ -857,7 +866,7 @@ declare namespace jspreadsheet {
         /**
          * Occurs after a paste action is performed in the javascript table.
          * @param instance - Instance of the worksheet where the change occurred.
-         * @param pastedInfo - Information that was pasted into the worksheet.
+         * @param pastedInfo - The pasted cells, one item for each cell.
          */
         onpaste?: (
             instance: WorksheetInstance,
@@ -865,7 +874,7 @@ declare namespace jspreadsheet {
                 x: number;
                 y: number;
                 value: CellValue;
-            }[][]
+            }[]
         ) => void;
 
         /**
@@ -929,6 +938,13 @@ declare namespace jspreadsheet {
         onsort?: (instance: WorksheetInstance, colIndex: number, order: 0 | 1, newOrderValues: number[]) => void;
 
         /**
+         * Occurs when the rows that a search or a filter shows have changed.
+         * @param instance - Instance of the worksheet.
+         * @param results - Indexes of the rows that are shown, or null when every row is shown.
+         */
+        onupdateresult?: (instance: WorksheetInstance, results: number[] | null) => void;
+
+        /**
          * Occurs when a change is undone.
          * @param instance - Instance of the worksheet where the change occurred.
          * @param historyRecord - History item that was undone. If there are no more actions to undo, it takes the value undefined.
@@ -965,8 +981,11 @@ declare namespace jspreadsheet {
          */
         hideTabs?: boolean;
 
-        /** Add custom toolbars. */
-        toolbar?: boolean | ToolbarItem[] | ((defaultToolbar: ToolbarItem[]) => ToolbarItem[]) | Record<string, any>;
+        /**
+         * Add custom toolbars: true for the default toolbar, the items, or the toolbar settings. A function gets the
+         * settings of the default toolbar and returns the settings to use.
+         */
+        toolbar?: boolean | ToolbarItem[] | ToolbarOptions | ((defaultToolbar: ToolbarOptions) => ToolbarOptions);
 
         /**
          * Worksheet settings.
@@ -1393,9 +1412,9 @@ declare namespace jspreadsheet {
          * This method is called before the spreadsheet sends data to the server.
          * @param instance - Worksheet instance.
          * @param method - Name of the method whose execution needs to be saved on the server.
-         * @param data - Arguments of the method whose execution needs to be saved on the server.
+         * @param data - Arguments of the method whose execution needs to be saved on the server: the changes, as onafterchanges gets them.
          */
-        persistence?: (instance: WorksheetInstance, method: string, data: any) => void;
+        persistence?: (instance: WorksheetInstance, method: string, data: { data: CellChange[] }) => void;
 
         /**
          * Method called before the context menu is displayed. If this method returns anything other than a falsy value, that value overrides the context menu settings.
@@ -1422,9 +1441,9 @@ declare namespace jspreadsheet {
 
         /**
          * Method called before the toolbar is displayed. If this method returns anything other than a falsy value, that value overrides the toolbar settings.
-         * @param defaultToolbar
+         * @param toolbar - The toolbar settings.
          */
-        toolbar?: (defaultToolbar: ToolbarItem[]) => ToolbarItem[] | null | undefined;
+        toolbar?: (toolbar: ToolbarOptions) => ToolbarOptions | null | undefined;
     }
 
     interface SpreadsheetInstance {
@@ -1590,7 +1609,7 @@ declare namespace jspreadsheet {
          * @param event - Event name.
          * @param args - Arguments that should be passed to the event.
          */
-        dispatch: (event: string, ...args: any[]) => any;
+        dispatch: (event: string, ...args: unknown[]) => any;
 
         /**
          * Simulates the action of the "arrow down" key.
@@ -1758,10 +1777,17 @@ declare namespace jspreadsheet {
         getMerge(cellName?: string): Record<string, [number, number]> | [number, number] | null;
 
         /**
-         * Get meta information from one or all cells.
-         * @param cell - Cell name. If it is a falsy value, the metadata of all cells is returned.
+         * Get the meta information of all cells.
+         * @returns The meta information by cell name, or undefined when no cell has meta information.
          */
-        getMeta: (cell?: string) => any;
+        getMeta(cell?: undefined): Record<string, MetaInformation> | undefined;
+
+        /**
+         * Get the meta information of a cell.
+         * @param cell - Cell name. An empty name gives the meta information of all cells.
+         * @returns The meta information of the cell, or null when it has none.
+         */
+        getMeta(cell: string): MetaInformation | null;
 
         /**
          * Get the range description of the selected cells.
@@ -2074,10 +2100,10 @@ declare namespace jspreadsheet {
 
         /**
          * Reset styles of one or more cells.
-         * @param o - Object whose keys are the names of the cells that must have their styles reset.
+         * @param o - Object whose keys are the names of the cells that must have their styles reset. Each value is the new style of the cell, as in {@link setStyle}.
          * @param ignoreHistoryAndEvents - If true, do not add this action to history.
          */
-        resetStyle: (o: Record<string, any>, ignoreHistoryAndEvents?: boolean) => void;
+        resetStyle: (o: Record<string, string | string[]>, ignoreHistoryAndEvents?: boolean) => void;
 
         /**
          * Information about the row or column currently being resized.
@@ -2203,7 +2229,7 @@ declare namespace jspreadsheet {
          * Remove current and define new meta information for one or more cells.
          * @param o - Object with the new meta information.
          */
-        setMeta(o: Record<string, Record<string, any>>): void;
+        setMeta(o: Record<string, MetaInformation>): void;
 
         /**
          * Change the read only state of a cell.
@@ -2361,9 +2387,9 @@ declare namespace jspreadsheet {
         createFromTable: (element: HTMLTableElement, options: WorksheetOptions) => WorksheetOptions;
 
         /**
-         * Internal method.
+         * Internal method. Get the position of the caret in an element.
          */
-        getCaretIndex: (e: any) => number;
+        getCaretIndex: (e: Node) => number;
 
         /**
          * Get the column letter(s) based on its index.
@@ -2392,9 +2418,9 @@ declare namespace jspreadsheet {
         getCoordsFromRange: (range: string) => [number, number, number, number];
 
         /**
-         * Internal method.
+         * Internal method. Swap the keys and the values of an object. A number value becomes an index of the list.
          */
-        invert: (o: object) => any[] & Record<string, any>;
+        invert: (o: Record<string, string | number>) => string[] & Record<string, string>;
 
         /**
          * Parse CSV string to JS array.
