@@ -76,3 +76,33 @@ describe('Keys', () => {
         expect(worksheet.selectedCell.map(Number)).to.eql([0, 0, 0, 0]);
     });
 });
+
+describe('Toggle a checkbox with the space key', () => {
+    // The spreadsheet adds its event handlers after a promise
+    const load = (options) =>
+        new Promise((resolve) => {
+            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+        });
+
+    it('gives the change events the column and row as numbers', async () => {
+        const calls = [];
+        const worksheet = await load({
+            worksheets: [{ data: [['a', false]], columns: [{ type: 'text' }, { type: 'checkbox' }] }],
+            onbeforechange: (instance, cell, x, y) => {
+                calls.push(['onbeforechange', x, y]);
+            },
+            onafterchanges: (instance, changes) => {
+                calls.push(['onafterchanges', changes[0].x, changes[0].y]);
+            },
+        });
+
+        worksheet.updateSelectionFromCoords(1, 0, 1, 0);
+        document.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, key: ' ', keyCode: 32, which: 32 }));
+
+        expect(worksheet.getValueFromCoords(1, 0)).to.equal(true);
+        expect(calls).to.eql([
+            ['onbeforechange', 1, 0],
+            ['onafterchanges', 1, 0],
+        ]);
+    });
+});

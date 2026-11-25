@@ -443,8 +443,8 @@ export const setCheckRadioValue = function (this: Worksheet) {
     const records = [];
     const keys = Object.keys(obj.highlighted);
     for (let i = 0; i < keys.length; i++) {
-        const x: any = obj.highlighted[i].element.getAttribute('data-x');
-        const y: any = obj.highlighted[i].element.getAttribute('data-y');
+        const x = parseInt(obj.highlighted[i].element.getAttribute('data-x'));
+        const y = parseInt(obj.highlighted[i].element.getAttribute('data-y'));
 
         const column = obj.options.columns[getCellColumnIndex.call(obj, x, y)];
         if (column.type == 'checkbox' || column.type == 'radio') {
