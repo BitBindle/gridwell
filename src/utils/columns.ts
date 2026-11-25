@@ -51,8 +51,8 @@ export const createCellHeader = function (this: Worksheet, colNumber: number) {
         obj.headers[colNumber].setAttribute('title', obj.headers[colNumber].innerText);
     }
     // id is not in the public typings of a column
-    if (obj.options.columns && obj.options.columns[colNumber] && (obj.options.columns[colNumber] as any).id) {
-        obj.headers[colNumber].setAttribute('id', (obj.options.columns[colNumber] as any).id);
+    if (obj.options.columns && obj.options.columns[colNumber] && obj.options.columns[colNumber].id) {
+        obj.headers[colNumber].setAttribute('id', obj.options.columns[colNumber].id);
     }
 
     // Width control
@@ -307,7 +307,7 @@ export const moveColumn: WorksheetMethod<'moveColumn'> = function (o, d) {
     const obj = this;
 
     if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
-        let insertBefore;
+        let insertBefore: 0 | 1;
         if (o > d) {
             insertBefore = 1;
         } else {

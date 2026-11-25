@@ -252,7 +252,7 @@ export const moveRow = function (this: Worksheet, o: number, d: number, ignoreDo
     const obj = this;
 
     if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
-        let insertBefore;
+        let insertBefore: 0 | 1;
 
         if (o > d) {
             insertBefore = 1;

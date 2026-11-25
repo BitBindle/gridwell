@@ -4,7 +4,7 @@ import type { Spreadsheet } from '../types/internal';
 /**
  * Get carret position for one element
  */
-export const getCaretIndex = function (this: Spreadsheet, e: any) {
+export const getCaretIndex = function (this: Spreadsheet, e: Node) {
     let d;
 
     // Applications call it as jspreadsheet.helpers.getCaretIndex, so this is a spreadsheet only when the caller sets it.

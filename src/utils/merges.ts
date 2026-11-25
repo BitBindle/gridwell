@@ -11,7 +11,8 @@ import type { MergeInfo, Worksheet, WorksheetMethod } from '../types/internal';
 /**
  * Is column merged
  */
-export const isColMerged = function (this: Worksheet, x: number, insertBefore?: any) {
+// The moves pass 1 or 0 for insertBefore
+export const isColMerged = function (this: Worksheet, x: number, insertBefore?: boolean | 0 | 1 | null) {
     const obj = this;
 
     const cols = [];
@@ -48,7 +49,8 @@ export const isColMerged = function (this: Worksheet, x: number, insertBefore?: 
 /**
  * Is rows merged
  */
-export const isRowMerged = function (this: Worksheet, y: number, insertBefore?: any) {
+// The moves pass 1 or 0 for insertBefore
+export const isRowMerged = function (this: Worksheet, y: number, insertBefore?: boolean | 0 | 1 | null) {
     const obj = this;
 
     const rows = [];
@@ -120,7 +122,7 @@ const updateMergedCell = function (this: Worksheet, cellName: string) {
 /**
  * Update the first cell of each merged range that covers one of the columns.
  */
-export const updateMergedColumns = function (this: Worksheet, columns: any) {
+export const updateMergedColumns = function (this: Worksheet, columns: number[]) {
     const obj = this;
 
     if (!obj.options.mergeCells) {
