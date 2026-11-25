@@ -500,3 +500,89 @@ describe('Paste', () => {
         });
     });
 });
+
+describe('Copy and paste without a selection', () => {
+    it('copies nothing and keeps the clipboard', () => {
+        const events = [];
+        const commands = [];
+        const execCommand = document.execCommand;
+        document.execCommand = (command) => commands.push(command);
+
+        try {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [
+                            ['a', 'b'],
+                            ['c', 'd'],
+                        ],
+                    },
+                ],
+                oncopy: () => events.push('oncopy'),
+            })[0];
+
+            worksheet.copy();
+            worksheet.copy(true);
+
+            expect(events).to.deep.equal([]);
+            expect(commands).to.deep.equal([]);
+            expect(worksheet.getData()).to.deep.equal([
+                ['a', 'b'],
+                ['c', 'd'],
+            ]);
+        } finally {
+            document.execCommand = execCommand;
+        }
+    });
+
+    it('pastes at the target cell', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 3] }] })[0];
+
+        worksheet.paste(1, 1, 'x\ty\nz');
+
+        expect(worksheet.getData()).to.deep.equal([
+            ['', '', ''],
+            ['', 'x', 'y'],
+            ['', 'z', ''],
+        ]);
+        expect(worksheet.getSelection()).to.deep.equal([1, 1, 2, 2]);
+    });
+});
+
+describe('Cut', () => {
+    it('keeps the cells when oncopy cancels the cut', () => {
+        const execCommand = document.execCommand;
+        document.execCommand = () => {};
+
+        try {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [{ data: [['a', 'b']] }],
+                oncopy: () => false,
+            })[0];
+            worksheet.updateSelectionFromCoords(0, 0, 1, 0);
+
+            worksheet.copy(true);
+
+            expect(worksheet.getData()).to.deep.equal([['a', 'b']]);
+        } finally {
+            document.execCommand = execCommand;
+        }
+    });
+
+    it('clears the cells after a cut', () => {
+        const execCommand = document.execCommand;
+        document.execCommand = () => {};
+
+        try {
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: [['a', 'b']] }] })[0];
+            worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+
+            worksheet.copy(true);
+
+            expect(worksheet.getData()).to.deep.equal([['', 'b']]);
+            expect(worksheet.data).to.equal('a');
+        } finally {
+            document.execCommand = execCommand;
+        }
+    });
+});

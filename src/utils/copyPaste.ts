@@ -167,12 +167,17 @@ export const copy = function (
 
     // Create a hidden textarea to copy the values
     if (!returnData) {
-        // Paste event. Without a selection, this throws (issue #41).
+        // Without a selection, no cell is highlighted: copy nothing and keep the clipboard
+        if (!obj.selectedCell) {
+            return;
+        }
+
+        // Paste event
         const selectedRange: [number, number, number, number] = [
-            Math.min(obj.selectedCell![0], obj.selectedCell![2]),
-            Math.min(obj.selectedCell![1], obj.selectedCell![3]),
-            Math.max(obj.selectedCell![0], obj.selectedCell![2]),
-            Math.max(obj.selectedCell![1], obj.selectedCell![3]),
+            Math.min(obj.selectedCell[0], obj.selectedCell[2]),
+            Math.min(obj.selectedCell[1], obj.selectedCell[3]),
+            Math.max(obj.selectedCell[0], obj.selectedCell[2]),
+            Math.max(obj.selectedCell[1], obj.selectedCell[3]),
         ];
 
         const result = dispatch.call(obj, 'oncopy', obj, selectedRange, strLabel, isCut);
@@ -247,9 +252,9 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data) {
     // Split new line. The rows and columns of the text, which can grow below to fill the selection, or be replaced by onbeforepaste
     let rows: jspreadsheet.CellValue[][] = parseCSV(data, '\t');
 
-    // Without a selection, this throws (issue #41)
-    const ex = obj.selectedCell![2];
-    const ey = obj.selectedCell![3];
+    // The end of the selection, to repeat the data over it. Without a selection, the data is pasted once.
+    const ex = obj.selectedCell ? obj.selectedCell[2] : x;
+    const ey = obj.selectedCell ? obj.selectedCell[3] : y;
 
     const w = ex - x + 1;
     const h = ey - y + 1;

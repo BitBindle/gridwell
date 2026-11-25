@@ -3,6 +3,13 @@ import { loadDown, loadPage, loadUp, loadValidation } from './lazyLoading.js';
 import type { SelectedWorksheet, Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
+ * Whether the worksheet has a selection
+ */
+const hasSelection = function (obj: Worksheet): obj is SelectedWorksheet {
+    return obj.selectedCell ? true : false;
+};
+
+/**
  * Move the selection from a cell that a merged range hides to the first cell of the range
  */
 const toFirstCell = function (this: SelectedWorksheet) {
@@ -76,8 +83,12 @@ const upVisible = function (this: SelectedWorksheet, group: Corner, direction: S
 };
 
 export const up: WorksheetMethod<'up'> = function (shiftKey, ctrlKey) {
-    // The methods that move the selection need a selection. Without one, they throw (issue #40).
-    const obj = this as SelectedWorksheet;
+    const obj = this;
+
+    // Without a selection, there is nothing to move
+    if (!hasSelection(obj)) {
+        return;
+    }
 
     if (shiftKey) {
         if (obj.selectedCell[3] > 0) {
@@ -176,8 +187,12 @@ const rightVisible = function (this: SelectedWorksheet, group: Corner, direction
 };
 
 export const right: WorksheetMethod<'right'> = function (shiftKey, ctrlKey) {
-    // The methods that move the selection need a selection. Without one, they throw (issue #40).
-    const obj = this as SelectedWorksheet;
+    const obj = this;
+
+    // Without a selection, there is nothing to move
+    if (!hasSelection(obj)) {
+        return;
+    }
 
     if (shiftKey) {
         if (obj.selectedCell[2] < obj.headers.length - 1) {
@@ -250,8 +265,12 @@ const downVisible = function (this: SelectedWorksheet, group: Corner, direction:
 };
 
 export const down: WorksheetMethod<'down'> = function (shiftKey, ctrlKey) {
-    // The methods that move the selection need a selection. Without one, they throw (issue #40).
-    const obj = this as SelectedWorksheet;
+    const obj = this;
+
+    // Without a selection, there is nothing to move
+    if (!hasSelection(obj)) {
+        return;
+    }
 
     if (shiftKey) {
         if (obj.selectedCell[3] < obj.records.length - 1) {
@@ -348,8 +367,12 @@ const leftVisible = function (this: SelectedWorksheet, group: Corner, direction:
 };
 
 export const left: WorksheetMethod<'left'> = function (shiftKey, ctrlKey) {
-    // The methods that move the selection need a selection. Without one, they throw (issue #40).
-    const obj = this as SelectedWorksheet;
+    const obj = this;
+
+    // Without a selection, there is nothing to move
+    if (!hasSelection(obj)) {
+        return;
+    }
 
     if (shiftKey) {
         if (obj.selectedCell[2] > 0) {
@@ -369,8 +392,12 @@ export const left: WorksheetMethod<'left'> = function (shiftKey, ctrlKey) {
 };
 
 export const first: WorksheetMethod<'first'> = function (shiftKey, ctrlKey) {
-    // The methods that move the selection need a selection. Without one, they throw (issue #40).
-    const obj = this as SelectedWorksheet;
+    const obj = this;
+
+    // Without a selection, there is nothing to move
+    if (!hasSelection(obj)) {
+        return;
+    }
 
     if (shiftKey) {
         if (ctrlKey) {
@@ -404,8 +431,12 @@ export const first: WorksheetMethod<'first'> = function (shiftKey, ctrlKey) {
 };
 
 export const last: WorksheetMethod<'last'> = function (shiftKey, ctrlKey) {
-    // The methods that move the selection need a selection. Without one, they throw (issue #40).
-    const obj = this as SelectedWorksheet;
+    const obj = this;
+
+    // Without a selection, there is nothing to move
+    if (!hasSelection(obj)) {
+        return;
+    }
 
     if (shiftKey) {
         if (ctrlKey) {

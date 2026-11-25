@@ -55,7 +55,7 @@ declare namespace jspreadsheet {
 
     interface CustomEditor {
         /**
-         * Event responsible for closing the editor of a cell with a custom editor.
+         * Event responsible for closing the editor of a cell with a custom editor. Without it, closing the editor keeps the value of the cell.
          * @param cell - Td tag whose editor should close.
          * @param save - If true, the value returned by this event will be the cell's new value. Otherwise, the value returned by this event is ignored.
          * @param x - Cell column index.
@@ -79,7 +79,7 @@ declare namespace jspreadsheet {
         createCell?: (cell: HTMLTableCellElement, value: CellValue, x: number, y: number, instance: WorksheetInstance, options: Column) => HTMLTableCellElement;
 
         /**
-         * Event responsible for opening the editor of a cell with a custom editor.
+         * Event responsible for opening the editor of a cell with a custom editor. Without it, the cells of the column cannot be edited.
          * @param cell - Td tag whose editor should open.
          * @param value - Cell value.
          * @param x - Cell column index.
@@ -692,7 +692,7 @@ declare namespace jspreadsheet {
         oncomments?: (instance: WorksheetInstance, newComments: Record<string, string | null | undefined>, oldComments: Record<string, string | null>) => void;
 
         /**
-         * Occurs when the contents of one or more cells are copied.
+         * Occurs when the contents of one or more cells are copied. Returning false cancels the copy or the cut, and text replaces the copied data.
          * @param instance - Instance of the worksheet where the change occurred.
          * @param selectedRange - Copied cell range.
          * @param copiedData - Data from copied cell range.
@@ -1530,7 +1530,7 @@ declare namespace jspreadsheet {
         ads: HTMLDivElement;
 
         /**
-         * Close a cell editor.
+         * Close a cell editor. Does nothing when the cell is not the cell being edited.
          * @param cell - HTML td tag whose editor must be closed.
          * @param save - Whether or not to save editor content in cell.
          */
@@ -1552,7 +1552,7 @@ declare namespace jspreadsheet {
         content: HTMLDivElement;
 
         /**
-         * Copies or cuts the contents of selected cells in the worksheet.
+         * Copies or cuts the contents of selected cells in the worksheet. Does nothing when no cell is selected.
          * @param cut - If true, the operation is cut, if not, it is copy.
          */
         copy: (cut?: boolean) => void;
@@ -1612,7 +1612,7 @@ declare namespace jspreadsheet {
         dispatch: (event: string, ...args: unknown[]) => any;
 
         /**
-         * Simulates the action of the "arrow down" key.
+         * Simulates the action of the "arrow down" key. Does nothing when no cell is selected.
          * @param shiftKey - If true, the method simulates the action of the "arrow down" key while the Shift key is pressed.
          * @param ctrlKey - If true, the method simulates the action of the "arrow down" key while the Ctrl key is pressed.
          */
@@ -1659,7 +1659,7 @@ declare namespace jspreadsheet {
         filters: (string[] | null)[];
 
         /**
-         * Simulates the action of the Home key.
+         * Simulates the action of the Home key. Does nothing when no cell is selected.
          * @param shiftKey - If true, the method simulates the action of the Home key while the Shift key is pressed.
          * @param ctrlKey - If true, the method simulates the action of the Home key while the Ctrl key is pressed.
          */
@@ -1960,14 +1960,14 @@ declare namespace jspreadsheet {
         isReadOnly(cellName: string): boolean;
 
         /**
-         * Simulates the action of the End key.
+         * Simulates the action of the End key. Does nothing when no cell is selected.
          * @param shiftKey - If true, the method simulates the action of the End key while the Shift key is pressed.
          * @param ctrlKey - If true, the method simulates the action of the End key while the Ctrl key is pressed.
          */
         last: (shiftKey?: boolean, ctrlKey?: boolean) => void;
 
         /**
-         * Simulates the action of the "arrow left" key.
+         * Simulates the action of the "arrow left" key. Does nothing when no cell is selected.
          * @param shiftKey - If true, the method simulates the action of the "arrow left" key while the Shift key is pressed.
          * @param ctrlKey - If true, the method simulates the action of the "arrow left" key while the Ctrl key is pressed.
          */
@@ -2049,7 +2049,7 @@ declare namespace jspreadsheet {
         parent: SpreadsheetInstance;
 
         /**
-         * Pastes content into one or more cells.
+         * Pastes content into one or more cells. When the selection is larger than the content, the content is repeated over the selection.
          * @param x - Column index of the cell from which the content will be pasted.
          * @param y - Row index of the cell from which the content will be pasted.
          * @param data - Content to be pasted.
@@ -2116,7 +2116,7 @@ declare namespace jspreadsheet {
         results: null | number[];
 
         /**
-         * Simulates the action of the "arrow right" key.
+         * Simulates the action of the "arrow right" key. Does nothing when no cell is selected.
          * @param shiftKey - If true, the method simulates the action of the "arrow right" key while the Shift key is pressed.
          * @param ctrlKey - If true, the method simulates the action of the "arrow right" key while the Ctrl key is pressed.
          */
@@ -2349,7 +2349,7 @@ declare namespace jspreadsheet {
         undo: () => void;
 
         /**
-         * Simulates the action of the "arrow up" key.
+         * Simulates the action of the "arrow up" key. Does nothing when no cell is selected.
          * @param shiftKey - If true, the method simulates the action of the "arrow up" key while the Shift key is pressed.
          * @param ctrlKey - If true, the method simulates the action of the "arrow up" key while the Ctrl key is pressed.
          */
