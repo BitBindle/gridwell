@@ -104,5 +104,6 @@ Modules import each other with the `.js` extension, although the files are `.ts`
 ## Commits and pull requests
 
 -   Write commit subjects in the imperative, describing the behaviour for users, for example "Keep the selection when a tap is on a jss_object control". Use plain, short sentences.
+-   When you find a bug that you do not fix in your change, open an issue for it. Follow the existing issues: what goes wrong, a reproduction with the expected and actual result, the branch and commit where you checked it, and the cause in the code. Say why it was not fixed.
 -   Pull request descriptions follow this order: the problem, a reproduction (code, expected and actual result), the fix, breaking changes, and the tests that fail before and pass after.
 -   CI (`.github/workflows/ci.yml`) runs `npm test` on Node 20 and 22.
