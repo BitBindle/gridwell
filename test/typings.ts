@@ -27,6 +27,12 @@ assertType<Equals<typeof selectedNames, string[]>>();
 const selection = worksheet.getSelection();
 assertType<Equals<typeof selection, [number, number, number, number] | null>>();
 
+// getMeta returns the meta information of a cell, or null, or the meta information of all cells
+const cellMeta = worksheet.getMeta('A1');
+assertType<Equals<typeof cellMeta, jspreadsheet.MetaInformation | null>>();
+const allMeta = worksheet.getMeta();
+assertType<Equals<typeof allMeta, Record<string, jspreadsheet.MetaInformation> | undefined>>();
+
 declare const spreadsheet: jspreadsheet.SpreadsheetInstance;
 
 // The factory gives each spreadsheet getConfig

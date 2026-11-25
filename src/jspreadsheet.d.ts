@@ -662,9 +662,9 @@ declare namespace jspreadsheet {
          * Occurs when a "setMeta" is called.
          *
          * @param instance - Instance of the worksheet where the change occurred.
-         * @param cellName - An object with the metadata changes.
+         * @param cellName - The changes of the meta information, by cell name.
          */
-        onchangemeta?: (instance: WorksheetInstance, cellName: Record<string, any>) => void;
+        onchangemeta?: (instance: WorksheetInstance, cellName: Record<string, MetaInformation>) => void;
 
         /**
          * Occurs when the page is changed.
@@ -1777,10 +1777,17 @@ declare namespace jspreadsheet {
         getMerge(cellName?: string): Record<string, [number, number]> | [number, number] | null;
 
         /**
-         * Get meta information from one or all cells.
-         * @param cell - Cell name. If it is a falsy value, the metadata of all cells is returned.
+         * Get the meta information of all cells.
+         * @returns The meta information by cell name, or undefined when no cell has meta information.
          */
-        getMeta: (cell?: string) => any;
+        getMeta(cell?: undefined): Record<string, MetaInformation> | undefined;
+
+        /**
+         * Get the meta information of a cell.
+         * @param cell - Cell name. An empty name gives the meta information of all cells.
+         * @returns The meta information of the cell, or null when it has none.
+         */
+        getMeta(cell: string): MetaInformation | null;
 
         /**
          * Get the range description of the selected cells.
@@ -2222,7 +2229,7 @@ declare namespace jspreadsheet {
          * Remove current and define new meta information for one or more cells.
          * @param o - Object with the new meta information.
          */
-        setMeta(o: Record<string, Record<string, any>>): void;
+        setMeta(o: Record<string, MetaInformation>): void;
 
         /**
          * Change the read only state of a cell.
