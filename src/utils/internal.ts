@@ -12,6 +12,7 @@ import { setFooter } from './footer.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { setCellLabel, updateGridSize, updateRowIndex, updateTabStop } from './accessibility.js';
 import type { MergeInfo, Spreadsheet, Worksheet, WorksheetMethod } from '../types/internal';
+import type { MaskFunctions, MaskOptions } from '../types/jsuites';
 
 export const updateTable = function (this: Worksheet) {
     const obj = this;
@@ -399,7 +400,7 @@ export const parseValue = function (this: Worksheet, i: number, j: number, value
                 value = Number(value);
             }
             // Process the decimals to match the mask
-            let masked = (jSuites.mask as any).render(value, opt, true);
+            let masked = (jSuites.mask as unknown as MaskFunctions).render(value, opt, true);
             // Negative indication
             if (cell) {
                 if (opt.mask) {
@@ -825,9 +826,9 @@ export const isFormula = function (value: unknown) {
 /**
  * Get the mask in the jSuites.mask format
  */
-export const getMask = function (o: any): any {
+export const getMask = function (o: Worksheet['options']['columns'][number]): MaskOptions | null {
     if (o.format || o.mask || o.locale) {
-        const opt: any = {};
+        const opt: MaskOptions = {};
         if (o.mask) {
             opt.mask = o.mask;
         } else if (o.format) {

@@ -6,6 +6,19 @@ import { setHistory } from './history.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import { getLabelText, restoreActiveCell } from './accessibility.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
+import type { MaskFunctions, MaskOptions } from '../types/jsuites';
+
+/**
+ * The editor in a cell that is being edited, read as an input because the text editors are inputs or text areas.
+ * jsuites keeps its control on the element, and a masked input keeps its mask options.
+ * The typings of the calendar and the color picker say that close returns nothing, but it returns the value.
+ */
+type EditorElement = HTMLInputElement & {
+    dropdown: { close(ignoreEvents: boolean): void; getValue(asArray: true): string[]; getValue(): string };
+    calendar: { close(ignoreEvents: boolean): string };
+    color: { close(ignoreEvents: boolean): string };
+    mask?: MaskOptions;
+};
 
 /**
  * Open the editor
@@ -35,8 +48,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
     }
 
     // Create editor
-    // The editor element gets properties, for example the jsuites control
-    const createEditor = function (type: string): any {
+    const createEditor = function <K extends keyof HTMLElementTagNameMap>(type: K) {
         // Cell information
         const info = cell.getBoundingClientRect();
 
@@ -122,6 +134,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 // On edition start
                 dispatch.call(obj, 'oncreateeditor', obj, cell, parseInt(x), parseInt(y), null, column);
 
+                // The jsuites typings say that the width is a number, but it takes CSS text
                 const options: any = {
                     data: data,
                     multiple: column.multiple ? true : false,
@@ -154,8 +167,10 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
 
                 dispatch.call(obj, 'oncreateeditor', obj, cell, parseInt(x), parseInt(y), null, column);
 
-                editor.value = value;
+                // The input converts the value to text
+                editor.value = value as string;
 
+                // The options of the calendar or the color picker
                 const options: any = column.options ? { ...column.options } : {};
 
                 if (obj.options.tableOverflow == true || obj.parent.config.fullscreen == true) {
@@ -163,7 +178,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 }
                 options.value = obj.options.data[y][x];
                 options.opened = true;
-                options.onclose = function (el: any, value: any) {
+                options.onclose = function (el: HTMLElement, value: string) {
                     closeEditor.call(obj, cell, true);
                 };
                 // Current value
@@ -173,8 +188,9 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                     const rect = cell.getBoundingClientRect();
 
                     if (options.position) {
-                        editor.nextSibling.children[1].style.top = rect.top + rect.height + 'px';
-                        editor.nextSibling.children[1].style.left = rect.left + 'px';
+                        // The color picker adds its container after the input
+                        ((editor.nextSibling as HTMLElement).children[1] as HTMLElement).style.top = rect.top + rect.height + 'px';
+                        ((editor.nextSibling as HTMLElement).children[1] as HTMLElement).style.left = rect.left + 'px';
                     }
                 } else {
                     if (!options.format) {
@@ -197,10 +213,10 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 div.classList.add('jss_richtext');
                 editor.appendChild(div);
                 // The jsuites typings miss the editor property
-                const richText: any = jSuites.editor(div, {
+                const richText = jSuites.editor(div, {
                     focus: true,
                     value: value as string,
-                });
+                }) as ReturnType<typeof jSuites.editor> & { editor?: HTMLElement };
                 // Accessible role and name of the rich text editor
                 if (richText && richText.editor) {
                     richText.editor.setAttribute('role', 'textbox');
@@ -261,7 +277,8 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 dispatch.call(obj, 'oncreateeditor', obj, cell, parseInt(x), parseInt(y), null, column);
 
                 editor.focus();
-                editor.value = value;
+                // The input converts the value to text
+                editor.value = value as string;
 
                 // Column options
                 const options = column;
@@ -270,7 +287,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 if (!isFormula(value)) {
                     if (options) {
                         // Format
-                        const opt: any = getMask(options);
+                        const opt = getMask(options);
 
                         if (opt) {
                             // Masking
@@ -285,10 +302,10 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                             // Input
                             opt.input = editor;
                             // Configuration
-                            editor.mask = opt;
+                            (editor as EditorElement).mask = opt;
                             // Do not treat the decimals
                             // The jsuites typings miss render and extract
-                            (jSuites.mask as any).render(value, opt, false);
+                            (jSuites.mask as unknown as MaskFunctions).render(value, opt, false);
                         }
                     }
                 }
@@ -332,30 +349,31 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
             if (column && (column.type == 'checkbox' || column.type == 'radio' || column.type == 'hidden')) {
                 // Do nothing
             } else if (column && column.type == 'dropdown') {
-                const dropdown = (cell.children[0] as any).dropdown;
+                const dropdown = (cell.children[0] as EditorElement).dropdown;
                 const delimiter = column.delimiter;
                 dropdown.close(true);
                 value = delimiter && column.multiple ? dropdown.getValue(true).join(delimiter) : dropdown.getValue();
             } else if (column && column.type == 'calendar') {
-                value = (cell.children[0] as any).calendar.close(true);
+                value = (cell.children[0] as EditorElement).calendar.close(true);
             } else if (column && column.type == 'color') {
-                value = (cell.children[0] as any).color.close(true);
+                value = (cell.children[0] as EditorElement).color.close(true);
             } else if (column && column.type == 'html') {
-                value = (cell.children[0] as any).children[0].editor.getData();
+                // The rich text editor keeps its jsuites control on its element
+                value = (cell.children[0].children[0] as HTMLElement & { editor: { getData(): string } }).editor.getData();
             } else if (column && column.type == 'image') {
-                const img = (cell.children[0] as any).children[0].children[0];
+                const img = cell.children[0].children[0].children[0] as HTMLImageElement | undefined;
                 value = img && img.tagName == 'IMG' ? img.src : '';
             } else if (column && column.type == 'numeric') {
-                value = (cell.children[0] as any).value;
+                value = (cell.children[0] as EditorElement).value;
                 if (('' + value).substr(0, 1) != '=') {
                     if (value == '') {
                         value = column.allowEmpty ? '' : 0;
                     }
                 }
-                (cell.children[0] as any).onblur = null;
+                (cell.children[0] as EditorElement).onblur = null;
             } else {
-                value = (cell.children[0] as any).value;
-                (cell.children[0] as any).onblur = null;
+                value = (cell.children[0] as EditorElement).value;
+                (cell.children[0] as EditorElement).onblur = null;
 
                 // Column options
                 const options = column;
@@ -366,7 +384,7 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
                     if (opt) {
                         // Keep numeric in the raw data
                         if (value !== '' && !isFormula(value) && typeof value !== 'number') {
-                            const t = (jSuites.mask as any).extract(value, opt, true);
+                            const t = (jSuites.mask as unknown as MaskFunctions).extract(value, opt, true);
                             if (t && t.value !== '') {
                                 value = t.value;
                             }
@@ -388,13 +406,13 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
             column.type.closeEditor!(cell, save, parseInt(x), parseInt(y), obj, column);
         } else {
             if (column && column.type == 'dropdown') {
-                (cell.children[0] as any).dropdown.close(true);
+                (cell.children[0] as EditorElement).dropdown.close(true);
             } else if (column && column.type == 'calendar') {
-                (cell.children[0] as any).calendar.close(true);
+                (cell.children[0] as EditorElement).calendar.close(true);
             } else if (column && column.type == 'color') {
-                (cell.children[0] as any).color.close(true);
+                (cell.children[0] as EditorElement).color.close(true);
             } else {
-                (cell.children[0] as any).onblur = null;
+                (cell.children[0] as EditorElement).onblur = null;
             }
         }
 
