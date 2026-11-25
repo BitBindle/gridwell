@@ -173,7 +173,7 @@ export const updateGridSize = function (this: Worksheet) {
 export const setCellLabel = function (this: Worksheet, td: HTMLTableCellElement) {
     const obj = this;
 
-    if (td.classList.contains('editor') || (obj.edition && obj.edition[0] === td)) {
+    if (td.classList.contains('editor') || (obj.editor.isOpen() && obj.editor.cell === td)) {
         td.removeAttribute('aria-label');
         return;
     }
@@ -245,7 +245,7 @@ const setActiveCell = function (this: Worksheet, td: HTMLTableCellElement | null
 
     if (td) {
         // The editor of a cell takes the focus, so the cell is not a focus target while the editor is open
-        if (!obj.edition || obj.edition[0] !== td) {
+        if (!obj.editor.isOpen() || obj.editor.cell !== td) {
             td.tabIndex = 0;
         }
         setCellLabel.call(obj, td);
@@ -298,7 +298,7 @@ export const updateTabStop = function (this: Worksheet) {
 
     setActiveCell.call(obj, td);
 
-    if (td && !obj.edition && libraryBase.jspreadsheet.current === obj) {
+    if (td && !obj.editor.isOpen() && libraryBase.jspreadsheet.current === obj) {
         const active = getActiveElement.call(obj);
         // The focus was in the grid at the last selection
         const lost = obj.focusInGrid === true && isFocusLost();
@@ -344,7 +344,7 @@ export const updateActiveCell = function (this: Worksheet, x: number, y: number,
     // The focus was in the grid at the last selection
     obj.focusInGrid = inGrid || (dropped && obj.focusInGrid === true);
 
-    if (obj.focusInGrid && !obj.edition && active !== td) {
+    if (obj.focusInGrid && !obj.editor.isOpen() && active !== td) {
         td.focus({ preventScroll: true });
     }
 };
@@ -365,7 +365,7 @@ export const restoreActiveCell = function (this: Worksheet, cell: HTMLTableCellE
     setCellLabel.call(obj, cell);
 
     setTimeout(function () {
-        if (isFocusLost() && libraryBase.jspreadsheet.current === obj && obj.activeCell === cell && !obj.edition) {
+        if (isFocusLost() && libraryBase.jspreadsheet.current === obj && obj.activeCell === cell && !obj.editor.isOpen()) {
             cell.focus({ preventScroll: true });
         }
     });

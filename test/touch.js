@@ -18,7 +18,7 @@ describe('Touch', () => {
         // A long touch opens the editor after 500 ms
         await new Promise((resolve) => setTimeout(resolve, 600));
 
-        expect(worksheet.edition).to.not.be.ok;
+        expect(worksheet.editor.cell).to.not.be.ok;
         expect(events).to.eql([]);
         expect(worksheet.selectedCell.map(Number)).to.eql([1, 1, 1, 1]);
     });

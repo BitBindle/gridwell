@@ -9,8 +9,8 @@ import type { Worksheet } from '../types/internal';
 const removeRow = function (this: Worksheet, row: ChildNode) {
     const obj = this;
 
-    if (obj.edition && row.contains(obj.edition[0])) {
-        closeEditor.call(obj, obj.edition[0], true);
+    if (obj.editor.isOpen() && row.contains(obj.editor.cell)) {
+        closeEditor.call(obj, obj.editor.cell, true);
     }
 
     obj.tbody.removeChild(row);

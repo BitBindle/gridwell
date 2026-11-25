@@ -153,3 +153,11 @@ assertType<Equals<typeof worksheet.clipboard.textarea, HTMLTextAreaElement>>();
 void worksheet.data;
 // @ts-expect-error The textarea is clipboard.textarea
 void worksheet.textarea;
+
+// The cell editor keeps the cell that is being edited
+assertType<Equals<typeof worksheet.editor.cell, HTMLTableCellElement | null>>();
+if (worksheet.editor.isOpen()) {
+    assertType<Equals<typeof worksheet.editor.cell, HTMLTableCellElement>>();
+}
+// @ts-expect-error The cell is editor.cell
+void worksheet.edition;

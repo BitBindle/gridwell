@@ -200,7 +200,7 @@ describe('Keys on a jss_object control outside the grid', () => {
         keydown(control, 'Escape', 27);
         control.remove();
 
-        expect(worksheet.edition).to.equal(null);
+        expect(worksheet.editor.cell).to.equal(null);
         expect(worksheet.getValue('B1')).to.equal('b');
     });
 });

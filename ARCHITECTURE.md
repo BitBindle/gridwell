@@ -57,7 +57,9 @@ what it changes, and lists its breaking changes in UPGRADING.md.
 3. **Clipboard.** Copy, cut, paste and the copied data move into `components/Clipboard.ts`. The copied text, its styles,
    the textarea and the copy border have moved; `copy` and `paste` stay worksheet methods in `utils/copyPaste.ts` for
    the same reason as `undo` and `redo`.
-4. **Editor.** `edition` and the editor types move into `components/Editor.ts`.
+4. **Editor.** `edition` and the editor types move into `components/Editor.ts`. The cell, its position and its HTML
+   have moved; `openEditor`, `closeEditor` and the editor types stay in `utils/editor.ts` for the same reason as `undo`
+   and `redo`.
 5. **Selection.** `selectedCell`, `highlighted`, the borders, the active cell and the focus state move into
    `components/Selection.ts`, together with the accessibility code that follows the selection.
 6. **Formulas.** The formula chain, the results and the footer formulas move into `components/Formulas.ts`.

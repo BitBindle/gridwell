@@ -511,7 +511,7 @@ describe('Use the columns method', () => {
             editor.selectionStart = editor.selectionEnd = editor.value.length;
             editor.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, key: 'Enter', keyCode: 13, which: 13, altKey: true }));
 
-            expect(worksheet.edition).to.not.equal(null);
+            expect(worksheet.editor.cell).to.not.equal(null);
             expect(editor.value).to.equal('a\n');
             worksheet.closeEditor(cell, false);
         });

@@ -30,7 +30,7 @@ type EditorElement = HTMLInputElement & {
 export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, e) {
     const obj = this;
 
-    // Get cell position. The edition keeps the text of data-x and data-y.
+    // Get cell position. The filter of a dropdown gets the text of data-x and data-y.
     const yText = cell.getAttribute('data-y')!;
     const xText = cell.getAttribute('data-x')!;
     const y = parseInt(yText);
@@ -83,7 +83,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
         // Do nothing
     } else {
         // Holder
-        obj.edition = [obj.records[y][x].element, obj.records[y][x].element.innerHTML, xText, yText];
+        obj.editor.start(obj.records[y][x].element, x, y);
 
         // If there is a custom editor for it
         if (column && typeof column.type === 'object') {
@@ -99,20 +99,20 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
             } else {
                 // A custom type without openEditor has no editor: do not keep edition open
-                obj.edition = null;
+                obj.editor.end();
             }
         } else {
             // Native functions
             if (column && column.type == 'hidden') {
                 // A hidden column has no editor: do not keep edition open
-                obj.edition = null;
+                obj.editor.end();
             } else if (column && (column.type == 'checkbox' || column.type == 'radio')) {
                 // Get value
                 const value = (cell.children[0] as HTMLInputElement).checked ? false : true;
                 // Toogle value
                 obj.setValue(cell, value);
                 // Do not keep edition open
-                obj.edition = null;
+                obj.editor.end();
             } else if (column && column.type == 'dropdown') {
                 // Get current value: the id of an item, or the ids of the items with multiple
                 let value = obj.options.data[y][x] as string | number | string[];
@@ -340,7 +340,7 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
     const obj = this;
 
     // Only the cell that is being edited has an editor to close
-    if (!obj.edition || obj.edition[0] !== cell) {
+    if (!obj.editor.isOpen() || obj.editor.cell !== cell) {
         return;
     }
 
@@ -416,7 +416,7 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
 
         // Ignore changes if the value is the same
         if (obj.options.data[y][x] == value) {
-            cell.innerHTML = obj.edition[1];
+            cell.innerHTML = obj.editor.html;
         } else {
             obj.setValue(cell, value);
         }
@@ -439,7 +439,7 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
         }
 
         // Restore value
-        cell.innerHTML = obj.edition && obj.edition[1] ? obj.edition[1] : '';
+        cell.innerHTML = obj.editor.html;
     }
 
     // On edition end
@@ -449,7 +449,7 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
     cell.classList.remove('editor');
 
     // Finish edition
-    obj.edition = null;
+    obj.editor.end();
 
     // The cell is a focus target again
     restoreActiveCell.call(obj, cell);
