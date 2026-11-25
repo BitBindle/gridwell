@@ -26,6 +26,8 @@ No `package-lock.json` is committed, so use `npm install`.
 | Lint / format check     | `npm run lint`, `npm run prettier`                               |
 | Fix lint and formatting | `npm run format`                                                 |
 
+Building and testing do not change the source. CI checks the formatting and lint separately, so run `npm run format` before you commit.
+
 The tests import the built bundle (`require('../dist/index.js')`), not `src/`. After you change the source, build again before you run a single test file, or the tests run against old code.
 
 ## Layout

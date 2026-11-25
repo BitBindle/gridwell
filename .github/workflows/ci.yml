@@ -33,7 +33,12 @@ jobs:
             - name: Install dependencies
               run: npm install --no-audit --no-fund
 
-            # `npm test` builds the bundle (prettier + eslint run via `prebuild`)
-            # and then runs the mocha suite.
+            - name: Check formatting
+              run: npm run prettier
+
+            - name: Lint
+              run: npm run lint
+
+            # `npm test` builds the bundle and then runs the mocha suite
             - name: Run tests
               run: npm test
