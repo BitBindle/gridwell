@@ -104,3 +104,9 @@ export interface Library extends jspreadsheet.JSpreadsheet {
 export interface SelectedWorksheet extends Worksheet {
     selectedCell: [number, number, number, number];
 }
+
+/**
+ * A DOM event whose target the code reads as an element. The handlers are on the document and on the elements of the
+ * spreadsheet, and the code reads the target without a check, as it did in JavaScript.
+ */
+export type TargetEvent<E extends Event = Event> = E & { target: HTMLElement };
