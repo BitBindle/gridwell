@@ -512,14 +512,14 @@ declare namespace jspreadsheet {
          * @param cell - HTML element that represents the cell being changed.
          * @param colIndex - Cell column index being changed.
          * @param rowIndex - Cell row index being changed.
-         * @param newValue - Value being applied to the cell.
+         * @param newValue - Value being applied to the cell. It is undefined when setValue was called without a value.
          */
         onbeforechange?: (
             instance: WorksheetInstance,
             cell: HTMLTableCellElement,
             colIndex: string | number,
             rowIndex: string | number,
-            newValue: CellValue
+            newValue: CellValue | undefined
         ) => undefined | CellValue;
 
         /**
@@ -637,7 +637,7 @@ declare namespace jspreadsheet {
          * @param cell - HTML element that represents the cell being changed.
          * @param colIndex - Cell column index being changed.
          * @param rowIndex - Cell row index being changed.
-         * @param newValue - New cell value.
+         * @param newValue - New cell value. It is undefined when setValue was called without a value.
          * @param oldValue - Old cell value.
          */
         onchange?: (
@@ -645,7 +645,7 @@ declare namespace jspreadsheet {
             cell: HTMLTableCellElement,
             colIndex: string | number,
             rowIndex: string | number,
-            newValue: CellValue,
+            newValue: CellValue | undefined,
             oldValue: CellValue
         ) => void;
 

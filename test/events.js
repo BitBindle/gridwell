@@ -240,6 +240,26 @@ describe('Dispatch events', () => {
         ]);
     });
 
+    it('gives onbeforechange and onchange undefined as the new value when setValue has no value', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b']] }],
+            onbeforechange: function (instance, cell, x, y, value) {
+                calls.push(['onbeforechange', value]);
+            },
+            onchange: function (instance, cell, x, y, value, oldValue) {
+                calls.push(['onchange', value, oldValue]);
+            },
+        })[0];
+
+        worksheet.setValue('A1');
+
+        expect(calls).to.eql([
+            ['onbeforechange', undefined],
+            ['onchange', undefined, 'a'],
+        ]);
+    });
+
     it('returns the result of the handler, so that onbeforeinsertrow can cancel the insertion', () => {
         const worksheet = jspreadsheet(root, {
             worksheets: [{ data: [['a']] }],

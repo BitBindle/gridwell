@@ -95,6 +95,10 @@ assertType<Equals<Handler<'onpaste'>[1], { x: number; y: number; value: jspreads
 // oneditionend gets undefined as the value when the edit was not saved
 assertType<Equals<Handler<'oneditionend'>[4], jspreadsheet.CellValue | undefined>>();
 
+// setValue without a value gives onbeforechange and onchange undefined as the new value
+assertType<Equals<Handler<'onbeforechange'>[4], jspreadsheet.CellValue | undefined>>();
+assertType<Equals<Handler<'onchange'>[4], jspreadsheet.CellValue | undefined>>();
+
 // oncomments gets the comments as setComments got them, where undefined removes a comment
 assertType<Equals<Handler<'oncomments'>[1], Record<string, string | null | undefined>>>();
 
