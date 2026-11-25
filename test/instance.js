@@ -152,3 +152,40 @@ describe('Use the helpers', () => {
         expect(jspreadsheet.helpers.getCaretIndex(element)).to.equal(5);
     });
 });
+
+describe('Worksheet and spreadsheet methods', () => {
+    const load = (options) =>
+        new Promise((resolve) => {
+            const worksheets = jspreadsheet(root, { ...options, onload: () => resolve(worksheets) });
+        });
+
+    it('shares the methods of the worksheets through the prototype', async () => {
+        const [first, second] = await load({ worksheets: [{ data: [['a']] }, { data: [['b']] }] });
+
+        expect(first.getData).to.be.a('function');
+        expect(first.getData).to.equal(second.getData);
+        expect(Object.keys(first)).to.not.include('getData');
+        expect(first.getData()).to.deep.equal([['a']]);
+        expect(second.getData()).to.deep.equal([['b']]);
+    });
+
+    it('shares the methods of the spreadsheets through the prototype', async () => {
+        const [worksheet] = await load({ worksheets: [{ data: [['a']] }] });
+        root.innerHTML = '';
+        const [other] = await load({ worksheets: [{ data: [['b']] }] });
+
+        expect(worksheet.parent.getConfig).to.be.a('function');
+        expect(worksheet.parent.getConfig).to.equal(other.parent.getConfig);
+        expect(Object.keys(worksheet.parent)).to.not.include('getConfig');
+        expect(other.parent.getWorksheetActive()).to.equal(0);
+    });
+
+    it('lets a worksheet replace a method for itself', async () => {
+        const [first, second] = await load({ worksheets: [{ data: [['a']] }, { data: [['b']] }] });
+
+        first.getData = () => 'replaced';
+
+        expect(first.getData()).to.equal('replaced');
+        expect(second.getData()).to.deep.equal([['b']]);
+    });
+});

@@ -1,0 +1,34 @@
+import type jspreadsheet from './jspreadsheet';
+import type { Spreadsheet, WorksheetState } from './types/internal';
+
+/**
+ * The fields of a worksheet and its public methods. The fields are in WorksheetState (src/types/internal.d.ts). The
+ * public methods are functions in the modules under src/utils, which src/utils/worksheets.ts puts on the prototype.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unsafe-declaration-merging
+export interface Worksheet extends WorksheetState {}
+
+/**
+ * A worksheet: one table of a spreadsheet, with its options, its DOM and its state.
+ *
+ * The constructor sets up the state that the worksheet has before it is built. buildWorksheet (src/utils/worksheets.ts)
+ * then creates the DOM from the options.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export class Worksheet {
+    constructor(spreadsheet: Spreadsheet, options: jspreadsheet.WorksheetOptions, element?: HTMLElement) {
+        this.parent = spreadsheet;
+        // buildWorksheet fills in the options that the internal type says are always there
+        this.options = options as Worksheet['options'];
+        if (element) {
+            // buildWorksheet adds jssWorksheet
+            this.element = element as Worksheet['element'];
+        }
+        this.filters = [];
+        // The formula chain by cell name. setData also starts it as an array, which the code uses as an object.
+        this.formula = [] as unknown as Worksheet['formula'];
+        this.history = [];
+        this.historyIndex = -1;
+        this.selection = [];
+    }
+}

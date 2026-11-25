@@ -10,7 +10,8 @@ import { createFromTable } from './helpers.js';
 import { createTabs } from './tabs.js';
 import { getSpreadsheetConfig, setConfig } from './config.js';
 import type jspreadsheet from '../jspreadsheet';
-import type { Spreadsheet, Worksheet } from '../types/internal';
+import { Spreadsheet } from '../Spreadsheet.js';
+import { Worksheet } from '../Worksheet.js';
 import type { Tabs, TabsOptions } from './tabs.js';
 
 const factory = function () {};
@@ -102,16 +103,7 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: jspr
                 });
             }
 
-            spreadsheet.worksheets.push({
-                parent: spreadsheet,
-                element: tabs.content.children[i],
-                options: o[i],
-                filters: [],
-                formula: [],
-                history: [],
-                selection: [],
-                historyIndex: -1,
-            } as unknown as Worksheet);
+            spreadsheet.worksheets.push(new Worksheet(spreadsheet, o[i], tabs.content.children[i] as HTMLElement));
 
             await buildWorksheet.call(spreadsheet.worksheets[i]);
         }
@@ -144,37 +136,8 @@ factory.spreadsheet = async function (el: HTMLElement & { spreadsheet?: Spreadsh
         el = div;
     }
 
-    // The other properties are added below, and el gets the spreadsheet at the end
-    const spreadsheet = {
-        worksheets: worksheets,
-        config: options,
-        element: el,
-        el,
-    } as unknown as Spreadsheet;
-
-    // Contextmenu container
-    // jSuites.contextmenu adds the contextmenu instance below
-    spreadsheet.contextMenu = document.createElement('div') as Spreadsheet['contextMenu'];
-    spreadsheet.contextMenu.className = 'jss_contextmenu';
-
-    spreadsheet.getWorksheetActive = getWorksheetActive.bind(spreadsheet);
-    spreadsheet.fullscreen = fullscreen.bind(spreadsheet);
-    spreadsheet.showToolbar = showToolbar.bind(spreadsheet);
-    spreadsheet.hideToolbar = hideToolbar.bind(spreadsheet);
-    spreadsheet.getConfig = getSpreadsheetConfig.bind(spreadsheet);
-    spreadsheet.setConfig = setConfig.bind(spreadsheet);
-
-    spreadsheet.setPlugins = function (newPlugins) {
-        if (!spreadsheet.plugins) {
-            spreadsheet.plugins = {};
-        }
-
-        if (typeof newPlugins == 'object') {
-            Object.entries(newPlugins).forEach(function ([pluginName, plugin]) {
-                spreadsheet.plugins[pluginName] = plugin.call(libraryBase.jspreadsheet, spreadsheet, {}, spreadsheet.config);
-            });
-        }
-    };
+    // el gets the spreadsheet at the end
+    const spreadsheet = new Spreadsheet(el, options, worksheets);
 
     // setPlugins ignores a missing value
     spreadsheet.setPlugins(options.plugins as Record<string, jspreadsheet.PluginFactory>);
@@ -209,5 +172,37 @@ factory.spreadsheet = async function (el: HTMLElement & { spreadsheet?: Spreadsh
 
     return spreadsheet;
 };
+
+/**
+ * Add plugins to the spreadsheet. Each plugin factory gets the spreadsheet, empty options and the spreadsheet options.
+ */
+const setPlugins = function (this: Spreadsheet, newPlugins: Record<string, jspreadsheet.PluginFactory>) {
+    const spreadsheet = this;
+
+    if (!spreadsheet.plugins) {
+        spreadsheet.plugins = {};
+    }
+
+    if (typeof newPlugins == 'object') {
+        Object.entries(newPlugins).forEach(function ([pluginName, plugin]) {
+            spreadsheet.plugins[pluginName] = plugin.call(libraryBase.jspreadsheet, spreadsheet, {}, spreadsheet.config);
+        });
+    }
+};
+
+// The public methods are on the prototype, as the methods of a class: not enumerable, and an instance can replace one
+const spreadsheetPublicMethods: [keyof jspreadsheet.SpreadsheetInstance, (this: Spreadsheet, ...args: never[]) => unknown][] = [
+    ['getWorksheetActive', getWorksheetActive],
+    ['fullscreen', fullscreen],
+    ['showToolbar', showToolbar],
+    ['hideToolbar', hideToolbar],
+    ['getConfig', getSpreadsheetConfig],
+    ['setConfig', setConfig],
+    ['setPlugins', setPlugins],
+];
+
+for (const [methodName, method] of spreadsheetPublicMethods) {
+    Object.defineProperty(Spreadsheet.prototype, methodName, { value: method, writable: true, configurable: true });
+}
 
 export default factory;

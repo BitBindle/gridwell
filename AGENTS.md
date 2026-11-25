@@ -9,7 +9,9 @@ This is BitBindle's fork of [Jspreadsheet CE](https://github.com/jspreadsheet/ce
 -   `jsuites`: UI components (calendar, dropdown, context menu, tabs, `ajax`, `translate`)
 -   `@jspreadsheet/formula`: the formula engine
 
-The fork has its own fixes (pull requests #5 and later), many of them for accessibility. Changes from upstream are not merged automatically.
+The fork has its own fixes (pull requests #5 and later), many of them for accessibility. Changes from upstream are not merged any more.
+
+The code is being reorganised into classes for version 6, one step per pull request. [ARCHITECTURE.md](ARCHITECTURE.md) has the target and the steps, and [UPGRADING.md](UPGRADING.md) lists the breaking changes. Add each breaking change you make to UPGRADING.md.
 
 The source is TypeScript (see [Type checking](#type-checking)). The modules were moved from JavaScript without changing the code, so they still use `any` in many places. The public typings in `src/jspreadsheet.d.ts` are written by hand.
 
@@ -34,8 +36,9 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 ## Layout
 
 -   `src/index.ts`: the entry point. It defines `jspreadsheet(element, options)` and its static helpers.
--   `src/utils/factory.ts`: creates the spreadsheet object and its worksheets.
--   `src/utils/worksheets.ts`: builds a worksheet's DOM. `worksheetPublicMethods` lists every method a worksheet instance gets.
+-   `src/Spreadsheet.ts`, `src/Worksheet.ts`: the `Spreadsheet` and `Worksheet` classes. Their constructors set up the state an instance has before it is built.
+-   `src/utils/factory.ts`: builds the spreadsheet and its worksheets. `spreadsheetPublicMethods` lists the methods of a spreadsheet.
+-   `src/utils/worksheets.ts`: builds a worksheet's DOM. `worksheetPublicMethods` lists the methods of a worksheet.
 -   `src/utils/*.ts`: one module per feature (`columns`, `rows`, `selection`, `editor`, `events`, `history`, `merges`, `accessibility`, …). `internal.ts` and `events.ts` are the largest and most connected.
 -   `src/jspreadsheet.d.ts`: the public typings, copied unchanged to `dist/index.d.ts`.
 -   `src/types/`: types for the type check only, not published (see [Type checking](#type-checking)).
@@ -49,8 +52,8 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 
 ## How the code is organised
 
--   **Two objects.** A _spreadsheet_ holds `config`, `element`, `worksheets` and the toolbar. A _worksheet_ holds `options`, the DOM (`table`, `thead`, `tbody`, `headers`, `rows`, `records`) and the state (`selectedCell`, `history`, …). `worksheet.parent` is its spreadsheet. Both are plain objects that modules add properties to; there are no classes.
--   **The worksheet is `this`.** Most functions start with `const obj = this` and are called with `fn.call(worksheet, ...)`. Public methods are bound to each worksheet in `setWorksheetFunctions`.
+-   **Two classes.** A _spreadsheet_ (`Spreadsheet`) holds `config`, `element`, `worksheets` and the toolbar. A _worksheet_ (`Worksheet`) holds `options`, the DOM (`table`, `thead`, `tbody`, `headers`, `rows`, `records`) and the state (`selectedCell`, `history`, …). `worksheet.parent` is its spreadsheet. Modules still add most of the state while they build the worksheet. To tell a worksheet from a spreadsheet, use `instanceof Worksheet`.
+-   **The worksheet is `this`.** Most functions start with `const obj = this` and are called with `fn.call(worksheet, ...)`. The public methods are these functions, put on `Worksheet.prototype` from `worksheetPublicMethods` (and on `Spreadsheet.prototype` from `spreadsheetPublicMethods`). They are not bound: they need the worksheet as `this`.
 -   **One global active worksheet.** `libraryBase.jspreadsheet.current` is the worksheet that keyboard and clipboard events go to. `events.ts` and `worksheets.ts` set it.
 -   **Events** go through `dispatch.call(obj, 'oneventname', ...args)`. `dispatch` calls the spreadsheet's `config.onevent`, then the specific handler in `config`, then each plugin's `onevent`, and returns the last result. Returning `false` from an `onbefore…` handler cancels the action.
 -   **Circular imports** exist (17 cycles, for example `internal → pagination → selection → history → orderBy`). They work because imported functions are only called at runtime. Do not call an imported function at the top level of a module.
@@ -73,7 +76,7 @@ Modules import each other with the `.js` extension, although the files are `.ts`
 -   **Settings.** `strict` is on, `strictNullChecks` included.
 -   **Null and undefined.** Give a value that can be missing its real type (`HTMLElement | null`, `string | undefined`). Where the code reads a value without a check because it is always there at that point, mark it with `!` (`obj.filter!.children`, `parentNode!.removeChild`). A comparison with an optional number, such as `obj.options.pagination! > 0`, keeps its meaning: `undefined > 0` is false. When a `!` hides a real bug, open an issue and name it in a comment next to the `!`. Do not use `!` to avoid a check that the code needs.
 -   **The selection.** `selectedCell` is `null` or `undefined` until a cell is selected. The functions that move the selection (`src/utils/keys.ts`) use `SelectedWorksheet`, a worksheet that has a selection.
--   **Internal types.** `src/types/internal.d.ts` has `Worksheet` and `Spreadsheet`: the public instance types and the state only the library uses. Add new internal fields there, with a comment. Import them with `import type { Worksheet } from '../types/internal';`. The history records have the union `WorksheetHistoryRecord`, by action: a new action needs a member there. DOM event handlers take `TargetEvent<MouseEvent>` and similar, an event whose target the code reads as an element.
+-   **Internal types.** `src/types/internal.d.ts` has `WorksheetState` and `SpreadsheetState`: the fields of the classes, which are the public instance types and the state only the library uses. Add new internal fields there, with a comment, and give them their first value in the constructor when they have one before the build. The file also exports the classes as types: import them with `import type { Worksheet } from '../types/internal';`, or from `../Worksheet.js` where the code needs the class itself (for `new` or `instanceof`). `src/Worksheet.ts` and `src/Spreadsheet.ts` import nothing at run time, so any module can import them without a cycle. The history records have the union `WorksheetHistoryRecord`, by action: a new action needs a member there. DOM event handlers take `TargetEvent<MouseEvent>` and similar, an event whose target the code reads as an element.
 -   **Other declarations.** `src/types/modules.d.ts` declares `@jspreadsheet/formula`, which has no typings. `tsconfig.json` maps `jsuites` to `src/types/jsuites-module.d.ts`, which corrects the jsuites typings where they do not match jsuites and adds the methods they miss (some declared in `src/types/jsuites.d.ts`). Correct a jsuites typing there instead of casting at the call. `src/types/globals.d.ts` lets `parseInt` take numbers, null and undefined, and `setAttribute` take numbers, as the code does in many places.
 -   **The worksheet as `this`.** Type a public method from its declaration with `WorksheetMethod<'name'>`, so the code and the public typings agree. Give other functions that use the worksheet as `this` a `this: Worksheet` parameter. Use rest parameters, not `arguments`.
 -   **Casts.** Where the type check cannot follow the code, cast with `as X` (or `as any`) and say why in a comment when it is not obvious. Wrap the expression in parentheses rather than add a local variable.

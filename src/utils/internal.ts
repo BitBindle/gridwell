@@ -12,7 +12,8 @@ import { setFooter } from './footer.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { setCellLabel, updateGridSize, updateRowIndex, updateTabStop } from './accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
-import type { HistoryCellChange, MergeInfo, Spreadsheet, Worksheet, WorksheetMethod } from '../types/internal';
+import { Worksheet } from '../Worksheet.js';
+import type { HistoryCellChange, MergeInfo, Spreadsheet, WorksheetMethod } from '../types/internal';
 import type { MaskOptions } from '../types/jsuites';
 
 export const updateTable = function (this: Worksheet) {
@@ -1471,7 +1472,7 @@ export const createNestedHeader = function (this: Worksheet, nestedInformation: 
 
 // Spreadsheets call it too
 export const getWorksheetActive = function (this: Worksheet | Spreadsheet): number {
-    const spreadsheet = this.parent ? this.parent : this;
+    const spreadsheet = this instanceof Worksheet ? this.parent : this;
 
     // The element of a spreadsheet with tabs has the tabs object
     // getActive returns false only when no tab is open, and a tab is open while the spreadsheet has worksheets

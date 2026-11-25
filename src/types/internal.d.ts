@@ -6,11 +6,16 @@
  */
 import type jspreadsheet from '../jspreadsheet';
 import type { Tabs } from '../utils/tabs';
+import type { Spreadsheet } from '../Spreadsheet';
+import type { Worksheet } from '../Worksheet';
+
+/** The classes. Their fields are in WorksheetState and SpreadsheetState below. */
+export type { Spreadsheet, Worksheet };
 
 /**
- * A worksheet as the library sees it: the public instance and the state that only the library uses.
+ * The fields of a worksheet as the library sees it: the public instance and the state that only the library uses.
  */
-export interface Worksheet extends jspreadsheet.WorksheetInstance {
+export interface WorksheetState extends jspreadsheet.WorksheetInstance {
     parent: Spreadsheet;
 
     /** The events find the worksheet of an element through jssWorksheet. */
@@ -68,12 +73,9 @@ export interface Worksheet extends jspreadsheet.WorksheetInstance {
 }
 
 /**
- * A spreadsheet as the library sees it.
+ * The fields of a spreadsheet as the library sees it.
  */
-export interface Spreadsheet extends jspreadsheet.SpreadsheetInstance {
-    /** A spreadsheet has no parent. Code that gets a worksheet or a spreadsheet checks this property. */
-    parent?: undefined;
-
+export interface SpreadsheetState extends jspreadsheet.SpreadsheetInstance {
     worksheets: Worksheet[];
 
     /** The tabs of the worksheets, which createTabs keeps on the element. */
