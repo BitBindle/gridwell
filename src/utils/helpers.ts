@@ -1,4 +1,3 @@
-import { getColumnNameFromId } from './internalHelpers.js';
 import type { Spreadsheet } from '../types/internal';
 
 /**
@@ -300,7 +299,7 @@ export const createFromTable = function (el: HTMLElement, options?: jspreadsheet
                     data[rowNumber].push(value);
 
                     // Key, by the row in the data, which is j - 1 when the first row is the header
-                    const cellName = getColumnNameFromId([i, rowNumber]);
+                    const cellName = getCellNameFromCoords(i, rowNumber);
 
                     // Classes
                     const tmp = content[j].children[i].getAttribute('class');

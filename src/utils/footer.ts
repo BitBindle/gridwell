@@ -1,4 +1,4 @@
-import { parseValue } from './internal.js';
+import { parseValue } from './values.js';
 import { updateGridSize } from './accessibility.js';
 import type { Worksheet } from '../types/internal';
 

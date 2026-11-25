@@ -2,7 +2,7 @@ import jSuites from 'jsuites';
 import { closeEditor, openEditor, setCheckRadioValue } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
 import { down, first, last, left, right, up } from '../utils/keys.js';
-import { getCellColumnIndex } from '../utils/internal.js';
+import { getCellColumnIndex } from '../utils/values.js';
 import { selectAll } from '../utils/selection.js';
 import { copy } from '../utils/copyPaste.js';
 import { copyControls, cutControls, pasteControls } from './clipboard.js';
