@@ -8,12 +8,12 @@ import { hideToolbar, showToolbar, updateToolbar } from './toolbar.js';
 import { buildWorksheet, createWorksheetObj, getNextDefaultWorksheetName } from './worksheets.js';
 import dispatch from './dispatch.js';
 import { createFromTable } from './helpers.js';
-import { createTabs } from './tabs.js';
+import { Tabs } from './tabs.js';
 import { getSpreadsheetConfig, setConfig } from './config.js';
 import type jspreadsheet from '../jspreadsheet';
 import { Spreadsheet } from '../Spreadsheet.js';
 import { Worksheet } from '../Worksheet.js';
-import type { Tabs, TabsOptions } from './tabs.js';
+import type { TabsOptions } from './tabs.js';
 
 const factory = function () {};
 
@@ -89,7 +89,7 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: jspr
         el.classList.add('jss_spreadsheet');
         el.tabIndex = 0;
 
-        const tabs = createTabs(el, tabsOptions);
+        const tabs = new Tabs(el, tabsOptions);
 
         const spreadsheetStyles = options.style;
         delete options.style;

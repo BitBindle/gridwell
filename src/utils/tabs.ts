@@ -1,17 +1,12 @@
 import jSuites from 'jsuites';
 
-/**
- * Worksheet tabs. CE uses only part of jSuites.tabs, and needs the keyboard and ARIA behaviour of the
- * WAI-ARIA tabs pattern for the tab headers: https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
- * The object has the methods of jSuites.tabs, and the same class names, so the jSuites styles still apply.
- */
 /** A tab header. It keeps a reference to its panel. */
 type TabHeader = HTMLButtonElement & { content?: HTMLElement };
 
 /** A handler of a click on a tab, or of a change of the open tab. */
 type TabHandler = (el: HTMLElement, tabs: Tabs, index: number, header: TabHeader | null, content: Element) => void;
 
-/** The options of the tabs, which factory.ts gives. A missing option takes its default in createTabs. */
+/** The options of the tabs, which factory.ts gives. A missing option takes its default in the constructor. */
 export interface TabsOptions {
     /** The tabs to create when the tabs start. content is HTML. */
     data: { title: string; content: string }[];
@@ -27,172 +22,172 @@ export interface TabsOptions {
     onchangeposition: ((headers: HTMLDivElement, from: number, to: number) => void) | null;
 }
 
-export interface Tabs {
+/**
+ * Worksheet tabs. CE uses only part of jSuites.tabs, and needs the keyboard and ARIA behaviour of the
+ * WAI-ARIA tabs pattern for the tab headers: https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
+ * The object has the methods of jSuites.tabs, and the same class names, so the jSuites styles still apply.
+ *
+ * A spreadsheet with worksheets has one, as element.tabs: new Tabs(element, options) builds the tabs in the element.
+ */
+export class Tabs {
+    /** The element of the spreadsheet, which holds the headers and the panels. */
+    el: HTMLElement & { tabs?: Tabs };
+
     options: TabsOptions;
-    headers: HTMLDivElement;
-    content: HTMLDivElement;
-    setBorder(index: number | false): void;
-    open(index: number): void;
-    selectIndex(a: Element): number;
-    /** The index of the open tab, or false when no tab is open. */
-    getActive(): number | false;
-    rename(i: number, title?: string | null): void;
-    create(title?: string): HTMLDivElement | false | undefined;
-    remove(index: number): void | false;
-    nextNumber(): number;
-    deleteElement(index: number): void | false;
-    appendElement(
-        title?: string | null,
-        cb?: ((div: HTMLDivElement, header: TabHeader) => void) | null,
-        openTab?: boolean,
-        position?: number
-    ): HTMLDivElement | undefined;
-    updateContent(position: number, newContent: string | HTMLElement): void;
-    updatePosition(f: number, t: number, ignoreEvents?: boolean, openTab?: boolean): void;
-    move(f: number, t: number, ignoreEvents?: boolean, openTab?: boolean): void;
-    init(): void;
-}
 
-export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: Partial<TabsOptions>) {
-    const obj = {} as Tabs;
-    // Each option is set below
-    obj.options = {} as TabsOptions;
+    /** The tab list: a header for each tab, then the border. */
+    headers!: HTMLDivElement;
 
-    // Default configuration
-    const defaults: TabsOptions = {
-        data: [],
-        allowCreate: false,
-        hideHeaders: false,
-        animation: false,
-        onclick: null,
-        onchange: null,
-        oncreate: null,
-        ondelete: null,
-        onbeforecreate: null,
-        onchangeposition: null,
-    };
+    /** The panels, one for each tab. */
+    content!: HTMLDivElement;
 
-    for (const property in defaults) {
-        if (options && Object.prototype.hasOwnProperty.call(options, property)) {
-            (obj.options as unknown as Record<string, unknown>)[property] = (options as Record<string, unknown>)[property];
-        } else {
-            (obj.options as unknown as Record<string, unknown>)[property] = (defaults as unknown as Record<string, unknown>)[property];
+    /** The buttons that scroll the headers, which init creates. */
+    private prev!: HTMLDivElement;
+    private next!: HTMLDivElement;
+
+    /** The line under the open tab, after the last header. init creates it. */
+    private border!: HTMLDivElement;
+
+    constructor(el: HTMLElement & { tabs?: Tabs }, options: Partial<TabsOptions>) {
+        this.el = el;
+        // Each option is set below
+        this.options = {} as TabsOptions;
+
+        // Default configuration
+        const defaults: TabsOptions = {
+            data: [],
+            allowCreate: false,
+            hideHeaders: false,
+            animation: false,
+            onclick: null,
+            onchange: null,
+            oncreate: null,
+            ondelete: null,
+            onbeforecreate: null,
+            onchangeposition: null,
+        };
+
+        for (const property in defaults) {
+            if (options && Object.prototype.hasOwnProperty.call(options, property)) {
+                (this.options as unknown as Record<string, unknown>)[property] = (options as Record<string, unknown>)[property];
+            } else {
+                (this.options as unknown as Record<string, unknown>)[property] = (defaults as unknown as Record<string, unknown>)[property];
+            }
         }
+
+        this.init();
+
+        el.tabs = this;
     }
 
-    // init creates these elements
-    let prev: HTMLDivElement = null!;
-    let next: HTMLDivElement = null!;
-    let border: HTMLDivElement = null!;
+    private getHeader(index: number | false) {
+        const header = this.headers.children[index as number];
 
-    const getHeader = function (index: number | false) {
-        const header = obj.headers.children[index as number];
-
-        if (header && header !== border) {
+        if (header && header !== this.border) {
             return header as TabHeader;
         }
 
         return null;
-    };
+    }
 
-    const getIndex = function (element: HTMLElement) {
-        while (element && element.parentNode !== obj.headers) {
+    private getIndex(element: HTMLElement) {
+        while (element && element.parentNode !== this.headers) {
             element = element.parentNode as HTMLElement;
         }
 
-        if (!element || element === border) {
+        if (!element || element === this.border) {
             return -1;
         }
 
-        return Array.prototype.indexOf.call(obj.headers.children, element);
-    };
+        return Array.prototype.indexOf.call(this.headers.children, element);
+    }
 
-    const updateControls = function (x: number) {
-        if (typeof obj.headers.scrollTo == 'function') {
-            obj.headers.scrollTo({
+    private updateControls(x: number) {
+        if (typeof this.headers.scrollTo == 'function') {
+            this.headers.scrollTo({
                 left: x,
                 behavior: 'smooth',
             });
         } else {
-            obj.headers.scrollLeft = x;
+            this.headers.scrollLeft = x;
         }
 
         if (x <= 1) {
-            prev.classList.add('disabled');
+            this.prev.classList.add('disabled');
         } else {
-            prev.classList.remove('disabled');
+            this.prev.classList.remove('disabled');
         }
 
-        if (x >= obj.headers.scrollWidth - obj.headers.offsetWidth) {
-            next.classList.add('disabled');
+        if (x >= this.headers.scrollWidth - this.headers.offsetWidth) {
+            this.next.classList.add('disabled');
         } else {
-            next.classList.remove('disabled');
+            this.next.classList.remove('disabled');
         }
 
-        if (obj.headers.scrollWidth <= obj.headers.offsetWidth) {
-            prev.style.display = 'none';
-            next.style.display = 'none';
+        if (this.headers.scrollWidth <= this.headers.offsetWidth) {
+            this.prev.style.display = 'none';
+            this.next.style.display = 'none';
         } else {
-            prev.style.display = '';
-            next.style.display = '';
+            this.prev.style.display = '';
+            this.next.style.display = '';
         }
-    };
+    }
 
     /**
      * Show the headers when the user can choose a worksheet or create one, unless the option hideHeaders is true
      */
-    const updateHeaders = function () {
-        const container = obj.headers.parentNode as HTMLElement;
+    private updateHeaders() {
+        const container = this.headers.parentNode as HTMLElement;
 
-        if (obj.options.hideHeaders == true || (obj.content.children.length < 2 && obj.options.allowCreate != true)) {
+        if (this.options.hideHeaders == true || (this.content.children.length < 2 && this.options.allowCreate != true)) {
             container.style.display = 'none';
         } else {
             container.style.display = '';
 
-            const index = obj.getActive();
-            const header = getHeader(index);
+            const index = this.getActive();
+            const header = this.getHeader(index);
 
             if (header) {
                 const x1 = header.offsetLeft;
                 const x2 = x1 + header.offsetWidth;
-                const r1 = obj.headers.scrollLeft;
-                const r2 = r1 + obj.headers.offsetWidth;
+                const r1 = this.headers.scrollLeft;
+                const r2 = r1 + this.headers.offsetWidth;
 
                 if (!(r1 <= x1 && r2 >= x2)) {
                     // Out of the viewport
-                    updateControls(x1 - 1);
+                    this.updateControls(x1 - 1);
                 }
 
-                obj.setBorder(index);
+                this.setBorder(index);
             }
         }
-    };
+    }
 
-    obj.setBorder = function (index) {
-        if (obj.options.animation) {
-            setTimeout(function () {
-                const header = getHeader(index);
+    setBorder(index: number | false) {
+        if (this.options.animation) {
+            setTimeout(() => {
+                const header = this.getHeader(index);
 
                 if (header) {
-                    border.style.width = header.getBoundingClientRect().width + 'px';
-                    border.style.left = header.offsetLeft + 'px';
-                    border.style.bottom = '0px';
+                    this.border.style.width = header.getBoundingClientRect().width + 'px';
+                    this.border.style.left = header.offsetLeft + 'px';
+                    this.border.style.bottom = '0px';
                 }
             }, 50);
         }
-    };
+    }
 
-    obj.open = function (index) {
-        if (!obj.content.children[index] || !getHeader(index)) {
+    open(index: number) {
+        if (!this.content.children[index] || !this.getHeader(index)) {
             return;
         }
 
         index = parseInt(index);
 
-        const previous = obj.getActive();
+        const previous = this.getActive();
 
-        for (let i = 0; i < obj.content.children.length; i++) {
-            const header = getHeader(i);
+        for (let i = 0; i < this.content.children.length; i++) {
+            const header = this.getHeader(i);
             const selected = i === index;
 
             if (header) {
@@ -207,41 +202,41 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
             }
 
             if (selected) {
-                obj.content.children[i].classList.add('jtabs-selected');
+                this.content.children[i].classList.add('jtabs-selected');
             } else {
-                obj.content.children[i].classList.remove('jtabs-selected');
+                this.content.children[i].classList.remove('jtabs-selected');
             }
         }
 
-        if (previous !== index && typeof obj.options.onchange == 'function') {
-            obj.options.onchange(el, obj, index, getHeader(index), obj.content.children[index]);
+        if (previous !== index && typeof this.options.onchange == 'function') {
+            this.options.onchange(this.el, this, index, this.getHeader(index), this.content.children[index]);
         }
 
-        updateHeaders();
-    };
+        this.updateHeaders();
+    }
 
-    obj.selectIndex = function (a) {
-        const index = Array.prototype.indexOf.call(obj.headers.children, a);
+    selectIndex(a: Element) {
+        const index = Array.prototype.indexOf.call(this.headers.children, a);
 
         if (index >= 0) {
-            obj.open(index);
+            this.open(index);
         }
 
         return index;
-    };
+    }
 
-    obj.getActive = function () {
-        for (let i = 0; i < obj.headers.children.length; i++) {
-            if (obj.headers.children[i].classList.contains('jtabs-selected')) {
+    getActive(): number | false {
+        for (let i = 0; i < this.headers.children.length; i++) {
+            if (this.headers.children[i].classList.contains('jtabs-selected')) {
                 return i;
             }
         }
 
         return false;
-    };
+    }
 
-    obj.rename = function (i, title) {
-        const header = getHeader(i);
+    rename(i: number, title?: string | null) {
+        const header = this.getHeader(i);
 
         if (!header) {
             return;
@@ -255,12 +250,12 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
             header.textContent = title;
         }
 
-        obj.setBorder(obj.getActive());
-    };
+        this.setBorder(this.getActive());
+    }
 
-    obj.create = function (title) {
-        if (typeof obj.options.onbeforecreate == 'function') {
-            const ret = obj.options.onbeforecreate(el, title);
+    create(title?: string): HTMLDivElement | false | undefined {
+        if (typeof this.options.onbeforecreate == 'function') {
+            const ret = this.options.onbeforecreate(this.el, title);
 
             if (ret === false) {
                 return false;
@@ -269,28 +264,28 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
             }
         }
 
-        const div = obj.appendElement(title);
+        const div = this.appendElement(title);
 
-        if (typeof obj.options.oncreate == 'function') {
-            // createTabs sets el.tabs before a tab can be created
-            obj.options.oncreate(el as HTMLElement & { tabs: Tabs }, div);
+        if (typeof this.options.oncreate == 'function') {
+            // The constructor sets el.tabs before a tab can be created
+            this.options.oncreate(this.el as HTMLElement & { tabs: Tabs }, div);
         }
 
-        obj.setBorder(obj.getActive());
+        this.setBorder(this.getActive());
 
         return div;
-    };
+    }
 
-    obj.remove = function (index) {
-        return obj.deleteElement(index);
-    };
+    remove(index: number): void | false {
+        return this.deleteElement(index);
+    }
 
-    obj.nextNumber = function () {
+    nextNumber() {
         let num = 0;
 
-        for (let i = 0; i < obj.content.children.length; i++) {
+        for (let i = 0; i < this.content.children.length; i++) {
             // The match is compared and parsed as text
-            const tmp = getHeader(i)!.textContent.match(/[0-9].*/) as unknown as string | null;
+            const tmp = this.getHeader(i)!.textContent.match(/[0-9].*/) as unknown as string | null;
 
             if (Number(tmp) > num) {
                 num = parseInt(tmp);
@@ -304,11 +299,11 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
         }
 
         return num;
-    };
+    }
 
-    obj.deleteElement = function (index) {
-        const current = obj.getActive();
-        const header = getHeader(index);
+    deleteElement(index: number): void | false {
+        const current = this.getActive();
+        const header = this.getHeader(index);
 
         if (!header) {
             return false;
@@ -316,26 +311,31 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
 
         const hadFocus = header === document.activeElement;
 
-        obj.headers.removeChild(header);
-        obj.content.removeChild(obj.content.children[index]);
+        this.headers.removeChild(header);
+        this.content.removeChild(this.content.children[index]);
 
         if (current === index) {
-            obj.open(0);
+            this.open(0);
         } else {
-            updateHeaders();
+            this.updateHeaders();
         }
 
         // Keep the focus in the tab list
-        if (hadFocus && getHeader(obj.getActive())) {
-            getHeader(obj.getActive())!.focus();
+        if (hadFocus && this.getHeader(this.getActive())) {
+            this.getHeader(this.getActive())!.focus();
         }
 
-        if (typeof obj.options.ondelete == 'function') {
-            obj.options.ondelete(el, index);
+        if (typeof this.options.ondelete == 'function') {
+            this.options.ondelete(this.el, index);
         }
-    };
+    }
 
-    obj.appendElement = function (title, cb, openTab, position) {
+    appendElement(
+        title?: string | null,
+        cb?: ((div: HTMLDivElement, header: TabHeader) => void) | null,
+        openTab?: boolean,
+        position?: number
+    ): HTMLDivElement | undefined {
         if (!title) {
             title = prompt('Title?', '');
         }
@@ -361,18 +361,18 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
             h.textContent = title;
             (h as TabHeader).content = div;
 
-            if (typeof position === 'undefined' || !obj.content.children[position]) {
-                obj.content.appendChild(div);
-                obj.headers.insertBefore(h, border);
+            if (typeof position === 'undefined' || !this.content.children[position]) {
+                this.content.appendChild(div);
+                this.headers.insertBefore(h, this.border);
             } else {
-                obj.content.insertBefore(div, obj.content.children[position]);
-                obj.headers.insertBefore(h, getHeader(position));
+                this.content.insertBefore(div, this.content.children[position]);
+                this.headers.insertBefore(h, this.getHeader(position));
             }
 
             if (openTab !== false) {
-                obj.selectIndex(h);
+                this.selectIndex(h);
             } else {
-                updateHeaders();
+                this.updateHeaders();
             }
 
             if (typeof cb == 'function') {
@@ -381,10 +381,10 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
 
             return div;
         }
-    };
+    }
 
-    obj.updateContent = function (position, newContent) {
-        const current = obj.content.children[position];
+    updateContent(position: number, newContent: string | HTMLElement) {
+        const current = this.content.children[position];
 
         if (!current) {
             return;
@@ -414,142 +414,142 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
             contentItem.classList.add('jtabs-selected');
         }
 
-        obj.content.replaceChild(contentItem, current);
+        this.content.replaceChild(contentItem, current);
 
-        if (getHeader(position)) {
-            getHeader(position)!.content = contentItem;
-            getHeader(position)!.setAttribute('aria-controls', contentItem.id);
+        if (this.getHeader(position)) {
+            this.getHeader(position)!.content = contentItem;
+            this.getHeader(position)!.setAttribute('aria-controls', contentItem.id);
         }
 
-        obj.setBorder(obj.getActive());
-    };
+        this.setBorder(this.getActive());
+    }
 
-    obj.updatePosition = function (f, t, ignoreEvents, openTab) {
+    updatePosition(f: number, t: number, ignoreEvents?: boolean, openTab?: boolean) {
         // Update the position of the content
         if (f > t) {
-            obj.content.insertBefore(obj.content.children[f], obj.content.children[t]);
+            this.content.insertBefore(this.content.children[f], this.content.children[t]);
         } else {
-            obj.content.insertBefore(obj.content.children[f], obj.content.children[t].nextSibling);
+            this.content.insertBefore(this.content.children[f], this.content.children[t].nextSibling);
         }
 
         if (openTab !== false) {
-            obj.open(t);
+            this.open(t);
         } else {
-            obj.setBorder(obj.getActive());
+            this.setBorder(this.getActive());
         }
 
-        if (!ignoreEvents && typeof obj.options.onchangeposition == 'function') {
-            obj.options.onchangeposition(obj.headers, f, t);
+        if (!ignoreEvents && typeof this.options.onchangeposition == 'function') {
+            this.options.onchangeposition(this.headers, f, t);
         }
-    };
+    }
 
-    obj.move = function (f, t, ignoreEvents, openTab) {
+    move(f: number, t: number, ignoreEvents?: boolean, openTab?: boolean) {
         if (f > t) {
-            obj.headers.insertBefore(getHeader(f)!, getHeader(t));
+            this.headers.insertBefore(this.getHeader(f)!, this.getHeader(t));
         } else {
-            obj.headers.insertBefore(getHeader(f)!, getHeader(t)!.nextSibling);
+            this.headers.insertBefore(this.getHeader(f)!, this.getHeader(t)!.nextSibling);
         }
 
-        obj.updatePosition(f, t, ignoreEvents, openTab);
-    };
+        this.updatePosition(f, t, ignoreEvents, openTab);
+    }
 
-    obj.init = function () {
-        el.classList.add('jtabs');
-        el.textContent = '';
+    init() {
+        this.el.classList.add('jtabs');
+        this.el.textContent = '';
 
-        obj.headers = document.createElement('div');
-        obj.headers.className = 'jtabs-headers';
-        obj.headers.setAttribute('role', 'tablist');
-        obj.headers.setAttribute('aria-label', jSuites.translate('Worksheets'));
+        this.headers = document.createElement('div');
+        this.headers.className = 'jtabs-headers';
+        this.headers.setAttribute('role', 'tablist');
+        this.headers.setAttribute('aria-label', jSuites.translate('Worksheets'));
 
-        obj.content = document.createElement('div');
-        obj.content.className = 'jtabs-content';
-        obj.content.setAttribute('role', 'region');
-        obj.content.setAttribute('aria-label', 'Tab Panels');
+        this.content = document.createElement('div');
+        this.content.className = 'jtabs-content';
+        this.content.setAttribute('role', 'region');
+        this.content.setAttribute('aria-label', 'Tab Panels');
 
         const header = document.createElement('div');
         header.className = 'jtabs-headers-container';
-        header.appendChild(obj.headers);
+        header.appendChild(this.headers);
 
         const controls = document.createElement('div');
         controls.className = 'jtabs-controls';
         controls.setAttribute('draggable', 'false');
         header.appendChild(controls);
 
-        el.appendChild(header);
-        el.appendChild(obj.content);
+        this.el.appendChild(header);
+        this.el.appendChild(this.content);
 
         // Button to create a new worksheet
-        if (obj.options.allowCreate == true) {
+        if (this.options.allowCreate == true) {
             const add = document.createElement('button');
             add.type = 'button';
             add.className = 'jtabs-add';
             add.setAttribute('aria-label', jSuites.translate('Add a new worksheet'));
-            add.onclick = function () {
-                obj.create();
+            add.onclick = () => {
+                this.create();
             };
             controls.appendChild(add);
         }
 
         // Scroll buttons for the mouse. The keyboard moves between the tabs with the arrow keys.
-        prev = document.createElement('div');
-        prev.className = 'jtabs-prev';
-        prev.setAttribute('aria-hidden', 'true');
-        prev.onclick = function () {
-            updateControls(obj.headers.scrollLeft - obj.headers.offsetWidth);
+        this.prev = document.createElement('div');
+        this.prev.className = 'jtabs-prev';
+        this.prev.setAttribute('aria-hidden', 'true');
+        this.prev.onclick = () => {
+            this.updateControls(this.headers.scrollLeft - this.headers.offsetWidth);
         };
-        controls.appendChild(prev);
+        controls.appendChild(this.prev);
 
-        next = document.createElement('div');
-        next.className = 'jtabs-next';
-        next.setAttribute('aria-hidden', 'true');
-        next.onclick = function () {
-            updateControls(obj.headers.scrollLeft + obj.headers.offsetWidth);
+        this.next = document.createElement('div');
+        this.next.className = 'jtabs-next';
+        this.next.setAttribute('aria-hidden', 'true');
+        this.next.onclick = () => {
+            this.updateControls(this.headers.scrollLeft + this.headers.offsetWidth);
         };
-        controls.appendChild(next);
+        controls.appendChild(this.next);
 
-        border = document.createElement('div');
-        border.className = 'jtabs-border';
-        border.setAttribute('aria-hidden', 'true');
-        obj.headers.appendChild(border);
+        this.border = document.createElement('div');
+        this.border.className = 'jtabs-border';
+        this.border.setAttribute('aria-hidden', 'true');
+        this.headers.appendChild(this.border);
 
-        if (obj.options.animation) {
-            el.classList.add('jtabs-animation');
+        if (this.options.animation) {
+            this.el.classList.add('jtabs-animation');
         }
 
-        for (let i = 0; i < obj.options.data.length; i++) {
-            const div = obj.appendElement(obj.options.data[i].title, null, false);
+        for (let i = 0; i < this.options.data.length; i++) {
+            const div = this.appendElement(this.options.data[i].title, null, false);
 
-            if (obj.options.data[i].content) {
-                div!.innerHTML = obj.options.data[i].content;
+            if (this.options.data[i].content) {
+                div!.innerHTML = this.options.data[i].content;
             }
         }
 
         // Events
-        obj.headers.addEventListener('click', function (e) {
-            const index = getIndex(e.target as HTMLElement);
+        this.headers.addEventListener('click', (e) => {
+            const index = this.getIndex(e.target as HTMLElement);
 
             if (index >= 0) {
-                obj.open(index);
+                this.open(index);
 
-                if (typeof obj.options.onclick == 'function') {
-                    obj.options.onclick(el, obj, index, getHeader(index), obj.content.children[index]);
+                if (typeof this.options.onclick == 'function') {
+                    this.options.onclick(this.el, this, index, this.getHeader(index), this.content.children[index]);
                 }
             }
         });
 
-        obj.headers.addEventListener('contextmenu', function (e) {
-            const index = getIndex(e.target as HTMLElement);
+        this.headers.addEventListener('contextmenu', (e) => {
+            const index = this.getIndex(e.target as HTMLElement);
 
             if (index >= 0) {
-                obj.open(index);
+                this.open(index);
             }
         });
 
         // Keyboard: the arrow keys, Home and End move the focus and open the tab
-        obj.headers.addEventListener('keydown', function (e) {
-            const index = getIndex(e.target as HTMLElement);
-            const total = obj.content.children.length;
+        this.headers.addEventListener('keydown', (e) => {
+            const index = this.getIndex(e.target as HTMLElement);
+            const total = this.content.children.length;
 
             if (index < 0 || !total || e.altKey || e.ctrlKey || e.metaKey) {
                 return;
@@ -569,23 +569,17 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
 
             if (target !== null) {
                 e.preventDefault();
-                obj.open(target);
-                getHeader(target)!.focus();
+                this.open(target);
+                this.getHeader(target)!.focus();
             }
         });
 
-        if (obj.content.children.length) {
-            obj.open(0);
+        if (this.content.children.length) {
+            this.open(0);
         } else {
-            updateHeaders();
+            this.updateHeaders();
         }
 
-        updateControls(0);
-    };
-
-    obj.init();
-
-    el.tabs = obj;
-
-    return obj;
-};
+        this.updateControls(0);
+    }
+}

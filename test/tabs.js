@@ -244,6 +244,30 @@ describe('Worksheet tabs', () => {
         expect(getPanels().length).to.eq(2);
     });
 
+    it('the methods of element.tabs are on its prototype', async () => {
+        await create({ tabs: true });
+        const tabs = root.tabs;
+
+        expect(Object.prototype.hasOwnProperty.call(tabs, 'open')).to.eq(false);
+        expect(Object.getPrototypeOf(tabs).open).to.be.a('function');
+
+        // A method assigned to the object replaces it for the calls of the tabs too, as with jSuites.tabs
+        const opened = [];
+        const open = tabs.open;
+        tabs.open = function (index) {
+            opened.push(index);
+            return open.call(this, index);
+        };
+
+        getTabs()[1].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(opened).to.eql([1]);
+        expect(tabs.getActive()).to.eq(1);
+
+        tabs.selectIndex(getTabs()[2]);
+        expect(opened).to.eql([1, 2]);
+        expect(tabs.getActive()).to.eq(2);
+    });
+
     it('createWorksheet, openWorksheet and deleteWorksheet update the tabs', async () => {
         const worksheets = await create({ tabs: true });
 

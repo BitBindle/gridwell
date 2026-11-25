@@ -121,6 +121,8 @@ that is hard to read but does not need a new owner. They change no behaviour.
     it runs. The handlers read the global in 26 places instead of 361.
 13. **The tabs.** `createTabs` builds the tabs in one long closure. The tabs become a class, with the methods on the
     prototype.
+    Done. `Tabs` in `utils/tabs.ts` is a class: `new Tabs(element, options)` builds the tabs and keeps them on
+    `element.tabs`. The variables of the closure are fields, and its inner functions are private methods.
 14. **The anys in the public typings.** The `any` types left in `src/jspreadsheet.d.ts` get real types.
 
 ## Rules for each step
