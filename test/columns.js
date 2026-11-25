@@ -763,3 +763,79 @@ describe('Calendar columns', () => {
         expect(worksheet.getData()).to.eql([['2020'], ['2022']]);
     });
 });
+
+describe('Insert a column with nested headers', () => {
+    it('widens the last nested header', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [3, 2], nestedHeaders: [[{ title: 'All', colspan: 3 }]] }],
+        })[0];
+
+        worksheet.insertColumn(2);
+
+        expect(worksheet.options.nestedHeaders[0][0].colspan).to.equal(5);
+        const header = worksheet.thead.children[0].lastElementChild;
+        expect(header.getAttribute('colspan')).to.equal('5');
+        expect(header.getAttribute('data-column')).to.equal('0,1,2,3,4');
+        expect(worksheet.headers.map((header) => header.textContent)).to.eql(['A', 'B', 'C', 'D', 'E']);
+        expect(worksheet.cols.map((col) => col.x)).to.eql([0, 1, 2, 3, 4]);
+    });
+});
+
+describe('Insert columns', () => {
+    it('gives the events the new columns, renders them and puts them before or after the column', () => {
+        const events = [];
+        const rendered = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b'],
+                        ['c', 'd'],
+                    ],
+                },
+            ],
+            onbeforeinsertcolumn: (instance, columns) => {
+                events.push(['before', JSON.parse(JSON.stringify(columns))]);
+            },
+            oninsertcolumn: (instance, columns) => {
+                events.push(['after', JSON.parse(JSON.stringify(columns))]);
+            },
+        })[0];
+
+        worksheet.insertColumn(['x', 'y'], 0, true, [{ title: 'New', render: (td, value, x, y) => rendered.push([value, x, y]) }]);
+        worksheet.insertColumn(2, 2, false);
+
+        expect(worksheet.getData()).to.eql([
+            ['x', 'a', 'b', '', ''],
+            ['y', 'c', 'd', '', ''],
+        ]);
+        expect(rendered).to.eql([
+            ['x', 0, 0],
+            ['y', 0, 1],
+        ]);
+        expect(worksheet.headers.map((header) => header.textContent)).to.eql(['New', 'B', 'C', 'D', 'E']);
+        expect(events).to.eql([
+            ['before', [{ column: 0, options: { title: 'New' }, data: ['x', 'y'] }]],
+            ['after', [{ column: 0, options: { title: 'New' }, data: ['x', 'y'] }]],
+            [
+                'before',
+                [
+                    { column: 3, options: {} },
+                    { column: 4, options: {} },
+                ],
+            ],
+            [
+                'after',
+                [
+                    { column: 3, options: {} },
+                    { column: 4, options: {} },
+                ],
+            ],
+        ]);
+        expect(worksheet.records.map((row) => row.map((cell) => cell.x))).to.eql([
+            [0, 1, 2, 3, 4],
+            [0, 1, 2, 3, 4],
+        ]);
+        expect(Array.from(worksheet.rows[0].element.children).slice(1)).to.eql(worksheet.records[0].map((cell) => cell.element));
+    });
+});

@@ -96,6 +96,75 @@ export const createRow = function (this: Worksheet, j: number, data: jspreadshee
 };
 
 /**
+ * The rows that insertRow inserts, with their position and their data, for the events.
+ */
+const getInsertedRows = function (this: Worksheet, numOfRows: number, rowNumber: number, insertBefore: boolean, data: jspreadsheet.CellValue[]) {
+    const obj = this;
+
+    const onbeforeinsertrowRecords = [];
+
+    for (let row = 0; row < numOfRows; row++) {
+        const newRow = [];
+
+        for (let col = 0; col < obj.options.columns.length; col++) {
+            newRow[col] = data[col] ? data[col] : '';
+        }
+
+        onbeforeinsertrowRecords.push({
+            row: row + rowNumber + (insertBefore ? 0 : 1),
+            data: newRow,
+        });
+    }
+
+    return onbeforeinsertrowRecords;
+};
+
+/**
+ * Create the new rows with the data or empty, and put them in the table before the rows that follow them.
+ * @param currentRows - The rows after the new rows, which insertRow took out of the list of rows.
+ */
+const addRows = function (
+    this: Worksheet,
+    rowIndex: number,
+    numOfRows: number,
+    rowNumber: number,
+    data: jspreadsheet.CellValue[],
+    currentRows: Worksheet['rows']
+) {
+    const obj = this;
+
+    const rowRecords = [];
+    const rowData = [];
+    const rowNode = [];
+
+    for (let row = rowIndex; row < numOfRows + rowIndex; row++) {
+        // Push data to the data container
+        obj.options.data[row] = [];
+        for (let col = 0; col < obj.options.columns.length; col++) {
+            obj.options.data[row][col] = data[col] ? data[col] : '';
+        }
+        // Create row
+        const newRow = createRow.call(obj, row, obj.options.data[row]);
+        // Append node
+        if (currentRows[0]) {
+            if (Array.prototype.indexOf.call(obj.tbody.children, currentRows[0].element) >= 0) {
+                obj.tbody.insertBefore(newRow.element, currentRows[0].element);
+            }
+        } else {
+            if (Array.prototype.indexOf.call(obj.tbody.children, obj.rows[rowNumber].element) >= 0) {
+                obj.tbody.appendChild(newRow.element);
+            }
+        }
+        // Record History
+        rowRecords.push([...obj.records[row]]);
+        rowData.push([...obj.options.data[row]]);
+        rowNode.push(newRow);
+    }
+
+    return { rowRecords, rowData, rowNode };
+};
+
+/**
  * Insert a new row
  *
  * @param mixed - number of blank lines to be insert or a single array with the data of the new row
@@ -134,20 +203,7 @@ export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumbe
             rowNumber = lastRow;
         }
 
-        const onbeforeinsertrowRecords = [];
-
-        for (let row = 0; row < numOfRows; row++) {
-            const newRow = [];
-
-            for (let col = 0; col < obj.options.columns.length; col++) {
-                newRow[col] = data[col] ? data[col] : '';
-            }
-
-            onbeforeinsertrowRecords.push({
-                row: row + rowNumber + (insertBefore ? 0 : 1),
-                data: newRow,
-            });
-        }
+        const onbeforeinsertrowRecords = getInsertedRows.call(obj, numOfRows, rowNumber, insertBefore, data);
 
         // Onbeforeinsertrow
         if (dispatch.call(obj, 'onbeforeinsertrow', obj, onbeforeinsertrowRecords) === false) {
@@ -187,33 +243,7 @@ export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumbe
         const currentRows = obj.rows.splice(rowIndex);
 
         // Adding lines
-        const rowRecords = [];
-        const rowData = [];
-        const rowNode = [];
-
-        for (let row = rowIndex; row < numOfRows + rowIndex; row++) {
-            // Push data to the data container
-            obj.options.data[row] = [];
-            for (let col = 0; col < obj.options.columns.length; col++) {
-                obj.options.data[row][col] = data[col] ? data[col] : '';
-            }
-            // Create row
-            const newRow = createRow.call(obj, row, obj.options.data[row]);
-            // Append node
-            if (currentRows[0]) {
-                if (Array.prototype.indexOf.call(obj.tbody.children, currentRows[0].element) >= 0) {
-                    obj.tbody.insertBefore(newRow.element, currentRows[0].element);
-                }
-            } else {
-                if (Array.prototype.indexOf.call(obj.tbody.children, obj.rows[rowNumber].element) >= 0) {
-                    obj.tbody.appendChild(newRow.element);
-                }
-            }
-            // Record History
-            rowRecords.push([...obj.records[row]]);
-            rowData.push([...obj.options.data[row]]);
-            rowNode.push(newRow);
-        }
+        const { rowRecords, rowData, rowNode } = addRows.call(obj, rowIndex, numOfRows, rowNumber, data, currentRows);
 
         // Copy the data back to the main data
         Array.prototype.push.apply(obj.records, currentRecords);

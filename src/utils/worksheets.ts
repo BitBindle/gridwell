@@ -60,17 +60,11 @@ import type jspreadsheet from '../jspreadsheet';
 import { Worksheet } from '../Worksheet.js';
 import type { Spreadsheet, WorksheetMethod } from '../types/internal';
 
-const createTable = function (this: Worksheet) {
+/**
+ * The container of the table, which scrolls.
+ */
+const createContent = function (this: Worksheet) {
     const obj = this;
-
-    // Elements
-    obj.table = document.createElement('table');
-    obj.thead = document.createElement('thead');
-    obj.tbody = document.createElement('tbody');
-
-    // Create headers controllers
-    obj.headers = [];
-    obj.cols = [];
 
     // Create table container
     obj.content = document.createElement('div');
@@ -81,6 +75,13 @@ const createTable = function (this: Worksheet) {
     obj.content.onwheel = function (e) {
         wheelControls.call(obj, e);
     };
+};
+
+/**
+ * The search and the number of rows on a page, above the table. The worksheet adds them only with the search option.
+ */
+const createSearch = function (this: Worksheet) {
+    const obj = this;
 
     // Search
     const searchContainer = document.createElement('div');
@@ -127,6 +128,15 @@ const createTable = function (this: Worksheet) {
     filter.classList.add('jss_filter');
     filter.appendChild(paginationUpdateContainer);
     filter.appendChild(searchContainer);
+
+    return filter;
+};
+
+/**
+ * The columns and the head of the table: the nested headers, the headers and the filters.
+ */
+const createHead = function (this: Worksheet) {
+    const obj = this;
 
     // Colsgroup
     obj.colgroupContainer = document.createElement('colgroup');
@@ -179,6 +189,13 @@ const createTable = function (this: Worksheet) {
 
         obj.thead.appendChild(obj.filter);
     }
+};
+
+/**
+ * The table, with the roles of the grid.
+ */
+const createGrid = function (this: Worksheet) {
+    const obj = this;
 
     // Content table
     obj.table = document.createElement('table');
@@ -196,6 +213,13 @@ const createTable = function (this: Worksheet) {
     if (!obj.options.textOverflow) {
         obj.table.classList.add('jss_overflow');
     }
+};
+
+/**
+ * The corner of the selection, which fills the cells.
+ */
+const createCorner = function (this: Worksheet) {
+    const obj = this;
 
     // Spreadsheet corner
     obj.corner = document.createElement('div');
@@ -206,6 +230,13 @@ const createTable = function (this: Worksheet) {
     if (obj.options.selectionCopy == false) {
         obj.corner.style.display = 'none';
     }
+};
+
+/**
+ * The link to Jspreadsheet below the table.
+ */
+const createAbout = function (this: Worksheet) {
+    const obj = this;
 
     // Powered by Jspreadsheet
     const ads = document.createElement('a');
@@ -217,10 +248,13 @@ const createTable = function (this: Worksheet) {
     span.innerHTML = 'Jspreadsheet CE';
     ads.appendChild(span);
     obj.ads.appendChild(ads);
+};
 
-    // Create table container TODO: frozen columns
-    const container = document.createElement('div');
-    container.classList.add('jss_table');
+/**
+ * The pagination below the table, hidden without the pagination option.
+ */
+const createPagination = function (this: Worksheet) {
+    const obj = this;
 
     // Pagination
     obj.pagination = document.createElement('div');
@@ -234,25 +268,13 @@ const createTable = function (this: Worksheet) {
     if (!obj.options.pagination) {
         obj.pagination.style.display = 'none';
     }
+};
 
-    // Append containers to the table
-    if (obj.options.search == true) {
-        obj.element.appendChild(filter);
-    }
-
-    // Elements
-    obj.content.appendChild(obj.table);
-    obj.content.appendChild(obj.corner);
-    obj.content.appendChild(obj.clipboard.textarea);
-    setGridLabels.call(obj);
-
-    obj.element.appendChild(obj.content);
-    obj.element.appendChild(obj.pagination);
-    obj.element.appendChild(obj.ads);
-    obj.element.classList.add('jss_container');
-
-    obj.element.jssWorksheet = obj;
-    obj.element.jspreadsheet = obj;
+/**
+ * The size and the overflow of the content, and the classes that allow the drag and the resize.
+ */
+const setLayout = function (this: Worksheet) {
+    const obj = this;
 
     // Overflow
     if (obj.options.tableOverflow == true) {
@@ -285,6 +307,13 @@ const createTable = function (this: Worksheet) {
     if (obj.options.rowResize != false) {
         obj.tbody.classList.add('resizable');
     }
+};
+
+/**
+ * The data, and the styles, the comments and the classes of the cells.
+ */
+const loadContent = function (this: Worksheet) {
+    const obj = this;
 
     // Load data
     obj.setData.call(obj);
@@ -317,6 +346,48 @@ const createTable = function (this: Worksheet) {
             obj.records[cell[1]][cell[0]].element.classList.add(obj.options.classes[k[i]]);
         }
     }
+};
+
+const createTable = function (this: Worksheet) {
+    const obj = this;
+
+    // Elements
+    obj.thead = document.createElement('thead');
+    obj.tbody = document.createElement('tbody');
+
+    // Create headers controllers
+    obj.headers = [];
+    obj.cols = [];
+
+    createContent.call(obj);
+    const filter = createSearch.call(obj);
+    createHead.call(obj);
+    createGrid.call(obj);
+    createCorner.call(obj);
+    createAbout.call(obj);
+    createPagination.call(obj);
+
+    // Append containers to the table
+    if (obj.options.search == true) {
+        obj.element.appendChild(filter);
+    }
+
+    // Elements
+    obj.content.appendChild(obj.table);
+    obj.content.appendChild(obj.corner);
+    obj.content.appendChild(obj.clipboard.textarea);
+    setGridLabels.call(obj);
+
+    obj.element.appendChild(obj.content);
+    obj.element.appendChild(obj.pagination);
+    obj.element.appendChild(obj.ads);
+    obj.element.classList.add('jss_container');
+
+    obj.element.jssWorksheet = obj;
+    obj.element.jspreadsheet = obj;
+
+    setLayout.call(obj);
+    loadContent.call(obj);
 };
 
 /**

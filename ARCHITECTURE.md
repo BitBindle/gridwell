@@ -145,6 +145,15 @@ that is hard to read but does not need a new owner. They change no behaviour.
     `getSelectedRange`. The items and their order are the same.
 17. **The long builders.** `createTable`, `insertColumn`, `insertRow`, `copy` and `paste` are each more than 200 lines.
     They are split into the steps they do.
+    Done. `createTable` calls `createContent`, `createSearch`, `createHead` (the nested headers, the headers and the
+    filters), `createGrid`, `createCorner`, `createAbout` and `createPagination`, puts them in order, and then calls
+    `setLayout` and `loadContent` (the data, the styles, the comments and the classes). `insertColumn` gets the columns for
+    the events from `getInsertedColumns` and adds the headers, the footers, the cells and the nested headers in a function
+    each; `insertRow` uses `getInsertedRows` and `addRows`. `copy` reads the cells in `getCopiedRows` and the nested
+    headers in `getNestedHeadersText`, and quotes a value in `quote`; `paste` calls `repeatToSelection`,
+    `insertSpaceForPaste` and `pasteRows`. Code that had no effect went: a second table and a container that
+    `createTable` created and did not use, and a loop in `copy` that worked out a value that nothing read. The functions
+    are 41 to 121 lines long instead of 150 to 258.
 
 ## Rules for each step
 
