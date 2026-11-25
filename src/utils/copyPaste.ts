@@ -8,6 +8,7 @@ import { downGet, rightGet } from './keys.js';
 import { hash, removeCopyingSelection, updateSelectionFromCoords } from './selection.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
+import type { CalendarFunctions } from '../types/jsuites';
 
 /**
  * Copy method
@@ -20,10 +21,10 @@ export const copy = function (
     this: Worksheet,
     highlighted: boolean,
     delimiter?: string,
-    returnData?: any,
+    returnData?: boolean,
     includeHeaders?: boolean,
-    download?: any,
-    isCut?: any,
+    download?: boolean,
+    isCut?: boolean,
     processed?: boolean
 ) {
     const obj = this;
@@ -267,7 +268,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
         }
 
         const arrayB = data.map(function (row: any[], i: number) {
-            const arrayC = Array.from({ length: repeats * row.length }, function (e: any, i: number) {
+            const arrayC = Array.from({ length: repeats * row.length }, function (e: unknown, i: number) {
                 return row[i % row.length];
             });
             return arrayC;
@@ -284,7 +285,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
             }
             style = newStyle;
         }
-        const arrayB = Array.from({ length: repeats * srcH }, function (e: any, i: number) {
+        const arrayB = Array.from({ length: repeats * srcH }, function (e: unknown, i: number) {
             return data[i % srcH];
         });
         data = arrayB;
@@ -353,10 +354,10 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
                 let value = row[i];
 
                 if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].type == 'calendar') {
-                    // The jsuites typings miss extractDateFromString, and a calendar column has options
-                    value = (jSuites.calendar as any).extractDateFromString(
+                    // The jsuites typings miss extractDateFromString
+                    value = (jSuites.calendar as unknown as CalendarFunctions).extractDateFromString(
                         value,
-                        ((obj.options.columns[i] as any).options && (obj.options.columns[i] as any).options.format) || 'YYYY-MM-DD'
+                        (obj.options.columns[i].options && obj.options.columns[i].options.format) || 'YYYY-MM-DD'
                     );
                 }
 

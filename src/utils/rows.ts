@@ -12,7 +12,7 @@ import type { Worksheet, WorksheetMethod } from '../types/internal';
 /**
  * Create row
  */
-export const createRow = function (this: Worksheet, j: number, data: any) {
+export const createRow = function (this: Worksheet, j: number, data: jspreadsheet.CellValue[]) {
     const obj = this;
 
     // Create container
@@ -248,7 +248,7 @@ export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumbe
  *
  * @return void
  */
-export const moveRow = function (this: Worksheet, o: any, d: any, ignoreDom?: any) {
+export const moveRow = function (this: Worksheet, o: number, d: number, ignoreDom?: boolean) {
     const obj = this;
 
     if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
