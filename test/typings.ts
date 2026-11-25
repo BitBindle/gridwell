@@ -44,3 +44,22 @@ const versionType = versionInfo.type;
 // setComments removes the comment of a cell when the comment is a falsy value, null included
 worksheet.setComments('A1', null);
 worksheet.setComments({ A1: 'Comment', B1: null, C1: undefined, D1: '' });
+
+declare const shadowRoot: ShadowRoot;
+
+// root, plugins and style are spreadsheet options. A number in a worksheet style is the index of a spreadsheet style.
+const pluginFactory = function (spreadsheetInstance: jspreadsheet.SpreadsheetInstance, options: object, spreadsheetConfig: jspreadsheet.SpreadsheetOptions) {
+    return {
+        getConfig: () => spreadsheetConfig,
+        onevent: () => {},
+        persistence: () => {},
+        contextMenu: (instance: jspreadsheet.WorksheetInstance, x: number | null, y: number | null, e: PointerEvent, items: jspreadsheet.ContextMenuItem[]) =>
+            items,
+    } as unknown as jspreadsheet.Plugin;
+};
+library(document.createElement('div'), {
+    root: shadowRoot,
+    plugins: { pluginFactory },
+    style: ['background-color: orange;'],
+    worksheets: [{ style: { A1: 0, B1: 'font-weight: bold;' } }],
+});

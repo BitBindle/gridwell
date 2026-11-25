@@ -367,6 +367,21 @@ declare namespace jspreadsheet {
         about?: boolean;
 
         /**
+         * Spreadsheet plugins. Each function is called with the spreadsheet, an empty object and the spreadsheet options, and returns the plugin.
+         */
+        plugins?: Record<string, PluginFactory>;
+
+        /**
+         * Node for binding the javascript events and reading the text selection. This property is normally used when JSS is running as a web component, with its shadow root.
+         */
+        root?: HTMLElement | ShadowRoot;
+
+        /**
+         * Styles that the worksheets refer to by index: a number in {@link WorksheetOptions.style} is the index of a style in this list.
+         */
+        style?: string[];
+
+        /**
          * Allow table export as csv.
          * @default true
          */
@@ -1167,11 +1182,13 @@ declare namespace jspreadsheet {
 
         /**
          * Spreadsheet plugins.
+         * @deprecated The worksheet options do not load plugins. Use {@link SpreadsheetOptions.plugins}.
          */
-        plugins?: Record<string, () => Plugin>;
+        plugins?: Record<string, PluginFactory>;
 
         /**
-         * DOM element for binding the javascript events. This property is normally used when JSS is running as a web component.
+         * DOM element for binding the javascript events.
+         * @deprecated The worksheet options do not bind events. Use {@link SpreadsheetOptions.root}.
          */
         root?: HTMLElement;
 
@@ -1209,9 +1226,9 @@ declare namespace jspreadsheet {
         selectionCopy?: boolean;
 
         /**
-         * Cell styles.
+         * Cell styles, by cell name. A number is the index of a style in {@link SpreadsheetOptions.style}.
          */
-        style?: Record<string, string>;
+        style?: Record<string, string | number>;
 
         /**
          * Set the max height of the table.
@@ -1332,6 +1349,11 @@ declare namespace jspreadsheet {
          */
         width: number;
     }
+
+    /**
+     * Creates a plugin. The spreadsheet calls it with itself, an empty object and the spreadsheet options.
+     */
+    type PluginFactory = (spreadsheet: SpreadsheetInstance, options: object, config: SpreadsheetOptions) => Plugin;
 
     interface Plugin {
         /**
@@ -1458,7 +1480,7 @@ declare namespace jspreadsheet {
          * Add new plugins to the spreadsheet.
          * @param plugins - New plugins.
          */
-        setPlugins: (plugins: Record<string, () => Plugin>) => void;
+        setPlugins: (plugins: Record<string, PluginFactory>) => void;
 
         /**
          * Show the toolbar using the current settings.
