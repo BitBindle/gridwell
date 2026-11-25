@@ -2,6 +2,12 @@ const { expect } = require('chai');
 
 const jspreadsheet = require('../dist/index.js');
 
+// The spreadsheet adds its event handlers after a promise
+const load = (options) =>
+    new Promise((resolve) => {
+        const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+    });
+
 describe('Keys', () => {
     const ctrlKey = function (target, key, keyCode) {
         target.dispatchEvent(
@@ -9,14 +15,14 @@ describe('Keys', () => {
         );
     };
 
-    it('copies the selection with Ctrl+X when the worksheet is read-only', () => {
+    it('copies the selection with Ctrl+X when the worksheet is read-only', async () => {
         const copied = [];
-        const worksheet = jspreadsheet(root, {
+        const worksheet = await load({
             worksheets: [{ data: [['a', 'b']], editable: false }],
             oncopy: function (instance, coords, text, isCut) {
                 copied.push(text);
             },
-        })[0];
+        });
 
         worksheet.updateSelectionFromCoords(0, 0, 1, 0);
         ctrlKey(worksheet.records[0][0].element, 'x', 88);
@@ -78,12 +84,6 @@ describe('Keys', () => {
 });
 
 describe('Toggle a checkbox with the space key', () => {
-    // The spreadsheet adds its event handlers after a promise
-    const load = (options) =>
-        new Promise((resolve) => {
-            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
-        });
-
     it('gives the change events the column and row as numbers', async () => {
         const calls = [];
         const worksheet = await load({
