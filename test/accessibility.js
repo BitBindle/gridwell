@@ -472,12 +472,14 @@ describe('Keyboard focus', () => {
         expect(document.activeElement.getAttribute('aria-label')).to.equal('D2');
     });
 
-    it('Keep the focus outside the grid', () => {
+    it('Keep the focus outside the grid', async () => {
         // The grid never had the focus
         document.activeElement.blur();
         const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3) }] })[0];
         const input = document.createElement('input');
         root.appendChild(input);
+        // The spreadsheet adds its document listeners after it builds its worksheets
+        await wait();
 
         expect(document.activeElement).to.equal(document.body);
 
