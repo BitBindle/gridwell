@@ -23,6 +23,10 @@ assertType<Equals<typeof selected, { element: HTMLTableCellElement; x: number; y
 const selectedNames = worksheet.getSelected(true);
 assertType<Equals<typeof selectedNames, string[]>>();
 
+// getSelection returns null when no cell is selected
+const selection = worksheet.getSelection();
+assertType<Equals<typeof selection, [number, number, number, number] | null>>();
+
 declare const spreadsheet: jspreadsheet.SpreadsheetInstance;
 
 // The factory gives each spreadsheet getConfig
