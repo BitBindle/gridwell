@@ -8,7 +8,7 @@ import { setMerge } from './merges.js';
 import { getCoordsFromRange } from './helpers.js';
 import { updateGridSize, updateTabStop } from './accessibility.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
-import type { CellValue } from '../jspreadsheet';
+import type { CellChange, CellValue } from '../jspreadsheet';
 
 // data can be rows of objects. They are changed to arrays.
 export const setData: WorksheetMethod<'setData'> = function (data) {
@@ -291,7 +291,8 @@ export const setValue: WorksheetMethod<'setValue'> = function (cell: any, value,
         };
     });
 
-    dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords);
+    // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
+    dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
 };
 
 /**
@@ -331,7 +332,8 @@ export const setValueFromCoords: WorksheetMethod<'setValueFromCoords'> = functio
         };
     });
 
-    dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords);
+    // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
+    dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
 };
 
 /**

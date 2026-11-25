@@ -152,7 +152,7 @@ export const setStyle = function (
         });
     }
 
-    dispatch.call(obj, 'onchangestyle', obj, newValue);
+    dispatch.call(obj, 'onchangestyle', obj, newValue as unknown as Record<string, string>);
 };
 
 /**

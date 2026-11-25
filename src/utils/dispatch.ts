@@ -1,14 +1,21 @@
 import jSuites from 'jsuites';
-import type { Worksheet, Spreadsheet } from '../types/internal';
+import type jspreadsheet from '../jspreadsheet';
+import type { Worksheet, Spreadsheet, Dispatch, EventName } from '../types/internal';
+
+/** The rows that persistence posts to the server, the data of onbeforesave */
+type SaveData = Parameters<NonNullable<jspreadsheet.SpreadsheetOptions['onbeforesave']>>[2];
+
+/** A record of onafterchanges. The coordinates can be text (issue #52), and a read-only cell has no value (issue #58). */
+type ChangeRecord = { x: number; y: number; value?: jspreadsheet.CellValue };
 
 /**
  * Prepare JSON in the correct format
  * @param data - The changed cells.
  */
-const prepareJson = function (this: Worksheet, data: { x: number; y: number; value: any }[]) {
+const prepareJson = function (this: Worksheet, data: ChangeRecord[]) {
     const obj = this;
 
-    const rows: { row: number; data: Record<string, any> }[] = [];
+    const rows: SaveData = [];
     for (let i = 0; i < data.length; i++) {
         const x = data[i].x;
         const y = data[i].y;
@@ -21,7 +28,8 @@ const prepareJson = function (this: Worksheet, data: { x: number; y: number; val
                 data: {},
             };
         }
-        rows[y].data[k] = data[i].value;
+        // A read-only cell has no value (issue #58)
+        rows[y].data[k] = data[i].value!;
     }
 
     // Filter rows
@@ -34,7 +42,7 @@ const prepareJson = function (this: Worksheet, data: { x: number; y: number; val
  * Post json to a remote server
  */
 // The url is undefined when persistence is true and the worksheet has no url option
-const save = function (this: Worksheet, url: string | undefined, data: any) {
+const save = function (this: Worksheet, url: string | undefined, data: SaveData) {
     const obj = this;
 
     // Parse anything in the data before sending to the server
@@ -53,7 +61,7 @@ const save = function (this: Worksheet, url: string | undefined, data: any) {
         method: 'POST',
         dataType: 'json',
         data: { data: JSON.stringify(data) },
-        success: function (result: any) {
+        success: function (result: unknown) {
             // Event
             dispatch.call(obj, 'onsave', obj.parent, obj, data);
         },
@@ -66,9 +74,9 @@ const save = function (this: Worksheet, url: string | undefined, data: any) {
  * The first argument is the name of the event, for example "onchange". The other arguments go to the event handlers.
  * It returns the result of the last handler.
  */
-const dispatch = function (this: Worksheet | Spreadsheet, event: string, ...args: any[]): any {
+const dispatch = function (this: Worksheet | Spreadsheet, event: EventName, ...args: unknown[]) {
     const obj = this;
-    let ret = null;
+    let ret: unknown = null;
 
     const spreadsheet = (obj.parent ? obj.parent : obj) as Spreadsheet;
 
@@ -79,9 +87,10 @@ const dispatch = function (this: Worksheet | Spreadsheet, event: string, ...args
             ret = spreadsheet.config.onevent.call(this, event, ...args);
         }
         // Call specific events
-        const config: Record<string, any> = spreadsheet.config;
+        const config = spreadsheet.config;
         if (typeof config[event] == 'function') {
-            ret = config[event].apply(this, args);
+            // The arguments match the handler of the event, as the type of dispatch says
+            ret = (config[event] as (...args: unknown[]) => unknown).apply(this, args);
         }
 
         if (typeof spreadsheet.plugins === 'object') {
@@ -111,12 +120,12 @@ const dispatch = function (this: Worksheet | Spreadsheet, event: string, ...args
 
         if (worksheet.options.persistence) {
             const url = worksheet.options.persistence == true ? worksheet.options.url : worksheet.options.persistence;
-            const data = prepareJson.call(worksheet, args[1]);
+            const data = prepareJson.call(worksheet, args[1] as ChangeRecord[]);
             save.call(worksheet, url, data);
         }
     }
 
     return ret;
-};
+} as Dispatch;
 
 export default dispatch;

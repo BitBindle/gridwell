@@ -283,7 +283,7 @@ export const setMerge = function (
                 data: data,
             });
 
-            dispatch.call(obj, 'onmerge', obj, { [cellName]: [colspan, rowspan] });
+            dispatch.call(obj, 'onmerge', obj, { [cellName]: [colspan!, rowspan!] });
         }
     }
 };

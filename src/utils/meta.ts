@@ -79,6 +79,6 @@ export const setMeta = function (this: Worksheet, o: string | Record<string, jsp
             }
         }
 
-        dispatch.call(obj, 'onchangemeta', obj, o);
+        dispatch.call(obj, 'onchangemeta', obj, o as Record<string, jspreadsheet.MetaInformation>);
     }
 };

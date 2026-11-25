@@ -6,6 +6,7 @@ import { setHistory } from './history.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import { getLabelText, restoreActiveCell } from './accessibility.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
+import type { CellChange } from '../jspreadsheet';
 import type { MaskFunctions, MaskOptions } from '../types/jsuites';
 
 /**
@@ -473,6 +474,7 @@ export const setCheckRadioValue = function (this: Worksheet) {
             };
         });
 
-        dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords);
+        // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
+        dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
     }
 };

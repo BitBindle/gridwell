@@ -237,8 +237,7 @@ export const undo: WorksheetMethod<'undo'> = function () {
             // The public overloads take one column or a list, not either
             (obj.setWidth as (column: number | number[], width: number | number[]) => void)(historyRecord.column, historyRecord.oldValue);
         } else if (historyRecord.action == 'setHeight') {
-            // The old height can be the text of the height attribute. setHeight reads it with parseInt.
-            obj.setHeight(historyRecord.row, historyRecord.oldValue as number);
+            obj.setHeight(historyRecord.row, historyRecord.oldValue);
         } else if (historyRecord.action == 'setHeader') {
             obj.setHeader(historyRecord.column, historyRecord.oldValue);
         } else if (historyRecord.action == 'setComments') {

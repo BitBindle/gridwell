@@ -822,8 +822,17 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
             setCellLabel.call(obj, obj.activeCell);
         }
 
-        // On change
-        dispatch.call(obj, 'onchange', obj, obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : null, x, y, value, record.oldValue);
+        // On change. updateCell has read obj.records[y][x] already, so the cell is there.
+        dispatch.call(
+            obj,
+            'onchange',
+            obj,
+            (obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : null) as HTMLTableCellElement,
+            x,
+            y,
+            value,
+            record.oldValue
+        );
     }
 
     return record;

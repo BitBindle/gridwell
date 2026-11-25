@@ -7,6 +7,7 @@ import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { updateToolbar } from './toolbar.js';
 import { updateActiveCell } from './accessibility.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
+import type { CellChange } from '../jspreadsheet';
 
 /**
  * Get the number of columns of the merged range that starts at x, y.
@@ -316,7 +317,8 @@ export const updateSelectionFromCoords = function (
         borderRight = 0;
     }
 
-    const ret = dispatch.call(obj, 'onbeforeselection', obj, borderLeft, borderTop, borderRight, borderBottom, origin);
+    // The top and bottom are null when every selected row is hidden (issue #59)
+    const ret = dispatch.call(obj, 'onbeforeselection', obj, borderLeft, borderTop!, borderRight, borderBottom!, origin);
     if (ret === false) {
         return false;
     }
@@ -385,7 +387,8 @@ export const updateSelectionFromCoords = function (
         removeCopyingSelection();
     }
 
-    dispatch.call(obj, 'onselection', obj, borderLeft, borderTop, borderRight, borderBottom, origin);
+    // The top and bottom are null when every selected row is hidden (issue #59)
+    dispatch.call(obj, 'onselection', obj, borderLeft, borderTop!, borderRight, borderBottom!, origin);
 
     // Find corner cell
     updateCornerPosition.call(obj);
@@ -628,7 +631,8 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
         };
     });
 
-    dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords);
+    // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
+    dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
 };
 
 export const hash = function (str: string) {
