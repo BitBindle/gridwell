@@ -247,11 +247,20 @@ export const executeFormula = function (expression, x, y) {
                 expression = ret;
             }
 
+            // Hand string literals to the formula parser as variables, so characters such as $ or & inside them are not
+            // interpreted as part of the formula syntax
+            let literalIndex = 0;
+            const parsedExpression = expression.substr(1).replace(/"(?:[^"]|"")*"/g, function (literal) {
+                const name = '__JSSSTR' + literalIndex++ + '__';
+                formulaExpressions[name] = '"' + literal.slice(1, -1).replace(/""/g, '\\"') + '"';
+                return name;
+            });
+
             // Convert formula to javascript
             let res;
 
             try {
-                res = formula(expression.substr(1), formulaExpressions, x, y, obj);
+                res = formula(parsedExpression, formulaExpressions, x, y, obj);
 
                 if (typeof res === 'function') {
                     res = '#ERROR';
