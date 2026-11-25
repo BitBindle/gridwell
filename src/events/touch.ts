@@ -8,32 +8,37 @@ import type { TargetEvent } from '../types/internal';
 export const touchStartControls = function (e: TargetEvent<TouchEvent>) {
     const jssTable = getElement(e.target);
 
+    // A touch on a worksheet makes it the active worksheet. A touch outside the spreadsheets leaves no active worksheet.
+    const previous = libraryBase.jspreadsheet.current;
     if (jssTable[0]) {
-        if (libraryBase.jspreadsheet.current != jssTable[0].jssWorksheet) {
-            if (libraryBase.jspreadsheet.current) {
-                libraryBase.jspreadsheet.current.resetSelection();
+        if (previous != jssTable[0].jssWorksheet) {
+            if (previous) {
+                previous.resetSelection();
             }
             libraryBase.jspreadsheet.current = jssTable[0].jssWorksheet;
         }
     } else {
-        if (libraryBase.jspreadsheet.current && !e.target.closest('.jss_object')) {
-            libraryBase.jspreadsheet.current.resetSelection();
+        if (previous && !e.target.closest('.jss_object')) {
+            previous.resetSelection();
             libraryBase.jspreadsheet.current = null;
         }
     }
 
-    if (libraryBase.jspreadsheet.current && jssTable[0]) {
-        if (!libraryBase.jspreadsheet.current.editor.isOpen()) {
+    const current = libraryBase.jspreadsheet.current;
+
+    if (current && jssTable[0]) {
+        if (!current.editor.isOpen()) {
             const columnId = getIndex(e.target, 'data-x');
             const rowId = getIndex(e.target, 'data-y');
 
             if (columnId != null && rowId != null) {
-                updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, columnId, rowId, undefined, undefined, e);
+                updateSelectionFromCoords.call(current, columnId, rowId, undefined, undefined, e);
 
-                if (libraryBase.jspreadsheet.current.options.editable == false) {
+                if (current.options.editable == false) {
                     return;
                 }
 
+                // The active worksheet when the timer runs
                 libraryBase.jspreadsheet.timeControl = setTimeout(function () {
                     // Keep temporary reference to the element
                     const column =
@@ -57,7 +62,8 @@ export const touchEndControls = function (e: TargetEvent<TouchEvent>) {
         libraryBase.jspreadsheet.timeControl = null;
         // Element
         if (libraryBase.jspreadsheet.tmpElement && libraryBase.jspreadsheet.tmpElement.children[0].tagName == 'INPUT') {
-            libraryBase.jspreadsheet.tmpElement.children[0].focus();
+            // The test of the tag name above
+            (libraryBase.jspreadsheet.tmpElement.children[0] as HTMLInputElement).focus();
         }
         libraryBase.jspreadsheet.tmpElement = null;
     }

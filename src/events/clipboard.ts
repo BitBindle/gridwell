@@ -9,23 +9,20 @@ export const pasteControls = function (e?: TargetEvent<ClipboardEvent>) {
         return;
     }
 
-    if (libraryBase.jspreadsheet.current && libraryBase.jspreadsheet.current.selection.range) {
-        if (!libraryBase.jspreadsheet.current.editor.isOpen()) {
-            if (libraryBase.jspreadsheet.current.options.editable != false) {
+    const current = libraryBase.jspreadsheet.current;
+
+    if (current && current.selection.range) {
+        if (!current.editor.isOpen()) {
+            if (current.options.editable != false) {
                 if (e && e.clipboardData) {
-                    paste.call(
-                        libraryBase.jspreadsheet.current,
-                        libraryBase.jspreadsheet.current.selection.range[0],
-                        libraryBase.jspreadsheet.current.selection.range[1],
-                        e.clipboardData.getData('text')
-                    );
+                    paste.call(current, current.selection.range[0], current.selection.range[1], e.clipboardData.getData('text'));
                     e.preventDefault();
                 } else if ((window as Window & { clipboardData?: DataTransfer }).clipboardData) {
                     // Internet Explorer has the clipboard on the window
                     paste.call(
-                        libraryBase.jspreadsheet.current,
-                        libraryBase.jspreadsheet.current.selection.range[0],
-                        libraryBase.jspreadsheet.current.selection.range[1],
+                        current,
+                        current.selection.range[0],
+                        current.selection.range[1],
                         (window as Window & { clipboardData?: DataTransfer }).clipboardData!.getData('text')
                     );
                 }
@@ -35,14 +32,16 @@ export const pasteControls = function (e?: TargetEvent<ClipboardEvent>) {
 };
 
 export const cutControls = function (e?: TargetEvent<ClipboardEvent>) {
-    if (libraryBase.jspreadsheet.current) {
+    const current = libraryBase.jspreadsheet.current;
+
+    if (current) {
         // Without a selection, there is nothing to cut
-        if (!libraryBase.jspreadsheet.current.editor.isOpen() && libraryBase.jspreadsheet.current.selection.range) {
-            const copied = copy.call(libraryBase.jspreadsheet.current, true, undefined, undefined, undefined, undefined, true);
+        if (!current.editor.isOpen() && current.selection.range) {
+            const copied = copy.call(current, true, undefined, undefined, undefined, undefined, true);
             // oncopy can cancel the cut
-            if (copied !== false && libraryBase.jspreadsheet.current.options.editable != false) {
-                libraryBase.jspreadsheet.current.setValue(
-                    libraryBase.jspreadsheet.current.selection.highlighted.map(function (record) {
+            if (copied !== false && current.options.editable != false) {
+                current.setValue(
+                    current.selection.highlighted.map(function (record) {
                         return record.element;
                     }),
                     ''
@@ -53,9 +52,11 @@ export const cutControls = function (e?: TargetEvent<ClipboardEvent>) {
 };
 
 export const copyControls = function (e?: TargetEvent<ClipboardEvent>) {
-    if (libraryBase.jspreadsheet.current) {
-        if (!libraryBase.jspreadsheet.current.editor.isOpen()) {
-            copy.call(libraryBase.jspreadsheet.current, true);
+    const current = libraryBase.jspreadsheet.current;
+
+    if (current) {
+        if (!current.editor.isOpen()) {
+            copy.call(current, true);
         }
     }
 };

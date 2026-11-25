@@ -169,7 +169,7 @@ so JavaScript code works as before, but TypeScript code that reads them no longe
 | `worksheet.ads`                   | none                                      |
 | `jspreadsheet.timeControl`        | none                                      |
 | `jspreadsheet.timeControlLoading` | none                                      |
-| `jspreadsheet.isMouseAction`      | none: the library never set it            |
+| `jspreadsheet.isMouseAction`      | none                                      |
 
 Code that still needs one of these fields can cast the worksheet, for example `(worksheet as any).corner`, but the
 fields can change in any version. `WorksheetInstance` and `SpreadsheetInstance` are the types of the `Worksheet` and

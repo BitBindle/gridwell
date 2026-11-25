@@ -194,133 +194,125 @@ const defaultContextMenu = function (worksheet: Worksheet, x: number, y: number,
 export const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
     e = e || window.event;
 
-    let mouseButton;
+    const current = libraryBase.jspreadsheet.current;
 
-    if ('buttons' in e) {
-        mouseButton = e.buttons;
-    } else {
-        mouseButton = (e as MouseEvent).which || (e as MouseEvent).button;
-    }
+    if (current) {
+        const spreadsheet = current.parent;
 
-    if (libraryBase.jspreadsheet.current) {
-        const spreadsheet = libraryBase.jspreadsheet.current.parent;
-
-        if (libraryBase.jspreadsheet.current.editor.isOpen()) {
+        if (current.editor.isOpen()) {
             e.preventDefault();
         } else {
             spreadsheet.contextMenu.contextmenu.close();
 
-            if (libraryBase.jspreadsheet.current) {
-                const role = getRole(e.target);
+            const role = getRole(e.target);
 
-                // Text from data-x and data-y, or an index. Number() converts them as a comparison does: null is 0.
-                let x: string | number | null = null,
-                    y: string | number | null = null;
+            // Text from data-x and data-y, or an index. Number() converts them as a comparison does: null is 0.
+            let x: string | number | null = null,
+                y: string | number | null = null;
 
-                if (role === 'cell') {
-                    let cellElement = e.target;
-                    while (cellElement.tagName !== 'TD') {
-                        cellElement = cellElement.parentNode as HTMLElement;
-                    }
-
-                    y = cellElement.getAttribute('data-y');
-                    x = cellElement.getAttribute('data-x');
-
-                    if (
-                        !libraryBase.jspreadsheet.current.selection.range ||
-                        Number(x) < parseInt(libraryBase.jspreadsheet.current.selection.range[0]) ||
-                        Number(x) > parseInt(libraryBase.jspreadsheet.current.selection.range[2]) ||
-                        Number(y) < parseInt(libraryBase.jspreadsheet.current.selection.range[1]) ||
-                        Number(y) > parseInt(libraryBase.jspreadsheet.current.selection.range[3])
-                    ) {
-                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, parseInt(x), parseInt(y), parseInt(x), parseInt(y), e);
-                    }
-                } else if (role === 'row' || role === 'header') {
-                    if (role === 'row') {
-                        y = e.target.getAttribute('data-y');
-                    } else {
-                        x = e.target.getAttribute('data-x');
-                    }
-
-                    if (
-                        !libraryBase.jspreadsheet.current.selection.range ||
-                        Number(x) < parseInt(libraryBase.jspreadsheet.current.selection.range[0]) ||
-                        Number(x) > parseInt(libraryBase.jspreadsheet.current.selection.range[2]) ||
-                        Number(y) < parseInt(libraryBase.jspreadsheet.current.selection.range[1]) ||
-                        Number(y) > parseInt(libraryBase.jspreadsheet.current.selection.range[3])
-                    ) {
-                        // A null index selects the whole row or column
-                        const column = x == null ? null : parseInt(x);
-                        const row = y == null ? null : parseInt(y);
-                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, column, row, column, row, e);
-                    }
-                } else if (role === 'nested') {
-                    // The indexes of the columns under the nested header
-                    const columns = e.target
-                        .getAttribute('data-column')!
-                        .split(',')
-                        .map((column) => parseInt(column));
-
-                    x = getElementIndex(e.target) - 1;
-                    y = getElementIndex(e.target.parentElement!);
-
-                    if (
-                        !libraryBase.jspreadsheet.current.selection.range ||
-                        columns[0] != parseInt(libraryBase.jspreadsheet.current.selection.range[0]) ||
-                        columns[columns.length - 1] != parseInt(libraryBase.jspreadsheet.current.selection.range[2]) ||
-                        libraryBase.jspreadsheet.current.selection.range[1] != null ||
-                        libraryBase.jspreadsheet.current.selection.range[3] != null
-                    ) {
-                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, columns[0], null, columns[columns.length - 1], null, e);
-                    }
-                } else if (role === 'select-all') {
-                    selectAll.call(libraryBase.jspreadsheet.current);
-                } else if (role === 'tabs') {
-                    x = getElementIndex(e.target);
-                } else if (role === 'footer') {
-                    x = getElementIndex(e.target) - 1;
-                    y = getElementIndex(e.target.parentElement!);
+            if (role === 'cell') {
+                let cellElement = e.target;
+                while (cellElement.tagName !== 'TD') {
+                    cellElement = cellElement.parentNode as HTMLElement;
                 }
 
-                // Table found
-                let items = defaultContextMenu(libraryBase.jspreadsheet.current, parseInt(x), parseInt(y), role);
+                y = cellElement.getAttribute('data-y');
+                x = cellElement.getAttribute('data-x');
 
-                if (typeof spreadsheet.config.contextMenu === 'function') {
-                    const result = spreadsheet.config.contextMenu(libraryBase.jspreadsheet.current, x, y, e, items, role, x, y);
-
-                    if (result) {
-                        items = result;
-                    } else if (result === false) {
-                        return;
-                    }
+                if (
+                    !current.selection.range ||
+                    Number(x) < parseInt(current.selection.range[0]) ||
+                    Number(x) > parseInt(current.selection.range[2]) ||
+                    Number(y) < parseInt(current.selection.range[1]) ||
+                    Number(y) > parseInt(current.selection.range[3])
+                ) {
+                    updateSelectionFromCoords.call(current, parseInt(x), parseInt(y), parseInt(x), parseInt(y), e);
+                }
+            } else if (role === 'row' || role === 'header') {
+                if (role === 'row') {
+                    y = e.target.getAttribute('data-y');
+                } else {
+                    x = e.target.getAttribute('data-x');
                 }
 
-                if (typeof spreadsheet.plugins === 'object') {
-                    Object.entries(spreadsheet.plugins).forEach(function ([, plugin]) {
-                        if (typeof plugin.contextMenu === 'function') {
-                            const result = plugin.contextMenu(
-                                libraryBase.jspreadsheet.current!,
-                                x !== null ? parseInt(x) : null,
-                                y !== null ? parseInt(y) : null,
-                                e,
-                                items,
-                                role,
-                                x !== null ? parseInt(x) : null,
-                                y !== null ? parseInt(y) : null
-                            );
-
-                            if (result) {
-                                items = result;
-                            }
-                        }
-                    });
+                if (
+                    !current.selection.range ||
+                    Number(x) < parseInt(current.selection.range[0]) ||
+                    Number(x) > parseInt(current.selection.range[2]) ||
+                    Number(y) < parseInt(current.selection.range[1]) ||
+                    Number(y) > parseInt(current.selection.range[3])
+                ) {
+                    // A null index selects the whole row or column
+                    const column = x == null ? null : parseInt(x);
+                    const row = y == null ? null : parseInt(y);
+                    updateSelectionFromCoords.call(current, column, row, column, row, e);
                 }
+            } else if (role === 'nested') {
+                // The indexes of the columns under the nested header
+                const columns = e.target
+                    .getAttribute('data-column')!
+                    .split(',')
+                    .map((column) => parseInt(column));
 
-                // The id is depending on header and body
-                spreadsheet.contextMenu.contextmenu.open(e, items);
-                // Avoid the real one
-                e.preventDefault();
+                x = getElementIndex(e.target) - 1;
+                y = getElementIndex(e.target.parentElement!);
+
+                if (
+                    !current.selection.range ||
+                    columns[0] != parseInt(current.selection.range[0]) ||
+                    columns[columns.length - 1] != parseInt(current.selection.range[2]) ||
+                    current.selection.range[1] != null ||
+                    current.selection.range[3] != null
+                ) {
+                    updateSelectionFromCoords.call(current, columns[0], null, columns[columns.length - 1], null, e);
+                }
+            } else if (role === 'select-all') {
+                selectAll.call(current);
+            } else if (role === 'tabs') {
+                x = getElementIndex(e.target);
+            } else if (role === 'footer') {
+                x = getElementIndex(e.target) - 1;
+                y = getElementIndex(e.target.parentElement!);
             }
+
+            // Table found
+            let items = defaultContextMenu(current, parseInt(x), parseInt(y), role);
+
+            if (typeof spreadsheet.config.contextMenu === 'function') {
+                const result = spreadsheet.config.contextMenu(current, x, y, e, items, role, x, y);
+
+                if (result) {
+                    items = result;
+                } else if (result === false) {
+                    return;
+                }
+            }
+
+            if (typeof spreadsheet.plugins === 'object') {
+                Object.entries(spreadsheet.plugins).forEach(function ([, plugin]) {
+                    if (typeof plugin.contextMenu === 'function') {
+                        const result = plugin.contextMenu(
+                            current,
+                            x !== null ? parseInt(x) : null,
+                            y !== null ? parseInt(y) : null,
+                            e,
+                            items,
+                            role,
+                            x !== null ? parseInt(x) : null,
+                            y !== null ? parseInt(y) : null
+                        );
+
+                        if (result) {
+                            items = result;
+                        }
+                    }
+                });
+            }
+
+            // The id is depending on header and body
+            spreadsheet.contextMenu.contextmenu.open(e, items);
+            // Avoid the real one
+            e.preventDefault();
         }
     }
 };
