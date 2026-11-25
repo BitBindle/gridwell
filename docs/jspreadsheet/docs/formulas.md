@@ -39,6 +39,7 @@ A summary of configurations related to the use of formulas.
 | parseFormulas?: boolean          | Enable formula calculations. Default: true                        |
 | debugFormulas?: boolean          | Enable the formula debug notices. Default: false                  |
 | autoIncrement?: boolean          | Formula variable increment on cloning or copying. Default: true   |
+| formulaEngine?: Function         | Calculate formulas with an engine of the application in place of the formula plugin. The engine reads the raw values of the referenced cells and calculates referenced formulas itself. A formula that refers to its own cell shows #ERROR, and the engine does not get it.<br/>formulaEngine(worksheet: Object, expression: String, x: Number, y: Number) => Any |
 
 
 ### Events

@@ -414,6 +414,19 @@ declare namespace jspreadsheet {
         debugFormulas?: boolean;
 
         /**
+         * Calculate formulas with an engine of the application in place of the formula plugin.
+         * The worksheet does not calculate the referenced cells first. The engine reads their raw values and calculates referenced formulas itself.
+         * The worksheet still calculates the dependent cells again when a referenced cell changes.
+         * A formula that refers to its own cell shows "#ERROR", and the engine does not get it.
+         * @param instance - Worksheet of the formula.
+         * @param expression - Formula text as typed, with the "=", or the text that `onbeforeformula` returned.
+         * @param x - Column index of the cell. Undefined when `executeFormula` gets no coordinates.
+         * @param y - Row index of the cell. Undefined when `executeFormula` gets no coordinates.
+         * @returns Value that the cell shows. If the function throws, the cell shows "#ERROR".
+         */
+        formulaEngine?: (instance: WorksheetInstance, expression: string, x?: number, y?: number) => CellValue;
+
+        /**
          * Fullscreen mode.
          * @default false
          */
