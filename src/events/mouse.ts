@@ -2,7 +2,6 @@ import { closeEditor, openEditor } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
 import { resetSelection, selectAll, updateCornerPosition, updateSelectionFromCoords } from '../utils/selection.js';
 import { copyData } from '../utils/fill.js';
-import { openFilter } from '../utils/filter.js';
 import { setWidth } from '../utils/columns.js';
 import { moveRow, setHeight } from '../utils/rows.js';
 import { getElement, getIndex } from './helpers.js';
@@ -787,7 +786,7 @@ export const doubleClickControls = function (e: TargetEvent<MouseEvent>) {
             // Column
             const columnId = parseInt(e.target.getAttribute('data-x'));
             // Open filter
-            openFilter.call(current, columnId);
+            current.view.openFilter(columnId);
         } else {
             // Get table
             const jssTable = getElement(e.target);

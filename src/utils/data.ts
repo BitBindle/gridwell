@@ -3,7 +3,6 @@ import { updateCell } from './render.js';
 import { updateTable } from './table.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import dispatch from './dispatch.js';
-import { updatePagination } from './pagination.js';
 import { getCoordsFromRange } from './helpers.js';
 import { updateGridSize, updateTabStop } from './accessibility.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
@@ -114,7 +113,7 @@ export const setData: WorksheetMethod<'setData'> = function (data) {
     if (obj.options.lazyLoading == true) {
         // Do not create pagination with lazyloading activated
     } else if (obj.options.pagination) {
-        updatePagination.call(obj);
+        obj.view.updatePagination();
     }
 
     // Merge cells

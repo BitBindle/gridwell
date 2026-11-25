@@ -32,21 +32,17 @@ import {
     updateSelectionFromCoords,
 } from './selection.js';
 import { deleteRow, getHeight, getRowData, hideRow, insertRow, moveRow, setHeight, setRowData, showRow } from './rows.js';
-import { resetSearch, search } from './search.js';
 import { getHeader, getHeaders, setHeader } from './headers.js';
-import { page, quantiyOfPages, whichPage } from './pagination.js';
 import { download } from './download.js';
 import { down, first, last, left, right, up } from './keys.js';
 import { createNestedHeader } from './headers.js';
 import { hideIndex, showIndex } from './rows.js';
 import { getWorksheetActive } from './activeWorksheet.js';
-import { orderBy } from './orderBy.js';
 import { getWorksheetConfig, setConfig } from './config.js';
 import { closeEditor, openEditor } from './editor.js';
 import dispatch from './dispatch.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import { copy, paste } from './copyPaste.js';
-import { openFilter, resetFilters } from './filter.js';
 import { redo, undo } from './history.js';
 import { setGridFocusEvents, setGridLabels, setGridRoles } from './accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
@@ -708,8 +704,18 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.merges.remove(cellName, data);
         },
     ],
-    ['search', search],
-    ['resetSearch', resetSearch],
+    [
+        'search',
+        function (this: Worksheet, query: string) {
+            return this.view.search(query);
+        },
+    ],
+    [
+        'resetSearch',
+        function (this: Worksheet) {
+            return this.view.resetSearch();
+        },
+    ],
     ['getHeader', getHeader],
     ['getHeaders', getHeaders],
     ['setHeader', setHeader],
@@ -743,8 +749,18 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
     ['deleteColumn', deleteColumn],
     ['getColumnData', getColumnData],
     ['setColumnData', setColumnData],
-    ['whichPage', whichPage],
-    ['page', page],
+    [
+        'whichPage',
+        function (this: Worksheet, row: number) {
+            return this.view.whichPage(row);
+        },
+    ],
+    [
+        'page',
+        function (this: Worksheet, pageNumber: number) {
+            return this.view.page(pageNumber);
+        },
+    ],
     ['download', download],
     [
         'getComments',
@@ -758,7 +774,12 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.comments.set(cellId, comments);
         },
     ],
-    ['orderBy', orderBy],
+    [
+        'orderBy',
+        function (this: Worksheet, column: number, order?: 0 | 1) {
+            return this.view.orderBy(column, order);
+        },
+    ],
     ['undo', undo],
     ['redo', redo],
     [
@@ -821,7 +842,12 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
         },
     ],
     ['getDataFromRange', getDataFromRange],
-    ['quantiyOfPages', quantiyOfPages],
+    [
+        'quantiyOfPages',
+        function (this: Worksheet) {
+            return this.view.countPages();
+        },
+    ],
     ['getRange', getRange],
     ['isSelected', isSelected],
     [
@@ -845,8 +871,18 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
     ['left', left],
     ['right', right],
     ['up', up],
-    ['openFilter', openFilter],
-    ['resetFilters', resetFilters],
+    [
+        'openFilter',
+        function (this: Worksheet, columnId: number) {
+            return this.view.openFilter(columnId);
+        },
+    ],
+    [
+        'resetFilters',
+        function (this: Worksheet) {
+            return this.view.resetFilters();
+        },
+    ],
 ];
 
 // The public methods are on the prototype, as the methods of a class: not enumerable, and an instance can replace one
