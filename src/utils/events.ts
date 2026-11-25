@@ -368,7 +368,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                         }
 
                         // Update selection
-                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, null as any, o, null as any, d, e);
+                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, null, o, null, d, e);
                     }
                 } else {
                     // Jclose
@@ -1147,7 +1147,7 @@ const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
                         libraryBase.jspreadsheet.current.selectedCell[1] != null ||
                         libraryBase.jspreadsheet.current.selectedCell[3] != null
                     ) {
-                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, columns[0], null as any, columns[columns.length - 1], null as any, e);
+                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, columns[0], null, columns[columns.length - 1], null, e);
                     }
                 } else if (role === 'select-all') {
                     selectAll.call(libraryBase.jspreadsheet.current);
