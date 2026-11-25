@@ -145,3 +145,11 @@ assertType<Equals<ReturnType<typeof worksheet.history.back>, jspreadsheet.Histor
 void worksheet.historyIndex;
 // @ts-expect-error The flag is history.ignore
 void worksheet.ignoreHistory;
+
+// What a worksheet copied is in its clipboard
+assertType<Equals<typeof worksheet.clipboard.data, string>>();
+assertType<Equals<typeof worksheet.clipboard.textarea, HTMLTextAreaElement>>();
+// @ts-expect-error The copied text is clipboard.data
+void worksheet.data;
+// @ts-expect-error The textarea is clipboard.textarea
+void worksheet.textarea;

@@ -187,7 +187,7 @@ describe('Paste', () => {
         sheet.hideRow(0);
         sheet.hideColumn(0);
         sheet.updateSelectionFromCoords(2, 2, 2, 2);
-        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], sheet.data);
+        sheet.paste(sheet.selectedCell[0], sheet.selectedCell[1], sheet.clipboard.data);
 
         expect(sheet.getData()).to.eql([
             [1, 2, '', ''],
@@ -223,7 +223,7 @@ describe('Paste', () => {
             ['', '', '', '', '', '', '', '', '', ''],
         ]);
 
-        sheet.paste(7, 2, sheet.data);
+        sheet.paste(7, 2, sheet.clipboard.data);
 
         expect(sheet.getData()).to.eql([
             [1, 2, 3, '', '', '', '', '', '', '', '', ''],
@@ -314,7 +314,7 @@ describe('Paste', () => {
         sheet.setStyle('A1', 'color', 'red');
         sheet.updateSelectionFromCoords(0, 0, 1, 1);
         sheet.copy();
-        sheet.paste(2, 2, sheet.data);
+        sheet.paste(2, 2, sheet.clipboard.data);
         expect(sheet.getData()).to.eql([
             ['Mazda', 2001, 2000, 1],
             ['Peugeot', 2010, 5000, '=B2+C2'],
@@ -340,7 +340,7 @@ describe('Paste', () => {
         sheet.updateSelectionFromCoords(0, 0, 1, 0);
         sheet.copy();
         sheet.updateSelectionFromCoords(0, 2, 4, 4);
-        sheet.paste(0, 2, sheet.data);
+        sheet.paste(0, 2, sheet.clipboard.data);
         expect(sheet.getData()).to.eql([
             ['Mazda', 2001, 2000, 1],
             ['Peugeot', 2010, 5000, '=B2+C2'],
@@ -400,7 +400,7 @@ describe('Paste', () => {
         from.copy();
         const to = sheets[1];
         to.updateSelectionFromCoords(0, 2, 4, 4);
-        to.paste(0, 2, from.data);
+        to.paste(0, 2, from.clipboard.data);
         expect(to.getData()).to.eql([
             ['Mazda', 2001, 2000, 1],
             ['Peugeot', 2010, 5000, '=B2+C2'],
@@ -580,9 +580,158 @@ describe('Cut', () => {
             worksheet.copy(true);
 
             expect(worksheet.getData()).to.deep.equal([['', 'b']]);
-            expect(worksheet.data).to.equal('a');
+            expect(worksheet.clipboard.data).to.equal('a');
         } finally {
             document.execCommand = execCommand;
         }
+    });
+});
+
+describe('The styles of the copied cells', () => {
+    const create = (options) =>
+        jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b'],
+                        ['', ''],
+                    ],
+                    style: { A1: 'color:red', B1: 'color:blue' },
+                },
+            ],
+            ...options,
+        })[0];
+
+    it('are kept when oncopy cancels a copy', () => {
+        let cancel = false;
+        const worksheet = create({ oncopy: () => (cancel ? false : undefined) });
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.copy();
+        const copied = worksheet.clipboard.data;
+
+        cancel = true;
+        worksheet.updateSelectionFromCoords(1, 0, 1, 0);
+        worksheet.copy();
+
+        worksheet.updateSelectionFromCoords(0, 1, 0, 1);
+        worksheet.paste(0, 1, copied);
+
+        expect(worksheet.getValueFromCoords(0, 1)).to.equal('a');
+        expect(worksheet.getStyle('A2', 'color')).to.equal('red');
+    });
+
+    it('are kept when the data is downloaded', () => {
+        const createObjectURL = URL.createObjectURL;
+        URL.createObjectURL = () => 'blob:test';
+
+        try {
+            const worksheet = create();
+
+            worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+            worksheet.copy();
+            const copied = worksheet.clipboard.data;
+
+            worksheet.download();
+
+            worksheet.updateSelectionFromCoords(0, 1, 0, 1);
+            worksheet.paste(0, 1, copied);
+
+            expect(worksheet.getValueFromCoords(0, 1)).to.equal('a');
+            expect(worksheet.getStyle('A2', 'color')).to.equal('red');
+        } finally {
+            URL.createObjectURL = createObjectURL;
+        }
+    });
+});
+
+describe('The clipboard', () => {
+    const create = () =>
+        jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b'],
+                        ['c', 'd'],
+                    ],
+                    style: { A1: 'color:red' },
+                },
+            ],
+        })[0];
+
+    it('is empty before the first copy', () => {
+        const worksheet = create();
+
+        expect(worksheet.clipboard.data).to.equal('');
+        expect(worksheet.clipboard.hash).to.equal(null);
+        expect(worksheet.clipboard.style).to.deep.equal([]);
+        expect(worksheet.clipboard.matches('')).to.equal(false);
+    });
+
+    it('keeps the text and the styles of a copy', () => {
+        const commands = [];
+        const execCommand = document.execCommand;
+        document.execCommand = (command) => commands.push(command);
+
+        try {
+            const worksheet = create();
+
+            worksheet.updateSelectionFromCoords(0, 0, 1, 0);
+            worksheet.copy();
+
+            expect(commands).to.deep.equal(['copy']);
+            expect(worksheet.clipboard.textarea.value).to.equal('a\tb');
+            expect(worksheet.clipboard.data).to.equal('a\tb');
+            expect(worksheet.clipboard.style.length).to.equal(2);
+            expect(worksheet.clipboard.style[0]).to.include('color: red');
+            expect(worksheet.clipboard.matches('a\tb')).to.equal(true);
+            expect(worksheet.clipboard.matches('a\tc')).to.equal(false);
+        } finally {
+            document.execCommand = execCommand;
+        }
+    });
+
+    it('draws the border around the copied cells until the next paste', () => {
+        const worksheet = create();
+        const cell = (x, y) => worksheet.records[y][x].element;
+
+        worksheet.updateSelectionFromCoords(0, 0, 1, 0);
+        worksheet.copy();
+
+        expect(cell(0, 0).classList.contains('copying')).to.equal(true);
+        expect(cell(0, 0).classList.contains('copying-left')).to.equal(true);
+        expect(cell(1, 0).classList.contains('copying-right')).to.equal(true);
+        expect(cell(0, 1).classList.contains('copying')).to.equal(false);
+
+        worksheet.updateSelectionFromCoords(0, 1, 0, 1);
+        worksheet.paste(0, 1, worksheet.clipboard.data);
+
+        expect(root.querySelectorAll('.copying').length).to.equal(0);
+        expect(worksheet.getStyle('A2', 'color')).to.equal('red');
+    });
+
+    it('is the textarea that the worksheet labels', () => {
+        const worksheet = create();
+
+        expect(worksheet.content.contains(worksheet.clipboard.textarea)).to.equal(true);
+        // jsdom does not reflect ariaHidden to the attribute
+        expect(worksheet.clipboard.textarea.ariaHidden).to.equal('true');
+        expect(worksheet.clipboard.textarea.tabIndex).to.equal(-1);
+    });
+
+    it('is not shared between worksheets', async () => {
+        const worksheets = jspreadsheet(root, {
+            worksheets: [{ data: [['A']] }, { data: [['B']] }],
+        });
+
+        // The worksheets after the first are built asynchronously
+        await new Promise((resolve) => setTimeout(resolve));
+
+        worksheets[0].updateSelectionFromCoords(0, 0, 0, 0);
+        worksheets[0].copy();
+
+        expect(worksheets[0].clipboard.data).to.equal('A');
+        expect(worksheets[1].clipboard.data).to.equal('');
+        expect(worksheets[0].clipboard).to.not.equal(worksheets[1].clipboard);
     });
 });

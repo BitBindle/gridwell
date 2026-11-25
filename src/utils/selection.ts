@@ -165,17 +165,6 @@ export const updateSelection = function (this: Worksheet, el1: HTMLElement, el2?
     updateSelectionFromCoords.call(obj, x1, y1, x2, y2, origin);
 };
 
-export const removeCopyingSelection = function () {
-    const copying = document.querySelectorAll('.jss_worksheet .copying');
-    for (let i = 0; i < copying.length; i++) {
-        copying[i].classList.remove('copying');
-        copying[i].classList.remove('copying-left');
-        copying[i].classList.remove('copying-right');
-        copying[i].classList.remove('copying-top');
-        copying[i].classList.remove('copying-bottom');
-    }
-};
-
 // A null x1 selects the rows from y1 to y2, and a null y1 selects the columns from x1 to x2
 export const updateSelectionFromCoords = function (
     this: Worksheet,
@@ -383,7 +372,7 @@ export const updateSelectionFromCoords = function (
     if (previousState == 0) {
         dispatch.call(obj, 'onfocus', obj);
 
-        removeCopyingSelection();
+        obj.clipboard.clearBorder();
     }
 
     // The top and bottom are null when every selected row is hidden (issue #59)
@@ -633,23 +622,6 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
 
     // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
     dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
-};
-
-export const hash = function (str: string) {
-    let hash = 0,
-        i,
-        chr;
-
-    if (!str || str.length === 0) {
-        return hash;
-    } else {
-        for (i = 0; i < str.length; i++) {
-            chr = str.charCodeAt(i);
-            hash = (hash << 5) - hash + chr;
-            hash |= 0;
-        }
-    }
-    return hash;
 };
 
 /**

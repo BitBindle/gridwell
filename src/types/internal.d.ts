@@ -8,6 +8,7 @@ import type jspreadsheet from '../jspreadsheet';
 import type { Tabs } from '../utils/tabs';
 import type { Spreadsheet } from '../Spreadsheet';
 import type { Worksheet } from '../Worksheet';
+import type { Clipboard } from '../components/Clipboard';
 import type { History } from '../components/History';
 
 /** The classes. Their fields are in WorksheetState and SpreadsheetState below. */
@@ -40,6 +41,8 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
 
     /** The public typings allow any record. The library stores the records in WorksheetHistoryRecord. */
     history: History;
+
+    clipboard: Clipboard;
 
     /** The cell that has the roving tabindex (the tab stop of the grid). */
     activeCell?: HTMLTableCellElement | null;

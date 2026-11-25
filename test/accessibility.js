@@ -277,7 +277,7 @@ describe('Accessible names', () => {
         const worksheet = instance[0];
         expect(worksheet.table.getAttribute('aria-label')).to.equal('Cars');
         expect(worksheet.headerContainer.children[0].getAttribute('aria-label')).to.equal('Select all');
-        expect(worksheet.textarea.getAttribute('aria-label')).to.equal('Clipboard helper');
+        expect(worksheet.clipboard.textarea.getAttribute('aria-label')).to.equal('Clipboard helper');
 
         worksheet.openEditor(worksheet.records[1][2].element);
 
@@ -298,7 +298,7 @@ describe('Accessible names', () => {
         const worksheet = instance[0];
 
         expect(worksheet.headerContainer.children[0].getAttribute('aria-label')).to.equal('Alles auswählen');
-        expect(worksheet.textarea.getAttribute('aria-label')).to.equal('Zwischenablage');
+        expect(worksheet.clipboard.textarea.getAttribute('aria-label')).to.equal('Zwischenablage');
 
         worksheet.openEditor(worksheet.records[2][0].element);
 
@@ -360,7 +360,7 @@ describe('Accessible names', () => {
             const worksheet = instance[0];
 
             expect(worksheet.headerContainer.children[0].getAttribute('aria-label')).to.equal('Selecionar tudo');
-            expect(worksheet.textarea.getAttribute('aria-label')).to.equal('Área de transferência');
+            expect(worksheet.clipboard.textarea.getAttribute('aria-label')).to.equal('Área de transferência');
 
             worksheet.openEditor(worksheet.records[0][1].element);
 

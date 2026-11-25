@@ -54,7 +54,9 @@ what it changes, and lists its breaking changes in UPGRADING.md.
    spreadsheet.
 2. **History.** The undo history and the `ignoreHistory` flag move into `components/History.ts`. Applying a record
    (`undo` and `redo` in `utils/history.ts`) stays a worksheet method until the functions it calls are components.
-3. **Clipboard.** Copy, cut, paste and the copied data move into `components/Clipboard.ts`.
+3. **Clipboard.** Copy, cut, paste and the copied data move into `components/Clipboard.ts`. The copied text, its styles,
+   the textarea and the copy border have moved; `copy` and `paste` stay worksheet methods in `utils/copyPaste.ts` for
+   the same reason as `undo` and `redo`.
 4. **Editor.** `edition` and the editor types move into `components/Editor.ts`.
 5. **Selection.** `selectedCell`, `highlighted`, the borders, the active cell and the focus state move into
    `components/Selection.ts`, together with the accessibility code that follows the selection.

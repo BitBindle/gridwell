@@ -4,7 +4,7 @@ import { parseCSV } from './helpers.js';
 import dispatch from './dispatch.js';
 import { updateCell, updateFormulaChain, updateTable, updateTableReferences } from './internal.js';
 import { downGet, rightGet } from './keys.js';
-import { hash, removeCopyingSelection, updateSelectionFromCoords } from './selection.js';
+import { updateSelectionFromCoords } from './selection.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
@@ -91,8 +91,8 @@ export const copy = function (
         copyHeader = true;
     }
 
-    // Reset container
-    obj.style = [];
+    // The styles of the copied cells, which a paste of the same text applies
+    const style: string[] = [];
 
     // Go through the columns to get the data
     for (let j = 0; j < y; j++) {
@@ -135,7 +135,7 @@ export const copy = function (
                 // Get style
                 // createCell gives each cell a style attribute
                 const cellStyle = obj.records[j][i].element.getAttribute('style')!.replace('display: none;', '');
-                obj.style.push(cellStyle ? cellStyle : '');
+                style.push(cellStyle ? cellStyle : '');
             }
         }
 
@@ -187,45 +187,26 @@ export const copy = function (
             return false;
         }
 
-        obj.textarea.value = strLabel;
-        obj.textarea.select();
-        document.execCommand('copy');
+        obj.clipboard.write(strLabel);
     }
 
-    // Keep data
-    if (processed == true) {
-        obj.data = strLabel;
-    } else {
-        obj.data = str;
-    }
-    // Keep non visible information
-    obj.hashString = hash.call(obj, obj.data);
+    const data = processed == true ? strLabel : str;
 
-    // Any exiting border should go
+    // A copy to the clipboard keeps the data, so that a paste of the same text gets the styles too. A cancelled copy or a
+    // download keeps what was copied before.
     if (!returnData) {
-        removeCopyingSelection.call(obj);
+        obj.clipboard.keep(data, style);
+
+        // Any exiting border should go
+        obj.clipboard.clearBorder();
 
         // Border
         if (obj.highlighted) {
-            for (let i = 0; i < obj.highlighted.length; i++) {
-                obj.highlighted[i].element.classList.add('copying');
-                if (obj.highlighted[i].element.classList.contains('highlight-left')) {
-                    obj.highlighted[i].element.classList.add('copying-left');
-                }
-                if (obj.highlighted[i].element.classList.contains('highlight-right')) {
-                    obj.highlighted[i].element.classList.add('copying-right');
-                }
-                if (obj.highlighted[i].element.classList.contains('highlight-top')) {
-                    obj.highlighted[i].element.classList.add('copying-top');
-                }
-                if (obj.highlighted[i].element.classList.contains('highlight-bottom')) {
-                    obj.highlighted[i].element.classList.add('copying-bottom');
-                }
-            }
+            obj.clipboard.showBorder(obj.highlighted);
         }
     }
 
-    return obj.data;
+    return data;
 };
 
 /**
@@ -240,12 +221,12 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data) {
     const obj = this;
 
     // Controls
-    const dataHash = hash(data);
-    let style = dataHash == obj.hashString ? obj.style : null;
+    const isCopy = obj.clipboard.matches(data);
+    let style = isCopy ? obj.clipboard.style : null;
 
     // Depending on the behavior
-    if (dataHash == obj.hashString) {
-        data = obj.data;
+    if (isCopy) {
+        data = obj.clipboard.data;
     }
 
     // Split new line. The rows and columns of the text, which can grow below to fill the selection, or be replaced by onbeforepaste
@@ -460,5 +441,5 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data) {
         dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords as unknown as jspreadsheet.CellChange[]);
     }
 
-    removeCopyingSelection();
+    obj.clipboard.clearBorder();
 };

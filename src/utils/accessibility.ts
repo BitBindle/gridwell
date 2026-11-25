@@ -87,7 +87,7 @@ export const setGridLabels = function (this: Worksheet) {
 
     obj.headerContainer.children[0].setAttribute('aria-label', getLabelText.call(obj.parent, 'selectAll'));
 
-    obj.textarea.setAttribute('aria-label', getLabelText.call(obj.parent, 'clipboardHelper'));
+    obj.clipboard.textarea.setAttribute('aria-label', getLabelText.call(obj.parent, 'clipboardHelper'));
 };
 
 /**
@@ -339,7 +339,7 @@ export const updateActiveCell = function (this: Worksheet, x: number, y: number,
 
     const active = getActiveElement.call(obj);
     const pointer = origin && origin.target && (origin.target as Node).nodeType === 1 && obj.table.contains(origin.target as Node);
-    const inGrid = pointer || (!!active && (active === obj.parent.element || active === obj.textarea || obj.table.contains(active)));
+    const inGrid = pointer || (!!active && (active === obj.parent.element || active === obj.clipboard.textarea || obj.table.contains(active)));
     const dropped = isFocusLost() && libraryBase.jspreadsheet.current === obj;
     // The focus was in the grid at the last selection
     obj.focusInGrid = inGrid || (dropped && obj.focusInGrid === true);

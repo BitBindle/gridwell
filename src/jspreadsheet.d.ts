@@ -334,6 +334,38 @@ declare namespace jspreadsheet {
     }
 
     /**
+     * What a worksheet copied last, {@link WorksheetInstance.clipboard}.
+     */
+    interface WorksheetClipboard {
+        /** The text of the last copy, or an empty string before the first copy. */
+        data: string;
+
+        /** The hash of {@link WorksheetClipboard.data}, or null before the first copy. */
+        hash: number | null;
+
+        /** The styles of the copied cells, one entry for each cell, by row. A paste of the copied text applies them. */
+        style: string[];
+
+        /** The hidden textarea that a copy selects, to put the text on the system clipboard. */
+        textarea: HTMLTextAreaElement;
+
+        /** Keep the text of a copy and the styles of its cells, without putting the text on the system clipboard. */
+        keep(data: string, style: string[]): void;
+
+        /** Whether text is the text of the last copy. */
+        matches(text: string): boolean;
+
+        /** Put text on the system clipboard. */
+        write(text: string): void;
+
+        /** Draw the dashed border around copied cells. */
+        showBorder(cells: { element: HTMLTableCellElement }[]): void;
+
+        /** Remove the dashed border from the cells of every worksheet in the document. */
+        clearBorder(): void;
+    }
+
+    /**
      * The undo history of a worksheet, {@link WorksheetInstance.history}.
      */
     interface WorksheetHistory {
@@ -1603,11 +1635,6 @@ declare namespace jspreadsheet {
         cursor: null | HTMLElement;
 
         /**
-         * Last content copied.
-         */
-        data: string;
-
-        /**
          * Remove columns.
          *
          * This method returns false if the {@link SpreadsheetOptions.onbeforedeletecolumn} event returns false or if the "This action will destroy any existing merged cells. Are you sure?" dialog receives a negative response.
@@ -1895,11 +1922,6 @@ declare namespace jspreadsheet {
         getWorksheetActive: () => number;
 
         /**
-         * @deprecated
-         */
-        hashString: null | number;
-
-        /**
          * HTML element that corresponds to the header row.
          */
         headerContainer: HTMLTableRowElement;
@@ -1939,6 +1961,11 @@ declare namespace jspreadsheet {
          * The undo history of the worksheet.
          */
         history: WorksheetHistory;
+
+        /**
+         * What the worksheet copied last.
+         */
+        clipboard: WorksheetClipboard;
 
         /**
          * Check if a cell is within the current selection.
@@ -2341,11 +2368,6 @@ declare namespace jspreadsheet {
         showRow: (rowNumber: number | number[]) => void;
 
         /**
-         * Styles of the cells that were copied.
-         */
-        style: string[];
-
-        /**
          * HTML table tag of this jss instance.
          */
         table: HTMLTableElement;
@@ -2354,11 +2376,6 @@ declare namespace jspreadsheet {
          * HTML tbody tag of this jss instance.
          */
         tbody: HTMLTableSectionElement;
-
-        /**
-         * HTML textarea tag used internally when copying cells.
-         */
-        textarea: HTMLTextAreaElement;
 
         /**
          * HTML thead tag of this jss instance.
