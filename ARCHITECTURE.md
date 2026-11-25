@@ -203,6 +203,9 @@ that changes it.
     `toggleCheckbox`, `openDropdown`, `openPicker`, `openHtml`, `openImage` and `openText`), closes it and saves the
     value (`close`), and toggles the highlighted checkboxes (`setCheckRadioValue`). `openEditor` and `closeEditor` call it.
 24. **The clipboard.** `copyPaste.ts` moves into `Clipboard`.
+    Done. `worksheet.clipboard` copies the cells (`copy`, with the private `getNestedHeadersText` and `getCopiedRows`)
+    and pastes text (`paste`, with the private `insertSpaceForPaste` and `pasteRows`). `quote` and `repeatToSelection`
+    use no worksheet and stay functions in `Clipboard.ts`. The public `copy`, `paste` and `download` call it.
 25. **The selection.** `selection.ts`, the moves of `keys.ts` and the accessibility code that follows the selection move
     into `Selection`; the fill with the selection corner (`fill.ts`) into `Pointer`.
 26. **Columns.** `Columns` (`columns.ts`, the headers in `headers.ts`, and the frozen columns in `freeze.ts` and

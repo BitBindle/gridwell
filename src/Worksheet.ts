@@ -37,7 +37,7 @@ export class Worksheet {
             this.element = element as Worksheet['element'];
         }
         this.history = new History();
-        this.clipboard = new Clipboard();
+        this.clipboard = new Clipboard(this);
         this.editor = new Editor(this);
         this.selection = new Selection();
         this.formulas = new Formulas(this);

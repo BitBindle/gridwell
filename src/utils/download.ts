@@ -1,4 +1,3 @@
-import { copy } from './copyPaste.js';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -16,7 +15,7 @@ export const download = function (this: Worksheet, includeHeaders?: boolean, pro
         let data = '';
 
         // Get data
-        data += copy.call(obj, false, obj.options.csvDelimiter, true, includeHeaders, true, undefined, processed);
+        data += obj.clipboard.copy(false, obj.options.csvDelimiter, true, includeHeaders, true, undefined, processed);
 
         // Download element
         const blob = new Blob(['\uFEFF' + data], { type: 'text/csv;charset=utf-8;' });

@@ -1,7 +1,6 @@
 import jSuites from 'jsuites';
 import libraryBase from '../utils/libraryBase.js';
 import { selectAll, updateSelectionFromCoords } from '../utils/selection.js';
-import { copy, paste } from '../utils/copyPaste.js';
 import version from '../utils/version.js';
 import { getCellNameFromCoords } from '../utils/helpers.js';
 import { getElementIndex, getRole } from './helpers.js';
@@ -141,7 +140,7 @@ const defaultContextMenu = function (worksheet: Worksheet, x: number, y: number,
             title: jSuites.translate('Copy') + '...',
             shortcut: 'Ctrl + C',
             onclick: function () {
-                copy.call(worksheet, true);
+                worksheet.clipboard.copy(true);
             },
         });
 
@@ -154,7 +153,7 @@ const defaultContextMenu = function (worksheet: Worksheet, x: number, y: number,
                     if (worksheet.selection.range) {
                         navigator.clipboard.readText().then(function (text) {
                             if (text) {
-                                paste.call(worksheet, worksheet.selection.range![0], worksheet.selection.range![1], text);
+                                worksheet.clipboard.paste(worksheet.selection.range![0], worksheet.selection.range![1], text);
                             }
                         });
                     }

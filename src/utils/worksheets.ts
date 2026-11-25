@@ -41,7 +41,6 @@ import { getWorksheetActive } from './activeWorksheet.js';
 import { getWorksheetConfig, setConfig } from './config.js';
 import dispatch from './dispatch.js';
 import { getIdFromColumnName } from './internalHelpers.js';
-import { copy, paste } from './copyPaste.js';
 import { redo, undo } from './history.js';
 import { setGridFocusEvents, setGridLabels, setGridRoles } from './accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
@@ -839,11 +838,16 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             if (cut) {
                 cutControls();
             } else {
-                copy.call(this, true);
+                this.clipboard.copy(true);
             }
         },
     ],
-    ['paste', paste],
+    [
+        'paste',
+        function (this: Worksheet, x: number, y: number, data: string) {
+            return this.clipboard.paste(x, y, data);
+        },
+    ],
     [
         'executeFormula',
         function (this: Worksheet, expression: string, x?: number, y?: number) {
