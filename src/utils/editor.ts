@@ -100,7 +100,8 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
         } else {
             // Native functions
             if (column && column.type == 'hidden') {
-                // Do nothing
+                // A hidden column has no editor: do not keep edition open
+                obj.edition = null;
             } else if (column && (column.type == 'checkbox' || column.type == 'radio')) {
                 // Get value
                 const value = (cell.children[0] as HTMLInputElement).checked ? false : true;

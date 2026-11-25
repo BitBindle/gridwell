@@ -128,4 +128,21 @@ describe('Editor', () => {
             expect(worksheet.getData()).to.deep.equal([['typed', 'b']]);
         });
     });
+
+    describe('Cells without an editor', () => {
+        it('does not edit a cell of type hidden', () => {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [{ data: [['id-7', '']], columns: [{ type: 'hidden' }, { type: 'text' }] }],
+            })[0];
+            const cell = worksheet.getCell('A1');
+
+            worksheet.openEditor(cell);
+            expect(worksheet.edition).to.equal(null);
+
+            worksheet.closeEditor(cell, false);
+            worksheet.closeEditor(cell, true);
+            expect(worksheet.edition).to.equal(null);
+            expect(worksheet.getValueFromCoords(0, 0)).to.equal('id-7');
+        });
+    });
 });
