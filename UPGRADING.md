@@ -50,3 +50,18 @@ stops new records in `worksheet.ignoreHistory`. It is now an object that holds a
 
 `worksheet.history.add(record)` keeps a record, as the library does for each change. `worksheet.undo()` and
 `worksheet.redo()` work as before, and the `onundo` and `onredo` events still get the record.
+
+## What a worksheet copied is in its clipboard
+
+The text that a worksheet copied last, the styles of the copied cells and the hidden textarea were fields of the
+worksheet. They are now in `worksheet.clipboard`:
+
+| Version 5              | Version 6                      |
+| ---------------------- | ------------------------------ |
+| `worksheet.data`       | `worksheet.clipboard.data`     |
+| `worksheet.style`      | `worksheet.clipboard.style`    |
+| `worksheet.hashString` | `worksheet.clipboard.hash`     |
+| `worksheet.textarea`   | `worksheet.clipboard.textarea` |
+
+`worksheet.clipboard.data` is an empty string before the first copy, where `worksheet.data` was undefined. A cancelled
+copy and `download()` no longer change it. `worksheet.copy()` and `worksheet.paste()` work as before.

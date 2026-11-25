@@ -202,13 +202,6 @@ const createTable = function (this: Worksheet) {
         obj.corner.style.display = 'none';
     }
 
-    // Textarea helper
-    obj.textarea = document.createElement('textarea');
-    obj.textarea.className = 'jss_textarea';
-    obj.textarea.id = 'jss_textarea';
-    obj.textarea.tabIndex = -1;
-    obj.textarea.ariaHidden = 'true';
-
     // Powered by Jspreadsheet
     const ads = document.createElement('a');
     ads.setAttribute('href', 'https://bossanova.uk/jspreadsheet/');
@@ -245,7 +238,7 @@ const createTable = function (this: Worksheet) {
     // Elements
     obj.content.appendChild(obj.table);
     obj.content.appendChild(obj.corner);
-    obj.content.appendChild(obj.textarea);
+    obj.content.appendChild(obj.clipboard.textarea);
     setGridLabels.call(obj);
 
     obj.element.appendChild(obj.content);
