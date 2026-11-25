@@ -131,6 +131,16 @@ that is hard to read but does not need a new owner. They change no behaviour.
     jsuites are not used, because they fail a strict check. A context menu item gets the element of the item. The
     library object has no index signature. The bundle is the same as before.
 
+15. **The editor types.** `openEditor` opens each column type in its own branch of one long function. Each type gets its
+    own function.
+    Done. `openEditor` finds the column and starts the edition, then calls `openCustomEditor`, `toggleCheckbox`,
+    `openDropdownEditor`, `openPickerEditor` (calendar and color), `openHtmlEditor`, `openImageEditor` or
+    `openTextEditor`. `createEditor`, which puts the editor element in the cell, is a function of the module.
+16. **The default toolbar.** `getDefault` in `utils/toolbar.ts` builds all the items of the default toolbar in one
+    function of more than 400 lines. Each item, or group of items, gets its own function.
+17. **The long builders.** `createTable`, `insertColumn`, `insertRow`, `copy` and `paste` are each more than 200 lines.
+    They are split into the steps they do.
+
 ## Rules for each step
 
 -   A step moves code; it does not rewrite it. Fix a bug that the move finds in its own commit, with a test.

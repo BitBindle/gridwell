@@ -6,6 +6,7 @@ import { getCellColumnIndex, getMask, isFormula } from './values.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import { getLabelText, restoreActiveCell } from './accessibility.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
+import type jspreadsheet from '../jspreadsheet';
 import type { CellChange } from '../jspreadsheet';
 import type { MaskOptions } from '../types/jsuites';
 import type { CalendarOptions, ColorOptions, DropdownOptions } from '../types/jsuites-module';
@@ -22,8 +23,352 @@ type EditorElement = HTMLInputElement & {
     mask?: MaskOptions;
 };
 
+/** The options of a column, as the worksheet keeps them. */
+type ColumnOptions = Worksheet['options']['columns'][number];
+
 /**
- * Open the editor
+ * Put a new editor of the given tag in a cell, with the size of the cell. The editor is the focus target in place of the
+ * cell, and a text editor gets the accessible name.
+ */
+const createEditor = function <K extends keyof HTMLElementTagNameMap>(cell: HTMLTableCellElement, type: K, label: string) {
+    // Cell information
+    const info = cell.getBoundingClientRect();
+
+    // Create dropdown
+    const editor = document.createElement(type);
+    editor.style.width = info.width + 'px';
+    editor.style.height = info.height - 2 + 'px';
+    editor.style.minHeight = info.height - 2 + 'px';
+
+    // Accessible name of a text editor
+    if (type === 'input' || type === 'textarea') {
+        editor.setAttribute('aria-label', label);
+    }
+
+    // The editor is the focus target, and it has its own name
+    cell.removeAttribute('tabindex');
+    cell.removeAttribute('aria-label');
+
+    // Edit cell
+    cell.classList.add('editor');
+    cell.innerHTML = '';
+    cell.appendChild(editor);
+
+    return editor;
+};
+
+/**
+ * The editor of a column with a custom type. A custom type without openEditor has no editor.
+ */
+const openCustomEditor = function (
+    this: Worksheet,
+    cell: HTMLTableCellElement,
+    x: number,
+    y: number,
+    column: ColumnOptions & { type: jspreadsheet.CustomEditor },
+    e: Parameters<jspreadsheet.WorksheetInstance['openEditor']>[2]
+) {
+    const obj = this;
+
+    if (typeof column.type.openEditor === 'function') {
+        // The editor is the focus target, and it has its own name
+        cell.removeAttribute('tabindex');
+        cell.removeAttribute('aria-label');
+
+        // Custom editors
+        column.type.openEditor(cell, obj.options.data[y][x], x, y, obj, column, e);
+
+        // On edition start
+        dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+    } else {
+        // A custom type without openEditor has no editor: do not keep edition open
+        obj.editor.end();
+    }
+};
+
+/**
+ * A checkbox or a radio has no editor: opening it toggles the value.
+ */
+const toggleCheckbox = function (this: Worksheet, cell: HTMLTableCellElement) {
+    const obj = this;
+
+    // Get value
+    const value = (cell.children[0] as HTMLInputElement).checked ? false : true;
+    // Toogle value
+    obj.setValue(cell, value);
+    // Do not keep edition open
+    obj.editor.end();
+};
+
+/**
+ * The editor of a dropdown column: an open jSuites dropdown with the items of the source, or of the filter.
+ * xText and yText are data-x and data-y of the cell, which the filter gets as text.
+ */
+const openDropdownEditor = function (
+    this: Worksheet,
+    cell: HTMLTableCellElement,
+    x: number,
+    y: number,
+    xText: string,
+    yText: string,
+    column: ColumnOptions,
+    label: string
+) {
+    const obj = this;
+
+    // Get current value: the id of an item, or the ids of the items with multiple
+    let value = obj.options.data[y][x] as string | number | string[];
+    if (column.multiple && !Array.isArray(value)) {
+        // A number has no split
+        value = ('' + value).split(column.delimiter || ';');
+    }
+
+    // Create dropdown
+    let source;
+
+    if (typeof column.filter == 'function') {
+        source = column.filter(obj.element, cell, xText, yText, column.source);
+    } else {
+        source = column.source;
+    }
+
+    // Do not change the original source
+    const data = [];
+    if (source) {
+        for (let j = 0; j < source.length; j++) {
+            data.push(source[j]);
+        }
+    }
+
+    // Create editor
+    const editor = createEditor(cell, 'div', label);
+
+    // On edition start
+    dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+
+    const options: DropdownOptions = {
+        data: data,
+        multiple: column.multiple ? true : false,
+        autocomplete: column.autocomplete ? true : false,
+        opened: true,
+        value: value,
+        width: '100%',
+        position: obj.options.tableOverflow == true || obj.parent.config.fullscreen == true ? true : false,
+        onclose: function () {
+            closeEditor.call(obj, cell, true);
+        },
+    };
+    if (column.options && column.options.type) {
+        options.type = column.options.type;
+    }
+    const dropdown = jSuites.dropdown(editor, options);
+    if (dropdown && dropdown.header) {
+        dropdown.header.setAttribute('aria-label', label);
+        // The editor is the focus target, as the other editors
+        if (!editor.contains(document.activeElement)) {
+            dropdown.header.focus({ preventScroll: true });
+        }
+    }
+};
+
+/**
+ * The editor of a calendar or a color column: an input with an open jSuites calendar or color picker.
+ */
+const openPickerEditor = function (this: Worksheet, cell: HTMLTableCellElement, x: number, y: number, column: ColumnOptions, label: string) {
+    const obj = this;
+
+    // Value
+    const value = obj.options.data[y][x];
+    // Create editor
+    const editor = createEditor(cell, 'input', label);
+
+    dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+
+    // The input converts the value to text
+    editor.value = value as string;
+
+    // The options of the calendar or the color picker
+    const options: CalendarOptions & ColorOptions = column.options ? { ...column.options } : {};
+
+    if (obj.options.tableOverflow == true || obj.parent.config.fullscreen == true) {
+        options.position = true;
+    }
+    // The value of a calendar or a color cell is text
+    options.value = obj.options.data[y][x] as string;
+    options.opened = true;
+    // The color picker gives its instance as the second argument, and the calendar nothing
+    options.onclose = function (el: HTMLElement, value?: unknown) {
+        closeEditor.call(obj, cell, true);
+    };
+    // Current value
+    if (column.type == 'color') {
+        jSuites.color(editor, options);
+
+        const rect = cell.getBoundingClientRect();
+
+        if (options.position) {
+            // The color picker adds its container after the input
+            ((editor.nextSibling as HTMLElement).children[1] as HTMLElement).style.top = rect.top + rect.height + 'px';
+            ((editor.nextSibling as HTMLElement).children[1] as HTMLElement).style.left = rect.left + 'px';
+        }
+    } else {
+        if (!options.format) {
+            options.format = 'YYYY-MM-DD';
+        }
+
+        jSuites.calendar(editor, options);
+    }
+    // Focus on editor
+    editor.focus();
+};
+
+/**
+ * The editor of an html column: a jSuites rich text editor over the cell, kept inside the window.
+ */
+const openHtmlEditor = function (this: Worksheet, cell: HTMLTableCellElement, x: number, y: number, column: ColumnOptions, label: string) {
+    const obj = this;
+
+    const value = obj.options.data[y][x];
+    // Create editor
+    const editor = createEditor(cell, 'div', label);
+
+    dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+
+    editor.style.position = 'relative';
+    const div = document.createElement('div');
+    div.classList.add('jss_richtext');
+    editor.appendChild(div);
+    // The jsuites typings miss the editor property
+    const richText = jSuites.editor(div, {
+        focus: true,
+        value: value as string,
+    }) as ReturnType<typeof jSuites.editor> & { editor?: HTMLElement };
+    // Accessible role and name of the rich text editor
+    if (richText && richText.editor) {
+        richText.editor.setAttribute('role', 'textbox');
+        richText.editor.setAttribute('aria-multiline', 'true');
+        richText.editor.setAttribute('aria-label', label);
+    }
+    const rect = cell.getBoundingClientRect();
+    const rectContent = div.getBoundingClientRect();
+    if (window.innerHeight < rect.bottom + rectContent.height) {
+        div.style.top = rect.bottom - (rectContent.height + 2) + 'px';
+    } else {
+        div.style.top = rect.top + 'px';
+    }
+
+    if (window.innerWidth < rect.left + rectContent.width) {
+        div.style.left = rect.right - (rectContent.width + 2) + 'px';
+    } else {
+        div.style.left = rect.left + 'px';
+    }
+};
+
+/**
+ * The editor of an image column: a jSuites image upload over the cell, with the image of the cell.
+ */
+const openImageEditor = function (this: Worksheet, cell: HTMLTableCellElement, x: number, y: number, column: ColumnOptions, label: string) {
+    const obj = this;
+
+    // Value
+    const img = cell.children[0] as HTMLImageElement;
+    // Create editor
+    const editor = createEditor(cell, 'div', label);
+
+    dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+
+    editor.style.position = 'relative';
+    const div = document.createElement('div');
+    div.classList.add('jclose');
+    if (img && img.src) {
+        div.appendChild(img);
+    }
+    editor.appendChild(div);
+    jSuites.image(div, column);
+    const rect = cell.getBoundingClientRect();
+    const rectContent = div.getBoundingClientRect();
+    if (window.innerHeight < rect.bottom + rectContent.height) {
+        div.style.top = rect.top - (rectContent.height + 2) + 'px';
+    } else {
+        div.style.top = rect.top + 'px';
+    }
+
+    div.style.left = rect.left + 'px';
+};
+
+/**
+ * The text editor: an input, or a text area when the column wraps its text, with the mask of the column. empty opens it
+ * without the value of the cell.
+ */
+const openTextEditor = function (
+    this: Worksheet,
+    cell: HTMLTableCellElement,
+    x: number,
+    y: number,
+    // The type of the column options, as openEditor reads them. The code still checks for a column.
+    column: ColumnOptions,
+    label: string,
+    empty: boolean | undefined
+) {
+    const obj = this;
+
+    // Value
+    const value = empty == true ? '' : obj.options.data[y][x];
+
+    // Basic editor
+    let editor;
+
+    if ((!column || column.wordWrap != false) && (obj.options.wordWrap == true || (column && column.wordWrap == true))) {
+        editor = createEditor(cell, 'textarea', label);
+    } else {
+        editor = createEditor(cell, 'input', label);
+    }
+
+    dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+
+    editor.focus();
+    // The input converts the value to text
+    editor.value = value as string;
+
+    // Column options
+    const options = column;
+
+    // Apply format when is not a formula
+    if (!isFormula(value)) {
+        if (options) {
+            // Format
+            const opt = getMask(options);
+
+            if (opt) {
+                // Masking
+                if (!options.disabledMaskOnEdition) {
+                    if (options.mask) {
+                        const m = options.mask.split(';');
+                        editor.setAttribute('data-mask', m[0]);
+                    } else if (options.locale) {
+                        editor.setAttribute('data-locale', options.locale);
+                    }
+                }
+                // Input
+                opt.input = editor;
+                // Configuration
+                (editor as EditorElement).mask = opt;
+                // Do not treat the decimals
+                // The jsuites typings miss render and extract
+                jSuites.mask.render(value, opt, false);
+            }
+        }
+    }
+
+    editor.onblur = function () {
+        closeEditor.call(obj, cell, true);
+    };
+    editor.scrollLeft = editor.scrollWidth;
+};
+
+/**
+ * Open the editor of a cell: the editor of its column type, or of the custom type. A read-only cell, a hidden column and
+ * a custom type without openEditor have no editor, and a checkbox or a radio toggles.
  *
  * @param object cell
  * @return void
@@ -51,34 +396,6 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
         obj.records[y][x - 1].element.style.overflow = 'hidden';
     }
 
-    // Create editor
-    const createEditor = function <K extends keyof HTMLElementTagNameMap>(type: K) {
-        // Cell information
-        const info = cell.getBoundingClientRect();
-
-        // Create dropdown
-        const editor = document.createElement(type);
-        editor.style.width = info.width + 'px';
-        editor.style.height = info.height - 2 + 'px';
-        editor.style.minHeight = info.height - 2 + 'px';
-
-        // Accessible name of a text editor
-        if (type === 'input' || type === 'textarea') {
-            editor.setAttribute('aria-label', label);
-        }
-
-        // The editor is the focus target, and it has its own name
-        cell.removeAttribute('tabindex');
-        cell.removeAttribute('aria-label');
-
-        // Edit cell
-        cell.classList.add('editor');
-        cell.innerHTML = '';
-        cell.appendChild(editor);
-
-        return editor;
-    };
-
     // Readonly
     if (cell.classList.contains('readonly') == true) {
         // Do nothing
@@ -88,243 +405,25 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
 
         // If there is a custom editor for it
         if (column && typeof column.type === 'object') {
-            if (typeof column.type.openEditor === 'function') {
-                // The editor is the focus target, and it has its own name
-                cell.removeAttribute('tabindex');
-                cell.removeAttribute('aria-label');
-
-                // Custom editors
-                column.type.openEditor(cell, obj.options.data[y][x], x, y, obj, column, e);
-
-                // On edition start
-                dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
-            } else {
-                // A custom type without openEditor has no editor: do not keep edition open
-                obj.editor.end();
-            }
+            // The test of typeof narrows the type, not the column
+            openCustomEditor.call(obj, cell, x, y, column as ColumnOptions & { type: jspreadsheet.CustomEditor }, e);
         } else {
             // Native functions
             if (column && column.type == 'hidden') {
                 // A hidden column has no editor: do not keep edition open
                 obj.editor.end();
             } else if (column && (column.type == 'checkbox' || column.type == 'radio')) {
-                // Get value
-                const value = (cell.children[0] as HTMLInputElement).checked ? false : true;
-                // Toogle value
-                obj.setValue(cell, value);
-                // Do not keep edition open
-                obj.editor.end();
+                toggleCheckbox.call(obj, cell);
             } else if (column && column.type == 'dropdown') {
-                // Get current value: the id of an item, or the ids of the items with multiple
-                let value = obj.options.data[y][x] as string | number | string[];
-                if (column.multiple && !Array.isArray(value)) {
-                    // A number has no split
-                    value = ('' + value).split(column.delimiter || ';');
-                }
-
-                // Create dropdown
-                let source;
-
-                if (typeof column.filter == 'function') {
-                    source = column.filter(obj.element, cell, xText, yText, column.source);
-                } else {
-                    source = column.source;
-                }
-
-                // Do not change the original source
-                const data = [];
-                if (source) {
-                    for (let j = 0; j < source.length; j++) {
-                        data.push(source[j]);
-                    }
-                }
-
-                // Create editor
-                const editor = createEditor('div');
-
-                // On edition start
-                dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
-
-                const options: DropdownOptions = {
-                    data: data,
-                    multiple: column.multiple ? true : false,
-                    autocomplete: column.autocomplete ? true : false,
-                    opened: true,
-                    value: value,
-                    width: '100%',
-                    position: obj.options.tableOverflow == true || obj.parent.config.fullscreen == true ? true : false,
-                    onclose: function () {
-                        closeEditor.call(obj, cell, true);
-                    },
-                };
-                if (column.options && column.options.type) {
-                    options.type = column.options.type;
-                }
-                const dropdown = jSuites.dropdown(editor, options);
-                if (dropdown && dropdown.header) {
-                    dropdown.header.setAttribute('aria-label', label);
-                    // The editor is the focus target, as the other editors
-                    if (!editor.contains(document.activeElement)) {
-                        dropdown.header.focus({ preventScroll: true });
-                    }
-                }
+                openDropdownEditor.call(obj, cell, x, y, xText, yText, column, label);
             } else if (column && (column.type == 'calendar' || column.type == 'color')) {
-                // Value
-                const value = obj.options.data[y][x];
-                // Create editor
-                const editor = createEditor('input');
-
-                dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
-
-                // The input converts the value to text
-                editor.value = value as string;
-
-                // The options of the calendar or the color picker
-                const options: CalendarOptions & ColorOptions = column.options ? { ...column.options } : {};
-
-                if (obj.options.tableOverflow == true || obj.parent.config.fullscreen == true) {
-                    options.position = true;
-                }
-                // The value of a calendar or a color cell is text
-                options.value = obj.options.data[y][x] as string;
-                options.opened = true;
-                // The color picker gives its instance as the second argument, and the calendar nothing
-                options.onclose = function (el: HTMLElement, value?: unknown) {
-                    closeEditor.call(obj, cell, true);
-                };
-                // Current value
-                if (column.type == 'color') {
-                    jSuites.color(editor, options);
-
-                    const rect = cell.getBoundingClientRect();
-
-                    if (options.position) {
-                        // The color picker adds its container after the input
-                        ((editor.nextSibling as HTMLElement).children[1] as HTMLElement).style.top = rect.top + rect.height + 'px';
-                        ((editor.nextSibling as HTMLElement).children[1] as HTMLElement).style.left = rect.left + 'px';
-                    }
-                } else {
-                    if (!options.format) {
-                        options.format = 'YYYY-MM-DD';
-                    }
-
-                    jSuites.calendar(editor, options);
-                }
-                // Focus on editor
-                editor.focus();
+                openPickerEditor.call(obj, cell, x, y, column, label);
             } else if (column && column.type == 'html') {
-                const value = obj.options.data[y][x];
-                // Create editor
-                const editor = createEditor('div');
-
-                dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
-
-                editor.style.position = 'relative';
-                const div = document.createElement('div');
-                div.classList.add('jss_richtext');
-                editor.appendChild(div);
-                // The jsuites typings miss the editor property
-                const richText = jSuites.editor(div, {
-                    focus: true,
-                    value: value as string,
-                }) as ReturnType<typeof jSuites.editor> & { editor?: HTMLElement };
-                // Accessible role and name of the rich text editor
-                if (richText && richText.editor) {
-                    richText.editor.setAttribute('role', 'textbox');
-                    richText.editor.setAttribute('aria-multiline', 'true');
-                    richText.editor.setAttribute('aria-label', label);
-                }
-                const rect = cell.getBoundingClientRect();
-                const rectContent = div.getBoundingClientRect();
-                if (window.innerHeight < rect.bottom + rectContent.height) {
-                    div.style.top = rect.bottom - (rectContent.height + 2) + 'px';
-                } else {
-                    div.style.top = rect.top + 'px';
-                }
-
-                if (window.innerWidth < rect.left + rectContent.width) {
-                    div.style.left = rect.right - (rectContent.width + 2) + 'px';
-                } else {
-                    div.style.left = rect.left + 'px';
-                }
+                openHtmlEditor.call(obj, cell, x, y, column, label);
             } else if (column && column.type == 'image') {
-                // Value
-                const img = cell.children[0] as HTMLImageElement;
-                // Create editor
-                const editor = createEditor('div');
-
-                dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
-
-                editor.style.position = 'relative';
-                const div = document.createElement('div');
-                div.classList.add('jclose');
-                if (img && img.src) {
-                    div.appendChild(img);
-                }
-                editor.appendChild(div);
-                jSuites.image(div, column);
-                const rect = cell.getBoundingClientRect();
-                const rectContent = div.getBoundingClientRect();
-                if (window.innerHeight < rect.bottom + rectContent.height) {
-                    div.style.top = rect.top - (rectContent.height + 2) + 'px';
-                } else {
-                    div.style.top = rect.top + 'px';
-                }
-
-                div.style.left = rect.left + 'px';
+                openImageEditor.call(obj, cell, x, y, column, label);
             } else {
-                // Value
-                const value = empty == true ? '' : obj.options.data[y][x];
-
-                // Basic editor
-                let editor;
-
-                if ((!column || column.wordWrap != false) && (obj.options.wordWrap == true || (column && column.wordWrap == true))) {
-                    editor = createEditor('textarea');
-                } else {
-                    editor = createEditor('input');
-                }
-
-                dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
-
-                editor.focus();
-                // The input converts the value to text
-                editor.value = value as string;
-
-                // Column options
-                const options = column;
-
-                // Apply format when is not a formula
-                if (!isFormula(value)) {
-                    if (options) {
-                        // Format
-                        const opt = getMask(options);
-
-                        if (opt) {
-                            // Masking
-                            if (!options.disabledMaskOnEdition) {
-                                if (options.mask) {
-                                    const m = options.mask.split(';');
-                                    editor.setAttribute('data-mask', m[0]);
-                                } else if (options.locale) {
-                                    editor.setAttribute('data-locale', options.locale);
-                                }
-                            }
-                            // Input
-                            opt.input = editor;
-                            // Configuration
-                            (editor as EditorElement).mask = opt;
-                            // Do not treat the decimals
-                            // The jsuites typings miss render and extract
-                            jSuites.mask.render(value, opt, false);
-                        }
-                    }
-                }
-
-                editor.onblur = function () {
-                    closeEditor.call(obj, cell, true);
-                };
-                editor.scrollLeft = editor.scrollWidth;
+                openTextEditor.call(obj, cell, x, y, column, label, empty);
             }
         }
     }
