@@ -135,3 +135,20 @@ describe('Use getWorksheetInstanceByName', () => {
         expect(jspreadsheet.getWorksheetInstanceByName(null, 'missing')).to.deep.equal({});
     });
 });
+
+describe('Use the helpers', () => {
+    it('getCaretIndex returns the position of the caret in an element', () => {
+        const element = document.createElement('div');
+        element.textContent = 'Hello world';
+        root.appendChild(element);
+
+        const range = document.createRange();
+        range.setStart(element.firstChild, 5);
+        range.collapse(true);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        expect(jspreadsheet.helpers.getCaretIndex(element)).to.equal(5);
+    });
+});

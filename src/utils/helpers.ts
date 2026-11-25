@@ -7,8 +7,9 @@ import type { Spreadsheet } from '../types/internal';
 export const getCaretIndex = function (this: Spreadsheet, e: any) {
     let d;
 
+    // Applications call it as jspreadsheet.helpers.getCaretIndex, so this is a spreadsheet only when the caller sets it.
     // root is not a documented option
-    if ((this.config as any).root) {
+    if (this && this.config && (this.config as any).root) {
         d = (this.config as any).root;
     } else {
         d = window;
