@@ -272,7 +272,7 @@ export const setValue: WorksheetMethod<'setValue'> = function (cell: any, value,
     obj.history.add({
         action: 'setValue',
         records: records,
-        selection: obj.selection.range,
+        selection: obj.selection.range && [...obj.selection.range],
     });
 
     // Update table with custom configurations if applicable
@@ -313,7 +313,7 @@ export const setValueFromCoords: WorksheetMethod<'setValueFromCoords'> = functio
     obj.history.add({
         action: 'setValue',
         records: records,
-        selection: obj.selection.range,
+        selection: obj.selection.range && [...obj.selection.range],
     });
 
     // Update table with custom configurations if applicable

@@ -479,7 +479,7 @@ export const setCheckRadioValue = function (this: Worksheet) {
         obj.history.add({
             action: 'setValue',
             records: records,
-            selection: obj.selection.range,
+            selection: obj.selection.range && [...obj.selection.range],
         });
 
         // On after changes

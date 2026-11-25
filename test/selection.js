@@ -17,6 +17,47 @@ describe('Selection', () => {
 
         expect(worksheet.isSelected(0, 0)).to.equal(false);
     });
+    it('selectAll does not change the selection that the undo history restores', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b'],
+                        ['c', 'd'],
+                    ],
+                },
+            ],
+        })[0];
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.setValue('A1', 'x');
+        worksheet.selectAll();
+        worksheet.undo();
+
+        expect(worksheet.getValue('A1')).to.equal('a');
+        expect(worksheet.getSelection()).to.eql([0, 0, 0, 0]);
+    });
+
+    it('an arrow key does not change the selection that the undo history restores', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b'],
+                        ['c', 'd'],
+                    ],
+                },
+            ],
+        })[0];
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.setValue('A1', 'x');
+        worksheet.right();
+        worksheet.undo();
+
+        expect(worksheet.getValue('A1')).to.equal('a');
+        expect(worksheet.getSelection()).to.eql([0, 0, 0, 0]);
+    });
 });
 
 describe('Selection with the mouse', () => {

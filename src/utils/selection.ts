@@ -584,7 +584,7 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
     obj.history.add({
         action: 'setValue',
         records: records,
-        selection: obj.selection.range,
+        selection: obj.selection.range && [...obj.selection.range],
     });
 
     // Update table with custom configuration if applicable

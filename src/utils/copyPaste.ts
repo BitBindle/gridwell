@@ -404,7 +404,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data) {
         obj.history.add({
             action: 'setValue',
             records: records,
-            selection: obj.selection.range,
+            selection: obj.selection.range && [...obj.selection.range],
             newStyle: newStyle,
             oldStyle: oldStyle,
         });
