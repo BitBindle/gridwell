@@ -281,7 +281,7 @@ describe('Accessible names', () => {
 
         worksheet.openEditor(worksheet.records[1][2].element);
 
-        expect(worksheet.edition[0].children[0].getAttribute('aria-label')).to.equal('Edit cell C2');
+        expect(worksheet.editor.cell.children[0].getAttribute('aria-label')).to.equal('Edit cell C2');
     });
 
     it('Use the texts of the labels option', () => {
@@ -302,18 +302,18 @@ describe('Accessible names', () => {
 
         worksheet.openEditor(worksheet.records[2][0].element);
 
-        expect(worksheet.edition[0].children[0].tagName).to.equal('TEXTAREA');
-        expect(worksheet.edition[0].children[0].getAttribute('aria-label')).to.equal('Zelle A3 bearbeiten');
+        expect(worksheet.editor.cell.children[0].tagName).to.equal('TEXTAREA');
+        expect(worksheet.editor.cell.children[0].getAttribute('aria-label')).to.equal('Zelle A3 bearbeiten');
 
-        worksheet.closeEditor(worksheet.edition[0], false);
+        worksheet.closeEditor(worksheet.editor.cell, false);
         worksheet.openEditor(worksheet.records[0][1].element);
 
-        expect(worksheet.edition[0].querySelector('.jdropdown-header').getAttribute('aria-label')).to.equal('Zelle B1 bearbeiten');
+        expect(worksheet.editor.cell.querySelector('.jdropdown-header').getAttribute('aria-label')).to.equal('Zelle B1 bearbeiten');
 
-        worksheet.closeEditor(worksheet.edition[0], false);
+        worksheet.closeEditor(worksheet.editor.cell, false);
         worksheet.openEditor(worksheet.records[2][3].element);
 
-        expect(worksheet.edition[0].children[0].getAttribute('aria-label')).to.equal('Zelle D3 bearbeiten');
+        expect(worksheet.editor.cell.children[0].getAttribute('aria-label')).to.equal('Zelle D3 bearbeiten');
     });
 
     it('Give the rich text editor a role and a name', () => {
@@ -339,7 +339,7 @@ describe('Accessible names', () => {
 
             worksheet.openEditor(worksheet.records[0][1].element);
 
-            const richText = worksheet.edition[0].querySelector('[contenteditable]');
+            const richText = worksheet.editor.cell.querySelector('[contenteditable]');
             expect(richText.getAttribute('role')).to.equal('textbox');
             expect(richText.getAttribute('aria-multiline')).to.equal('true');
             expect(richText.getAttribute('aria-label')).to.equal('Zelle B1 bearbeiten');
@@ -364,7 +364,7 @@ describe('Accessible names', () => {
 
             worksheet.openEditor(worksheet.records[0][1].element);
 
-            expect(worksheet.edition[0].children[0].getAttribute('aria-label')).to.equal('Editar célula B1');
+            expect(worksheet.editor.cell.children[0].getAttribute('aria-label')).to.equal('Editar célula B1');
         } finally {
             delete document.dictionary['Select all'];
             delete document.dictionary['Edit cell {0}'];
@@ -537,7 +537,7 @@ describe('Keyboard focus', () => {
         expect(cell.hasAttribute('aria-label')).to.equal(false);
         expect(getTabStops(worksheet)).to.deep.equal([]);
 
-        worksheet.edition[0].children[0].value = 'new';
+        worksheet.editor.cell.children[0].value = 'new';
         worksheet.closeEditor(cell, true);
 
         expect(cell.tabIndex).to.equal(0);
@@ -546,13 +546,13 @@ describe('Keyboard focus', () => {
         cell.focus();
         keydown(cell, 'F2', 113);
 
-        const editor = worksheet.edition[0].children[0];
+        const editor = worksheet.editor.cell.children[0];
         expect(document.activeElement).to.equal(editor);
 
         keydown(editor, 'Escape', 27);
         await wait();
 
-        expect(worksheet.edition).to.equal(null);
+        expect(worksheet.editor.cell).to.equal(null);
         expect(document.activeElement).to.equal(cell);
         expect(cell.tabIndex).to.equal(0);
         expect(cell.getAttribute('aria-label')).to.equal('B2 new');
@@ -604,9 +604,9 @@ describe('Keyboard focus', () => {
 
         expect(customCell.hasAttribute('tabindex')).to.equal(false);
 
-        keydown(worksheet.edition[0].children[0], 'Escape', 27);
+        keydown(worksheet.editor.cell.children[0], 'Escape', 27);
 
-        expect(worksheet.edition).to.equal(null);
+        expect(worksheet.editor.cell).to.equal(null);
         expect(customCell.tabIndex).to.equal(0);
     });
 
@@ -681,7 +681,7 @@ describe('Keyboard focus', () => {
             expect(shadowRoot.activeElement).to.equal(a2);
 
             keydown(a2, 'F2', 113);
-            keydown(worksheet.edition[0].children[0], 'Escape', 27);
+            keydown(worksheet.editor.cell.children[0], 'Escape', 27);
             await wait();
 
             expect(shadowRoot.activeElement).to.equal(a2);

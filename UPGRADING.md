@@ -65,3 +65,20 @@ worksheet. They are now in `worksheet.clipboard`:
 
 `worksheet.clipboard.data` is an empty string before the first copy, where `worksheet.data` was undefined. A cancelled
 copy and `download()` no longer change it. `worksheet.copy()` and `worksheet.paste()` work as before.
+
+## The cell editor is an object
+
+`worksheet.edition` was `null`, or an array with the cell that is being edited, its HTML before the editor opened, and
+its column and row as text. It is now `worksheet.editor`:
+
+| Version 5                        | Version 6                   |
+| -------------------------------- | --------------------------- |
+| `worksheet.edition` (to test it) | `worksheet.editor.isOpen()` |
+| `worksheet.edition[0]`           | `worksheet.editor.cell`     |
+| `worksheet.edition[1]`           | `worksheet.editor.html`     |
+| `parseInt(worksheet.edition[2])` | `worksheet.editor.x`        |
+| `parseInt(worksheet.edition[3])` | `worksheet.editor.y`        |
+
+`x` and `y` are numbers. `worksheet.editor.cell` is `null` when no editor is open, where `worksheet.edition` was `null`
+or, before the first editor, undefined. `openEditor()`, `closeEditor()`, the editor events and the custom editors work as
+before.

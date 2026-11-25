@@ -37,7 +37,7 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 
 -   `src/index.ts`: the entry point. It defines `jspreadsheet(element, options)` and its static helpers.
 -   `src/Spreadsheet.ts`, `src/Worksheet.ts`: the `Spreadsheet` and `Worksheet` classes. Their constructors set up the state an instance has before it is built.
--   `src/components/*.ts`: the components of a worksheet, one class per feature, each owning its state (`History`, `Clipboard`). See [ARCHITECTURE.md](ARCHITECTURE.md).
+-   `src/components/*.ts`: the components of a worksheet, one class per feature, each owning its state (`History`, `Clipboard`, `Editor`). See [ARCHITECTURE.md](ARCHITECTURE.md).
 -   `src/utils/factory.ts`: builds the spreadsheet and its worksheets. `spreadsheetPublicMethods` lists the methods of a spreadsheet.
 -   `src/utils/worksheets.ts`: builds a worksheet's DOM. `worksheetPublicMethods` lists the methods of a worksheet.
 -   `src/utils/*.ts`: one module per feature (`columns`, `rows`, `selection`, `editor`, `events`, `history`, `merges`, `accessibility`, …). `internal.ts` and `events.ts` are the largest and most connected.
@@ -53,7 +53,7 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 
 ## How the code is organised
 
--   **Two classes.** A _spreadsheet_ (`Spreadsheet`) holds `config`, `element`, `worksheets` and the toolbar. A _worksheet_ (`Worksheet`) holds `options`, the DOM (`table`, `thead`, `tbody`, `headers`, `rows`, `records`) and the state (`selectedCell`, …). `worksheet.parent` is its spreadsheet. Modules still add most of the state while they build the worksheet. The state that has moved into a component is reached through it: `worksheet.history` is a `History`, and a change is recorded with `obj.history.add(record)`; `worksheet.clipboard` is a `Clipboard`, which keeps what the worksheet copied. To tell a worksheet from a spreadsheet, use `instanceof Worksheet`.
+-   **Two classes.** A _spreadsheet_ (`Spreadsheet`) holds `config`, `element`, `worksheets` and the toolbar. A _worksheet_ (`Worksheet`) holds `options`, the DOM (`table`, `thead`, `tbody`, `headers`, `rows`, `records`) and the state (`selectedCell`, …). `worksheet.parent` is its spreadsheet. Modules still add most of the state while they build the worksheet. The state that has moved into a component is reached through it: `worksheet.history` is a `History`, and a change is recorded with `obj.history.add(record)`; `worksheet.clipboard` is a `Clipboard`, which keeps what the worksheet copied; `worksheet.editor` is an `Editor`, and `obj.editor.isOpen()` tells whether a cell is being edited. To tell a worksheet from a spreadsheet, use `instanceof Worksheet`.
 -   **The worksheet is `this`.** Most functions start with `const obj = this` and are called with `fn.call(worksheet, ...)`. The public methods are these functions, put on `Worksheet.prototype` from `worksheetPublicMethods` (and on `Spreadsheet.prototype` from `spreadsheetPublicMethods`). They are not bound: they need the worksheet as `this`.
 -   **One global active worksheet.** `libraryBase.jspreadsheet.current` is the worksheet that keyboard and clipboard events go to. `events.ts` and `worksheets.ts` set it.
 -   **Events** go through `dispatch.call(obj, 'oneventname', ...args)`. `dispatch` calls the spreadsheet's `config.onevent`, then the specific handler in `config`, then each plugin's `onevent`, and returns the last result. Returning `false` from an `onbefore…` handler cancels the action.

@@ -208,8 +208,8 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
     if (jssTable[0]) {
         if (libraryBase.jspreadsheet.current != jssTable[0].jssWorksheet) {
             if (libraryBase.jspreadsheet.current) {
-                if (libraryBase.jspreadsheet.current.edition) {
-                    closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition[0], true);
+                if (libraryBase.jspreadsheet.current.editor.isOpen()) {
+                    closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.editor.cell, true);
                 }
                 libraryBase.jspreadsheet.current.resetSelection();
             }
@@ -217,8 +217,8 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
         }
     } else {
         if (libraryBase.jspreadsheet.current) {
-            if (libraryBase.jspreadsheet.current.edition) {
-                closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition[0], true);
+            if (libraryBase.jspreadsheet.current.editor.isOpen()) {
+                closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.editor.cell, true);
             }
 
             if (!e.target.closest('.jss_object')) {
@@ -387,7 +387,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                 } else {
                     // Jclose
                     if (e.target.classList.contains('jclose') && e.target.clientWidth - e.offsetX < 50 && e.offsetY < 50) {
-                        closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition![0], true);
+                        closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.editor.cell!, true);
                     } else {
                         const getCellCoords = function (element: HTMLElement) {
                             const x = element.getAttribute('data-x');
@@ -406,17 +406,13 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                             const columnId = position[0];
                             const rowId = position[1];
                             // Close edition
-                            if (libraryBase.jspreadsheet.current.edition) {
-                                // The edition keeps the text of data-x and data-y
-                                if (
-                                    parseInt(libraryBase.jspreadsheet.current.edition[2]) != columnId ||
-                                    parseInt(libraryBase.jspreadsheet.current.edition[3]) != rowId
-                                ) {
-                                    closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition[0], true);
+                            if (libraryBase.jspreadsheet.current.editor.isOpen()) {
+                                if (libraryBase.jspreadsheet.current.editor.x != columnId || libraryBase.jspreadsheet.current.editor.y != rowId) {
+                                    closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.editor.cell, true);
                                 }
                             }
 
-                            if (!libraryBase.jspreadsheet.current.edition) {
+                            if (!libraryBase.jspreadsheet.current.editor.isOpen()) {
                                 // Update cell selection
                                 if (e.shiftKey) {
                                     updateSelectionFromCoords.call(
@@ -454,7 +450,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
             }
         }
 
-        if (libraryBase.jspreadsheet.current.edition) {
+        if (libraryBase.jspreadsheet.current.editor.isOpen()) {
             libraryBase.jspreadsheet.isMouseAction = false;
         } else {
             libraryBase.jspreadsheet.isMouseAction = true;
@@ -718,7 +714,7 @@ const mouseOverControls = function (e: TargetEvent<MouseEvent>) {
                         }
                     } else {
                         // Do not select edtion is in progress
-                        if (!libraryBase.jspreadsheet.current.edition) {
+                        if (!libraryBase.jspreadsheet.current.editor.isOpen()) {
                             if (columnId != null && rowId != null) {
                                 if (libraryBase.jspreadsheet.current.selectedCorner) {
                                     updateCopySelection.call(libraryBase.jspreadsheet.current, columnId, rowId);
@@ -794,7 +790,7 @@ const doubleClickControls = function (e: TargetEvent<MouseEvent>) {
 
             // Double click over body
             if (jssTable[1] == 2 && libraryBase.jspreadsheet.current.options.editable != false) {
-                if (!libraryBase.jspreadsheet.current.edition) {
+                if (!libraryBase.jspreadsheet.current.editor.isOpen()) {
                     const getCellCoords = function (element: HTMLElement) {
                         if (element.parentNode) {
                             const x = element.getAttribute('data-x');
@@ -823,7 +819,7 @@ const pasteControls = function (e?: TargetEvent<ClipboardEvent>) {
     }
 
     if (libraryBase.jspreadsheet.current && libraryBase.jspreadsheet.current.selectedCell) {
-        if (!libraryBase.jspreadsheet.current.edition) {
+        if (!libraryBase.jspreadsheet.current.editor.isOpen()) {
             if (libraryBase.jspreadsheet.current.options.editable != false) {
                 if (e && e.clipboardData) {
                     paste.call(
@@ -1110,7 +1106,7 @@ const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
     if (libraryBase.jspreadsheet.current) {
         const spreadsheet = libraryBase.jspreadsheet.current.parent;
 
-        if (libraryBase.jspreadsheet.current.edition) {
+        if (libraryBase.jspreadsheet.current.editor.isOpen()) {
             e.preventDefault();
         } else {
             spreadsheet.contextMenu.contextmenu.close();
@@ -1248,7 +1244,7 @@ const touchStartControls = function (e: TargetEvent<TouchEvent>) {
     }
 
     if (libraryBase.jspreadsheet.current && jssTable[0]) {
-        if (!libraryBase.jspreadsheet.current.edition) {
+        if (!libraryBase.jspreadsheet.current.editor.isOpen()) {
             const columnId = getIndex(e.target, 'data-x');
             const rowId = getIndex(e.target, 'data-y');
 
@@ -1291,7 +1287,7 @@ const touchEndControls = function (e: TargetEvent<TouchEvent>) {
 export const cutControls = function (e?: TargetEvent<ClipboardEvent>) {
     if (libraryBase.jspreadsheet.current) {
         // Without a selection, there is nothing to cut
-        if (!libraryBase.jspreadsheet.current.edition && libraryBase.jspreadsheet.current.selectedCell) {
+        if (!libraryBase.jspreadsheet.current.editor.isOpen() && libraryBase.jspreadsheet.current.selectedCell) {
             const copied = copy.call(libraryBase.jspreadsheet.current, true, undefined, undefined, undefined, undefined, true);
             // oncopy can cancel the cut
             if (copied !== false && libraryBase.jspreadsheet.current.options.editable != false) {
@@ -1308,7 +1304,7 @@ export const cutControls = function (e?: TargetEvent<ClipboardEvent>) {
 
 const copyControls = function (e?: TargetEvent<ClipboardEvent>) {
     if (libraryBase.jspreadsheet.current) {
-        if (!libraryBase.jspreadsheet.current.edition) {
+        if (!libraryBase.jspreadsheet.current.editor.isOpen()) {
             copy.call(libraryBase.jspreadsheet.current, true);
         }
     }
@@ -1339,29 +1335,27 @@ const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
         // Keys on a control with the class jss_object outside the worksheet, for example a button next to the grid, also in
         // an open shadow root, do not go to the grid. An editor can have a jss_object control, so this applies only when no
         // editor is open.
-        if (!libraryBase.jspreadsheet.current.edition) {
+        if (!libraryBase.jspreadsheet.current.editor.isOpen()) {
             if (keyTarget && typeof keyTarget.closest === 'function' && !getElement(keyTarget)[0] && keyTarget.closest('.jss_object')) {
                 return;
             }
         }
 
-        if (libraryBase.jspreadsheet.current.edition) {
+        if (libraryBase.jspreadsheet.current.editor.isOpen()) {
             const current = libraryBase.jspreadsheet.current;
-            const column =
-                current.options.columns &&
-                current.options.columns[getCellColumnIndex.call(current, parseInt(current.edition![2]), parseInt(current.edition![3]))];
+            const column = current.options.columns && current.options.columns[getCellColumnIndex.call(current, current.editor.x, current.editor.y)];
 
             if (e.which == 27) {
                 // Escape
-                if (libraryBase.jspreadsheet.current.edition) {
+                if (libraryBase.jspreadsheet.current.editor.isOpen()) {
                     // Exit without saving
-                    closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition[0], false);
+                    closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.editor.cell, false);
                 }
                 e.preventDefault();
             } else if (e.which == 13) {
                 // Enter
                 if (column && column.type == 'calendar') {
-                    closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition[0], true);
+                    closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.editor.cell, true);
                 } else if (column && column.type == 'dropdown') {
                     // Do nothing
                 } else {
@@ -1369,19 +1363,19 @@ const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
                     if (
                         (libraryBase.jspreadsheet.current.options.wordWrap == true ||
                             (column && column.wordWrap == true) ||
-                            (libraryBase.jspreadsheet.current.options.data[parseInt(libraryBase.jspreadsheet.current.edition[3])][
-                                parseInt(libraryBase.jspreadsheet.current.edition[2])
+                            (libraryBase.jspreadsheet.current.options.data[libraryBase.jspreadsheet.current.editor.y][
+                                libraryBase.jspreadsheet.current.editor.x
                             ] &&
                                 (
-                                    libraryBase.jspreadsheet.current.options.data[parseInt(libraryBase.jspreadsheet.current.edition[3])][
-                                        parseInt(libraryBase.jspreadsheet.current.edition[2])
+                                    libraryBase.jspreadsheet.current.options.data[libraryBase.jspreadsheet.current.editor.y][
+                                        libraryBase.jspreadsheet.current.editor.x
                                     ] as string
                                 ).length > 200)) &&
                         e.altKey
                     ) {
                         // Add new line to the editor
-                        const editorTextarea = libraryBase.jspreadsheet.current.edition[0].children[0] as HTMLTextAreaElement;
-                        let editorValue = (libraryBase.jspreadsheet.current.edition[0].children[0] as HTMLTextAreaElement).value;
+                        const editorTextarea = libraryBase.jspreadsheet.current.editor.cell.children[0] as HTMLTextAreaElement;
+                        let editorValue = (libraryBase.jspreadsheet.current.editor.cell.children[0] as HTMLTextAreaElement).value;
                         const editorIndexOf = editorTextarea.selectionStart;
                         editorValue = editorValue.slice(0, editorIndexOf) + '\n' + editorValue.slice(editorIndexOf);
                         editorTextarea.value = editorValue;
@@ -1389,20 +1383,20 @@ const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
                         editorTextarea.selectionStart = editorIndexOf + 1;
                         editorTextarea.selectionEnd = editorIndexOf + 1;
                     } else {
-                        (libraryBase.jspreadsheet.current.edition[0].children[0] as HTMLElement).blur();
+                        (libraryBase.jspreadsheet.current.editor.cell.children[0] as HTMLElement).blur();
                     }
                 }
             } else if (e.which == 9) {
                 // Tab
                 if (column && ['calendar', 'html'].includes(column.type as string)) {
-                    closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition[0], true);
+                    closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.editor.cell, true);
                 } else {
-                    (libraryBase.jspreadsheet.current.edition[0].children[0] as HTMLElement).blur();
+                    (libraryBase.jspreadsheet.current.editor.cell.children[0] as HTMLElement).blur();
                 }
             }
         }
 
-        if (!libraryBase.jspreadsheet.current.edition && libraryBase.jspreadsheet.current.selectedCell) {
+        if (!libraryBase.jspreadsheet.current.editor.isOpen() && libraryBase.jspreadsheet.current.selectedCell) {
             // Which key
             if (e.which == 37) {
                 left.call(libraryBase.jspreadsheet.current, e.shiftKey, e.ctrlKey);
@@ -1673,8 +1667,8 @@ export const scrollControls = function (this: Worksheet, e: Event) {
 
     // Close a floating editor. The text editor is inside the cell and scrolls with it.
     if (obj.options.lazyLoading == true || obj.options.tableOverflow == true) {
-        if (obj.edition && hasFloatingEditor.call(obj, parseInt(obj.edition[2])) && (e.target as HTMLElement).className.substr(0, 9) != 'jdropdown') {
-            closeEditor.call(obj, obj.edition[0], true);
+        if (obj.editor.isOpen() && hasFloatingEditor.call(obj, obj.editor.x) && (e.target as HTMLElement).className.substr(0, 9) != 'jdropdown') {
+            closeEditor.call(obj, obj.editor.cell, true);
         }
     }
 };

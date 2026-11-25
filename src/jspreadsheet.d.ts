@@ -334,6 +334,33 @@ declare namespace jspreadsheet {
     }
 
     /**
+     * The cell editor of a worksheet, {@link WorksheetInstance.editor}. {@link WorksheetInstance.openEditor} and
+     * {@link WorksheetInstance.closeEditor} open and close it.
+     */
+    interface WorksheetEditor {
+        /** The cell that is being edited, or null when no editor is open. */
+        cell: HTMLTableCellElement | null;
+
+        /** The HTML of the cell before the editor opened. */
+        html: string;
+
+        /** The column of the cell, or -1 when no editor is open. */
+        x: number;
+
+        /** The row of the cell, or -1 when no editor is open. */
+        y: number;
+
+        /** Whether an editor is open. */
+        isOpen(): this is WorksheetEditor & { cell: HTMLTableCellElement };
+
+        /** Keep the cell that an editor opens on, without creating the editor. */
+        start(cell: HTMLTableCellElement, x: number, y: number): void;
+
+        /** Forget the cell, without closing its editor. */
+        end(): void;
+    }
+
+    /**
      * What a worksheet copied last, {@link WorksheetInstance.clipboard}.
      */
     interface WorksheetClipboard {
@@ -1690,11 +1717,6 @@ declare namespace jspreadsheet {
         dragging: null | DragColumnInfo | DragRowInfo;
 
         /**
-         * Currently open editor information. Respectively the cell whose editor is open, its initial value, its column index and its row index.
-         */
-        edition: null | [HTMLTableCellElement, string, string, string];
-
-        /**
          * Root HTML element of this worksheet instance.
          */
         element: JworksheetInstanceElement;
@@ -1966,6 +1988,11 @@ declare namespace jspreadsheet {
          * What the worksheet copied last.
          */
         clipboard: WorksheetClipboard;
+
+        /**
+         * The cell editor of the worksheet.
+         */
+        editor: WorksheetEditor;
 
         /**
          * Check if a cell is within the current selection.
