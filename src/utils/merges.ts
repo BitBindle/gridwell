@@ -324,7 +324,7 @@ export const removeMerge = function (this: Worksheet, cellName: string, data?: j
         }
 
         // Update selection
-        updateSelection.call(obj, obj.records[cell[1]][cell[0]].element, obj.records[cell[1] + j! - 1][cell[0] + i! - 1].element);
+        updateSelection.call(obj, obj.records[cell[1]][cell[0]].element, obj.records[cell[1] + j - 1][cell[0] + i! - 1].element);
 
         if (!keepOptions) {
             delete obj.options.mergeCells[cellName];

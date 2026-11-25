@@ -570,20 +570,20 @@ const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
                 if ((e.target.parentNode!.parentNode as HTMLElement).classList.contains('resizable')) {
                     if (e.target && x && !y && rect.width - (e.clientX - rect.left) < 6) {
                         libraryBase.jspreadsheet.current.cursor = e.target;
-                        libraryBase.jspreadsheet.current.cursor!.style.cursor = 'col-resize';
+                        libraryBase.jspreadsheet.current.cursor.style.cursor = 'col-resize';
                     } else if (e.target && !x && y && rect.height - (e.clientY - rect.top) < 6) {
                         libraryBase.jspreadsheet.current.cursor = e.target;
-                        libraryBase.jspreadsheet.current.cursor!.style.cursor = 'row-resize';
+                        libraryBase.jspreadsheet.current.cursor.style.cursor = 'row-resize';
                     }
                 }
 
                 if ((e.target.parentNode!.parentNode as HTMLElement).classList.contains('draggable')) {
                     if (e.target && !x && y && rect.width - (e.clientX - rect.left) < 6) {
                         libraryBase.jspreadsheet.current.cursor = e.target;
-                        libraryBase.jspreadsheet.current.cursor!.style.cursor = 'move';
+                        libraryBase.jspreadsheet.current.cursor.style.cursor = 'move';
                     } else if (e.target && x && !y && rect.height - (e.clientY - rect.top) < 6) {
                         libraryBase.jspreadsheet.current.cursor = e.target;
-                        libraryBase.jspreadsheet.current.cursor!.style.cursor = 'move';
+                        libraryBase.jspreadsheet.current.cursor.style.cursor = 'move';
                     }
                 }
             }
