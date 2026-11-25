@@ -92,7 +92,7 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
             cell.removeAttribute('tabindex');
             cell.removeAttribute('aria-label');
 
-            // Custom editors. The code expects a custom editor to have openEditor and closeEditor.
+            // Custom editors. The code expects a custom editor to have openEditor and closeEditor (issue #60).
             column.type.openEditor!(cell, obj.options.data[y][x], x, y, obj, column, e);
 
             // On edition start
@@ -347,7 +347,7 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
     if (save == true) {
         // If custom editor
         if (column && typeof column.type === 'object') {
-            // Custom editor
+            // Custom editor. It throws without closeEditor (issue #60).
             value = column.type.closeEditor!(cell, save, parseInt(x), parseInt(y), obj, column);
         } else {
             // Native functions
@@ -399,7 +399,7 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
             }
         }
 
-        // Ignore changes if the value is the same
+        // Ignore changes if the value is the same. A cell without an open editor throws above (issue #61).
         if (obj.options.data[y][x] == value) {
             cell.innerHTML = obj.edition![1];
         } else {
@@ -407,7 +407,7 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
         }
     } else {
         if (column && typeof column.type === 'object') {
-            // Custom editor
+            // Custom editor. It throws without closeEditor (issue #60).
             column.type.closeEditor!(cell, save, parseInt(x), parseInt(y), obj, column);
         } else {
             if (column && column.type == 'dropdown') {
