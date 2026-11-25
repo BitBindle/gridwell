@@ -14,12 +14,12 @@ type ComponentOptions<F> = F extends (el: HTMLElement, options: infer O) => unkn
 export type Dropdown = ReturnType<Base['dropdown']>;
 
 /**
- * The options of jSuites.dropdown. jsuites takes any CSS width, a list or null as the value of a dropdown with
- * multiple, and gives onclose the element of the dropdown, which holds the dropdown.
+ * The options of jSuites.dropdown. jsuites takes any CSS width, the id of an item as the value, a list or null as the
+ * value of a dropdown with multiple, and gives onclose the element of the dropdown, which holds the dropdown.
  */
 export type DropdownOptions = Omit<ComponentOptions<Base['dropdown']>, 'width' | 'value' | 'onclose'> & {
     width?: number | string;
-    value?: string | string[] | null;
+    value?: string | number | (string | number)[] | null;
     onclose?: (el: HTMLElement & { dropdown: Dropdown }) => void;
 };
 
@@ -28,8 +28,23 @@ export type ContextmenuOptions = Partial<Omit<ComponentOptions<Base['contextmenu
     onclick?: (instance: ReturnType<Base['contextmenu']>, e: MouseEvent) => void;
 };
 
-export interface JSuites extends Omit<Base, 'calendar' | 'contextmenu' | 'dropdown' | 'mask'> {
-    calendar: Base['calendar'] & CalendarFunctions;
+/**
+ * The options of jSuites.calendar. jsuites has defaults for each of them, takes a truthy position for a fixed position,
+ * and gives onclose the input.
+ */
+export type CalendarOptions = Partial<Omit<ComponentOptions<Base['calendar']>, 'onclose' | 'position'>> & {
+    position?: boolean;
+    onclose?: (el: HTMLElement) => void;
+};
+
+/** The options of jSuites.color. jsuites has defaults for each of them, and takes a truthy position for a fixed position. */
+export type ColorOptions = Partial<Omit<ComponentOptions<Base['color']>, 'position'>> & {
+    position?: boolean;
+};
+
+export interface JSuites extends Omit<Base, 'calendar' | 'color' | 'contextmenu' | 'dropdown' | 'mask'> {
+    calendar: ((el: HTMLElement, options: CalendarOptions) => ReturnType<Base['calendar']>) & CalendarFunctions;
+    color(el: HTMLElement, options: ColorOptions): ReturnType<Base['color']>;
     contextmenu(el: HTMLElement, options: ContextmenuOptions): ReturnType<Base['contextmenu']>;
     dropdown(el: HTMLElement, options: DropdownOptions): Dropdown;
     mask: Base['mask'] & MaskFunctions;

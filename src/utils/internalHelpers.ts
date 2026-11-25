@@ -27,9 +27,12 @@ export const injectArray = function <T>(o: T[], idx: number, arr: T[]): T[] {
  * With arr true, it returns the coordinates, for example [1, 2] for "B3". Otherwise it returns the id, for example "1-2".
  * When id does not start with letters, it returns id.
  */
-export const getIdFromColumnName: { (id: string, arr: true): number[]; (id: string, arr?: boolean): string } = function (id: any, arr?: boolean): any {
+type GetIdFromColumnName = { (id: string, arr: true): number[]; (id: string, arr?: boolean): string };
+
+// id becomes the result, so it can be a list
+export const getIdFromColumnName = function (id: string | number[], arr?: boolean) {
     // Get the letters
-    const t = /^[a-zA-Z]+/.exec(id);
+    const t = /^[a-zA-Z]+/.exec(id as string);
 
     if (t) {
         // Base 26 calculation
@@ -45,7 +48,7 @@ export const getIdFromColumnName: { (id: string, arr: true): number[]; (id: stri
 
         // Number
         // parseInt converts the match to its text, or null to NaN
-        let number = parseInt(/[0-9]+$/.exec(id) as any);
+        let number = parseInt(/[0-9]+$/.exec(id as string) as unknown as string | null);
         if (number > 0) {
             number--;
         }
@@ -58,7 +61,7 @@ export const getIdFromColumnName: { (id: string, arr: true): number[]; (id: stri
     }
 
     return id;
-};
+} as GetIdFromColumnName;
 
 /**
  * Convert jss id to excel like column name

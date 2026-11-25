@@ -7,7 +7,7 @@ import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { updateToolbar } from './toolbar.js';
 import { updateActiveCell } from './accessibility.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
-import type { CellChange } from '../jspreadsheet';
+import type { CellChange, CellValue } from '../jspreadsheet';
 
 /**
  * Get the number of columns of the merged range that starts at x, y.
@@ -546,7 +546,7 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
                 }
 
                 // Value
-                let value: any = data[posy][posx];
+                let value: CellValue = data[posy][posx];
 
                 if (value && !data[1] && obj.parent.config.autoIncrement != false) {
                     if (
@@ -555,7 +555,7 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
                         (!obj.options.columns[i].type || obj.options.columns[i].type == 'text' || (obj.options.columns[i].type as string) == 'number')
                     ) {
                         if (('' + value).substr(0, 1) == '=') {
-                            const tokens = value.match(/([A-Z]+[0-9]+)/g);
+                            const tokens = (value as string).match(/([A-Z]+[0-9]+)/g);
 
                             if (tokens) {
                                 // An array used as a map, as before
@@ -575,7 +575,7 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
                                 }
                                 // Update formula
                                 if (affectedTokens) {
-                                    value = updateFormula(value, affectedTokens);
+                                    value = updateFormula(value as string, affectedTokens);
                                 }
                             }
                         } else {
@@ -584,7 +584,8 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
                             }
                         }
                     } else if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].type == 'calendar') {
-                        const date = new Date(value);
+                        // A calendar cell has a date as text
+                        const date = new Date(value as string);
                         date.setDate(date.getDate() + rowNumber);
                         value =
                             date.getFullYear() +

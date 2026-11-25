@@ -85,7 +85,8 @@ export const setData: WorksheetMethod<'setData'> = function (data) {
         finalNumber = obj.options.data.length < 100 ? obj.options.data.length : 100;
 
         if (obj.options.pagination) {
-            obj.options.pagination = false as any;
+            // pagination is declared as a number, and false turns it off as 0 does
+            (obj.options as { pagination?: number | false }).pagination = false;
             console.error('Jspreadsheet: Pagination will be disable due the lazyLoading');
         }
     } else if (obj.options.pagination) {
@@ -342,12 +343,12 @@ export const setValueFromCoords: WorksheetMethod<'setValueFromCoords'> = functio
  * @param bool get highlighted cells only
  * @return array data
  */
-// The public typings say it returns CellValue[][], but with a delimiter it returns text, and with asJson objects
-export const getData = function (this: Worksheet, highlighted?: boolean, processed?: boolean, delimiter?: string, asJson?: boolean): any {
+// The public typings have one overload for each kind of result: rows of values, text with a delimiter, or objects with asJson
+export const getData = function (this: Worksheet, highlighted?: boolean, processed?: boolean, delimiter?: string, asJson?: boolean) {
     const obj = this;
 
     // Control vars
-    const dataset: any[] = [];
+    const dataset: CellValue[][] = [];
     let px = 0;
     let py = 0;
 
@@ -394,9 +395,9 @@ export const getData = function (this: Worksheet, highlighted?: boolean, process
 
     if (asJson) {
         return dataset.map(function (row) {
-            const resultRow: Record<number, any> = {};
+            const resultRow: Record<number, CellValue> = {};
 
-            row.forEach(function (item: any, index: number) {
+            row.forEach(function (item, index) {
                 resultRow[index] = item;
             });
 

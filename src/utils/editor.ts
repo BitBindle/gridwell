@@ -8,7 +8,7 @@ import { getLabelText, restoreActiveCell } from './accessibility.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
 import type { CellChange } from '../jspreadsheet';
 import type { MaskOptions } from '../types/jsuites';
-import type { DropdownOptions } from '../types/jsuites-module';
+import type { CalendarOptions, ColorOptions, DropdownOptions } from '../types/jsuites-module';
 
 /**
  * The editor in a cell that is being edited, read as an input because the text editors are inputs or text areas.
@@ -109,8 +109,8 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 // Do not keep edition open
                 obj.edition = null;
             } else if (column && column.type == 'dropdown') {
-                // Get current value
-                let value: any = obj.options.data[y][x];
+                // Get current value: the id of an item, or the ids of the items with multiple
+                let value = obj.options.data[y][x] as string | number | string[];
                 if (column.multiple && !Array.isArray(value)) {
                     // A number has no split
                     value = ('' + value).split(column.delimiter || ';');
@@ -174,14 +174,16 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                 editor.value = value as string;
 
                 // The options of the calendar or the color picker
-                const options: any = column.options ? { ...column.options } : {};
+                const options: CalendarOptions & ColorOptions = column.options ? { ...column.options } : {};
 
                 if (obj.options.tableOverflow == true || obj.parent.config.fullscreen == true) {
                     options.position = true;
                 }
-                options.value = obj.options.data[y][x];
+                // The value of a calendar or a color cell is text
+                options.value = obj.options.data[y][x] as string;
                 options.opened = true;
-                options.onclose = function (el: HTMLElement, value: string) {
+                // The color picker gives its instance as the second argument, and the calendar nothing
+                options.onclose = function (el: HTMLElement, value?: unknown) {
                     closeEditor.call(obj, cell, true);
                 };
                 // Current value
