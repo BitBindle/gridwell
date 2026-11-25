@@ -7,6 +7,7 @@ import { updateCell, updateFormulaChain, updateTable, updateTableReferences } fr
 import { downGet, rightGet } from './keys.js';
 import { hash, removeCopyingSelection, updateSelectionFromCoords } from './selection.js';
 import { getColumnNameFromId } from './internalHelpers.js';
+import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
 import type { CalendarFunctions } from '../types/jsuites';
 
@@ -43,7 +44,6 @@ export const copy = function (
     const rowLabel = [];
     const x = obj.options.data[0].length;
     const y = obj.options.data.length;
-    let tmp: any = '';
     let copyHeader = false;
     let headers = '';
     let nestedHeaders = '';
@@ -75,13 +75,13 @@ export const copy = function (
     if (download && (obj.parent.config.includeHeadersOnDownload == true || includeHeaders)) {
         // Nested headers
         if (obj.options.nestedHeaders && obj.options.nestedHeaders.length > 0) {
-            tmp = obj.options.nestedHeaders;
+            const headerRows = obj.options.nestedHeaders;
 
-            for (let j = 0; j < tmp.length; j++) {
+            for (let j = 0; j < headerRows.length; j++) {
                 const nested = [];
-                for (let i = 0; i < tmp[j].length; i++) {
-                    const colspan = parseInt(tmp[j][i].colspan);
-                    nested.push(tmp[j][i].title);
+                for (let i = 0; i < headerRows[j].length; i++) {
+                    const colspan = parseInt(headerRows[j][i].colspan);
+                    nested.push(headerRows[j][i].title);
                     for (let c = 0; c < colspan - 1; c++) {
                         nested.push('');
                     }
@@ -108,9 +108,13 @@ export const copy = function (
                     header.push(obj.headers[i].textContent);
                 }
                 // Values
-                let value: any = obj.options.data[j][i];
-                if (value.match && (value.match(div) || value.match(/,/g) || value.match(/\n/) || value.match(/"/))) {
-                    value = value.replace(new RegExp('"', 'g'), '""');
+                let value = obj.options.data[j][i];
+                // Only text has match
+                if (
+                    (value as string).match &&
+                    ((value as string).match(div) || (value as string).match(/,/g) || (value as string).match(/\n/) || (value as string).match(/"/))
+                ) {
+                    value = (value as string).replace(new RegExp('"', 'g'), '""');
                     value = '"' + value + '"';
                 }
                 col.push(value);
@@ -131,9 +135,9 @@ export const copy = function (
                 colLabel.push(label);
 
                 // Get style
-                tmp = obj.records[j][i].element.getAttribute('style');
-                tmp = tmp.replace('display: none;', '');
-                obj.style.push(tmp ? tmp : '');
+                // createCell gives each cell a style attribute
+                const cellStyle = obj.records[j][i].element.getAttribute('style')!.replace('display: none;', '');
+                obj.style.push(cellStyle ? cellStyle : '');
             }
         }
 
@@ -229,8 +233,7 @@ export const copy = function (
  * @param data paste data. if data hash is the same as the copied data, apply style from copied cells
  * @return string value
  */
-// data is text, and then the rows that parseCSV makes from it
-export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
+export const paste: WorksheetMethod<'paste'> = function (x, y, data) {
     const obj = this;
 
     // Controls
@@ -242,8 +245,8 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
         data = obj.data;
     }
 
-    // Split new line
-    data = parseCSV(data, '\t');
+    // Split new line. The rows and columns of the text, which can grow below to fill the selection, or be replaced by onbeforepaste
+    let rows: jspreadsheet.CellValue[][] = parseCSV(data, '\t');
 
     // Without a selection, this throws (issue #41)
     const ex = obj.selectedCell![2];
@@ -253,7 +256,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
     const h = ey - y + 1;
 
     // Modify data to allow wor extending paste range in multiples of input range
-    const srcW = data[0].length;
+    const srcW = rows[0].length;
     if (w > 1 && Number.isInteger(w / srcW)) {
         const repeats = w / srcW;
         if (style) {
@@ -267,15 +270,15 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
             style = newStyle;
         }
 
-        const arrayB = data.map(function (row: any[], i: number) {
+        const arrayB = rows.map(function (row, i) {
             const arrayC = Array.from({ length: repeats * row.length }, function (e: unknown, i: number) {
                 return row[i % row.length];
             });
             return arrayC;
         });
-        data = arrayB;
+        rows = arrayB;
     }
-    const srcH = data.length;
+    const srcH = rows.length;
     if (h > 1 && Number.isInteger(h / srcH)) {
         const repeats = h / srcH;
         if (style) {
@@ -286,9 +289,9 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
             style = newStyle;
         }
         const arrayB = Array.from({ length: repeats * srcH }, function (e: unknown, i: number) {
-            return data[i % srcH];
+            return rows[i % srcH];
         });
-        data = arrayB;
+        rows = arrayB;
     }
 
     // Paste filter
@@ -296,8 +299,8 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
         obj,
         'onbeforepaste',
         obj,
-        data.map(function (row: any[]) {
-            return row.map(function (item: any) {
+        rows.map(function (row) {
+            return row.map(function (item) {
                 return { value: item };
             });
         }),
@@ -309,19 +312,19 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
         return false;
     } else if (typeof ret == 'string') {
         // The text to paste instead
-        data = parseCSV(ret, '\t');
+        rows = parseCSV(ret, '\t');
     } else if (ret && ret !== true) {
         // Rows of values to paste instead, which the typings do not declare
-        data = ret;
+        rows = ret;
     }
 
-    if (x != null && y != null && data) {
+    if (x != null && y != null && rows) {
         // Records
         let i = 0;
         let j = 0;
         const records = [];
-        const newStyle: Record<string, any> = {};
-        const oldStyle: Record<string, any> = {};
+        const newStyle: Record<string, string> = {};
+        const oldStyle: Record<string, string> = {};
         let styleIndex = 0;
 
         // Index
@@ -330,14 +333,14 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
         let row = null;
 
         const hiddenColCount = obj.headers.slice(colIndex).filter((x) => x.style.display === 'none').length;
-        const expandedColCount = colIndex + hiddenColCount + data[0].length;
+        const expandedColCount = colIndex + hiddenColCount + rows[0].length;
         const currentColCount = obj.headers.length;
         if (expandedColCount > currentColCount) {
             obj.skipUpdateTableReferences = true;
             obj.insertColumn(expandedColCount - currentColCount);
         }
         const hiddenRowCount = obj.rows.slice(rowIndex).filter((x) => x.element.style.display === 'none').length;
-        const expandedRowCount = rowIndex + hiddenRowCount + data.length;
+        const expandedRowCount = rowIndex + hiddenRowCount + rows.length;
         const currentRowCount = obj.rows.length;
         if (expandedRowCount > currentRowCount) {
             obj.skipUpdateTableReferences = true;
@@ -350,7 +353,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
         }
 
         // Go through the columns to get the data
-        while ((row = data[j])) {
+        while ((row = rows[j])) {
             i = 0;
             colIndex = parseInt(x);
 
@@ -375,7 +378,8 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
                 if (style && style[styleIndex]) {
                     const columnName = getColumnNameFromId([colIndex, rowIndex]);
                     newStyle[columnName] = style[styleIndex];
-                    oldStyle[columnName] = obj.getStyle(columnName);
+                    // The style text of one cell
+                    oldStyle[columnName] = obj.getStyle(columnName) as string;
                     obj.records[rowIndex][colIndex].element.setAttribute('style', style[styleIndex]);
                     styleIndex++;
                 }
@@ -395,7 +399,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
             }
 
             j++;
-            if (data[j]) {
+            if (rows[j]) {
                 if (rowIndex >= obj.rows.length - 1) {
                     // If the pasted row is out of range, create it if possible
                     if (obj.options.allowInsertRow != false) {
@@ -427,12 +431,12 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
         // Paste event
         const eventRecords = [];
 
-        for (let j = 0; j < data.length; j++) {
-            for (let i = 0; i < data[j].length; i++) {
+        for (let j = 0; j < rows.length; j++) {
+            for (let i = 0; i < rows[j].length; i++) {
                 eventRecords.push({
                     x: i + x,
                     y: j + y,
-                    value: data[j][i],
+                    value: rows[j][i],
                 });
             }
         }
