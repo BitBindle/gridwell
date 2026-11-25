@@ -92,7 +92,6 @@ export const setData: WorksheetMethod<'setData'> = function (data: any) {
         if (!obj.pageNumber) {
             obj.pageNumber = 0;
         }
-        var quantityPerPage = obj.options.pagination;
         startNumber = obj.options.pagination * obj.pageNumber;
         finalNumber = obj.options.pagination * obj.pageNumber + obj.options.pagination;
 

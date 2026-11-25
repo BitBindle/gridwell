@@ -85,9 +85,6 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
 
     // Configuration
     if (obj.options.allowInsertColumn != false) {
-        // Records
-        var records = [];
-
         // Data to be insert
         let data: any[] = [];
 

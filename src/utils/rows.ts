@@ -97,9 +97,6 @@ export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumbe
 
     // Configuration
     if (obj.options.allowInsertRow != false) {
-        // Records
-        var records = [];
-
         // Data to be insert
         let data: any[] = [];
 

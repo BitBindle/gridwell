@@ -278,9 +278,6 @@ export const redo: WorksheetMethod<'redo'> = function () {
     obj.parent.ignoreEvents = true;
     obj.ignoreHistory = true;
 
-    // Records
-    var records = [];
-
     // Update cells
     let historyRecord;
 

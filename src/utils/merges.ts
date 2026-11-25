@@ -160,7 +160,6 @@ export const getMerge: WorksheetMethod<'getMerge'> = function (cellName) {
         }
     } else {
         if (obj.options.mergeCells) {
-            var mergedCells = obj.options.mergeCells;
             const keys = Object.keys(obj.options.mergeCells);
             for (let i = 0; i < keys.length; i++) {
                 data[keys[i]] = [obj.options.mergeCells[keys[i]][0], obj.options.mergeCells[keys[i]][1]];
@@ -212,10 +211,8 @@ export const setMerge = function (this: Worksheet, cellName: string, colspan: an
     } else if ((!colspan || colspan < 2) && (!rowspan || rowspan < 2)) {
         test = 'Invalid merged properties';
     } else {
-        var cells = [];
         for (let j = cell[1]; j < cell[1] + rowspan; j++) {
             for (let i = cell[0]; i < cell[0] + colspan; i++) {
-                var columnName = getColumnNameFromId([i, j]);
                 if (obj.records[j][i].element.getAttribute('data-merged')) {
                     test = 'There is a conflict with another merged cell';
                 }
@@ -340,7 +337,6 @@ export const destroyMerge = function (this: Worksheet, keepOptions?: boolean) {
 
     // Remove any merged cells
     if (obj.options.mergeCells) {
-        var mergedCells = obj.options.mergeCells;
         const keys = Object.keys(obj.options.mergeCells);
         for (let i = 0; i < keys.length; i++) {
             removeMerge.call(obj, keys[i], null, keepOptions);
