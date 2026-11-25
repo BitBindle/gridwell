@@ -94,7 +94,7 @@ export const getCoordsFromCellName = function (columnName: string): [number, num
     }
 };
 
-export const getCoordsFromRange = function (range: any): [number, number, number, number] {
+export const getCoordsFromRange = function (range: string): [number, number, number, number] {
     const [start, end] = range.split(':');
 
     // A range of whole columns, for example A:B, has no rows

@@ -479,7 +479,7 @@ export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numO
  * @param row - row number (first row is: 0)
  * @return height - current row height
  */
-export const getHeight = function (this: Worksheet, row: any) {
+export const getHeight = function (this: Worksheet, row?: number | string | HTMLElement): string[] | string {
     const obj = this;
 
     let data;
@@ -496,10 +496,11 @@ export const getHeight = function (this: Worksheet, row: any) {
     } else {
         // In case the row is an object
         if (typeof row == 'object') {
-            row = row.getAttribute('data-y');
+            row = row.getAttribute('data-y')!;
         }
 
-        data = obj.rows[row].element.style.height;
+        // data-y is the row number as text, which works as an index
+        data = obj.rows[row as number].element.style.height;
     }
 
     return data;
