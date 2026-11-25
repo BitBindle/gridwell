@@ -1216,6 +1216,10 @@ const touchStartControls = function (e) {
             if (columnId && rowId) {
                 updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, columnId, rowId, undefined, undefined, e);
 
+                if (libraryBase.jspreadsheet.current.options.editable == false) {
+                    return;
+                }
+
                 libraryBase.jspreadsheet.timeControl = setTimeout(function () {
                     // Keep temporary reference to the element
                     if (libraryBase.jspreadsheet.current.options.columns[columnId].type == 'color') {
