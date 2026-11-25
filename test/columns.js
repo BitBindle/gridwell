@@ -743,3 +743,23 @@ describe('Image columns', () => {
         ]);
     });
 });
+
+describe('Calendar columns', () => {
+    it('shows a cell whose value is a year, and sets a year as the value', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [['2020'], ['2021-05-01']],
+                    columns: [{ type: 'calendar' }],
+                },
+            ],
+        })[0];
+
+        expect(worksheet.getCell('A1')).to.not.equal(undefined);
+        expect(worksheet.getCell('A2').textContent).to.equal('2021-05-01');
+
+        worksheet.setValueFromCoords(0, 1, '2022');
+
+        expect(worksheet.getData()).to.eql([['2020'], ['2022']]);
+    });
+});

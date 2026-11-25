@@ -482,7 +482,8 @@ const validDate = function (date: any) {
         return true;
     } else {
         date = date.split('-');
-        if (date[0].length == 4 && date[0] == Number(date[0]) && date[1].length == 2 && date[1] == Number(date[1])) {
+        // A text without a dash, such as a year, has one part
+        if (date[0].length == 4 && date[0] == Number(date[0]) && date[1] && date[1].length == 2 && date[1] == Number(date[1])) {
             return true;
         }
     }
