@@ -1,14 +1,12 @@
-// @ts-check
 import { copy } from './copyPaste.js';
-/** @import { Worksheet } from '../types/internal' */
+import type { Worksheet } from '../types/internal';
 
 /**
  * Download CSV table
- * @this {Worksheet}
- * @param {boolean} [includeHeaders] - Put the headers in the first row.
- * @param {boolean} [processed] - Download the shown values instead of the data.
+ * @param includeHeaders - Put the headers in the first row.
+ * @param processed - Download the shown values instead of the data.
  */
-export const download = function (includeHeaders, processed) {
+export const download = function (this: Worksheet, includeHeaders?: boolean, processed?: boolean) {
     const obj = this;
 
     if (obj.parent.config.allowExport == false) {

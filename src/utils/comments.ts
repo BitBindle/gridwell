@@ -1,17 +1,14 @@
-// @ts-check
 import dispatch from './dispatch.js';
 import { getCoordsFromCellName } from './helpers.js';
 import { setHistory } from './history.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
-/** @import { Worksheet } from '../types/internal' */
+import type { Worksheet } from '../types/internal';
 
 /**
  * Get cell comments, null cell for all
- * @this {Worksheet}
- * @param {string | number[]} [cell] - The cell name, for example "B3".
- * @returns {Record<string, string> | string}
+ * @param cell - The cell name, for example "B3".
  */
-export const getComments = function (cell) {
+export const getComments = function (this: Worksheet, cell?: string | number[]): Record<string, string> | string {
     const obj = this;
 
     if (cell) {
@@ -23,8 +20,7 @@ export const getComments = function (cell) {
 
         return obj.records[cell[1]][cell[0]].element.getAttribute('title') || '';
     } else {
-        /** @type {Record<string, string>} */
-        const data = {};
+        const data: Record<string, string> = {};
         for (let j = 0; j < obj.options.data.length; j++) {
             for (let i = 0; i < obj.options.columns.length; i++) {
                 const comments = obj.records[j][i].element.getAttribute('title');
@@ -40,11 +36,10 @@ export const getComments = function (cell) {
 
 /**
  * Set cell comments
- * @this {Worksheet}
- * @param {string | Record<string, string>} cellId - The cell name, for example "B3", or the comments by cell name.
- * @param {string} [comments] - The comment, with a cell name.
+ * @param cellId - The cell name, for example "B3", or the comments by cell name.
+ * @param comments - The comment, with a cell name.
  */
-export const setComments = function (cellId, comments) {
+export const setComments = function (this: Worksheet, cellId: string | Record<string, string>, comments?: string) {
     const obj = this;
 
     let commentsObj;
@@ -55,8 +50,7 @@ export const setComments = function (cellId, comments) {
         commentsObj = cellId;
     }
 
-    /** @type {Record<string, string>} */
-    const oldValue = {};
+    const oldValue: Record<string, string> = {};
 
     Object.entries(commentsObj).forEach(function ([cellName, comment]) {
         const cellCoords = getCoordsFromCellName(cellName);

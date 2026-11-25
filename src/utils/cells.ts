@@ -1,14 +1,12 @@
-// @ts-check
 import { getCoordsFromCellName } from './helpers.js';
-/** @import { Worksheet } from '../types/internal' */
+import type { Worksheet } from '../types/internal';
 
 /**
  * Make a cell read-only, or editable again.
- * @this {Worksheet}
- * @param {string | HTMLElement} cell - The cell name, for example "B3", or the td of the cell.
- * @param {boolean} state - Whether the cell is read-only.
+ * @param cell - The cell name, for example "B3", or the td of the cell.
+ * @param state - Whether the cell is read-only.
  */
-export const setReadOnly = function (cell, state) {
+export const setReadOnly = function (this: Worksheet, cell: string | HTMLElement, state: boolean) {
     const obj = this;
 
     let record;
@@ -33,12 +31,10 @@ export const setReadOnly = function (cell, state) {
 
 /**
  * Check if a cell is read-only.
- * @this {Worksheet}
- * @param {number | string} x - The column, or the cell name, for example "B3".
- * @param {number} [y] - The row.
- * @returns {boolean}
+ * @param x - The column, or the cell name, for example "B3".
+ * @param y - The row.
  */
-export const isReadOnly = function (x, y) {
+export const isReadOnly = function (this: Worksheet, x: number | string, y?: number): boolean {
     const obj = this;
 
     if (typeof x === 'string' && typeof y === 'undefined') {
@@ -47,5 +43,5 @@ export const isReadOnly = function (x, y) {
         [x, y] = coords;
     }
 
-    return obj.records[y][/** @type {number} */ (x)].element.classList.contains('readonly');
+    return obj.records[y][x as number].element.classList.contains('readonly');
 };

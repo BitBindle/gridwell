@@ -1,16 +1,14 @@
-// @ts-check
 import { resetFilters } from './filter.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import { updateResult } from './internal.js';
 import { isRowMerged } from './merges.js';
-/** @import { Worksheet } from '../types/internal' */
+import type { Worksheet } from '../types/internal';
 
 /**
  * Search
- * @this {Worksheet}
- * @param {string} query - The text to find. An empty text shows all rows again.
+ * @param query - The text to find. An empty text shows all rows again.
  */
-export const search = function (query) {
+export const search = function (this: Worksheet, query: string) {
     const obj = this;
 
     // Reset any filter
@@ -32,11 +30,10 @@ export const search = function (query) {
 
         /**
          * Search filter
-         * @param {any} item - The data of the row.
-         * @param {RegExp} query
-         * @param {number} index - The row.
+         * @param item - The data of the row.
+         * @param index - The row.
          */
-        const search = function (item, query, index) {
+        const search = function (item: any, query: RegExp, index: number) {
             for (let i = 0; i < item.length; i++) {
                 if (('' + item[i]).toLowerCase().search(query) >= 0 || ('' + obj.records[index][i].element.innerHTML).toLowerCase().search(query) >= 0) {
                     return true;
@@ -47,16 +44,15 @@ export const search = function (query) {
 
         /**
          * Result
-         * @param {number} k - The row.
+         * @param k - The row.
          */
-        const addToResult = function (k) {
+        const addToResult = function (k: number) {
             if (obj.results.indexOf(k) == -1) {
                 obj.results.push(k);
             }
         };
 
-        /** @type {string | RegExp} */
-        let parsedQuery = query.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+        let parsedQuery: string | RegExp = query.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
         parsedQuery = new RegExp(parsedQuery, 'i');
 
         // Filter
@@ -86,9 +82,8 @@ export const search = function (query) {
 
 /**
  * Reset search
- * @this {Worksheet}
  */
-export const resetSearch = function () {
+export const resetSearch = function (this: Worksheet) {
     const obj = this;
 
     obj.searchInput.value = '';

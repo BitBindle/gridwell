@@ -1,15 +1,12 @@
-// @ts-check
 import dispatch from './dispatch.js';
-/** @import { Worksheet } from '../types/internal' */
+import type { Worksheet } from '../types/internal';
 
 /**
  * Get meta information from cell(s)
- * @this {Worksheet}
- * @param {string} [cell] - The cell name, for example "B3". Without it, the meta information of all cells.
- * @param {string} [key] - The key of the information.
- * @returns {any}
+ * @param cell - The cell name, for example "B3". Without it, the meta information of all cells.
+ * @param key - The key of the information.
  */
-export const getMeta = function (cell, key) {
+export const getMeta = function (this: Worksheet, cell?: string, key?: string): any {
     const obj = this;
 
     if (!cell) {
@@ -25,15 +22,13 @@ export const getMeta = function (cell, key) {
 
 /**
  * Update meta information
- * @this {Worksheet}
- * @param {Record<string, string>} affectedCells - The new cell names, by old cell name.
+ * @param affectedCells - The new cell names, by old cell name.
  */
-export const updateMeta = function (affectedCells) {
+export const updateMeta = function (this: Worksheet, affectedCells: Record<string, string>) {
     const obj = this;
 
     if (obj.options.meta) {
-        /** @type {Record<string, any>} */
-        const newMeta = {};
+        const newMeta: Record<string, any> = {};
         const keys = Object.keys(obj.options.meta);
         for (let i = 0; i < keys.length; i++) {
             if (affectedCells[keys[i]]) {
@@ -49,12 +44,11 @@ export const updateMeta = function (affectedCells) {
 
 /**
  * Set meta information to cell(s)
- * @this {Worksheet}
- * @param {any} o - The cell name, for example "B3", or the information of many cells: { B3: { key: value } }.
- * @param {string} [k] - The key, with a cell name.
- * @param {any} [v] - The value, with a cell name.
+ * @param o - The cell name, for example "B3", or the information of many cells: { B3: { key: value } }.
+ * @param k - The key, with a cell name.
+ * @param v - The value, with a cell name.
  */
-export const setMeta = function (o, k, v) {
+export const setMeta = function (this: Worksheet, o: any, k?: string, v?: any) {
     const obj = this;
 
     if (!obj.options.meta) {

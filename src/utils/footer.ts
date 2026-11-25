@@ -1,14 +1,12 @@
-// @ts-check
 import { parseValue } from './internal.js';
 import { updateGridSize } from './accessibility.js';
-/** @import { Worksheet } from '../types/internal' */
+import type { Worksheet } from '../types/internal';
 
 /**
  * Set the footers, or show the footers of the options again.
- * @this {Worksheet}
- * @param {string[][]} [data] - The new footers.
+ * @param data - The new footers.
  */
-export const setFooter = function (data) {
+export const setFooter = function (this: Worksheet, data?: string[][]) {
     const obj = this;
 
     if (data) {
@@ -40,7 +38,7 @@ export const setFooter = function (data) {
                 let td;
 
                 if (obj.tfoot.children[j].children[i + 1]) {
-                    td = /** @type {HTMLTableCellElement} */ (obj.tfoot.children[j].children[i + 1]);
+                    td = obj.tfoot.children[j].children[i + 1] as HTMLTableCellElement;
                 } else {
                     td = document.createElement('td');
                     tr.appendChild(td);

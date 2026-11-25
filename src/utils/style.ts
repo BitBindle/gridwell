@@ -1,24 +1,20 @@
-// @ts-check
 import dispatch from './dispatch.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { setHistory } from './history.js';
-/** @import { Worksheet } from '../types/internal' */
+import type { Worksheet } from '../types/internal';
 
 /**
  * Get style information from cell(s)
- * @this {Worksheet}
- * @param {string | number[]} [cell] - The cell name, for example "B3". Without it, the style of all cells.
- * @param {any} [key] - A CSS property, for example "color". Without it, the whole style.
- * @returns {Record<string, string> | string}
+ * @param cell - The cell name, for example "B3". Without it, the style of all cells.
+ * @param key - A CSS property, for example "color". Without it, the whole style.
  */
-export const getStyle = function (cell, key) {
+export const getStyle = function (this: Worksheet, cell?: string | number[], key?: any): Record<string, string> | string {
     const obj = this;
 
     // Cell
     if (!cell) {
         // Control vars
-        /** @type {Record<string, string>} */
-        const data = {};
+        const data: Record<string, string> = {};
 
         // Column and row length
         const x = obj.options.data[0].length;
@@ -42,7 +38,7 @@ export const getStyle = function (cell, key) {
 
         return data;
     } else {
-        cell = getIdFromColumnName(/** @type {string} */ (cell), true);
+        cell = getIdFromColumnName(cell as string, true);
 
         return key ? obj.records[cell[1]][cell[0]].element.style[key] : obj.records[cell[1]][cell[0]].element.getAttribute('style');
     }
@@ -50,28 +46,31 @@ export const getStyle = function (cell, key) {
 
 /**
  * Set the style of cell(s)
- * @this {Worksheet}
- * @param {string | Record<string, string | string[]>} o - The cell name, for example "B3", or the styles by cell name.
- * @param {any} [k] - A CSS property, with a cell name.
- * @param {string} [v] - The value, with a cell name.
- * @param {boolean} [force] - Also style read-only cells, and set a value that the cell already has.
- * @param {boolean} [ignoreHistoryAndEvents] - Add no history. The onchangestyle event still occurs.
+ * @param o - The cell name, for example "B3", or the styles by cell name.
+ * @param k - A CSS property, with a cell name.
+ * @param v - The value, with a cell name.
+ * @param force - Also style read-only cells, and set a value that the cell already has.
+ * @param ignoreHistoryAndEvents - Add no history. The onchangestyle event still occurs.
  */
-export const setStyle = function (o, k, v, force, ignoreHistoryAndEvents) {
+export const setStyle = function (
+    this: Worksheet,
+    o: string | Record<string, string | string[]>,
+    k?: any,
+    v?: string,
+    force?: boolean,
+    ignoreHistoryAndEvents?: boolean
+) {
     const obj = this;
 
-    /** @type {Record<string, any>} */
-    const newValue = {};
-    /** @type {Record<string, any>} */
-    const oldValue = {};
+    const newValue: Record<string, any> = {};
+    const oldValue: Record<string, any> = {};
 
     /**
      * Apply style
-     * @param {string} cellId - The cell name.
-     * @param {any} key - A CSS property.
-     * @param {string} value
+     * @param cellId - The cell name.
+     * @param key - A CSS property.
      */
-    const applyStyle = function (cellId, key, value) {
+    const applyStyle = function (cellId: string, key: any, value: string) {
         // Position
         const cell = getIdFromColumnName(cellId, true);
 
@@ -108,8 +107,7 @@ export const setStyle = function (o, k, v, force, ignoreHistoryAndEvents) {
     } else {
         const keys = Object.keys(o);
         for (let i = 0; i < keys.length; i++) {
-            /** @type {any} */
-            let style = /** @type {Record<string, any>} */ (o)[keys[i]];
+            let style: any = (o as Record<string, any>)[keys[i]];
             if (typeof style == 'string') {
                 style = style.split(';');
             }
@@ -148,11 +146,10 @@ export const setStyle = function (o, k, v, force, ignoreHistoryAndEvents) {
 
 /**
  * Remove the style of cells.
- * @this {Worksheet}
- * @param {Record<string, any>} o - The cells, as the keys.
- * @param {boolean} [ignoreHistoryAndEvents] - Add no history. The onchangestyle event still occurs.
+ * @param o - The cells, as the keys.
+ * @param ignoreHistoryAndEvents - Add no history. The onchangestyle event still occurs.
  */
-export const resetStyle = function (o, ignoreHistoryAndEvents) {
+export const resetStyle = function (this: Worksheet, o: Record<string, any>, ignoreHistoryAndEvents?: boolean) {
     const obj = this;
 
     const keys = Object.keys(o);

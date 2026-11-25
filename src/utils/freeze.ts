@@ -1,14 +1,11 @@
-// @ts-check
-/** @import { Worksheet } from '../types/internal' */
+import type { Worksheet } from '../types/internal';
 // Get the width of the index column. The frozen columns stay at the left of the content when scrollLeft is more than this width.
-/** @this {Worksheet} */
-export const getIndexWidth = function () {
+export const getIndexWidth = function (this: Worksheet) {
     return this.table.classList.contains('jss_hidden_index') ? 0 : 50;
 };
 
 // Get width of all freezed cells together
-/** @this {Worksheet} */
-export const getFreezeWidth = function () {
+export const getFreezeWidth = function (this: Worksheet) {
     const obj = this;
 
     let width = 0;

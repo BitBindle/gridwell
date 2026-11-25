@@ -1,15 +1,12 @@
-// @ts-check
 import { getColumnName } from './helpers.js';
 
 /**
  * Make a copy of the array with the items of arr inserted at idx. When idx is past the end, the gap is filled with undefined.
- * @template T
- * @param {T[]} o - The array.
- * @param {number} idx - The position.
- * @param {T[]} arr - The items to insert.
- * @returns {(T | undefined)[]}
+ * @param o - The array.
+ * @param idx - The position.
+ * @param arr - The items to insert.
  */
-export const injectArray = function (o, idx, arr) {
+export const injectArray = function <T>(o: T[], idx: number, arr: T[]): (T | undefined)[] {
     if (idx <= o.length) {
         return o.slice(0, idx).concat(arr).concat(o.slice(idx));
     }
@@ -28,10 +25,8 @@ export const injectArray = function (o, idx, arr) {
  *
  * With arr true, it returns the coordinates, for example [1, 2] for "B3". Otherwise it returns the id, for example "1-2".
  * When id does not start with letters, it returns id.
- *
- * @type {{ (id: string, arr: true): number[]; (id: string, arr?: boolean): string }}
  */
-export const getIdFromColumnName = /** @param {any} id @param {boolean} [arr] @returns {any} */ function (id, arr) {
+export const getIdFromColumnName: { (id: string, arr: true): number[]; (id: string, arr?: boolean): string } = function (id: any, arr?: boolean): any {
     // Get the letters
     const t = /^[a-zA-Z]+/.exec(id);
 
@@ -49,7 +44,7 @@ export const getIdFromColumnName = /** @param {any} id @param {boolean} [arr] @r
 
         // Number
         // parseInt converts the match to its text, or null to NaN
-        let number = parseInt(/** @type {any} */ (/[0-9]+$/.exec(id)));
+        let number = parseInt(/[0-9]+$/.exec(id) as any);
         if (number > 0) {
             number--;
         }
@@ -66,11 +61,10 @@ export const getIdFromColumnName = /** @param {any} id @param {boolean} [arr] @r
 
 /**
  * Convert jss id to excel like column name
- *
- * @param {string | (string | number)[]} cellId - An id, for example "1-2", or the coordinates, for example [1, 2].
- * @returns {string} The cell name, for example "B3".
+ * @param cellId - An id, for example "1-2", or the coordinates, for example [1, 2].
+ * @returns The cell name, for example "B3".
  */
-export const getColumnNameFromId = function (cellId) {
+export const getColumnNameFromId = function (cellId: string | (string | number)[]): string {
     if (!Array.isArray(cellId)) {
         cellId = cellId.split('-');
     }

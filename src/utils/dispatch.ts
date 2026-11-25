@@ -1,17 +1,14 @@
-// @ts-check
 import jSuites from 'jsuites';
-/** @import { Worksheet, Spreadsheet } from '../types/internal' */
+import type { Worksheet, Spreadsheet } from '../types/internal';
 
 /**
  * Prepare JSON in the correct format
- * @this {Worksheet}
- * @param {{ x: number, y: number, value: any }[]} data - The changed cells.
+ * @param data - The changed cells.
  */
-const prepareJson = function (data) {
+const prepareJson = function (this: Worksheet, data: { x: number; y: number; value: any }[]) {
     const obj = this;
 
-    /** @type {{ row: number, data: Record<string, any> }[]} */
-    const rows = [];
+    const rows: { row: number; data: Record<string, any> }[] = [];
     for (let i = 0; i < data.length; i++) {
         const x = data[i].x;
         const y = data[i].y;
@@ -35,11 +32,8 @@ const prepareJson = function (data) {
 
 /**
  * Post json to a remote server
- * @this {Worksheet}
- * @param {string} url
- * @param {any} data
  */
-const save = function (url, data) {
+const save = function (this: Worksheet, url: string, data: any) {
     const obj = this;
 
     // Parse anything in the data before sending to the server
@@ -58,8 +52,7 @@ const save = function (url, data) {
         method: 'POST',
         dataType: 'json',
         data: { data: JSON.stringify(data) },
-        /** @param {any} result */
-        success: function (result) {
+        success: function (result: any) {
             // Event
             dispatch.call(obj, 'onsave', obj.parent, obj, data);
         },
@@ -71,24 +64,21 @@ const save = function (url, data) {
  *
  * The first argument is the name of the event, for example "onchange". The other arguments go to the event handlers.
  * It returns the result of the last handler.
- *
- * @type {(this: Worksheet | Spreadsheet, event: string, ...args: any[]) => any}
  */
-const dispatch = function (event) {
+const dispatch: (this: Worksheet | Spreadsheet, event: string, ...args: any[]) => any = function (event) {
     const obj = this;
     let ret = null;
 
-    let spreadsheet = /** @type {Spreadsheet} */ (obj.parent ? obj.parent : obj);
+    let spreadsheet = (obj.parent ? obj.parent : obj) as Spreadsheet;
 
     // Dispatch events
     if (!spreadsheet.ignoreEvents) {
         // Call global event
         if (typeof spreadsheet.config.onevent == 'function') {
-            ret = spreadsheet.config.onevent.apply(this, /** @type {any} */ (arguments));
+            ret = spreadsheet.config.onevent.apply(this, arguments as any);
         }
         // Call specific events
-        /** @type {Record<string, any>} */
-        const config = spreadsheet.config;
+        const config: Record<string, any> = spreadsheet.config;
         if (typeof config[event] == 'function') {
             ret = config[event].apply(this, Array.prototype.slice.call(arguments, 1));
         }
@@ -101,7 +91,7 @@ const dispatch = function (event) {
                 const plugin = spreadsheet.plugins[key];
 
                 if (typeof plugin.onevent === 'function') {
-                    ret = plugin.onevent.apply(this, /** @type {any} */ (arguments));
+                    ret = plugin.onevent.apply(this, arguments as any);
                 }
             }
         }
@@ -109,7 +99,7 @@ const dispatch = function (event) {
 
     if (event == 'onafterchanges') {
         // Only a worksheet dispatches onafterchanges
-        const worksheet = /** @type {Worksheet} */ (obj);
+        const worksheet = obj as Worksheet;
         const scope = arguments;
 
         if (typeof spreadsheet.plugins === 'object') {
