@@ -3,12 +3,15 @@ import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { setHistory } from './history.js';
 import type { Worksheet } from '../types/internal';
 
+/** A style declaration read and written by property name, for example style['color'] */
+type StyleProperties = Record<string, string>;
+
 /**
  * Get style information from cell(s)
  * @param cell - The cell name, for example "B3". Without it, the style of all cells.
  * @param key - A CSS property, for example "color". Without it, the whole style.
  */
-export const getStyle = function (this: Worksheet, cell?: string | number[], key?: any): Record<string, string> | string {
+export const getStyle = function (this: Worksheet, cell?: string | number[], key?: string): Record<string, string> | string {
     const obj = this;
 
     // Cell
@@ -24,7 +27,7 @@ export const getStyle = function (this: Worksheet, cell?: string | number[], key
         for (let j = 0; j < y; j++) {
             for (let i = 0; i < x; i++) {
                 // Value
-                const v = key ? obj.records[j][i].element.style[key] : obj.records[j][i].element.getAttribute('style');
+                const v = key ? (obj.records[j][i].element.style as unknown as StyleProperties)[key] : obj.records[j][i].element.getAttribute('style');
 
                 // Any meta data for this column?
                 if (v) {
@@ -41,7 +44,9 @@ export const getStyle = function (this: Worksheet, cell?: string | number[], key
         cell = getIdFromColumnName(cell as string, true);
 
         // Each cell gets a style attribute when it is created (the text alignment)
-        return key ? obj.records[cell[1]][cell[0]].element.style[key] : obj.records[cell[1]][cell[0]].element.getAttribute('style')!;
+        return key
+            ? (obj.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key]
+            : obj.records[cell[1]][cell[0]].element.getAttribute('style')!;
     }
 };
 
@@ -56,35 +61,36 @@ export const getStyle = function (this: Worksheet, cell?: string | number[], key
 export const setStyle = function (
     this: Worksheet,
     o: string | Record<string, string | string[]>,
-    k?: any,
-    v?: string,
+    k?: string | null,
+    v?: string | null,
     force?: boolean,
     ignoreHistoryAndEvents?: boolean
 ) {
     const obj = this;
 
-    const newValue: Record<string, any> = {};
-    const oldValue: Record<string, any> = {};
+    // Lists of 'property:value' entries by cell name, joined into one string per cell below
+    const newValue: Record<string, string[][]> = {};
+    const oldValue: Record<string, string[][]> = {};
 
     /**
      * Apply style
      * @param cellId - The cell name.
      * @param key - A CSS property.
      */
-    const applyStyle = function (cellId: string, key: any, value: string) {
+    const applyStyle = function (cellId: string, key: string, value: string) {
         // Position
         const cell = getIdFromColumnName(cellId, true);
 
         if (obj.records[cell[1]] && obj.records[cell[1]][cell[0]] && (obj.records[cell[1]][cell[0]].element.classList.contains('readonly') == false || force)) {
             // Current value
-            const currentValue = obj.records[cell[1]][cell[0]].element.style[key];
+            const currentValue = (obj.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key];
 
             // Change layout
             if (currentValue == value && !force) {
                 value = '';
-                obj.records[cell[1]][cell[0]].element.style[key] = '';
+                (obj.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key] = '';
             } else {
-                obj.records[cell[1]][cell[0]].element.style[key] = value;
+                (obj.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key] = value;
             }
 
             // History
@@ -108,13 +114,13 @@ export const setStyle = function (
     } else {
         const keys = Object.keys(o);
         for (let i = 0; i < keys.length; i++) {
-            let style: any = (o as Record<string, any>)[keys[i]];
+            let style: string | string[] = (o as Record<string, string | string[]>)[keys[i]];
             if (typeof style == 'string') {
                 style = style.split(';');
             }
             for (let j = 0; j < style.length; j++) {
                 // Split into a new variable, so that the styles the application gave stay as they are
-                let property = style[j];
+                let property: string | string[] = style[j];
                 if (typeof property == 'string') {
                     // Split at the first colon only, because a value can have colons, for example url(http://...)
                     property = property.split(/:(.*)/);
@@ -127,21 +133,22 @@ export const setStyle = function (
         }
     }
 
+    // The lists become strings in place
     let keys = Object.keys(oldValue);
     for (let i = 0; i < keys.length; i++) {
-        oldValue[keys[i]] = oldValue[keys[i]].join(';');
+        (oldValue as Record<string, unknown>)[keys[i]] = oldValue[keys[i]].join(';');
     }
     keys = Object.keys(newValue);
     for (let i = 0; i < keys.length; i++) {
-        newValue[keys[i]] = newValue[keys[i]].join(';');
+        (newValue as Record<string, unknown>)[keys[i]] = newValue[keys[i]].join(';');
     }
 
     if (!ignoreHistoryAndEvents) {
         // Keeping history of changes
         setHistory.call(obj, {
             action: 'setStyle',
-            oldValue: oldValue,
-            newValue: newValue,
+            oldValue: oldValue as unknown as Record<string, string>,
+            newValue: newValue as unknown as Record<string, string>,
         });
     }
 

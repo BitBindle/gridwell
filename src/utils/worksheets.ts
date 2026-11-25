@@ -134,7 +134,8 @@ const createTable = function (this: Worksheet) {
 
     // Colsgroup
     obj.colgroupContainer = document.createElement('colgroup');
-    let tempCol: any = document.createElement('col');
+    // A col, then the select-all cell of the header
+    let tempCol: HTMLElement = document.createElement('col');
     tempCol.setAttribute('width', '50');
     obj.colgroupContainer.appendChild(tempCol);
 
@@ -267,12 +268,12 @@ const createTable = function (this: Worksheet) {
     // Overflow
     if (obj.options.tableOverflow == true) {
         if (obj.options.tableHeight) {
-            (obj.content.style as any)['overflow-y'] = 'auto';
-            (obj.content.style as any)['box-shadow'] = 'rgb(221 221 221) 2px 2px 5px 0.1px';
+            (obj.content.style as unknown as Record<string, string>)['overflow-y'] = 'auto';
+            (obj.content.style as unknown as Record<string, string>)['box-shadow'] = 'rgb(221 221 221) 2px 2px 5px 0.1px';
             obj.content.style.maxHeight = typeof obj.options.tableHeight === 'string' ? obj.options.tableHeight : obj.options.tableHeight + 'px';
         }
         if (obj.options.tableWidth) {
-            (obj.content.style as any)['overflow-x'] = 'auto';
+            (obj.content.style as unknown as Record<string, string>)['overflow-x'] = 'auto';
             obj.content.style.width = typeof obj.options.tableWidth === 'string' ? obj.options.tableWidth : obj.options.tableWidth + 'px';
         }
     }
@@ -662,7 +663,14 @@ const worksheetPublicMethods: [string, (...args: any[]) => any][] = [
     ['getStyle', getStyle],
     [
         'setStyle',
-        function (this: Worksheet, cell: any, property: any, value: any, forceOverwrite: boolean, ignoreHistoryAndEvents?: boolean) {
+        function (
+            this: Worksheet,
+            cell: string | Record<string, string | string[]>,
+            property: string | null | undefined,
+            value: string | null | undefined,
+            forceOverwrite: boolean,
+            ignoreHistoryAndEvents?: boolean
+        ) {
             return setStyle.call(this, cell, property, value, forceOverwrite, ignoreHistoryAndEvents);
         },
     ],

@@ -194,4 +194,5 @@ export type WorksheetHistoryRecord =
       }
     | { action: 'setMerge'; column: string; colspan: number; rowspan: number; data: jspreadsheet.CellValue[] }
     | { action: 'orderBy'; rows: number[]; column: number; order: boolean | number }
-    | { action: 'setStyle'; oldValue: Record<string, string[]>; newValue: Record<string, string[]> };
+    /** The styles by cell name, each as 'property:value' entries joined with ';' */
+    | { action: 'setStyle'; oldValue: Record<string, string>; newValue: Record<string, string> };
