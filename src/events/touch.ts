@@ -1,6 +1,6 @@
 import { openEditor } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
-import { getCellColumnIndex } from '../utils/internal.js';
+import { getCellColumnIndex } from '../utils/values.js';
 import { updateSelectionFromCoords } from '../utils/selection.js';
 import { getElement, getIndex } from './helpers.js';
 import type { TargetEvent } from '../types/internal';

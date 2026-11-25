@@ -1,7 +1,8 @@
 import { closeEditor, openEditor } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
 import { isColMerged, isRowMerged } from '../utils/merges.js';
-import { copyData, resetSelection, selectAll, updateCornerPosition, updateSelectionFromCoords } from '../utils/selection.js';
+import { resetSelection, selectAll, updateCornerPosition, updateSelectionFromCoords } from '../utils/selection.js';
+import { copyData } from '../utils/fill.js';
 import { openFilter } from '../utils/filter.js';
 import { setWidth } from '../utils/columns.js';
 import { moveRow, setHeight } from '../utils/rows.js';

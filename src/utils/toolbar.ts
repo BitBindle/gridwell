@@ -1,6 +1,6 @@
 import jSuites from 'jsuites';
 import { getCellNameFromCoords } from './helpers.js';
-import { getWorksheetInstance } from './internal.js';
+import { getWorksheetInstance } from './activeWorksheet.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Spreadsheet, Worksheet } from '../types/internal';
 import type { Color } from 'jsuites';

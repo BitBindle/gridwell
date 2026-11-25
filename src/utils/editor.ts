@@ -1,7 +1,8 @@
 import jSuites from 'jsuites';
 
 import dispatch from './dispatch.js';
-import { getCellColumnIndex, getMask, isFormula, updateCell } from './internal.js';
+import { updateCell } from './internal.js';
+import { getCellColumnIndex, getMask, isFormula } from './values.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import { getLabelText, restoreActiveCell } from './accessibility.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';

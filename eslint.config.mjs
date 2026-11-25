@@ -57,7 +57,7 @@ export default tseslint.config(
         },
     },
     {
-        files: ['webpack.config.js', 'build.cjs'],
+        files: ['webpack.config.js', 'build.cjs', 'check-cycles.cjs'],
         languageOptions: {
             globals: {
                 ...globals.node,
