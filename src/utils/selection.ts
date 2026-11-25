@@ -556,9 +556,9 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
 
                             if (tokens) {
                                 // An array used as a map, as before
-                                const affectedTokens: any = [];
+                                const affectedTokens = [] as unknown as Record<string, string>;
                                 for (let index = 0; index < tokens.length; index++) {
-                                    const position = getIdFromColumnName(tokens[index], 1 as any);
+                                    const position = getIdFromColumnName(tokens[index], true);
                                     position[0] += colNumber;
                                     position[1] += rowNumber;
                                     if (position[1] < 0) {

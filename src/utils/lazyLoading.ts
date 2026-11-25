@@ -5,7 +5,8 @@ import type { Worksheet } from '../types/internal';
 /**
  * Remove a row from the table. If the row holds the open editor, save and close the editor first.
  */
-const removeRow = function (this: Worksheet, row: any) {
+// The callers remove a row when the body has more than a page of rows, so it has a first and a last row
+const removeRow = function (this: Worksheet, row: ChildNode) {
     const obj = this;
 
     if (obj.edition && row.contains(obj.edition[0])) {
@@ -21,8 +22,8 @@ const removeRow = function (this: Worksheet, row: any) {
 export const loadPage = function (this: Worksheet, pageNumber: number) {
     const obj = this;
 
-    // Search
-    let results: any;
+    // Search: the indexes of the rows found, or the rows
+    let results: number[] | Worksheet['rows'];
 
     if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
         results = obj.results;
@@ -52,13 +53,13 @@ export const loadPage = function (this: Worksheet, pageNumber: number) {
     // Appeding items
     for (let j = startRow; j < finalRow; j++) {
         if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
-            obj.tbody.appendChild(obj.rows[results[j]].element);
+            obj.tbody.appendChild(obj.rows[results[j] as number].element);
         } else {
             obj.tbody.appendChild(obj.rows[j].element);
         }
 
         if (obj.tbody.children.length > quantityPerPage) {
-            removeRow.call(obj, obj.tbody.firstChild);
+            removeRow.call(obj, obj.tbody.firstChild!);
         }
     }
 
@@ -103,8 +104,8 @@ export const loadValidation = function (this: Worksheet) {
 export const loadUp = function (this: Worksheet) {
     const obj = this;
 
-    // Search
-    let results: any;
+    // Search: the indexes of the rows found, or the rows
+    let results: number[] | Worksheet['rows'];
 
     if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
         results = obj.results;
@@ -116,19 +117,19 @@ export const loadUp = function (this: Worksheet) {
         // Get the first element in the page
         let item = parseInt((obj.tbody.firstChild as HTMLElement).getAttribute('data-y'));
         if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
-            item = results.indexOf(item);
+            item = (results as number[]).indexOf(item);
         }
         if (item > 0) {
             for (let j = 0; j < 30; j++) {
                 item = item - 1;
                 if (item > -1) {
                     if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
-                        obj.tbody.insertBefore(obj.rows[results[item]].element, obj.tbody.firstChild);
+                        obj.tbody.insertBefore(obj.rows[results[item] as number].element, obj.tbody.firstChild);
                     } else {
                         obj.tbody.insertBefore(obj.rows[item].element, obj.tbody.firstChild);
                     }
                     if (obj.tbody.children.length > 100) {
-                        removeRow.call(obj, obj.tbody.lastChild);
+                        removeRow.call(obj, obj.tbody.lastChild!);
                         test = 1;
                     }
                 }
@@ -145,8 +146,8 @@ export const loadUp = function (this: Worksheet) {
 export const loadDown = function (this: Worksheet) {
     const obj = this;
 
-    // Search
-    let results: any;
+    // Search: the indexes of the rows found, or the rows
+    let results: number[] | Worksheet['rows'];
 
     if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
         results = obj.results;
@@ -158,18 +159,18 @@ export const loadDown = function (this: Worksheet) {
         // Get the last element in the page
         let item = parseInt((obj.tbody.lastChild as HTMLElement).getAttribute('data-y'));
         if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
-            item = results.indexOf(item);
+            item = (results as number[]).indexOf(item);
         }
         if (item < obj.rows.length - 1) {
             for (let j = 0; j <= 30; j++) {
                 if (item < results.length) {
                     if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
-                        obj.tbody.appendChild(obj.rows[results[item]].element);
+                        obj.tbody.appendChild(obj.rows[results[item] as number].element);
                     } else {
                         obj.tbody.appendChild(obj.rows[item].element);
                     }
                     if (obj.tbody.children.length > 100) {
-                        removeRow.call(obj, obj.tbody.firstChild);
+                        removeRow.call(obj, obj.tbody.firstChild!);
                         test = 1;
                     }
                 }
