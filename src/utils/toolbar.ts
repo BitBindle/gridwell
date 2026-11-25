@@ -5,7 +5,6 @@ import type jspreadsheet from '../jspreadsheet';
 import type { Spreadsheet, Worksheet } from '../types/internal';
 import type { Color } from 'jsuites';
 
-/** The border select keeps the thickness, the color and the style that the user chose on its picker instance. */
 /** The picker of the borders, which keeps the thickness, the color and the style that the user chose. */
 type BorderPicker = jspreadsheet.PickerInstance & { thickness?: number; color?: string; style?: string };
 
@@ -17,170 +16,147 @@ const setItemStatus = function (toolbarItem: HTMLElement, worksheet: Worksheet) 
     }
 };
 
-export const getDefault = function (this: Spreadsheet) {
-    const items: jspreadsheet.ToolbarItem[] = [];
-    const spreadsheet = this;
-
-    const getActive = function () {
-        return getWorksheetInstance.call(spreadsheet);
+/**
+ * The updateState of an item that changes cells: the item is disabled while the worksheet that the spreadsheet shows is
+ * not editable.
+ */
+const getUpdateState = function (spreadsheet: Spreadsheet) {
+    return function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
+        setItemStatus(toolbarItem, getWorksheetInstance.call(spreadsheet));
     };
+};
 
-    items.push({
-        content: 'undo',
-        onclick: function () {
-            const worksheet = getActive();
+/**
+ * Give the selected cells of the worksheet a style.
+ * @param style - A CSS property and its value, such as 'font-size: large'.
+ */
+const setSelectedStyle = function (worksheet: Worksheet, style: string) {
+    const cells = worksheet.getSelected(true);
+    if (cells) {
+        worksheet.setStyle(
+            Object.fromEntries(
+                cells.map(function (cellName: string) {
+                    return [cellName, style];
+                })
+            )
+        );
+    }
+};
 
-            worksheet.undo();
+/**
+ * The selected range, from its first column and row to its last column and row.
+ */
+const getSelectedRange = function (range: [number, number, number, number]) {
+    return [Math.min(range[0], range[2]), Math.min(range[1], range[3]), Math.max(range[0], range[2]), Math.max(range[1], range[3])];
+};
+
+/**
+ * Undo, redo and save.
+ */
+const getHistoryItems = function (spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
+    return [
+        {
+            content: 'undo',
+            onclick: function () {
+                const worksheet = getWorksheetInstance.call(spreadsheet);
+
+                worksheet.undo();
+            },
         },
-    });
+        {
+            content: 'redo',
+            onclick: function () {
+                const worksheet = getWorksheetInstance.call(spreadsheet);
 
-    items.push({
-        content: 'redo',
-        onclick: function () {
-            const worksheet = getActive();
-
-            worksheet.redo();
+                worksheet.redo();
+            },
         },
-    });
+        {
+            content: 'save',
+            onclick: function () {
+                const worksheet = getWorksheetInstance.call(spreadsheet);
 
-    items.push({
-        content: 'save',
-        onclick: function () {
-            const worksheet = getActive();
-
-            if (worksheet) {
-                worksheet.download();
-            }
+                if (worksheet) {
+                    worksheet.download();
+                }
+            },
         },
-    });
+    ];
+};
 
-    items.push({
-        type: 'divisor',
-    });
-
-    items.push({
-        type: 'select',
-        width: '120px',
-        options: ['Default', 'Verdana', 'Arial', 'Courier New'],
-        render: function (e: string) {
-            return '<span style="font-family:' + e + '">' + e + '</span>';
-        },
-        onchange: function (a: HTMLElement, b: object, c: string, d: string, e: string) {
-            const worksheet = getActive();
-
-            const cells = worksheet.getSelected(true);
-            if (cells) {
+/**
+ * The font, the size, the alignment, bold, the color of the text and the color of the background.
+ */
+const getFontItems = function (spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
+    return [
+        {
+            type: 'select',
+            width: '120px',
+            options: ['Default', 'Verdana', 'Arial', 'Courier New'],
+            render: function (e: string) {
+                return '<span style="font-family:' + e + '">' + e + '</span>';
+            },
+            onchange: function (a: HTMLElement, b: object, c: string, d: string, e: string) {
                 // e is the key of the option as text, and the first option is Default
                 const value = e === '0' ? '' : d;
 
-                worksheet.setStyle(
-                    Object.fromEntries(
-                        cells.map(function (cellName: string) {
-                            return [cellName, 'font-family: ' + value];
-                        })
-                    )
-                );
-            }
+                setSelectedStyle(getWorksheetInstance.call(spreadsheet), 'font-family: ' + value);
+            },
+            updateState: getUpdateState(spreadsheet),
         },
-        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
-            setItemStatus(toolbarItem, getActive());
+        {
+            type: 'select',
+            width: '48px',
+            content: 'format_size',
+            options: ['x-small', 'small', 'medium', 'large', 'x-large'],
+            render: function (e: string) {
+                return '<span style="font-size:' + e + '">' + e + '</span>';
+            },
+            onchange: function (a: HTMLElement, b: object, c: string, value: string) {
+                setSelectedStyle(getWorksheetInstance.call(spreadsheet), 'font-size: ' + value);
+            },
+            updateState: getUpdateState(spreadsheet),
         },
-    });
+        {
+            type: 'select',
+            options: ['left', 'center', 'right', 'justify'],
+            render: function (e: string) {
+                return '<i class="material-icons">format_align_' + e + '</i>';
+            },
+            onchange: function (a: HTMLElement, b: object, c: string, value: string) {
+                setSelectedStyle(getWorksheetInstance.call(spreadsheet), 'text-align: ' + value);
+            },
+            updateState: getUpdateState(spreadsheet),
+        },
+        {
+            content: 'format_bold',
+            onclick: function () {
+                setSelectedStyle(getWorksheetInstance.call(spreadsheet), 'font-weight:bold');
+            },
+            updateState: getUpdateState(spreadsheet),
+        },
+        {
+            type: 'color',
+            content: 'format_color_text',
+            k: 'color',
+            updateState: getUpdateState(spreadsheet),
+        },
+        {
+            type: 'color',
+            content: 'format_color_fill',
+            k: 'background-color',
+            updateState: getUpdateState(spreadsheet),
+        },
+    ];
+};
 
-    items.push({
-        type: 'select',
-        width: '48px',
-        content: 'format_size',
-        options: ['x-small', 'small', 'medium', 'large', 'x-large'],
-        render: function (e: string) {
-            return '<span style="font-size:' + e + '">' + e + '</span>';
-        },
-        onchange: function (a: HTMLElement, b: object, c: string, value: string) {
-            const worksheet = getActive();
-
-            const cells = worksheet.getSelected(true);
-            if (cells) {
-                worksheet.setStyle(
-                    Object.fromEntries(
-                        cells.map(function (cellName: string) {
-                            return [cellName, 'font-size: ' + value];
-                        })
-                    )
-                );
-            }
-        },
-        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
-            setItemStatus(toolbarItem, getActive());
-        },
-    });
-
-    items.push({
-        type: 'select',
-        options: ['left', 'center', 'right', 'justify'],
-        render: function (e: string) {
-            return '<i class="material-icons">format_align_' + e + '</i>';
-        },
-        onchange: function (a: HTMLElement, b: object, c: string, value: string) {
-            const worksheet = getActive();
-
-            const cells = worksheet.getSelected(true);
-            if (cells) {
-                worksheet.setStyle(
-                    Object.fromEntries(
-                        cells.map(function (cellName: string) {
-                            return [cellName, 'text-align: ' + value];
-                        })
-                    )
-                );
-            }
-        },
-        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
-            setItemStatus(toolbarItem, getActive());
-        },
-    });
-
-    items.push({
-        content: 'format_bold',
-        onclick: function () {
-            const worksheet = getActive();
-
-            const cells = worksheet.getSelected(true);
-            if (cells) {
-                worksheet.setStyle(
-                    Object.fromEntries(
-                        cells.map(function (cellName: string) {
-                            return [cellName, 'font-weight:bold'];
-                        })
-                    )
-                );
-            }
-        },
-        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
-            setItemStatus(toolbarItem, getActive());
-        },
-    });
-
-    items.push({
-        type: 'color',
-        content: 'format_color_text',
-        k: 'color',
-        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
-            setItemStatus(toolbarItem, getActive());
-        },
-    });
-
-    items.push({
-        type: 'color',
-        content: 'format_color_fill',
-        k: 'background-color',
-        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement, d: jspreadsheet.WorksheetInstance) {
-            setItemStatus(toolbarItem, getActive());
-        },
-    });
-
+/**
+ * The vertical alignment.
+ */
+const getVerticalAlignItem = function (spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
     const verticalAlign = ['top', 'middle', 'bottom'];
 
-    items.push({
+    return {
         type: 'select',
         options: ['vertical_align_top', 'vertical_align_center', 'vertical_align_bottom'],
         render: function (e: string) {
@@ -188,38 +164,25 @@ export const getDefault = function (this: Spreadsheet) {
         },
         value: 1,
         onchange: function (a: HTMLElement, b: object, c: string, d: string, value: string) {
-            const worksheet = getActive();
-
-            const cells = worksheet.getSelected(true);
-            if (cells) {
-                worksheet.setStyle(
-                    Object.fromEntries(
-                        cells.map(function (cellName: string) {
-                            // The key is the index of the option as text
-                            return [cellName, 'vertical-align: ' + (verticalAlign as unknown as Record<string, string>)[value]];
-                        })
-                    )
-                );
-            }
+            // The key is the index of the option as text
+            setSelectedStyle(getWorksheetInstance.call(spreadsheet), 'vertical-align: ' + (verticalAlign as unknown as Record<string, string>)[value]);
         },
-        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
-            setItemStatus(toolbarItem, getActive());
-        },
-    });
+        updateState: getUpdateState(spreadsheet),
+    };
+};
 
-    items.push({
+/**
+ * Merge the selected cells, or remove the merge of the selected merged cells.
+ */
+const getMergeItem = function (spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
+    return {
         content: 'web',
         tooltip: jSuites.translate('Merge the selected cells'),
         onclick: function () {
-            const worksheet = getActive();
+            const worksheet = getWorksheetInstance.call(spreadsheet);
 
             if (worksheet.selection.range && confirm(jSuites.translate('The merged cells will retain the value of the top-left cell only. Are you sure?'))) {
-                const selectedRange = [
-                    Math.min(worksheet.selection.range[0], worksheet.selection.range[2]),
-                    Math.min(worksheet.selection.range[1], worksheet.selection.range[3]),
-                    Math.max(worksheet.selection.range[0], worksheet.selection.range[2]),
-                    Math.max(worksheet.selection.range[1], worksheet.selection.range[3]),
-                ];
+                const selectedRange = getSelectedRange(worksheet.selection.range);
 
                 const cell = getCellNameFromCoords(selectedRange[0], selectedRange[1]);
                 if (worksheet.records[selectedRange[1]][selectedRange[0]].element.getAttribute('data-merged')) {
@@ -234,12 +197,159 @@ export const getDefault = function (this: Spreadsheet) {
                 }
             }
         },
-        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
-            setItemStatus(toolbarItem, getActive());
+        updateState: getUpdateState(spreadsheet),
+    };
+};
+
+/**
+ * Set the borders of the selected cells.
+ * @param picker - The picker of the borders, with the thickness, the color and the style that the user chose.
+ * @param type - The option of the picker, such as 'border_outer'.
+ */
+const setBorders = function (worksheet: Worksheet, picker: BorderPicker, type: string) {
+    if (worksheet.selection.range) {
+        const selectedRange = getSelectedRange(worksheet.selection.range);
+
+        // Default options
+        let thickness = picker.thickness || 1;
+        const color = picker.color || 'black';
+        const borderStyle = picker.style || 'solid';
+
+        if (borderStyle === 'double') {
+            thickness += 2;
+        }
+
+        const style: Record<string, string> = {};
+
+        // Matrix
+        const px = selectedRange[0];
+        const py = selectedRange[1];
+        const ux = selectedRange[2];
+        const uy = selectedRange[3];
+
+        const setBorder = function (columnName: string, i: number, j: number) {
+            const border = ['', '', '', ''];
+
+            if (
+                ((type === 'border_top' || type === 'border_outer') && j === py) ||
+                ((type === 'border_inner' || type === 'border_horizontal') && j > py) ||
+                type === 'border_all'
+            ) {
+                border[0] = 'border-top: ' + thickness + 'px ' + borderStyle + ' ' + color;
+            } else {
+                border[0] = 'border-top: ';
+            }
+
+            if ((type === 'border_all' || type === 'border_right' || type === 'border_outer') && i === ux) {
+                border[1] = 'border-right: ' + thickness + 'px ' + borderStyle + ' ' + color;
+            } else {
+                border[1] = 'border-right: ';
+            }
+
+            if ((type === 'border_all' || type === 'border_bottom' || type === 'border_outer') && j === uy) {
+                border[2] = 'border-bottom: ' + thickness + 'px ' + borderStyle + ' ' + color;
+            } else {
+                border[2] = 'border-bottom: ';
+            }
+
+            if (
+                ((type === 'border_left' || type === 'border_outer') && i === px) ||
+                ((type === 'border_inner' || type === 'border_vertical') && i > px) ||
+                type === 'border_all'
+            ) {
+                border[3] = 'border-left: ' + thickness + 'px ' + borderStyle + ' ' + color;
+            } else {
+                border[3] = 'border-left: ';
+            }
+
+            style[columnName] = border.join(';');
+        };
+
+        for (let j = selectedRange[1]; j <= selectedRange[3]; j++) {
+            // Row - py - uy
+            for (let i = selectedRange[0]; i <= selectedRange[2]; i++) {
+                // Col - px - ux
+                setBorder(getCellNameFromCoords(i, j), i, j);
+
+                if (worksheet.records[j][i].element.getAttribute('data-merged')) {
+                    setBorder(getCellNameFromCoords(selectedRange[0], selectedRange[1]), i, j);
+                }
+            }
+        }
+
+        if (Object.keys(style)) {
+            worksheet.setStyle(style);
+        }
+    }
+};
+
+/**
+ * Add the controls for the color, the thickness and the style of the borders to the picker of the borders.
+ * @param a - The element of the picker.
+ * @param b - The picker, which keeps what the user chooses.
+ */
+const addBorderControls = function (a: HTMLElement, b: BorderPicker) {
+    // Border color
+    const container = document.createElement('div');
+    let div = document.createElement('div');
+    container.appendChild(div);
+
+    const colorPicker = jSuites.color(div, {
+        closeOnChange: false,
+        onchange: function (o: HTMLElement, v: string) {
+            (o.parentNode!.children[1] as HTMLElement).style.color = v;
+            b.color = v;
         },
     });
 
-    items.push({
+    const i = document.createElement('i');
+    i.classList.add('material-icons');
+    i.innerHTML = 'color_lens';
+    i.onclick = function () {
+        colorPicker.open();
+    };
+    container.appendChild(i);
+    a.children[1].appendChild(container);
+
+    div = document.createElement('div');
+    jSuites.picker(div, {
+        data: [1, 2, 3, 4, 5],
+        render: function (e: number) {
+            return '<div style="height: ' + e + 'px; width: 30px; background-color: black;"></div>';
+        },
+        onchange: function (a: HTMLElement, k: object, c: number, d: number) {
+            b.thickness = d;
+        },
+        width: '50px',
+    });
+    a.children[1].appendChild(div);
+
+    const borderStylePicker = document.createElement('div');
+    jSuites.picker(borderStylePicker, {
+        data: ['solid', 'dotted', 'dashed', 'double'],
+        render: function (e: string) {
+            if (e === 'double') {
+                return '<div style="width: 30px; border-top: 3px ' + e + ' black;"></div>';
+            }
+            return '<div style="width: 30px; border-top: 2px ' + e + ' black;"></div>';
+        },
+        onchange: function (a: HTMLElement, k: object, c: string, d: string) {
+            b.style = d;
+        },
+        width: '50px',
+    });
+    a.children[1].appendChild(borderStylePicker);
+
+    div = document.createElement('div');
+    div.style.flex = '1';
+    a.children[1].appendChild(div);
+};
+
+/**
+ * The borders.
+ */
+const getBordersItem = function (spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
+    return {
         type: 'select',
         options: [
             'border_all',
@@ -259,158 +369,18 @@ export const getDefault = function (this: Spreadsheet) {
         },
         right: true,
         onchange: function (a: HTMLElement, b: BorderPicker, c: string, d: string) {
-            const worksheet = getActive();
-
-            if (worksheet.selection.range) {
-                const selectedRange = [
-                    Math.min(worksheet.selection.range[0], worksheet.selection.range[2]),
-                    Math.min(worksheet.selection.range[1], worksheet.selection.range[3]),
-                    Math.max(worksheet.selection.range[0], worksheet.selection.range[2]),
-                    Math.max(worksheet.selection.range[1], worksheet.selection.range[3]),
-                ];
-
-                const type = d;
-
-                if (selectedRange) {
-                    // Default options
-                    let thickness = b.thickness || 1;
-                    const color = b.color || 'black';
-                    const borderStyle = b.style || 'solid';
-
-                    if (borderStyle === 'double') {
-                        thickness += 2;
-                    }
-
-                    const style: Record<string, string> = {};
-
-                    // Matrix
-                    const px = selectedRange[0];
-                    const py = selectedRange[1];
-                    const ux = selectedRange[2];
-                    const uy = selectedRange[3];
-
-                    const setBorder = function (columnName: string, i: number, j: number) {
-                        const border = ['', '', '', ''];
-
-                        if (
-                            ((type === 'border_top' || type === 'border_outer') && j === py) ||
-                            ((type === 'border_inner' || type === 'border_horizontal') && j > py) ||
-                            type === 'border_all'
-                        ) {
-                            border[0] = 'border-top: ' + thickness + 'px ' + borderStyle + ' ' + color;
-                        } else {
-                            border[0] = 'border-top: ';
-                        }
-
-                        if ((type === 'border_all' || type === 'border_right' || type === 'border_outer') && i === ux) {
-                            border[1] = 'border-right: ' + thickness + 'px ' + borderStyle + ' ' + color;
-                        } else {
-                            border[1] = 'border-right: ';
-                        }
-
-                        if ((type === 'border_all' || type === 'border_bottom' || type === 'border_outer') && j === uy) {
-                            border[2] = 'border-bottom: ' + thickness + 'px ' + borderStyle + ' ' + color;
-                        } else {
-                            border[2] = 'border-bottom: ';
-                        }
-
-                        if (
-                            ((type === 'border_left' || type === 'border_outer') && i === px) ||
-                            ((type === 'border_inner' || type === 'border_vertical') && i > px) ||
-                            type === 'border_all'
-                        ) {
-                            border[3] = 'border-left: ' + thickness + 'px ' + borderStyle + ' ' + color;
-                        } else {
-                            border[3] = 'border-left: ';
-                        }
-
-                        style[columnName] = border.join(';');
-                    };
-
-                    for (let j = selectedRange[1]; j <= selectedRange[3]; j++) {
-                        // Row - py - uy
-                        for (let i = selectedRange[0]; i <= selectedRange[2]; i++) {
-                            // Col - px - ux
-                            setBorder(getCellNameFromCoords(i, j), i, j);
-
-                            if (worksheet.records[j][i].element.getAttribute('data-merged')) {
-                                setBorder(getCellNameFromCoords(selectedRange[0], selectedRange[1]), i, j);
-                            }
-                        }
-                    }
-
-                    if (Object.keys(style)) {
-                        worksheet.setStyle(style);
-                    }
-                }
-            }
+            setBorders(getWorksheetInstance.call(spreadsheet), b, d);
         },
-        onload: function (a: HTMLElement, b: BorderPicker) {
-            // Border color
-            const container = document.createElement('div');
-            let div = document.createElement('div');
-            container.appendChild(div);
+        onload: addBorderControls,
+        updateState: getUpdateState(spreadsheet),
+    };
+};
 
-            const colorPicker = jSuites.color(div, {
-                closeOnChange: false,
-                onchange: function (o: HTMLElement, v: string) {
-                    (o.parentNode!.children[1] as HTMLElement).style.color = v;
-                    b.color = v;
-                },
-            });
-
-            const i = document.createElement('i');
-            i.classList.add('material-icons');
-            i.innerHTML = 'color_lens';
-            i.onclick = function () {
-                colorPicker.open();
-            };
-            container.appendChild(i);
-            a.children[1].appendChild(container);
-
-            div = document.createElement('div');
-            jSuites.picker(div, {
-                data: [1, 2, 3, 4, 5],
-                render: function (e: number) {
-                    return '<div style="height: ' + e + 'px; width: 30px; background-color: black;"></div>';
-                },
-                onchange: function (a: HTMLElement, k: object, c: number, d: number) {
-                    b.thickness = d;
-                },
-                width: '50px',
-            });
-            a.children[1].appendChild(div);
-
-            const borderStylePicker = document.createElement('div');
-            jSuites.picker(borderStylePicker, {
-                data: ['solid', 'dotted', 'dashed', 'double'],
-                render: function (e: string) {
-                    if (e === 'double') {
-                        return '<div style="width: 30px; border-top: 3px ' + e + ' black;"></div>';
-                    }
-                    return '<div style="width: 30px; border-top: 2px ' + e + ' black;"></div>';
-                },
-                onchange: function (a: HTMLElement, k: object, c: string, d: string) {
-                    b.style = d;
-                },
-                width: '50px',
-            });
-            a.children[1].appendChild(borderStylePicker);
-
-            div = document.createElement('div');
-            div.style.flex = '1';
-            a.children[1].appendChild(div);
-        },
-        updateState: function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
-            setItemStatus(toolbarItem, getActive());
-        },
-    });
-
-    items.push({
-        type: 'divisor',
-    });
-
-    items.push({
+/**
+ * Toggle the fullscreen of the spreadsheet.
+ */
+const getFullscreenItem = function (spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
+    return {
         content: 'fullscreen',
         tooltip: 'Toggle Fullscreen',
         onclick: function (a: HTMLElement, b: object, c: HTMLElement) {
@@ -429,9 +399,25 @@ export const getDefault = function (this: Spreadsheet) {
                 c.children[0].textContent = 'fullscreen';
             }
         },
-    });
+    };
+};
 
-    return items;
+/**
+ * The items of the default toolbar.
+ */
+export const getDefault = function (this: Spreadsheet): jspreadsheet.ToolbarItem[] {
+    const spreadsheet = this;
+
+    return [
+        ...getHistoryItems(spreadsheet),
+        { type: 'divisor' },
+        ...getFontItems(spreadsheet),
+        getVerticalAlignItem(spreadsheet),
+        getMergeItem(spreadsheet),
+        getBordersItem(spreadsheet),
+        { type: 'divisor' },
+        getFullscreenItem(spreadsheet),
+    ];
 };
 
 const adjustToolbarSettingsForJSuites = function (this: Spreadsheet, toolbar: jspreadsheet.ToolbarOptions) {
