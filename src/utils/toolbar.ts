@@ -371,7 +371,6 @@ export const getDefault = function (this: Spreadsheet) {
 
             div = document.createElement('div');
             jSuites.picker(div, {
-                type: 'select',
                 data: [1, 2, 3, 4, 5],
                 render: function (e: number) {
                     return '<div style="height: ' + e + 'px; width: 30px; background-color: black;"></div>';
@@ -385,7 +384,6 @@ export const getDefault = function (this: Spreadsheet) {
 
             const borderStylePicker = document.createElement('div');
             jSuites.picker(borderStylePicker, {
-                type: 'select',
                 data: ['solid', 'dotted', 'dashed', 'double'],
                 render: function (e: string) {
                     if (e === 'double') {
