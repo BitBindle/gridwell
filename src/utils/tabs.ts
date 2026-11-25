@@ -8,8 +8,27 @@ import jSuites from 'jsuites';
 /** A tab header. It keeps a reference to its panel. */
 type TabHeader = HTMLButtonElement & { content?: HTMLElement };
 
+/** A handler of a click on a tab, or of a change of the open tab. */
+type TabHandler = (el: HTMLElement, tabs: Tabs, index: number, header: TabHeader | null, content: Element) => void;
+
+/** The options of the tabs, which factory.ts gives. A missing option takes its default in createTabs. */
+export interface TabsOptions {
+    /** The tabs to create when the tabs start. content is HTML. */
+    data: { title: string; content: string }[];
+    allowCreate: boolean;
+    hideHeaders: boolean;
+    animation: boolean;
+    onclick: TabHandler | null;
+    onchange: TabHandler | null;
+    oncreate: ((el: HTMLElement & { tabs: Tabs }, content: HTMLDivElement | undefined) => void) | null;
+    ondelete: ((el: HTMLElement, index: number) => void) | null;
+    /** Returns the title of the new tab, or false to cancel. */
+    onbeforecreate: ((el: HTMLElement, title?: string | null) => string | false) | null;
+    onchangeposition: ((headers: HTMLDivElement, from: number, to: number) => void) | null;
+}
+
 export interface Tabs {
-    options: Record<string, any>;
+    options: TabsOptions;
     headers: HTMLDivElement;
     content: HTMLDivElement;
     setBorder(index: number | false): void;
@@ -34,12 +53,13 @@ export interface Tabs {
     init(): void;
 }
 
-export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: any) {
+export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: Partial<TabsOptions>) {
     const obj = {} as Tabs;
-    obj.options = {};
+    // Each option is set below
+    obj.options = {} as TabsOptions;
 
     // Default configuration
-    const defaults: Record<string, any> = {
+    const defaults: TabsOptions = {
         data: [],
         allowCreate: false,
         hideHeaders: false,
@@ -54,9 +74,9 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
 
     for (const property in defaults) {
         if (options && Object.prototype.hasOwnProperty.call(options, property)) {
-            obj.options[property] = options[property];
+            (obj.options as unknown as Record<string, unknown>)[property] = (options as Record<string, unknown>)[property];
         } else {
-            obj.options[property] = defaults[property];
+            (obj.options as unknown as Record<string, unknown>)[property] = (defaults as unknown as Record<string, unknown>)[property];
         }
     }
 
@@ -252,7 +272,8 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
         const div = obj.appendElement(title);
 
         if (typeof obj.options.oncreate == 'function') {
-            obj.options.oncreate(el, div);
+            // createTabs sets el.tabs before a tab can be created
+            obj.options.oncreate(el as HTMLElement & { tabs: Tabs }, div);
         }
 
         obj.setBorder(obj.getActive());
@@ -269,9 +290,9 @@ export const createTabs = function (el: HTMLElement & { tabs?: Tabs }, options: 
 
         for (let i = 0; i < obj.content.children.length; i++) {
             // The match is compared and parsed as text
-            const tmp: any = getHeader(i)!.textContent.match(/[0-9].*/);
+            const tmp = getHeader(i)!.textContent.match(/[0-9].*/) as unknown as string | null;
 
-            if (tmp > num) {
+            if (Number(tmp) > num) {
                 num = parseInt(tmp);
             }
         }
