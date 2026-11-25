@@ -113,12 +113,14 @@ export const setStyle = function (
                 style = style.split(';');
             }
             for (let j = 0; j < style.length; j++) {
-                if (typeof style[j] == 'string') {
-                    style[j] = style[j].split(':');
+                // Split into a new variable, so that the styles the application gave stay as they are
+                let property = style[j];
+                if (typeof property == 'string') {
+                    property = property.split(':');
                 }
                 // Apply value
-                if (style[j][0].trim()) {
-                    applyStyle(keys[i], style[j][0].trim(), style[j][1]);
+                if (property[0].trim()) {
+                    applyStyle(keys[i], property[0].trim(), property[1]);
                 }
             }
         }

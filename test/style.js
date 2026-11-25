@@ -51,4 +51,17 @@ describe('Style', () => {
         expect(instance[0].getStyle('A1', 'font-weight')).to.equal('bold');
         expect(instance[0].history.length).to.equal(0);
     });
+
+    it('setStyle does not change the styles that it gets', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [2, 2] }],
+        });
+
+        const styles = { A1: ['color:red', 'font-weight:bold'] };
+        instance[0].setStyle(styles);
+
+        expect(styles).to.eql({ A1: ['color:red', 'font-weight:bold'] });
+        expect(instance[0].getStyle('A1', 'color')).to.equal('red');
+        expect(instance[0].getStyle('A1', 'font-weight')).to.equal('bold');
+    });
 });
