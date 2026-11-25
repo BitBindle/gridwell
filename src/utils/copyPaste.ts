@@ -91,8 +91,8 @@ export const copy = function (
         copyHeader = true;
     }
 
-    // Reset container
-    obj.style = [];
+    // The styles of the copied cells, which a paste of the same text applies
+    const style: string[] = [];
 
     // Go through the columns to get the data
     for (let j = 0; j < y; j++) {
@@ -135,7 +135,7 @@ export const copy = function (
                 // Get style
                 // createCell gives each cell a style attribute
                 const cellStyle = obj.records[j][i].element.getAttribute('style')!.replace('display: none;', '');
-                obj.style.push(cellStyle ? cellStyle : '');
+                style.push(cellStyle ? cellStyle : '');
             }
         }
 
@@ -192,17 +192,18 @@ export const copy = function (
         document.execCommand('copy');
     }
 
-    // Keep data
-    if (processed == true) {
-        obj.data = strLabel;
-    } else {
-        obj.data = str;
-    }
-    // Keep non visible information
-    obj.hashString = hash.call(obj, obj.data);
+    const data = processed == true ? strLabel : str;
 
-    // Any exiting border should go
+    // A copy to the clipboard keeps the data, so that a paste of the same text gets the styles too. A cancelled copy or a
+    // download keeps what was copied before.
     if (!returnData) {
+        // Keep data
+        obj.data = data;
+        obj.style = style;
+        // Keep non visible information
+        obj.hashString = hash(data);
+
+        // Any exiting border should go
         removeCopyingSelection.call(obj);
 
         // Border
@@ -225,7 +226,7 @@ export const copy = function (
         }
     }
 
-    return obj.data;
+    return data;
 };
 
 /**

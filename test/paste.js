@@ -586,3 +586,61 @@ describe('Cut', () => {
         }
     });
 });
+
+describe('The styles of the copied cells', () => {
+    const create = (options) =>
+        jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b'],
+                        ['', ''],
+                    ],
+                    style: { A1: 'color:red', B1: 'color:blue' },
+                },
+            ],
+            ...options,
+        })[0];
+
+    it('are kept when oncopy cancels a copy', () => {
+        let cancel = false;
+        const worksheet = create({ oncopy: () => (cancel ? false : undefined) });
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.copy();
+        const copied = worksheet.data;
+
+        cancel = true;
+        worksheet.updateSelectionFromCoords(1, 0, 1, 0);
+        worksheet.copy();
+
+        worksheet.updateSelectionFromCoords(0, 1, 0, 1);
+        worksheet.paste(0, 1, copied);
+
+        expect(worksheet.getValueFromCoords(0, 1)).to.equal('a');
+        expect(worksheet.getStyle('A2', 'color')).to.equal('red');
+    });
+
+    it('are kept when the data is downloaded', () => {
+        const createObjectURL = URL.createObjectURL;
+        URL.createObjectURL = () => 'blob:test';
+
+        try {
+            const worksheet = create();
+
+            worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+            worksheet.copy();
+            const copied = worksheet.data;
+
+            worksheet.download();
+
+            worksheet.updateSelectionFromCoords(0, 1, 0, 1);
+            worksheet.paste(0, 1, copied);
+
+            expect(worksheet.getValueFromCoords(0, 1)).to.equal('a');
+            expect(worksheet.getStyle('A2', 'color')).to.equal('red');
+        } finally {
+            URL.createObjectURL = createObjectURL;
+        }
+    });
+});
