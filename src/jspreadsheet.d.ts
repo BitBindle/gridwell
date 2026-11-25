@@ -1743,13 +1743,11 @@ declare namespace jspreadsheet {
          * Get information from selected cells in the worksheet.
          * @param columnNameOnly - If true, the method returns the names of the selected cells. Otherwise, the method returns the records of the selected cells.
          */
-        getSelected: (columnNameOnly?: boolean) =>
-            | {
-                  element: HTMLTableCellElement[][];
-                  x: number;
-                  y: number;
-              }[]
-            | string[];
+        getSelected: {
+            (columnNameOnly?: false): { element: HTMLTableCellElement; x: number; y: number }[];
+            (columnNameOnly: true): string[];
+            (columnNameOnly?: boolean): { element: HTMLTableCellElement; x: number; y: number }[] | string[];
+        };
 
         /**
          * Get indexes of the columns that have highlighted cells.

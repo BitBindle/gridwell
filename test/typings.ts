@@ -16,3 +16,9 @@ const csv = worksheet.getData(false, false, ';');
 assertType<Equals<typeof csv, string>>();
 const json = worksheet.getData(false, false, undefined, true);
 assertType<Equals<typeof json, Record<number, jspreadsheet.CellValue>[]>>();
+
+// getSelected returns the records of the selected cells, or their names
+const selected = worksheet.getSelected();
+assertType<Equals<typeof selected, { element: HTMLTableCellElement; x: number; y: number }[]>>();
+const selectedNames = worksheet.getSelected(true);
+assertType<Equals<typeof selectedNames, string[]>>();
