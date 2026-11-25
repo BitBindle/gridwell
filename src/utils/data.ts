@@ -7,8 +7,10 @@ import { updatePagination } from './pagination.js';
 import { setMerge } from './merges.js';
 import { getCoordsFromRange } from './helpers.js';
 import { updateGridSize, updateTabStop } from './accessibility.js';
+import type { Worksheet, WorksheetMethod } from '../types/internal';
 
-export const setData = function (data) {
+// data can be rows of objects. They are changed to arrays.
+export const setData: WorksheetMethod<'setData'> = function (data: any) {
     const obj = this;
 
     // Update data
@@ -28,7 +30,8 @@ export const setData = function (data) {
             for (let j = 0; j < obj.options.data.length; j++) {
                 const row = [];
                 for (let i = 0; i < obj.options.columns.length; i++) {
-                    row[i] = obj.options.data[j][obj.options.columns[i].name];
+                    // The rows are objects here
+                    row[i] = (obj.options.data[j] as any)[obj.options.columns[i].name];
                 }
                 data.push(row);
             }
@@ -81,7 +84,7 @@ export const setData = function (data) {
         finalNumber = obj.options.data.length < 100 ? obj.options.data.length : 100;
 
         if (obj.options.pagination) {
-            obj.options.pagination = false;
+            obj.options.pagination = false as any;
             console.error('Jspreadsheet: Pagination will be disable due the lazyLoading');
         }
     } else if (obj.options.pagination) {
@@ -142,7 +145,7 @@ export const setData = function (data) {
  * @param object cell
  * @return string value
  */
-export const getValue = function (cell, processedValue) {
+export const getValue: WorksheetMethod<'getValue'> = function (cell: any, processedValue) {
     const obj = this;
 
     let x;
@@ -178,7 +181,7 @@ export const getValue = function (cell, processedValue) {
  * @param int y
  * @return string value
  */
-export const getValueFromCoords = function (x, y, processedValue) {
+export const getValueFromCoords: WorksheetMethod<'getValueFromCoords'> = function (x, y, processedValue) {
     const obj = this;
 
     let value = null;
@@ -203,7 +206,7 @@ export const getValueFromCoords = function (x, y, processedValue) {
  * @param string value value
  * @return void
  */
-export const setValue = function (cell, value, force) {
+export const setValue: WorksheetMethod<'setValue'> = function (cell: any, value, force) {
     const obj = this;
 
     const records = [];
@@ -301,7 +304,7 @@ export const setValue = function (cell, value, force) {
  * @param string value
  * @return void
  */
-export const setValueFromCoords = function (x, y, value, force) {
+export const setValueFromCoords: WorksheetMethod<'setValueFromCoords'> = function (x, y, value, force) {
     const obj = this;
 
     const records = [];
@@ -339,11 +342,12 @@ export const setValueFromCoords = function (x, y, value, force) {
  * @param bool get highlighted cells only
  * @return array data
  */
-export const getData = function (highlighted, processed, delimiter, asJson) {
+// The public typings say it returns CellValue[][], but with a delimiter it returns text, and with asJson objects
+export const getData = function (this: Worksheet, highlighted?: boolean, processed?: boolean, delimiter?: string, asJson?: boolean): any {
     const obj = this;
 
     // Control vars
-    const dataset = [];
+    const dataset: any[] = [];
     let px = 0;
     let py = 0;
 
@@ -390,9 +394,9 @@ export const getData = function (highlighted, processed, delimiter, asJson) {
 
     if (asJson) {
         return dataset.map(function (row) {
-            const resultRow = {};
+            const resultRow: Record<number, any> = {};
 
-            row.forEach(function (item, index) {
+            row.forEach(function (item: any, index: number) {
                 resultRow[index] = item;
             });
 
@@ -403,7 +407,7 @@ export const getData = function (highlighted, processed, delimiter, asJson) {
     return dataset;
 };
 
-export const getDataFromRange = function (range, processed) {
+export const getDataFromRange: WorksheetMethod<'getDataFromRange'> = function (range, processed) {
     const obj = this;
 
     const coords = getCoordsFromRange(range);

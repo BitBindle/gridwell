@@ -3,11 +3,12 @@ import jSuites from 'jsuites';
 import dispatch from './dispatch.js';
 import { updateCornerPosition } from './selection.js';
 import { updateTabStop } from './accessibility.js';
+import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
  * Which page the row is
  */
-export const whichPage = function (row) {
+export const whichPage: WorksheetMethod<'whichPage'> = function (row) {
     const obj = this;
 
     // Search
@@ -21,7 +22,7 @@ export const whichPage = function (row) {
 /**
  * Update the pagination
  */
-export const updatePagination = function () {
+export const updatePagination = function (this: Worksheet) {
     const obj = this;
 
     // Reset container
@@ -31,7 +32,7 @@ export const updatePagination = function () {
     // Start pagination
     if (obj.options.pagination) {
         // Searchable
-        let results;
+        let results: any;
 
         if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
             results = obj.results.length;
@@ -67,7 +68,8 @@ export const updatePagination = function () {
                 const paginationItem = document.createElement('div');
                 paginationItem.className = 'jss_page';
                 paginationItem.innerHTML = '<';
-                paginationItem.title = 1;
+                // The DOM turns the numbers into text
+                paginationItem.title = 1 as any;
                 obj.pagination.children[1].appendChild(paginationItem);
             }
 
@@ -75,7 +77,7 @@ export const updatePagination = function () {
             for (let i = startNumber; i <= finalNumber; i++) {
                 const paginationItem = document.createElement('div');
                 paginationItem.className = 'jss_page';
-                paginationItem.innerHTML = i;
+                paginationItem.innerHTML = i as any;
                 obj.pagination.children[1].appendChild(paginationItem);
 
                 if (obj.pageNumber == i - 1) {
@@ -88,14 +90,15 @@ export const updatePagination = function () {
                 const paginationItem = document.createElement('div');
                 paginationItem.className = 'jss_page';
                 paginationItem.innerHTML = '>';
-                paginationItem.title = quantyOfPages;
+                paginationItem.title = quantyOfPages as any;
                 obj.pagination.children[1].appendChild(paginationItem);
             }
 
             // Text
-            const format = function (format) {
+            // It reads arguments, so it gets a function type
+            const format: (format: string, ...args: any[]) => string = function (format) {
                 const args = Array.prototype.slice.call(arguments, 1);
-                return format.replace(/{(\d+)}/g, function (match, number) {
+                return format.replace(/{(\d+)}/g, function (match: string, number: number) {
                     return typeof args[number] != 'undefined' ? args[number] : match;
                 });
             };
@@ -108,13 +111,13 @@ export const updatePagination = function () {
 /**
  * Go to page
  */
-export const page = function (pageNumber) {
+export const page: WorksheetMethod<'page'> = function (pageNumber) {
     const obj = this;
 
     const oldPage = obj.pageNumber;
 
     // Search
-    let results;
+    let results: any;
 
     if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
         results = obj.results;
@@ -171,10 +174,10 @@ export const page = function (pageNumber) {
     dispatch.call(obj, 'onchangepage', obj, pageNumber, oldPage, obj.options.pagination);
 };
 
-export const quantiyOfPages = function () {
+export const quantiyOfPages: WorksheetMethod<'quantiyOfPages'> = function () {
     const obj = this;
 
-    let results;
+    let results: any;
     if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
         results = obj.results.length;
     } else {

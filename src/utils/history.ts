@@ -4,13 +4,14 @@ import { updateTableReferences } from './internal.js';
 import { setMerge } from './merges.js';
 import { updateOrder, updateOrderArrow } from './orderBy.js';
 import { conditionalSelectionUpdate } from './selection.js';
+import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
  * Initializes a new history record for undo/redo
  *
  * @return null
  */
-export const setHistory = function (changes) {
+export const setHistory = function (this: Worksheet, changes: any) {
     const obj = this;
 
     if (obj.ignoreHistory != true) {
@@ -28,7 +29,7 @@ export const setHistory = function (changes) {
 /**
  * Process row
  */
-const historyProcessRow = function (type, historyRecord) {
+const historyProcessRow = function (this: Worksheet, type: any, historyRecord: any) {
     const obj = this;
 
     const rowIndex = !historyRecord.insertBefore ? historyRecord.rowNumber + 1 : +historyRecord.rowNumber;
@@ -54,12 +55,12 @@ const historyProcessRow = function (type, historyRecord) {
         conditionalSelectionUpdate.call(obj, 1, rowIndex, numOfRows + rowIndex - 1);
     } else {
         // Insert data
-        const records = historyRecord.rowRecords.map((row) => {
+        const records = historyRecord.rowRecords.map((row: any[]) => {
             return [...row];
         });
         obj.records = injectArray(obj.records, rowIndex, records);
 
-        const data = historyRecord.rowData.map((row) => {
+        const data = historyRecord.rowData.map((row: any[]) => {
             return [...row];
         });
         obj.options.data = injectArray(obj.options.data, rowIndex, data);
@@ -94,7 +95,7 @@ const historyProcessRow = function (type, historyRecord) {
 /**
  * Process column
  */
-const historyProcessColumn = function (type, historyRecord) {
+const historyProcessColumn = function (this: Worksheet, type: any, historyRecord: any) {
     const obj = this;
 
     const columnIndex = !historyRecord.insertBefore ? historyRecord.columnNumber + 1 : historyRecord.columnNumber;
@@ -184,7 +185,7 @@ const historyProcessColumn = function (type, historyRecord) {
 /**
  * Undo last action
  */
-export const undo = function () {
+export const undo: WorksheetMethod<'undo'> = function () {
     const obj = this;
 
     // Ignore events and history
@@ -219,7 +220,7 @@ export const undo = function () {
         } else if (historyRecord.action == 'setMerge') {
             obj.removeMerge(historyRecord.column, historyRecord.data);
         } else if (historyRecord.action == 'setStyle') {
-            obj.setStyle(historyRecord.oldValue, null, null, 1);
+            obj.setStyle(historyRecord.oldValue, null, null, 1 as any); // 1 means force
         } else if (historyRecord.action == 'setWidth') {
             obj.setWidth(historyRecord.column, historyRecord.oldValue);
         } else if (historyRecord.action == 'setHeight') {
@@ -267,7 +268,7 @@ export const undo = function () {
 /**
  * Redo previously undone action
  */
-export const redo = function () {
+export const redo: WorksheetMethod<'redo'> = function () {
     const obj = this;
 
     // Ignore events and history
@@ -302,7 +303,7 @@ export const redo = function () {
         } else if (historyRecord.action == 'setMerge') {
             setMerge.call(obj, historyRecord.column, historyRecord.colspan, historyRecord.rowspan, 1);
         } else if (historyRecord.action == 'setStyle') {
-            obj.setStyle(historyRecord.newValue, null, null, 1);
+            obj.setStyle(historyRecord.newValue, null, null, 1 as any); // 1 means force
         } else if (historyRecord.action == 'setWidth') {
             obj.setWidth(historyRecord.column, historyRecord.newValue);
         } else if (historyRecord.action == 'setHeight') {

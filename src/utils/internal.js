@@ -638,8 +638,10 @@ export const createCell = function (i, j, value, silent) {
 /**
  * Update cell content
  *
- * @param object cell
- * @return void
+ * @param {number} x
+ * @param {number} y
+ * @param {any} value
+ * @param {boolean} [force]
  */
 export const updateCell = function (x, y, value, force) {
     const obj = this;

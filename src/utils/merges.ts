@@ -5,11 +5,12 @@ import { renderCell, updateCell } from './internal.js';
 import { setHistory } from './history.js';
 import dispatch from './dispatch.js';
 import { updateSelection } from './selection.js';
+import type { MergeInfo, Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
  * Is column merged
  */
-export const isColMerged = function (x, insertBefore) {
+export const isColMerged = function (this: Worksheet, x: number, insertBefore?: boolean) {
     const obj = this;
 
     const cols = [];
@@ -46,7 +47,7 @@ export const isColMerged = function (x, insertBefore) {
 /**
  * Is rows merged
  */
-export const isRowMerged = function (y, insertBefore) {
+export const isRowMerged = function (this: Worksheet, y: number, insertBefore?: boolean) {
     const obj = this;
 
     const rows = [];
@@ -86,7 +87,7 @@ export const isRowMerged = function (y, insertBefore) {
  * So the first cell is hidden only when each column of the range is hidden,
  * and its colspan is the number of columns of the range that are not hidden.
  */
-const updateMergedCell = function (cellName) {
+const updateMergedCell = function (this: Worksheet, cellName: string) {
     const obj = this;
 
     const cell = getIdFromColumnName(cellName, true);
@@ -118,7 +119,7 @@ const updateMergedCell = function (cellName) {
 /**
  * Update the first cell of each merged range that covers one of the columns.
  */
-export const updateMergedColumns = function (columns) {
+export const updateMergedColumns = function (this: Worksheet, columns: any) {
     const obj = this;
 
     if (!obj.options.mergeCells) {
@@ -147,10 +148,10 @@ export const updateMergedColumns = function (columns) {
  * @param rowspan
  * @param ignoreHistoryAndEvents
  */
-export const getMerge = function (cellName) {
+export const getMerge: WorksheetMethod<'getMerge'> = function (cellName) {
     const obj = this;
 
-    let data = {};
+    let data: any = {};
     if (cellName) {
         if (obj.options.mergeCells && obj.options.mergeCells[cellName]) {
             data = [obj.options.mergeCells[cellName][0], obj.options.mergeCells[cellName][1]];
@@ -177,10 +178,10 @@ export const getMerge = function (cellName) {
  * @param rowspan
  * @param ignoreHistoryAndEvents
  */
-export const setMerge = function (cellName, colspan, rowspan, ignoreHistoryAndEvents) {
+export const setMerge = function (this: Worksheet, cellName: string, colspan: any, rowspan: any, ignoreHistoryAndEvents: any): void {
     const obj = this;
 
-    let test = false;
+    let test: string | false = false;
 
     if (!cellName) {
         if (!obj.highlighted.length) {
@@ -241,7 +242,8 @@ export const setMerge = function (cellName, colspan, rowspan, ignoreHistoryAndEv
             obj.options.mergeCells = {};
         }
 
-        obj.options.mergeCells[cellName] = [colspan, rowspan, []];
+        // The public typings have only colspan and rowspan
+        obj.options.mergeCells[cellName] = [colspan, rowspan, []] as any;
         // Mark cell as merged
         obj.records[cell[1]][cell[0]].element.setAttribute('data-merged', 'true');
         // Overflow
@@ -254,7 +256,7 @@ export const setMerge = function (cellName, colspan, rowspan, ignoreHistoryAndEv
                 if (!(cell[0] == x && cell[1] == y)) {
                     data.push(obj.options.data[y][x]);
                     updateCell.call(obj, x, y, '', true);
-                    obj.options.mergeCells[cellName][2].push(obj.records[y][x].element);
+                    (obj.options.mergeCells[cellName] as MergeInfo)[2].push(obj.records[y][x].element);
                     obj.records[y][x].element.style.display = 'none';
                     obj.records[y][x].element = obj.records[cell[1]][cell[0]].element;
                 }
@@ -283,7 +285,7 @@ export const setMerge = function (cellName, colspan, rowspan, ignoreHistoryAndEv
  * Remove merge by cellname
  * @param cellName
  */
-export const removeMerge = function (cellName, data, keepOptions) {
+export const removeMerge = function (this: Worksheet, cellName: string, data: any, keepOptions: boolean) {
     const obj = this;
 
     if (obj.options.mergeCells && obj.options.mergeCells[cellName]) {
@@ -294,7 +296,7 @@ export const removeMerge = function (cellName, data, keepOptions) {
         obj.records[cell[1]][cell[0]].element.removeAttribute('data-merged');
         // Each cell is visible when its column is visible
         obj.records[cell[1]][cell[0]].element.style.display = obj.headers[cell[0]].style.display == 'none' ? 'none' : '';
-        const info = obj.options.mergeCells[cellName];
+        const info = obj.options.mergeCells[cellName] as MergeInfo;
 
         let index = 0;
 
@@ -333,7 +335,7 @@ export const removeMerge = function (cellName, data, keepOptions) {
 /**
  * Remove all merged cells
  */
-export const destroyMerge = function (keepOptions) {
+export const destroyMerge = function (this: Worksheet, keepOptions: boolean) {
     const obj = this;
 
     // Remove any merged cells

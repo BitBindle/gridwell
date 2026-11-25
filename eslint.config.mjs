@@ -41,6 +41,7 @@ export default tseslint.config(
             // Off while the modules move to TypeScript, so that the move changes no code. Turn them on afterwards.
             'prefer-const': 'off',
             'prefer-rest-params': 'off',
+            'no-var': 'off',
         },
     },
     {

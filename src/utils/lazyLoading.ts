@@ -1,10 +1,11 @@
 import { closeEditor } from './editor.js';
 import { updateTabStop } from './accessibility.js';
+import type { Worksheet } from '../types/internal';
 
 /**
  * Remove a row from the table. If the row holds the open editor, save and close the editor first.
  */
-const removeRow = function (row) {
+const removeRow = function (this: Worksheet, row: any) {
     const obj = this;
 
     if (obj.edition && row.contains(obj.edition[0])) {
@@ -17,11 +18,11 @@ const removeRow = function (row) {
 /**
  * Go to a page in a lazyLoading
  */
-export const loadPage = function (pageNumber) {
+export const loadPage = function (this: Worksheet, pageNumber: number) {
     const obj = this;
 
     // Search
-    let results;
+    let results: any;
 
     if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
         results = obj.results;
@@ -65,11 +66,11 @@ export const loadPage = function (pageNumber) {
     updateTabStop.call(obj);
 };
 
-export const loadValidation = function () {
+export const loadValidation = function (this: Worksheet) {
     const obj = this;
 
     if (obj.selectedCell) {
-        let currentRow = parseInt(obj.tbody.firstChild.getAttribute('data-y'));
+        let currentRow = parseInt((obj.tbody.firstChild as HTMLElement).getAttribute('data-y'));
         let selectedRow = parseInt(obj.selectedCell[3]);
         let total = obj.rows.length;
 
@@ -89,7 +90,7 @@ export const loadValidation = function () {
         const totalPages = parseInt(total / 100);
 
         if (currentPage != selectedPage && selectedPage <= totalPages) {
-            if (Array.prototype.indexOf.call(obj.tbody.children, obj.rows[obj.selectedCell[3]].element) < 0) {
+            if (Array.prototype.indexOf.call(obj.tbody.children, obj.rows[obj.selectedCell[3] as number].element) < 0) {
                 loadPage.call(obj, selectedPage);
                 return true;
             }
@@ -99,11 +100,11 @@ export const loadValidation = function () {
     return false;
 };
 
-export const loadUp = function () {
+export const loadUp = function (this: Worksheet) {
     const obj = this;
 
     // Search
-    let results;
+    let results: any;
 
     if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
         results = obj.results;
@@ -113,7 +114,7 @@ export const loadUp = function () {
     let test = 0;
     if (results.length > 100) {
         // Get the first element in the page
-        let item = parseInt(obj.tbody.firstChild.getAttribute('data-y'));
+        let item = parseInt((obj.tbody.firstChild as HTMLElement).getAttribute('data-y'));
         if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
             item = results.indexOf(item);
         }
@@ -141,11 +142,11 @@ export const loadUp = function () {
     return test;
 };
 
-export const loadDown = function () {
+export const loadDown = function (this: Worksheet) {
     const obj = this;
 
     // Search
-    let results;
+    let results: any;
 
     if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
         results = obj.results;
@@ -155,7 +156,7 @@ export const loadDown = function () {
     let test = 0;
     if (results.length > 100) {
         // Get the last element in the page
-        let item = parseInt(obj.tbody.lastChild.getAttribute('data-y'));
+        let item = parseInt((obj.tbody.lastChild as HTMLElement).getAttribute('data-y'));
         if ((obj.options.search == true || obj.options.filters == true) && obj.results) {
             item = results.indexOf(item);
         }

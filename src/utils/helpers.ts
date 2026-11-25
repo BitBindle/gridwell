@@ -1,13 +1,15 @@
 import { getColumnNameFromId } from './internalHelpers.js';
+import type { Spreadsheet } from '../types/internal';
 
 /**
  * Get carret position for one element
  */
-export const getCaretIndex = function (e) {
+export const getCaretIndex = function (this: Spreadsheet, e: any) {
     let d;
 
-    if (this.config.root) {
-        d = this.config.root;
+    // root is not a documented option
+    if ((this.config as any).root) {
+        d = (this.config as any).root;
     } else {
         d = window;
     }
@@ -28,7 +30,7 @@ export const getCaretIndex = function (e) {
 /**
  * Invert keys and values
  */
-export const invert = function (o) {
+export const invert = function (o: any) {
     const d = [];
     const k = Object.keys(o);
     for (let i = 0; i < k.length; i++) {
@@ -43,7 +45,7 @@ export const invert = function (o) {
  * @param {number} columnNumber
  * @return string letter
  */
-export const getColumnName = function (columnNumber) {
+export const getColumnName = function (columnNumber: number) {
     let dividend = columnNumber + 1;
     let columnName = '';
     let modulo;
@@ -60,11 +62,11 @@ export const getColumnName = function (columnNumber) {
 /**
  * Get column name from coords
  */
-export const getCellNameFromCoords = function (x, y) {
+export const getCellNameFromCoords = function (x: number, y: number) {
     return getColumnName(parseInt(x)) + (parseInt(y) + 1);
 };
 
-export const getCoordsFromCellName = function (columnName) {
+export const getCoordsFromCellName = function (columnName: string) {
     // Get the letters
     const t = /^[a-zA-Z]+/.exec(columnName);
 
@@ -81,7 +83,8 @@ export const getCoordsFromCellName = function (columnName) {
         }
 
         // Number
-        let number = parseInt(/[0-9]+$/.exec(columnName)) || null;
+        // parseInt converts the match to a string
+        let number = parseInt(/[0-9]+$/.exec(columnName) as any) || null;
         if (number > 0) {
             number--;
         }
@@ -90,7 +93,7 @@ export const getCoordsFromCellName = function (columnName) {
     }
 };
 
-export const getCoordsFromRange = function (range) {
+export const getCoordsFromRange = function (range: any) {
     const [start, end] = range.split(':');
 
     return [...getCoordsFromCellName(start), ...getCoordsFromCellName(end)];
@@ -99,13 +102,13 @@ export const getCoordsFromRange = function (range) {
 /**
  * From stack overflow contributions
  */
-export const parseCSV = function (str, delimiter) {
+export const parseCSV = function (str: string, delimiter: string) {
     // user-supplied delimeter or default comma
     delimiter = delimiter || ',';
     // Remove last line break
     str = str.replace(/\r?\n$|\r$|\n$/g, '');
 
-    const arr = [];
+    const arr: string[][] = [];
     let quote = false; // true means we're inside a quoted field
     // iterate over each character, keep track of current row and column (of the returned array)
     let maxCol = 0;
@@ -172,7 +175,7 @@ export const parseCSV = function (str, delimiter) {
     return arr;
 };
 
-export const createFromTable = function (el, options) {
+export const createFromTable = function (el: HTMLElement, options: any) {
     if (el.tagName != 'TABLE') {
         console.log('Element is not a table');
     } else {
@@ -185,7 +188,7 @@ export const createFromTable = function (el, options) {
         options.data = [];
 
         // Colgroup
-        const colgroup = el.querySelectorAll('colgroup > col');
+        const colgroup = el.querySelectorAll<HTMLElement>('colgroup > col');
         if (colgroup.length) {
             // Get column width
             for (let i = 0; i < colgroup.length; i++) {
@@ -204,7 +207,7 @@ export const createFromTable = function (el, options) {
         }
 
         // Parse header
-        const parseHeader = function (header, i) {
+        const parseHeader = function (header: any, i: number) {
             // Get width information
             let info = header.getBoundingClientRect();
             const width = info.width > 50 ? info.width : 50;
@@ -237,7 +240,8 @@ export const createFromTable = function (el, options) {
 
         // Headers
         const nested = [];
-        let headers = el.querySelectorAll(':scope > thead > tr');
+        // The rows of the thead, then the cells of its last row
+        let headers: NodeListOf<Element> | HTMLCollection = el.querySelectorAll(':scope > thead > tr');
         if (headers.length) {
             for (let j = 0; j < headers.length - 1; j++) {
                 const cells = [];
@@ -260,12 +264,12 @@ export const createFromTable = function (el, options) {
 
         // Content
         let rowNumber = 0;
-        const mergeCells = {};
-        const rows = {};
-        const style = {};
-        const classes = {};
+        const mergeCells: Record<string, any> = {};
+        const rows: Record<string, any> = {};
+        const style: Record<string, any> = {};
+        const classes: Record<string, any> = {};
 
-        let content = el.querySelectorAll(':scope > tr, :scope > tbody > tr');
+        let content = el.querySelectorAll<HTMLElement>(':scope > tr, :scope > tbody > tr');
         for (let j = 0; j < content.length; j++) {
             options.data[rowNumber] = [];
             if (options.parseTableFirstRowAsHeader == true && !headers.length && j == 0) {
@@ -302,8 +306,8 @@ export const createFromTable = function (el, options) {
                     }
 
                     // Avoid problems with hidden cells
-                    if (content[j].children[i].style && content[j].children[i].style.display == 'none') {
-                        content[j].children[i].style.display = '';
+                    if ((content[j].children[i] as HTMLElement).style && (content[j].children[i] as HTMLElement).style.display == 'none') {
+                        (content[j].children[i] as HTMLElement).style.display = '';
                     }
                     // Get style
                     const s = content[j].children[i].getAttribute('style');
@@ -351,7 +355,7 @@ export const createFromTable = function (el, options) {
             options.classes = classes;
         }
 
-        content = el.querySelectorAll('tfoot tr');
+        content = el.querySelectorAll<HTMLElement>('tfoot tr');
         if (content.length) {
             const footers = [];
             for (let j = 0; j < content.length; j++) {

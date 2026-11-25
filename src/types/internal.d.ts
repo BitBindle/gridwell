@@ -46,3 +46,27 @@ export interface Spreadsheet extends jspreadsheet.SpreadsheetInstance {
     /** True while createWorksheet adds a tab, so that the tab does not create a second worksheet. */
     creationThroughJss?: boolean;
 }
+
+/**
+ * The type of a function that implements a public worksheet method, with the worksheet as `this`.
+ *
+ *     export const getData: WorksheetMethod<'getData'> = function (highlighted, processed) { ... };
+ *
+ * The parameters get their types from WorksheetInstance in src/index.d.ts, so the code and the public typings agree.
+ */
+/** A merged range in options.mergeCells: the colspan, the rowspan and, after setMerge, the cells that the range hides. */
+export type MergeInfo = [number, number, HTMLTableCellElement[]?];
+
+export type WorksheetMethod<K extends keyof jspreadsheet.WorksheetInstance> = jspreadsheet.WorksheetInstance[K] extends (...args: infer A) => infer R
+    ? (this: Worksheet, ...args: A) => R
+    : never;
+
+/**
+ * The jspreadsheet function, with the state the library keeps on it.
+ */
+export interface Library extends jspreadsheet.JSpreadsheet {
+    /** The worksheet that gets the keyboard and clipboard events. */
+    current: Worksheet | null;
+
+    spreadsheet: Spreadsheet[];
+}

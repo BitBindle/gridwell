@@ -5,11 +5,12 @@ import { updateTableReferences } from './internal.js';
 import { loadPage } from './lazyLoading.js';
 import { closeFilter } from './filter.js';
 import { updateTabStop } from './accessibility.js';
+import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
  * Update order arrow
  */
-export const updateOrderArrow = function (column, order) {
+export const updateOrderArrow = function (this: Worksheet, column: any, order: any) {
     const obj = this;
 
     // Remove order
@@ -29,7 +30,7 @@ export const updateOrderArrow = function (column, order) {
 /**
  * Update rows position
  */
-export const updateOrder = function (rows) {
+export const updateOrder = function (this: Worksheet, rows: any) {
     const obj = this;
 
     // History
@@ -88,7 +89,7 @@ export const updateOrder = function (rows) {
 /**
  * Sort data and reload table
  */
-export const orderBy = function (column, order) {
+export const orderBy: WorksheetMethod<'orderBy'> = function (column, order) {
     const obj = this;
 
     if (column >= 0) {
@@ -110,14 +111,14 @@ export const orderBy = function (column, order) {
         }
 
         // Test order
-        let temp = [];
+        let temp: any[] = [];
         if (
             obj.options.columns &&
             obj.options.columns[column] &&
-            (obj.options.columns[column].type == 'number' ||
+            ((obj.options.columns[column].type as string) == 'number' ||
                 obj.options.columns[column].type == 'numeric' ||
-                obj.options.columns[column].type == 'percentage' ||
-                obj.options.columns[column].type == 'autonumber' ||
+                (obj.options.columns[column].type as string) == 'percentage' ||
+                (obj.options.columns[column].type as string) == 'autonumber' ||
                 obj.options.columns[column].type == 'color')
         ) {
             for (let j = 0; j < obj.options.data.length; j++) {

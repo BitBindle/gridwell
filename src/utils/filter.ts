@@ -1,11 +1,12 @@
 import jSuites from 'jsuites';
 import { updateResult } from './internal.js';
 import { refreshSelection } from './selection.js';
+import type { Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
  * Open the column filter
  */
-export const openFilter = function (columnId) {
+export const openFilter: WorksheetMethod<'openFilter'> = function (columnId) {
     const obj = this;
 
     if (!obj.options.filters) {
@@ -21,13 +22,14 @@ export const openFilter = function (columnId) {
             optionsFiltered.push({ id: 'true', name: 'True' });
             optionsFiltered.push({ id: 'false', name: 'False' });
         } else {
-            const options = [];
+            // Labels by value. An array used as a map, as before.
+            const options: any = [];
             let hasBlanks = false;
             for (let j = 0; j < obj.options.data.length; j++) {
                 const k = obj.options.data[j][columnId];
                 const v = obj.records[j][columnId].element.innerHTML;
                 if (k && v) {
-                    options[k] = v;
+                    options[k as any] = v;
                 } else {
                     hasBlanks = true;
                 }
@@ -47,9 +49,9 @@ export const openFilter = function (columnId) {
         const div = document.createElement('div');
         obj.filter.children[columnId + 1].innerHTML = '';
         obj.filter.children[columnId + 1].appendChild(div);
-        obj.filter.children[columnId + 1].style.paddingLeft = '0px';
-        obj.filter.children[columnId + 1].style.paddingRight = '0px';
-        obj.filter.children[columnId + 1].style.overflow = 'initial';
+        (obj.filter.children[columnId + 1] as HTMLElement).style.paddingLeft = '0px';
+        (obj.filter.children[columnId + 1] as HTMLElement).style.paddingRight = '0px';
+        (obj.filter.children[columnId + 1] as HTMLElement).style.overflow = 'initial';
 
         const opt = {
             data: optionsFiltered,
@@ -59,24 +61,25 @@ export const openFilter = function (columnId) {
             value: obj.filters[columnId] !== undefined ? obj.filters[columnId] : null,
             width: '100%',
             position: obj.options.tableOverflow == true || obj.parent.config.fullscreen == true ? true : false,
-            onclose: function (o) {
+            onclose: function (o: any) {
                 resetFilters.call(obj);
                 obj.filters[columnId] = o.dropdown.getValue(true);
                 obj.filter.children[columnId + 1].innerHTML = o.dropdown.getText();
-                obj.filter.children[columnId + 1].style.paddingLeft = '';
-                obj.filter.children[columnId + 1].style.paddingRight = '';
-                obj.filter.children[columnId + 1].style.overflow = '';
+                (obj.filter.children[columnId + 1] as HTMLElement).style.paddingLeft = '';
+                (obj.filter.children[columnId + 1] as HTMLElement).style.paddingRight = '';
+                (obj.filter.children[columnId + 1] as HTMLElement).style.overflow = '';
                 closeFilter.call(obj, columnId);
                 refreshSelection.call(obj);
             },
         };
 
         // Dynamic dropdown
-        jSuites.dropdown(div, opt);
+        // The jsuites typings want a number for width, but the dropdown takes any CSS width
+        jSuites.dropdown(div, opt as any);
     }
 };
 
-export const closeFilter = function (columnId) {
+export const closeFilter = function (this: Worksheet, columnId?: any) {
     const obj = this;
 
     if (!columnId) {
@@ -88,7 +91,7 @@ export const closeFilter = function (columnId) {
     }
 
     // Search filter
-    const search = function (query, x, y) {
+    const search = function (query: any, x: number, y: number) {
         for (let i = 0; i < query.length; i++) {
             const value = '' + obj.options.data[y][x];
             const label = '' + obj.records[y][x].element.innerHTML;
@@ -113,7 +116,7 @@ export const closeFilter = function (columnId) {
     updateResult.call(obj);
 };
 
-export const resetFilters = function () {
+export const resetFilters: WorksheetMethod<'resetFilters'> = function () {
     const obj = this;
 
     if (obj.options.filters) {
