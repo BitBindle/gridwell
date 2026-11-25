@@ -1,7 +1,6 @@
 import jSuites from 'jsuites';
 import { getNumberOfColumns } from './columns.js';
 import { createCell } from './render.js';
-import { updateTableReferences } from './references.js';
 import dispatch from './dispatch.js';
 import { conditionalSelectionUpdate, getSelectedRows, updateCornerPosition } from './selection.js';
 import { getColumnNameFromId } from './internalHelpers.js';
@@ -276,7 +275,7 @@ export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumbe
         });
 
         // Remove table references
-        updateTableReferences.call(obj);
+        obj.formulas.updateTableReferences();
 
         // Events
         dispatch.call(obj, 'oninsertrow', obj, onbeforeinsertrowRecords);
@@ -364,7 +363,7 @@ export const moveRow = function (this: Worksheet, o: number, d: number, ignoreDo
     });
 
     // Update table references
-    updateTableReferences.call(obj);
+    obj.formulas.updateTableReferences();
 
     // Events
     dispatch.call(obj, 'onmoverow', obj, parseInt(o), parseInt(d), 1);
@@ -502,7 +501,7 @@ export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numO
                 });
 
                 // Remove table references
-                updateTableReferences.call(obj);
+                obj.formulas.updateTableReferences();
 
                 // Events
                 dispatch.call(obj, 'ondeleterow', obj, onbeforedeleterowRecords);

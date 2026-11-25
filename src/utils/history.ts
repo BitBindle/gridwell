@@ -1,6 +1,5 @@
 import dispatch from './dispatch.js';
 import { injectArray } from './internalHelpers.js';
-import { updateTableReferences } from './references.js';
 import { updateOrder, updateOrderArrow } from './orderBy.js';
 import { conditionalSelectionUpdate } from './selection.js';
 import type { Worksheet, WorksheetHistoryRecord, WorksheetMethod } from '../types/internal';
@@ -75,7 +74,7 @@ const historyProcessRow = function (
         obj.page(obj.view.pageNumber);
     }
 
-    updateTableReferences.call(obj);
+    obj.formulas.updateTableReferences();
 };
 
 /**
@@ -170,7 +169,7 @@ const historyProcessColumn = function (
         }
     }
 
-    updateTableReferences.call(obj);
+    obj.formulas.updateTableReferences();
 };
 
 /**

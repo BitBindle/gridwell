@@ -39,7 +39,6 @@ import { download } from './download.js';
 import { down, first, last, left, right, up } from './keys.js';
 import { createNestedHeader } from './headers.js';
 import { hideIndex, showIndex } from './rows.js';
-import { executeFormula } from './values.js';
 import { getWorksheetActive } from './activeWorksheet.js';
 import { orderBy } from './orderBy.js';
 import { getWorksheetConfig, setConfig } from './config.js';
@@ -815,7 +814,12 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
         },
     ],
     ['paste', paste],
-    ['executeFormula', executeFormula],
+    [
+        'executeFormula',
+        function (this: Worksheet, expression: string, x?: number, y?: number) {
+            return this.formulas.execute(expression, x, y);
+        },
+    ],
     ['getDataFromRange', getDataFromRange],
     ['quantiyOfPages', quantiyOfPages],
     ['getRange', getRange],

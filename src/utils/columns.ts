@@ -2,9 +2,7 @@ import jSuites from 'jsuites';
 import dispatch from './dispatch.js';
 import { getColumnName } from './helpers.js';
 import { createCell } from './render.js';
-import { updateTableReferences } from './references.js';
 import { conditionalSelectionUpdate, updateCornerPosition } from './selection.js';
-import { setFooter } from './footer.js';
 import { updateFreezePosition } from './freezePosition.js';
 import { getColumnNameFromId, injectArray } from './internalHelpers.js';
 import { setHeaderRole, updateTabStop } from './accessibility.js';
@@ -359,7 +357,7 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
         });
 
         // Remove table references
-        updateTableReferences.call(obj);
+        obj.formulas.updateTableReferences();
 
         // Events
         dispatch.call(obj, 'oninsertcolumn', obj, columns);
@@ -447,7 +445,7 @@ export const moveColumn: WorksheetMethod<'moveColumn'> = function (o, d) {
     });
 
     // Update table references
-    updateTableReferences.call(obj);
+    obj.formulas.updateTableReferences();
 
     // Events
     dispatch.call(obj, 'onmovecolumn', obj, o, d, 1);
@@ -601,7 +599,7 @@ export const deleteColumn: WorksheetMethod<'deleteColumn'> = function (columnNum
                 });
 
                 // Update table references
-                updateTableReferences.call(obj);
+                obj.formulas.updateTableReferences();
 
                 // Delete
                 dispatch.call(obj, 'ondeletecolumn', obj, removedColumns);
@@ -733,7 +731,7 @@ export const showColumn: WorksheetMethod<'showColumn'> = function (colNumber) {
 
     // Update footers
     if (obj.options.footers) {
-        setFooter.call(obj);
+        obj.formulas.setFooter();
     }
 
     // The line of the frozen pane moves when a frozen column is shown or hidden
@@ -771,7 +769,7 @@ export const hideColumn: WorksheetMethod<'hideColumn'> = function (colNumber) {
 
     // Update footers
     if (obj.options.footers) {
-        setFooter.call(obj);
+        obj.formulas.setFooter();
     }
 
     // The line of the frozen pane moves when a frozen column is shown or hidden

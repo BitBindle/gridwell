@@ -1,6 +1,5 @@
 import jSuites from 'jsuites';
 import dispatch from './dispatch.js';
-import { updateTableReferences } from './references.js';
 import { loadPage } from './lazyLoading.js';
 import { closeFilter } from './filter.js';
 import { updateTabStop } from './accessibility.js';
@@ -58,7 +57,7 @@ export const updateOrder = function (this: Worksheet, rows: number[]) {
     obj.rows = rowObjects;
 
     // Update references
-    updateTableReferences.call(obj);
+    obj.formulas.updateTableReferences();
 
     // Redo search
     if (obj.view.results && obj.view.results.length) {

@@ -191,6 +191,9 @@ that changes it.
     columns are hidden or shown (`updateColumns`).
 21. **Formulas.** The references (`references.ts`), the footers (`footer.ts`) and the calculation of a formula
     (`executeFormula` and what only it uses in `values.ts`) move into `Formulas`.
+    Done. `worksheet.formulas` calculates a formula (`execute`, with the private `parseNumber`), calculates the chain of
+    a cell again (`updateChain`), renames the references (`updateFormula`, `updateTableReferences`) and shows the
+    footers (`setFooter`). `parseValue` stays in `values.ts` and calls `obj.formulas.execute`.
 22. **The view.** Search, the filters, pagination, the order and the lazy loading (`search.ts`, `filter.ts`,
     `pagination.ts`, `orderBy.ts`, `lazyLoading.ts`) move into `View`.
 23. **The editor.** `editor.ts` moves into `Editor`.

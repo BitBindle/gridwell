@@ -1,6 +1,5 @@
 import dispatch from './dispatch.js';
 import { updateCell } from './render.js';
-import { updateFormula, updateFormulaChain } from './references.js';
 import { updateTable } from './table.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import type { Worksheet } from '../types/internal';
@@ -136,7 +135,7 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
                                 }
                                 // Update formula
                                 if (affectedTokens) {
-                                    value = updateFormula(value as string, affectedTokens);
+                                    value = obj.formulas.updateFormula(value as string, affectedTokens);
                                 }
                             }
                         } else {
@@ -162,7 +161,7 @@ export const copyData = function (this: Worksheet, o: HTMLElement, d: HTMLElemen
                 records.push(updateCell.call(obj, i, j, value));
 
                 // Update all formulas in the chain
-                updateFormulaChain.call(obj, i, j, records);
+                obj.formulas.updateChain(i, j, records);
             }
             posx++;
             if (h[0] != x1) {
