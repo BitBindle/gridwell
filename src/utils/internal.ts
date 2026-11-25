@@ -141,7 +141,7 @@ export const executeFormula: WorksheetMethod<'executeFormula'> = function (expre
         formulaLoopProtection[parentId] = true;
 
         // Convert range tokens
-        const tokensUpdate = function (tokens: any) {
+        const tokensUpdate = function (tokens: string[]) {
             for (let index = 0; index < tokens.length; index++) {
                 const f = [];
                 const token = tokens[index].split(':');
@@ -211,9 +211,9 @@ export const executeFormula: WorksheetMethod<'executeFormula'> = function (expre
                     }
 
                     // Do not calculate again. The formula engine reads the values of the references itself.
-                    if (!formulaEngine && typeof (globalThis as any)[tokens[i]] === 'undefined') {
+                    if (!formulaEngine && typeof (globalThis as unknown as Record<string, unknown>)[tokens[i]] === 'undefined') {
                         // Coords
-                        const position = getIdFromColumnName(tokens[i], 1 as any);
+                        const position = getIdFromColumnName(tokens[i], true);
                         // Get value
                         let value: any;
 
@@ -437,7 +437,7 @@ export const parseValue = function (this: Worksheet, i: number, j: number, value
 /**
  * Get dropdown value from key
  */
-const getDropDownValue = function (this: Worksheet, column: any, key: any) {
+const getDropDownValue = function (this: Worksheet, column: number, key: unknown) {
     const obj = this;
 
     const value = [];
@@ -1051,7 +1051,7 @@ export const updateTableReferences = function (this: Worksheet) {
                 obj.rows[j].element.children[0].setAttribute('data-y', j);
                 updateRowIndex.call(obj, obj.rows[j].element, j);
                 // Row number
-                obj.rows[j].element.children[0].innerHTML = (j + 1) as any;
+                obj.rows[j].element.children[0].innerHTML = String(j + 1);
             }
         }
     }
