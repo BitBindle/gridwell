@@ -75,7 +75,6 @@ Modules import each other with the `.js` extension, although the files are `.ts`
 -   **Other declarations.** `src/types/modules.d.ts` declares `@jspreadsheet/formula`, which has no typings. `src/types/jsuites.d.ts` adds the jsuites methods that its typings miss. `src/types/globals.d.ts` lets `parseInt` take numbers and `setAttribute` take numbers, as the code does in many places.
 -   **The worksheet as `this`.** Type a public method from its declaration with `WorksheetMethod<'name'>`, so the code and the public typings agree. Give other functions that use the worksheet as `this` a `this: Worksheet` parameter. Use rest parameters, not `arguments`.
 -   **Casts.** Where the type check cannot follow the code, cast with `as X` (or `as any`) and say why in a comment when it is not obvious. Wrap the expression in parentheses rather than add a local variable.
--   **Lint rules.** `prefer-const`, `no-var`, `prefer-rest-params` and `prefer-spread` are off in `eslint.config.mjs`, so that the move changed no code. Turn them on in their own commits.
 -   **No behaviour changes.** A commit that adds or changes types changes no behaviour. Fix a bug that the type check finds in a separate commit, with a test. To show that a typing commit changes no code, build without minifying before and after, format both bundles the same way (for example with esbuild and terser `--format beautify=true,comments=false`) and compare them.
 
 ## Build quirks

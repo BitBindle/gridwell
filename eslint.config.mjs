@@ -38,8 +38,6 @@ export default tseslint.config(
             // any is allowed while the code moves to TypeScript
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-unused-vars': 'off',
-            // Off while the modules move to TypeScript, so that the move changes no code. Turn them on afterwards.
-            'prefer-spread': 'off',
         },
     },
     {

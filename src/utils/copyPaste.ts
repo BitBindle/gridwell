@@ -267,7 +267,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
         }
 
         const arrayB = data.map(function (row: any[], i: number) {
-            const arrayC = Array.apply(null, { length: repeats * row.length } as any).map(function (e: any, i: number) {
+            const arrayC = Array.from({ length: repeats * row.length }, function (e: any, i: number) {
                 return row[i % row.length];
             });
             return arrayC;
@@ -284,7 +284,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
             }
             style = newStyle;
         }
-        const arrayB = Array.apply(null, { length: repeats * srcH } as any).map(function (e: any, i: number) {
+        const arrayB = Array.from({ length: repeats * srcH }, function (e: any, i: number) {
             return data[i % srcH];
         });
         data = arrayB;
