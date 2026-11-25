@@ -3,6 +3,8 @@ import jSuites from 'jsuites';
 import dispatch from './dispatch.js';
 import { getCellColumnIndex, getMask, isFormula, updateCell } from './internal.js';
 import { setHistory } from './history.js';
+import { getColumnNameFromId } from './internalHelpers.js';
+import { getLabelText } from './accessibility.js';
 
 /**
  * Open the editor
@@ -23,6 +25,9 @@ export const openEditor = function (cell, empty, e) {
     // On edition start
     dispatch.call(obj, 'oneditionstart', obj, cell, parseInt(x), parseInt(y));
 
+    // Accessible name of the editor
+    const label = getLabelText.call(obj.parent, 'editCell', getColumnNameFromId([parseInt(x), parseInt(y)]));
+
     // Overflow
     if (x > 0) {
         obj.records[y][x - 1].element.style.overflow = 'hidden';
@@ -38,6 +43,11 @@ export const openEditor = function (cell, empty, e) {
         editor.style.width = info.width + 'px';
         editor.style.height = info.height - 2 + 'px';
         editor.style.minHeight = info.height - 2 + 'px';
+
+        // Accessible name of a text editor
+        if (type === 'input' || type === 'textarea') {
+            editor.setAttribute('aria-label', label);
+        }
 
         // Edit cell
         cell.classList.add('editor');
@@ -118,7 +128,10 @@ export const openEditor = function (cell, empty, e) {
                 if (column.options && column.options.type) {
                     options.type = column.options.type;
                 }
-                jSuites.dropdown(editor, options);
+                const dropdown = jSuites.dropdown(editor, options);
+                if (dropdown && dropdown.header) {
+                    dropdown.header.setAttribute('aria-label', label);
+                }
             } else if (column && (column.type == 'calendar' || column.type == 'color')) {
                 // Value
                 const value = obj.options.data[y][x];
@@ -169,10 +182,16 @@ export const openEditor = function (cell, empty, e) {
                 const div = document.createElement('div');
                 div.classList.add('jss_richtext');
                 editor.appendChild(div);
-                jSuites.editor(div, {
+                const richText = jSuites.editor(div, {
                     focus: true,
                     value: value,
                 });
+                // Accessible role and name of the rich text editor
+                if (richText && richText.editor) {
+                    richText.editor.setAttribute('role', 'textbox');
+                    richText.editor.setAttribute('aria-multiline', 'true');
+                    richText.editor.setAttribute('aria-label', label);
+                }
                 const rect = cell.getBoundingClientRect();
                 const rectContent = div.getBoundingClientRect();
                 if (window.innerHeight < rect.bottom + rectContent.height) {

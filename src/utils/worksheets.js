@@ -50,7 +50,7 @@ import { copy, paste } from './copyPaste.js';
 import { isReadOnly, setReadOnly } from './cells.js';
 import { openFilter, resetFilters } from './filter.js';
 import { redo, undo } from './history.js';
-import { setGridRoles } from './accessibility.js';
+import { setGridLabels, setGridRoles } from './accessibility.js';
 
 const setWorksheetFunctions = function (worksheet) {
     for (let i = 0; i < worksheetPublicMethodsLength; i++) {
@@ -251,6 +251,7 @@ const createTable = function () {
     obj.content.appendChild(obj.table);
     obj.content.appendChild(obj.corner);
     obj.content.appendChild(obj.textarea);
+    setGridLabels.call(obj);
 
     obj.element.appendChild(obj.content);
     obj.element.appendChild(obj.pagination);

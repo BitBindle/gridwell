@@ -268,3 +268,106 @@ describe('Grid roles for assistive technology', () => {
         expect(getIndexes(worksheet)).to.eql(getExpectedIndexes(5, 2));
     });
 });
+
+describe('Accessible names', () => {
+    it('Give English names without the labels option', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [{ worksheetName: 'Cars', minDimensions: [3, 3] }],
+        });
+        const worksheet = instance[0];
+        expect(worksheet.table.getAttribute('aria-label')).to.equal('Cars');
+        expect(worksheet.headerContainer.children[0].getAttribute('aria-label')).to.equal('Select all');
+        expect(worksheet.textarea.getAttribute('aria-label')).to.equal('Clipboard helper');
+
+        worksheet.openEditor(worksheet.records[1][2].element);
+
+        expect(worksheet.edition[0].children[0].getAttribute('aria-label')).to.equal('Edit cell C2');
+    });
+
+    it('Use the texts of the labels option', () => {
+        const instance = jspreadsheet(root, {
+            labels: { selectAll: 'Alles auswählen', editCell: 'Zelle {0} bearbeiten', clipboardHelper: 'Zwischenablage' },
+            worksheets: [
+                {
+                    minDimensions: [4, 3],
+                    wordWrap: true,
+                    columns: [{}, { type: 'dropdown', source: ['a', 'b'] }, {}, { type: 'calendar' }],
+                },
+            ],
+        });
+        const worksheet = instance[0];
+
+        expect(worksheet.headerContainer.children[0].getAttribute('aria-label')).to.equal('Alles auswählen');
+        expect(worksheet.textarea.getAttribute('aria-label')).to.equal('Zwischenablage');
+
+        worksheet.openEditor(worksheet.records[2][0].element);
+
+        expect(worksheet.edition[0].children[0].tagName).to.equal('TEXTAREA');
+        expect(worksheet.edition[0].children[0].getAttribute('aria-label')).to.equal('Zelle A3 bearbeiten');
+
+        worksheet.closeEditor(worksheet.edition[0], false);
+        worksheet.openEditor(worksheet.records[0][1].element);
+
+        expect(worksheet.edition[0].querySelector('.jdropdown-header').getAttribute('aria-label')).to.equal('Zelle B1 bearbeiten');
+
+        worksheet.closeEditor(worksheet.edition[0], false);
+        worksheet.openEditor(worksheet.records[2][3].element);
+
+        expect(worksheet.edition[0].children[0].getAttribute('aria-label')).to.equal('Zelle D3 bearbeiten');
+    });
+
+    it('Give the rich text editor a role and a name', () => {
+        // The html cells use the Option constructor of the window, and the rich text editor uses execCommand, which
+        // jsdom does not have
+        const option = global.Option;
+        const execCommand = document.execCommand;
+        global.Option = window.Option;
+        document.execCommand = function () {
+            const range = document.createRange();
+            range.selectNodeContents(document.activeElement);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            return true;
+        };
+
+        try {
+            const instance = jspreadsheet(root, {
+                labels: { editCell: 'Zelle {0} bearbeiten' },
+                worksheets: [{ data: [['a', '']], columns: [{}, { type: 'html' }] }],
+            });
+            const worksheet = instance[0];
+
+            worksheet.openEditor(worksheet.records[0][1].element);
+
+            const richText = worksheet.edition[0].querySelector('[contenteditable]');
+            expect(richText.getAttribute('role')).to.equal('textbox');
+            expect(richText.getAttribute('aria-multiline')).to.equal('true');
+            expect(richText.getAttribute('aria-label')).to.equal('Zelle B1 bearbeiten');
+        } finally {
+            global.Option = option;
+            document.execCommand = execCommand;
+        }
+    });
+
+    it('Translate the English names with setDictionary', () => {
+        jspreadsheet.setDictionary({ 'Select all': 'Selecionar tudo', 'Edit cell {0}': 'Editar célula {0}' });
+
+        try {
+            const instance = jspreadsheet(root, {
+                labels: { clipboardHelper: 'Área de transferência' },
+                worksheets: [{ minDimensions: [3, 3] }],
+            });
+            const worksheet = instance[0];
+
+            expect(worksheet.headerContainer.children[0].getAttribute('aria-label')).to.equal('Selecionar tudo');
+            expect(worksheet.textarea.getAttribute('aria-label')).to.equal('Área de transferência');
+
+            worksheet.openEditor(worksheet.records[0][1].element);
+
+            expect(worksheet.edition[0].children[0].getAttribute('aria-label')).to.equal('Editar célula B1');
+        } finally {
+            delete document.dictionary['Select all'];
+            delete document.dictionary['Edit cell {0}'];
+        }
+    });
+});
