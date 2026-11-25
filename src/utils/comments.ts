@@ -50,20 +50,20 @@ export const setComments = function (this: Worksheet, cellId: string | Record<st
         commentsObj = cellId;
     }
 
-    const oldValue: Record<string, string> = {};
+    const oldValue: Record<string, string | null> = {};
 
     Object.entries(commentsObj).forEach(function ([cellName, comment]) {
         const cellCoords = getCoordsFromCellName(cellName);
 
         // Keep old value
-        oldValue[cellName] = obj.records[cellCoords[1]][cellCoords[0]].element.getAttribute('title');
+        oldValue[cellName] = obj.records[cellCoords![1]!][cellCoords![0]].element.getAttribute('title');
 
         // Set new values
-        obj.records[cellCoords[1]][cellCoords[0]].element.setAttribute('title', comment ? comment : '');
+        obj.records[cellCoords![1]!][cellCoords![0]].element.setAttribute('title', comment ? comment : '');
 
         // Remove class if there is no comment
         if (comment) {
-            obj.records[cellCoords[1]][cellCoords[0]].element.classList.add('jss_comments');
+            obj.records[cellCoords![1]!][cellCoords![0]].element.classList.add('jss_comments');
 
             if (!obj.options.comments) {
                 obj.options.comments = {};
@@ -71,7 +71,7 @@ export const setComments = function (this: Worksheet, cellId: string | Record<st
 
             obj.options.comments[cellName] = comment;
         } else {
-            obj.records[cellCoords[1]][cellCoords[0]].element.classList.remove('jss_comments');
+            obj.records[cellCoords![1]!][cellCoords![0]].element.classList.remove('jss_comments');
 
             if (obj.options.comments && obj.options.comments[cellName]) {
                 delete obj.options.comments[cellName];

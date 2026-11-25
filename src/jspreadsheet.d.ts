@@ -1768,8 +1768,9 @@ declare namespace jspreadsheet {
 
         /**
          * Get the coordinates of the range that is selected in the worksheet.
+         * @returns The first column, the first row, the last column and the last row, or null when no cell is selected.
          */
-        getSelection: () => [number, number, number, number];
+        getSelection: () => [number, number, number, number] | null;
 
         /**
          * Get styles from one or all cells.

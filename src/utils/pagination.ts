@@ -49,18 +49,18 @@ export const updatePagination = function (this: Worksheet) {
 
             let startNumber, finalNumber;
 
-            if (obj.pageNumber < 6) {
+            if (obj.pageNumber! < 6) {
                 startNumber = 1;
                 finalNumber = quantyOfPages < 10 ? quantyOfPages : 10;
-            } else if (quantyOfPages - obj.pageNumber < 5) {
+            } else if (quantyOfPages - obj.pageNumber! < 5) {
                 startNumber = quantyOfPages - 9;
                 finalNumber = quantyOfPages;
                 if (startNumber < 1) {
                     startNumber = 1;
                 }
             } else {
-                startNumber = obj.pageNumber - 4;
-                finalNumber = obj.pageNumber + 5;
+                startNumber = obj.pageNumber! - 4;
+                finalNumber = obj.pageNumber! + 5;
             }
 
             // First
@@ -101,7 +101,7 @@ export const updatePagination = function (this: Worksheet) {
                 });
             };
 
-            obj.pagination.children[0].innerHTML = format(jSuites.translate('Showing page {0} of {1} entries'), obj.pageNumber + 1, quantyOfPages);
+            obj.pagination.children[0].innerHTML = format(jSuites.translate('Showing page {0} of {1} entries'), obj.pageNumber! + 1, quantyOfPages);
         }
     }
 };
@@ -161,7 +161,7 @@ export const page: WorksheetMethod<'page'> = function (pageNumber) {
     // The tab stop of the grid can be in a row of the old page
     updateTabStop.call(obj);
 
-    if (obj.options.pagination > 0) {
+    if (obj.options.pagination! > 0) {
         updatePagination.call(obj);
     }
 
@@ -182,5 +182,5 @@ export const quantiyOfPages: WorksheetMethod<'quantiyOfPages'> = function () {
         results = obj.rows.length;
     }
 
-    return Math.ceil(results / obj.options.pagination);
+    return Math.ceil(results / obj.options.pagination!);
 };

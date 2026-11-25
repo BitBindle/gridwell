@@ -12,14 +12,20 @@ import type jspreadsheet from '../jspreadsheet';
 export interface Worksheet extends jspreadsheet.WorksheetInstance {
     parent: Spreadsheet;
 
-    options: Omit<jspreadsheet.WorksheetOptions, 'data' | 'columns'> & {
-        /** setData changes rows that are objects to arrays, so the library code always gets arrays. */
-        data?: jspreadsheet.CellValue[][];
+    options: Omit<jspreadsheet.WorksheetOptions, 'data' | 'columns' | 'minDimensions'> & {
+        /**
+         * setData changes rows that are objects to arrays, so the library code always gets arrays. setData also sets
+         * an empty array when there is no data.
+         */
+        data: jspreadsheet.CellValue[][];
         /**
          * Column is a union by type, and the code reads the options of one type after a test of the type that the
-         * type check cannot follow. The index signature allows that.
+         * type check cannot follow. The index signature allows that. The worksheet is set up with an empty array when
+         * there are no columns.
          */
-        columns?: (jspreadsheet.Column & Record<string, any>)[];
+        columns: (jspreadsheet.Column & Record<string, any>)[];
+        /** The worksheet is set up with [0, 0] when the option is missing. */
+        minDimensions: [number, number];
     };
 
     /** The public typings allow text, but the library only stores numbers. */
@@ -92,4 +98,9 @@ export interface Library extends jspreadsheet.JSpreadsheet {
     current: Worksheet | null;
 
     spreadsheet: Spreadsheet[];
+}
+
+/** A worksheet that has a selection. The functions that move the selection assume one. */
+export interface SelectedWorksheet extends Worksheet {
+    selectedCell: [number, number, number, number];
 }

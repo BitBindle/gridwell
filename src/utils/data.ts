@@ -8,6 +8,7 @@ import { setMerge } from './merges.js';
 import { getCoordsFromRange } from './helpers.js';
 import { updateGridSize, updateTabStop } from './accessibility.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
+import type { CellValue } from '../jspreadsheet';
 
 // data can be rows of objects. They are changed to arrays.
 export const setData: WorksheetMethod<'setData'> = function (data: any) {
@@ -31,7 +32,7 @@ export const setData: WorksheetMethod<'setData'> = function (data: any) {
                 const row = [];
                 for (let i = 0; i < obj.options.columns.length; i++) {
                     // The rows are objects here
-                    row[i] = (obj.options.data[j] as any)[obj.options.columns[i].name];
+                    row[i] = (obj.options.data[j] as any)[obj.options.columns[i].name!];
                 }
                 data.push(row);
             }
@@ -408,7 +409,7 @@ export const getDataFromRange: WorksheetMethod<'getDataFromRange'> = function (r
 
     const coords = getCoordsFromRange(range);
 
-    const dataset = [];
+    const dataset: CellValue[][] = [];
 
     for (let y = coords[1]; y <= coords[3]; y++) {
         dataset.push([]);

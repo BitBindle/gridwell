@@ -6,18 +6,19 @@ import { getColumnName } from './helpers.js';
  * @param idx - The position.
  * @param arr - The items to insert.
  */
-export const injectArray = function <T>(o: T[], idx: number, arr: T[]): (T | undefined)[] {
+export const injectArray = function <T>(o: T[], idx: number, arr: T[]): T[] {
     if (idx <= o.length) {
         return o.slice(0, idx).concat(arr).concat(o.slice(idx));
     }
 
-    const array = o.slice(0, o.length);
+    const array: (T | undefined)[] = o.slice(0, o.length);
 
     while (idx > array.length) {
         array.push(undefined);
     }
 
-    return array.concat(arr);
+    // A position after the end leaves undefined items between. The callers insert into the array or at its end.
+    return array.concat(arr) as T[];
 };
 
 /**

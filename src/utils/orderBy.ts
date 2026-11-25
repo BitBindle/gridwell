@@ -72,7 +72,7 @@ export const updateOrder = function (this: Worksheet, rows: any) {
         obj.results = null;
         obj.pageNumber = 0;
 
-        if (obj.options.pagination > 0) {
+        if (obj.options.pagination! > 0) {
             obj.page(0);
         } else if (obj.options.lazyLoading == true) {
             loadPage.call(obj, 0);

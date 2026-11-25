@@ -33,7 +33,8 @@ const prepareJson = function (this: Worksheet, data: { x: number; y: number; val
 /**
  * Post json to a remote server
  */
-const save = function (this: Worksheet, url: string, data: any) {
+// The url is undefined when persistence is true and the worksheet has no url option
+const save = function (this: Worksheet, url: string | undefined, data: any) {
     const obj = this;
 
     // Parse anything in the data before sending to the server

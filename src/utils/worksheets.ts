@@ -102,7 +102,7 @@ const createTable = function (this: Worksheet) {
     // Pagination select option
     const paginationUpdateContainer = document.createElement('div');
 
-    if (obj.options.pagination > 0 && obj.options.paginationOptions && obj.options.paginationOptions.length > 0) {
+    if (obj.options.pagination! > 0 && obj.options.paginationOptions && obj.options.paginationOptions.length > 0) {
         obj.paginationDropdown = document.createElement('select');
         obj.paginationDropdown.classList.add('jss_pagination_dropdown');
         obj.paginationDropdown.onchange = function () {
@@ -427,7 +427,7 @@ export const getNextDefaultWorksheetName = function (spreadsheet: Spreadsheet) {
     let largestWorksheetNumber = 0;
 
     spreadsheet.worksheets.forEach(function (worksheet) {
-        const regexResult = defaultWorksheetNameRegex.exec(worksheet.options.worksheetName);
+        const regexResult = defaultWorksheetNameRegex.exec(worksheet.options.worksheetName!);
         if (regexResult) {
             largestWorksheetNumber = Math.max(largestWorksheetNumber, parseInt(regexResult[1]));
         }
@@ -468,7 +468,7 @@ export const buildWorksheet = async function (this: Worksheet) {
 
                     // Headers
                     if (obj.options.csvHeaders == true && newData.length > 0) {
-                        const headers = newData.shift();
+                        const headers = newData.shift()!;
 
                         if (headers.length > 0) {
                             if (!obj.options.columns) {

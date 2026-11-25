@@ -279,7 +279,7 @@ const mouseDownControls = function (this: Worksheet, e: any) {
                                 libraryBase.jspreadsheet.current.options.allowRenameColumn != false
                             ) {
                                 libraryBase.jspreadsheet.timeControl = setTimeout(function () {
-                                    libraryBase.jspreadsheet.current.setHeader(columnId);
+                                    libraryBase.jspreadsheet.current!.setHeader(columnId);
                                 }, 800);
                             }
 
@@ -368,12 +368,12 @@ const mouseDownControls = function (this: Worksheet, e: any) {
                         }
 
                         // Update selection
-                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, null, o, null, d, e);
+                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, null as any, o, null as any, d, e);
                     }
                 } else {
                     // Jclose
                     if (e.target.classList.contains('jclose') && e.target.clientWidth - e.offsetX < 50 && e.offsetY < 50) {
-                        closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition[0], true);
+                        closeEditor.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.edition![0], true);
                     } else {
                         const getCellCoords = function (element: HTMLElement) {
                             const x = element.getAttribute('data-x');
@@ -403,8 +403,8 @@ const mouseDownControls = function (this: Worksheet, e: any) {
                                 if (e.shiftKey) {
                                     updateSelectionFromCoords.call(
                                         libraryBase.jspreadsheet.current,
-                                        libraryBase.jspreadsheet.current.selectedCell[0],
-                                        libraryBase.jspreadsheet.current.selectedCell[1],
+                                        libraryBase.jspreadsheet.current.selectedCell![0],
+                                        libraryBase.jspreadsheet.current.selectedCell![1],
                                         columnId,
                                         rowId,
                                         e
@@ -552,20 +552,20 @@ const mouseMoveControls = function (e: any) {
                 if (e.target.parentNode.parentNode.classList.contains('resizable')) {
                     if (e.target && x && !y && rect.width - (e.clientX - rect.left) < 6) {
                         libraryBase.jspreadsheet.current.cursor = e.target;
-                        libraryBase.jspreadsheet.current.cursor.style.cursor = 'col-resize';
+                        libraryBase.jspreadsheet.current.cursor!.style.cursor = 'col-resize';
                     } else if (e.target && !x && y && rect.height - (e.clientY - rect.top) < 6) {
                         libraryBase.jspreadsheet.current.cursor = e.target;
-                        libraryBase.jspreadsheet.current.cursor.style.cursor = 'row-resize';
+                        libraryBase.jspreadsheet.current.cursor!.style.cursor = 'row-resize';
                     }
                 }
 
                 if (e.target.parentNode.parentNode.classList.contains('draggable')) {
                     if (e.target && !x && y && rect.width - (e.clientX - rect.left) < 6) {
                         libraryBase.jspreadsheet.current.cursor = e.target;
-                        libraryBase.jspreadsheet.current.cursor.style.cursor = 'move';
+                        libraryBase.jspreadsheet.current.cursor!.style.cursor = 'move';
                     } else if (e.target && x && !y && rect.height - (e.clientY - rect.top) < 6) {
                         libraryBase.jspreadsheet.current.cursor = e.target;
-                        libraryBase.jspreadsheet.current.cursor.style.cursor = 'move';
+                        libraryBase.jspreadsheet.current.cursor!.style.cursor = 'move';
                     }
                 }
             }
@@ -586,10 +586,10 @@ const updateCopySelection = function (this: Worksheet, x3: number, y3: number) {
     removeCopySelection.call(obj);
 
     // Get elements first and last
-    const x1 = obj.selectedContainer[0];
-    const y1 = obj.selectedContainer[1];
-    const x2 = obj.selectedContainer[2];
-    const y2 = obj.selectedContainer[3];
+    const x1 = obj.selectedContainer![0];
+    const y1 = obj.selectedContainer![1];
+    const x2 = obj.selectedContainer![2];
+    const y2 = obj.selectedContainer![3];
 
     if (x3 != null && y3 != null) {
         let px, ux;
@@ -870,7 +870,8 @@ const getRole = function (element: HTMLElement) {
             return 'header';
         }
 
-        tempElement = tempElement.parentElement;
+        // The element is in a worksheet, so the loop ends at the element of the spreadsheet
+        tempElement = tempElement.parentElement!;
     }
 
     return 'applications';
@@ -918,7 +919,8 @@ const defaultContextMenu = function (worksheet: Worksheet, x: number, y: number,
 
                     const newValue = prompt(jSuites.translate('Column name'), oldValue);
 
-                    worksheet.setHeader(x, newValue);
+                    // A cancelled prompt gives null, and setHeader then uses the default name (issue #42)
+                    worksheet.setHeader(x, newValue!);
                 },
             });
         }
@@ -1022,7 +1024,7 @@ const defaultContextMenu = function (worksheet: Worksheet, x: number, y: number,
                     if (worksheet.selectedCell) {
                         navigator.clipboard.readText().then(function (text) {
                             if (text) {
-                                paste.call(worksheet, worksheet.selectedCell[0], worksheet.selectedCell[1], text);
+                                paste.call(worksheet, worksheet.selectedCell![0], worksheet.selectedCell![1], text);
                             }
                         });
                     }
@@ -1060,7 +1062,7 @@ const defaultContextMenu = function (worksheet: Worksheet, x: number, y: number,
 };
 
 const getElementIndex = function (element: HTMLElement) {
-    const parentChildren = element.parentElement.children;
+    const parentChildren = element.parentElement!.children;
 
     for (let i = 0; i < parentChildren.length; i++) {
         const currentElement = parentChildren[i];
@@ -1145,7 +1147,7 @@ const contextMenuControls = function (e: any) {
                         libraryBase.jspreadsheet.current.selectedCell[1] != null ||
                         libraryBase.jspreadsheet.current.selectedCell[3] != null
                     ) {
-                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, columns[0], null, columns[columns.length - 1], null, e);
+                        updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, columns[0], null as any, columns[columns.length - 1], null as any, e);
                     }
                 } else if (role === 'select-all') {
                     selectAll.call(libraryBase.jspreadsheet.current);
@@ -1173,7 +1175,7 @@ const contextMenuControls = function (e: any) {
                     Object.entries(spreadsheet.plugins).forEach(function ([, plugin]) {
                         if (typeof plugin.contextMenu === 'function') {
                             const result = plugin.contextMenu(
-                                libraryBase.jspreadsheet.current,
+                                libraryBase.jspreadsheet.current!,
                                 x !== null ? parseInt(x) : null,
                                 y !== null ? parseInt(y) : null,
                                 e,
@@ -1230,13 +1232,14 @@ const touchStartControls = function (e: any) {
 
                 libraryBase.jspreadsheet.timeControl = setTimeout(function () {
                     // Keep temporary reference to the element
-                    const column = libraryBase.jspreadsheet.current.options.columns[getCellColumnIndex.call(libraryBase.jspreadsheet.current, columnId, rowId)];
+                    const column =
+                        libraryBase.jspreadsheet.current!.options.columns[getCellColumnIndex.call(libraryBase.jspreadsheet.current!, columnId, rowId)];
                     if (column.type == 'color') {
                         libraryBase.jspreadsheet.tmpElement = null;
                     } else {
                         libraryBase.jspreadsheet.tmpElement = e.target;
                     }
-                    openEditor.call(libraryBase.jspreadsheet.current, e.target, false, e);
+                    openEditor.call(libraryBase.jspreadsheet.current!, e.target, false, e);
                 }, 500);
             }
         }
@@ -1313,7 +1316,7 @@ const keyDownControls = function (this: Worksheet, e: any) {
         if (libraryBase.jspreadsheet.current.edition) {
             const current = libraryBase.jspreadsheet.current;
             const column =
-                current.options.columns && current.options.columns[getCellColumnIndex.call(current, current.edition[2] as any, current.edition[3] as any)];
+                current.options.columns && current.options.columns[getCellColumnIndex.call(current, current.edition![2] as any, current.edition![3] as any)];
 
             if (e.which == 27) {
                 // Escape
@@ -1524,7 +1527,7 @@ const keyDownControls = function (this: Worksheet, e: any) {
                 }
 
                 libraryBase.jspreadsheet.timeControl = setTimeout(function () {
-                    libraryBase.jspreadsheet.current.search(e.target.value);
+                    libraryBase.jspreadsheet.current!.search(e.target.value);
                 }, 200);
             }
         }
@@ -1567,7 +1570,7 @@ export const updateFreezePosition = function (this: Worksheet) {
     const scrollLeft = obj.content.scrollLeft;
     const indexWidth = getIndexWidth.call(obj);
     // The worksheet can have fewer columns than freezeColumns, for example after deleteColumn
-    const freezeColumns = Math.min(obj.options.freezeColumns, obj.headers.length);
+    const freezeColumns = Math.min(obj.options.freezeColumns!, obj.headers.length);
     let width = 0;
     if (scrollLeft > indexWidth) {
         // The last frozen column that is not hidden shows the line of the frozen pane
@@ -1630,7 +1633,7 @@ export const scrollControls = function (this: Worksheet, e: any) {
 
     wheelControls.call(obj);
 
-    if (obj.options.freezeColumns > 0 && obj.content.scrollLeft != scrollLeft) {
+    if (obj.options.freezeColumns! > 0 && obj.content.scrollLeft != scrollLeft) {
         scrollLeft = obj.content.scrollLeft;
         updateFreezePosition.call(obj);
     }

@@ -47,8 +47,8 @@ export const search = function (this: Worksheet, query: string) {
          * @param k - The row.
          */
         const addToResult = function (k: number) {
-            if (obj.results.indexOf(k) == -1) {
-                obj.results.push(k);
+            if (obj.results!.indexOf(k) == -1) {
+                obj.results!.push(k);
             }
         };
 
@@ -63,7 +63,7 @@ export const search = function (this: Worksheet, query: string) {
                 if (rows.length) {
                     for (let i = 0; i < rows.length; i++) {
                         const row = getIdFromColumnName(rows[i], true);
-                        for (let j = 0; j < obj.options.mergeCells[rows[i]][1]; j++) {
+                        for (let j = 0; j < obj.options.mergeCells![rows[i]][1]; j++) {
                             addToResult(row[1] + j);
                         }
                     }

@@ -220,8 +220,8 @@ export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumbe
         }
 
         // Respect pagination
-        if (obj.options.pagination > 0) {
-            obj.page(obj.pageNumber);
+        if (obj.options.pagination! > 0) {
+            obj.page(obj.pageNumber!);
         }
 
         // Keep history
@@ -312,8 +312,8 @@ export const moveRow = function (this: Worksheet, o: any, d: any, ignoreDom?: an
     }
 
     // Respect pagination
-    if (obj.options.pagination > 0 && obj.tbody.children.length != obj.options.pagination) {
-        obj.page(obj.pageNumber);
+    if (obj.options.pagination! > 0 && obj.tbody.children.length != obj.options.pagination) {
+        obj.page(obj.pageNumber!);
     }
 
     // Keeping history of changes
@@ -423,7 +423,7 @@ export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numO
                 for (let row = rowNumber; row < rowNumber + numOfRows; row++) {
                     if (Array.prototype.indexOf.call(obj.tbody.children, obj.rows[row].element) >= 0) {
                         obj.rows[row].element.className = '';
-                        obj.rows[row].element.parentNode.removeChild(obj.rows[row].element);
+                        obj.rows[row].element.parentNode!.removeChild(obj.rows[row].element);
                     }
                 }
 
@@ -443,8 +443,8 @@ export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numO
                 }
 
                 // Respect pagination
-                if (obj.options.pagination > 0 && obj.tbody.children.length != obj.options.pagination) {
-                    obj.page(obj.pageNumber);
+                if (obj.options.pagination! > 0 && obj.tbody.children.length != obj.options.pagination) {
+                    obj.page(obj.pageNumber!);
                 }
 
                 // Remove selection
@@ -617,7 +617,7 @@ export const setRowData: WorksheetMethod<'setRowData'> = function (rowNumber, da
         const columnName = getColumnNameFromId([i, rowNumber]);
         // Set value
         if (data[i] != null) {
-            obj.setValue(columnName, data[i], force);
+            obj.setValue(columnName, data[i]!, force);
         }
     }
 };

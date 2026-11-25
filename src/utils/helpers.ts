@@ -67,7 +67,7 @@ export const getCellNameFromCoords = function (x: number, y: number) {
     return getColumnName(parseInt(x)) + (parseInt(y) + 1);
 };
 
-export const getCoordsFromCellName = function (columnName: string) {
+export const getCoordsFromCellName = function (columnName: string): [number, number | null] | undefined {
     // Get the letters
     const t = /^[a-zA-Z]+/.exec(columnName);
 
@@ -86,24 +86,25 @@ export const getCoordsFromCellName = function (columnName: string) {
         // Number
         // parseInt converts the match to a string
         let number = parseInt(/[0-9]+$/.exec(columnName) as any) || null;
-        if (number > 0) {
-            number--;
+        if (number! > 0) {
+            number!--;
         }
 
         return [code, number];
     }
 };
 
-export const getCoordsFromRange = function (range: any) {
+export const getCoordsFromRange = function (range: any): [number, number, number, number] {
     const [start, end] = range.split(':');
 
-    return [...getCoordsFromCellName(start), ...getCoordsFromCellName(end)];
+    // A range of whole columns, for example A:B, has no rows
+    return [...getCoordsFromCellName(start)!, ...getCoordsFromCellName(end)!] as [number, number, number, number];
 };
 
 /**
  * From stack overflow contributions
  */
-export const parseCSV = function (str: string, delimiter: string) {
+export const parseCSV = function (str: string, delimiter?: string) {
     // user-supplied delimeter or default comma
     delimiter = delimiter || ',';
     // Remove last line break
@@ -195,7 +196,7 @@ export const createFromTable = function (el: HTMLElement, options: any) {
             for (let i = 0; i < colgroup.length; i++) {
                 let width = colgroup[i].style.width;
                 if (!width) {
-                    width = colgroup[i].getAttribute('width');
+                    width = colgroup[i].getAttribute('width')!;
                 }
                 // Set column width
                 if (width) {
@@ -374,7 +375,7 @@ export const createFromTable = function (el: HTMLElement, options: any) {
 
         // I guess in terms the better column type
         if (options.parseTableAutoCellType == true) {
-            const pattern = [];
+            const pattern: any[] = [];
             for (let i = 0; i < options.columns.length; i++) {
                 let test = true;
                 let testCalendar = true;

@@ -562,8 +562,9 @@ export const hideToolbar = function (this: Spreadsheet) {
     const spreadsheet = this;
 
     if (spreadsheet.toolbar) {
-        spreadsheet.toolbar.parentNode.removeChild(spreadsheet.toolbar);
+        spreadsheet.toolbar.parentNode!.removeChild(spreadsheet.toolbar);
 
-        delete spreadsheet.toolbar;
+        // The public typings declare the toolbar as always there
+        delete (spreadsheet as Partial<Spreadsheet>).toolbar;
     }
 };

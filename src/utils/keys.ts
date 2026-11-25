@@ -1,11 +1,11 @@
 import { updateScroll } from './internal.js';
 import { loadDown, loadPage, loadUp, loadValidation } from './lazyLoading.js';
-import type { Worksheet, WorksheetMethod } from '../types/internal';
+import type { SelectedWorksheet, Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
  * Move the selection from a cell that a merged range hides to the first cell of the range
  */
-const toFirstCell = function (this: Worksheet) {
+const toFirstCell = function (this: SelectedWorksheet) {
     const obj = this;
 
     const element = obj.records[obj.selectedCell[1]][obj.selectedCell[0]].element;
@@ -36,7 +36,7 @@ const upGet = function (this: Worksheet, x: number, y: number) {
     return y;
 };
 
-const upVisible = function (this: Worksheet, group: any, direction: any) {
+const upVisible = function (this: SelectedWorksheet, group: any, direction: any) {
     const obj = this;
 
     let x, y;
@@ -70,7 +70,8 @@ const upVisible = function (this: Worksheet, group: any, direction: any) {
 };
 
 export const up: WorksheetMethod<'up'> = function (shiftKey, ctrlKey) {
-    const obj = this;
+    // The methods that move the selection need a selection. Without one, they throw (issue #40).
+    const obj = this as SelectedWorksheet;
 
     if (shiftKey) {
         if (obj.selectedCell[3] > 0) {
@@ -104,7 +105,7 @@ export const up: WorksheetMethod<'up'> = function (shiftKey, ctrlKey) {
                 }
             }
         }
-    } else if (obj.options.pagination > 0) {
+    } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selectedCell[3]);
         if (pageNumber != obj.pageNumber) {
             obj.page(pageNumber);
@@ -135,7 +136,7 @@ export const rightGet = function (this: Worksheet, x: number, y: number) {
     return x;
 };
 
-const rightVisible = function (this: Worksheet, group: any, direction: any) {
+const rightVisible = function (this: SelectedWorksheet, group: any, direction: any) {
     const obj = this;
 
     let x, y;
@@ -169,7 +170,8 @@ const rightVisible = function (this: Worksheet, group: any, direction: any) {
 };
 
 export const right: WorksheetMethod<'right'> = function (shiftKey, ctrlKey) {
-    const obj = this;
+    // The methods that move the selection need a selection. Without one, they throw (issue #40).
+    const obj = this as SelectedWorksheet;
 
     if (shiftKey) {
         if (obj.selectedCell[2] < obj.headers.length - 1) {
@@ -208,7 +210,7 @@ export const downGet = function (this: Worksheet, x: number, y: number) {
     return y;
 };
 
-const downVisible = function (this: Worksheet, group: any, direction: any) {
+const downVisible = function (this: SelectedWorksheet, group: any, direction: any) {
     const obj = this;
 
     let x, y;
@@ -242,7 +244,8 @@ const downVisible = function (this: Worksheet, group: any, direction: any) {
 };
 
 export const down: WorksheetMethod<'down'> = function (shiftKey, ctrlKey) {
-    const obj = this;
+    // The methods that move the selection need a selection. Without one, they throw (issue #40).
+    const obj = this as SelectedWorksheet;
 
     if (shiftKey) {
         if (obj.selectedCell[3] < obj.records.length - 1) {
@@ -275,7 +278,7 @@ export const down: WorksheetMethod<'down'> = function (shiftKey, ctrlKey) {
                 }
             }
         }
-    } else if (obj.options.pagination > 0) {
+    } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selectedCell[3]);
         if (pageNumber != obj.pageNumber) {
             obj.page(pageNumber);
@@ -305,7 +308,7 @@ const leftGet = function (this: Worksheet, x: number, y: number) {
     return x;
 };
 
-const leftVisible = function (this: Worksheet, group: any, direction: any) {
+const leftVisible = function (this: SelectedWorksheet, group: any, direction: any) {
     const obj = this;
 
     let x, y;
@@ -339,7 +342,8 @@ const leftVisible = function (this: Worksheet, group: any, direction: any) {
 };
 
 export const left: WorksheetMethod<'left'> = function (shiftKey, ctrlKey) {
-    const obj = this;
+    // The methods that move the selection need a selection. Without one, they throw (issue #40).
+    const obj = this as SelectedWorksheet;
 
     if (shiftKey) {
         if (obj.selectedCell[2] > 0) {
@@ -359,7 +363,8 @@ export const left: WorksheetMethod<'left'> = function (shiftKey, ctrlKey) {
 };
 
 export const first: WorksheetMethod<'first'> = function (shiftKey, ctrlKey) {
-    const obj = this;
+    // The methods that move the selection need a selection. Without one, they throw (issue #40).
+    const obj = this as SelectedWorksheet;
 
     if (shiftKey) {
         if (ctrlKey) {
@@ -381,7 +386,7 @@ export const first: WorksheetMethod<'first'> = function (shiftKey, ctrlKey) {
     // Change page
     if (obj.options.lazyLoading == true && (obj.selectedCell[1] == 0 || obj.selectedCell[3] == 0)) {
         loadPage.call(obj, 0);
-    } else if (obj.options.pagination > 0) {
+    } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selectedCell[3]);
         if (pageNumber != obj.pageNumber) {
             obj.page(pageNumber);
@@ -393,7 +398,8 @@ export const first: WorksheetMethod<'first'> = function (shiftKey, ctrlKey) {
 };
 
 export const last: WorksheetMethod<'last'> = function (shiftKey, ctrlKey) {
-    const obj = this;
+    // The methods that move the selection need a selection. Without one, they throw (issue #40).
+    const obj = this as SelectedWorksheet;
 
     if (shiftKey) {
         if (ctrlKey) {
@@ -415,7 +421,7 @@ export const last: WorksheetMethod<'last'> = function (shiftKey, ctrlKey) {
     // Change page
     if (obj.options.lazyLoading == true && (obj.selectedCell[1] == obj.records.length - 1 || obj.selectedCell[3] == obj.records.length - 1)) {
         loadPage.call(obj, -1);
-    } else if (obj.options.pagination > 0) {
+    } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selectedCell[3]);
         if (pageNumber != obj.pageNumber) {
             obj.page(pageNumber);

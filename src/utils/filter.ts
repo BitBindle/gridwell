@@ -47,11 +47,11 @@ export const openFilter: WorksheetMethod<'openFilter'> = function (columnId) {
 
         // Create dropdown
         const div = document.createElement('div');
-        obj.filter.children[columnId + 1].innerHTML = '';
-        obj.filter.children[columnId + 1].appendChild(div);
-        (obj.filter.children[columnId + 1] as HTMLElement).style.paddingLeft = '0px';
-        (obj.filter.children[columnId + 1] as HTMLElement).style.paddingRight = '0px';
-        (obj.filter.children[columnId + 1] as HTMLElement).style.overflow = 'initial';
+        obj.filter!.children[columnId + 1].innerHTML = '';
+        obj.filter!.children[columnId + 1].appendChild(div);
+        (obj.filter!.children[columnId + 1] as HTMLElement).style.paddingLeft = '0px';
+        (obj.filter!.children[columnId + 1] as HTMLElement).style.paddingRight = '0px';
+        (obj.filter!.children[columnId + 1] as HTMLElement).style.overflow = 'initial';
 
         const opt = {
             data: optionsFiltered,
@@ -64,10 +64,10 @@ export const openFilter: WorksheetMethod<'openFilter'> = function (columnId) {
             onclose: function (o: any) {
                 resetFilters.call(obj);
                 obj.filters[columnId] = o.dropdown.getValue(true);
-                obj.filter.children[columnId + 1].innerHTML = o.dropdown.getText();
-                (obj.filter.children[columnId + 1] as HTMLElement).style.paddingLeft = '';
-                (obj.filter.children[columnId + 1] as HTMLElement).style.paddingRight = '';
-                (obj.filter.children[columnId + 1] as HTMLElement).style.overflow = '';
+                obj.filter!.children[columnId + 1].innerHTML = o.dropdown.getText();
+                (obj.filter!.children[columnId + 1] as HTMLElement).style.paddingLeft = '';
+                (obj.filter!.children[columnId + 1] as HTMLElement).style.paddingRight = '';
+                (obj.filter!.children[columnId + 1] as HTMLElement).style.overflow = '';
                 closeFilter.call(obj, columnId);
                 refreshSelection.call(obj);
             },
@@ -83,7 +83,7 @@ export const closeFilter = function (this: Worksheet, columnId?: any) {
     const obj = this;
 
     if (!columnId) {
-        for (let i = 0; i < obj.filter.children.length; i++) {
+        for (let i = 0; i < obj.filter!.children.length; i++) {
             if (obj.filters[i]) {
                 columnId = i;
             }
@@ -120,8 +120,8 @@ export const resetFilters: WorksheetMethod<'resetFilters'> = function () {
     const obj = this;
 
     if (obj.options.filters) {
-        for (let i = 0; i < obj.filter.children.length; i++) {
-            obj.filter.children[i].innerHTML = '&nbsp;';
+        for (let i = 0; i < obj.filter!.children.length; i++) {
+            obj.filter!.children[i].innerHTML = '&nbsp;';
             obj.filters[i] = null;
         }
     }

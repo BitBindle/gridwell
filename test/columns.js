@@ -592,3 +592,21 @@ describe('Use the columns method', () => {
         });
     });
 });
+
+describe('Insert columns', () => {
+    it('gives onbeforeinsertcolumn the column that insertColumn inserts without arguments', () => {
+        let columns;
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b']] }],
+            onbeforeinsertcolumn: function (instance, list) {
+                columns = list;
+            },
+        })[0];
+
+        worksheet.insertColumn();
+
+        expect(columns.length).to.eql(1);
+        expect(columns[0].column).to.eql(2);
+        expect(worksheet.getData()).to.eql([['a', 'b', '']]);
+    });
+});
