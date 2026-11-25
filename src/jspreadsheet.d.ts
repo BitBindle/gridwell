@@ -365,6 +365,24 @@ declare namespace jspreadsheet {
     }
 
     /**
+     * The formula chain of a worksheet, {@link WorksheetInstance.formulas}. The worksheet adds to it when it calculates
+     * a formula.
+     */
+    interface WorksheetFormulas {
+        /**
+         * For each cell that a formula refers to, by its name (such as A1), the names of the cells whose formulas refer
+         * to it.
+         */
+        chain: Record<string, string[]>;
+
+        /** Keep that the formula of the cell `dependent` refers to the cell `cell`. Both are cell names. */
+        add(cell: string, dependent: string): void;
+
+        /** Rename the cells in the chain, with the new name by the old name, after rows or columns moved. */
+        rename(references: Record<string, string>): void;
+    }
+
+    /**
      * The cell editor of a worksheet, {@link WorksheetInstance.editor}. {@link WorksheetInstance.openEditor} and
      * {@link WorksheetInstance.closeEditor} open and close it.
      */
@@ -1777,10 +1795,8 @@ declare namespace jspreadsheet {
          */
         first: (shiftKey?: boolean, ctrlKey?: boolean) => void;
 
-        /**
-         * List of formulas that are used within other formulas. Each key is the name of a cell containing a formula, and each value is a list of cells whose formulas use the cell specified in the key.
-         */
-        formula: Record<string, string[]>;
+        /** The formula chain: which formulas the worksheet calculates again when a cell changes. */
+        formulas: WorksheetFormulas;
 
         /**
          * Get cell DOM element by cell name.

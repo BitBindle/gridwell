@@ -501,3 +501,61 @@ describe('Calculations', () => {
         expect(worksheet.getValueFromCoords(3, 0, true)).to.equal('3');
     });
 });
+
+describe('The formula chain of a worksheet', () => {
+    const create = (data) => jspreadsheet(root, { worksheets: [{ data }] })[0];
+
+    it('is empty before a formula is calculated', () => {
+        const worksheet = create([['1', '2']]);
+
+        expect(worksheet.formulas.chain).to.eql({});
+    });
+
+    it('keeps the cells whose formulas refer to a cell, once each', () => {
+        const worksheet = create([['1', '2', '=A1+B1', '=A1']]);
+
+        worksheet.setValue('D1', '=A1*2');
+
+        expect(worksheet.formulas.chain).to.eql({ A1: ['C1', 'D1'], B1: ['C1'] });
+    });
+
+    it('renames the cells after a row is added above them', () => {
+        const worksheet = create([
+            ['1', '=A1'],
+            ['2', '=A2'],
+        ]);
+
+        worksheet.insertRow(1, 0, true);
+
+        expect(worksheet.formulas.chain).to.eql({ A2: ['B2'], A3: ['B3'] });
+        expect(worksheet.getValue('B2')).to.equal('=A2');
+    });
+
+    it('add and rename change the chain', () => {
+        const worksheet = create([['1']]);
+
+        worksheet.formulas.add('A1', 'B1');
+        worksheet.formulas.add('A1', 'B1');
+        worksheet.formulas.add('A1', 'C1');
+        worksheet.formulas.rename({ A1: 'A2', C1: 'C2' });
+
+        expect(worksheet.formulas.chain).to.eql({ A2: ['B1', 'C2'] });
+    });
+
+    it('calculates the cells in the chain again when a cell changes', () => {
+        const worksheet = create([['1', '=A1+1']]);
+
+        worksheet.setValue('A1', '5');
+
+        expect(worksheet.getValue('B1', true)).to.equal('6');
+        expect(worksheet.formulas.chain.A1).to.eql(['B1']);
+    });
+
+    it('is not shared between worksheets', async () => {
+        const worksheets = jspreadsheet(root, { worksheets: [{ data: [['1', '=A1']] }, { data: [['2']] }] });
+        await new Promise((resolve) => setTimeout(resolve));
+
+        expect(worksheets[0].formulas).to.not.equal(worksheets[1].formulas);
+        expect(worksheets[1].formulas.chain).to.eql({});
+    });
+});

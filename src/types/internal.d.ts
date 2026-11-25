@@ -10,6 +10,7 @@ import type { Spreadsheet } from '../Spreadsheet';
 import type { Worksheet } from '../Worksheet';
 import type { Clipboard } from '../components/Clipboard';
 import type { Editor } from '../components/Editor';
+import type { Formulas } from '../components/Formulas';
 import type { History } from '../components/History';
 import type { Selection } from '../components/Selection';
 
@@ -49,6 +50,8 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
     editor: Editor;
 
     selection: Selection;
+
+    formulas: Formulas;
 
     /** The select for the number of rows per page, when the worksheet has pagination options. */
     paginationDropdown?: HTMLSelectElement;
