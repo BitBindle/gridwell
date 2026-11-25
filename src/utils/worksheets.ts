@@ -661,8 +661,8 @@ const worksheetPublicMethods: [string, (...args: any[]) => any][] = [
     ['getStyle', getStyle],
     [
         'setStyle',
-        function (this: Worksheet, cell: any, property: any, value: any, forceOverwrite: boolean) {
-            return setStyle.call(this, cell, property, value, forceOverwrite);
+        function (this: Worksheet, cell: any, property: any, value: any, forceOverwrite: boolean, ignoreHistoryAndEvents?: boolean) {
+            return setStyle.call(this, cell, property, value, forceOverwrite, ignoreHistoryAndEvents);
         },
     ],
     ['resetStyle', resetStyle],
