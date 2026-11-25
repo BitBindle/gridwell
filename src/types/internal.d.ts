@@ -60,11 +60,11 @@ export interface Worksheet extends jspreadsheet.WorksheetInstance {
     selectedRow?: number | null;
 
     /**
-     * The public typings use unions of the row and column information. The code tests one property and then reads the
-     * others, which the type check cannot follow, so the library sees these as any.
+     * The public typings use unions of the row and column information. Each member here says that the other index is
+     * missing, so that a test of column or row tells the type check which one it is.
      */
-    resizing: any;
-    dragging: any;
+    resizing: undefined | null | (jspreadsheet.ResizeColumnInfo & { row?: undefined }) | (jspreadsheet.ResizeRowInfo & { column?: undefined });
+    dragging: null | (jspreadsheet.DragColumnInfo & { row?: undefined }) | (jspreadsheet.DragRowInfo & { column?: undefined });
 }
 
 /**

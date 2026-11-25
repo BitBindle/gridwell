@@ -99,7 +99,8 @@ const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
             } else {
                 // Remove Class
                 libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.children[0].classList.remove('resizing');
-                const newHeight: any = libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.getAttribute('height');
+                // setHeight parses the height, and it ignores a missing attribute (NaN) as it ignored null
+                const newHeight = parseInt(libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.getAttribute('height'));
                 setHeight.call(
                     libraryBase.jspreadsheet.current,
                     libraryBase.jspreadsheet.current.resizing.row,
@@ -143,12 +144,12 @@ const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
                         let position;
 
                         if (libraryBase.jspreadsheet.current.dragging.element.nextSibling) {
-                            position = parseInt(libraryBase.jspreadsheet.current.dragging.element.nextSibling.getAttribute('data-y'));
+                            position = parseInt((libraryBase.jspreadsheet.current.dragging.element.nextSibling as HTMLElement).getAttribute('data-y'));
                             if (libraryBase.jspreadsheet.current.dragging.row < position) {
                                 position -= 1;
                             }
                         } else {
-                            position = parseInt(libraryBase.jspreadsheet.current.dragging.element.previousSibling.getAttribute('data-y'));
+                            position = parseInt((libraryBase.jspreadsheet.current.dragging.element.previousSibling as HTMLElement).getAttribute('data-y'));
                         }
 
                         moveRow.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.dragging.row, position, true);
@@ -267,7 +268,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                             libraryBase.jspreadsheet.current.resetSelection();
                             // Drag helper
                             libraryBase.jspreadsheet.current.dragging = {
-                                element: e.target,
+                                element: e.target as HTMLTableCellElement,
                                 column: columnId,
                                 destination: columnId,
                             };
@@ -342,7 +343,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                     if (libraryBase.jspreadsheet.current.options.rowResize != false && info.height - e.offsetY < 6) {
                         // Resize helper
                         libraryBase.jspreadsheet.current.resizing = {
-                            element: e.target.parentNode,
+                            element: e.target.parentNode as HTMLTableRowElement,
                             mousePosition: e.pageY,
                             row: rowId,
                             height: info.height,
@@ -359,7 +360,7 @@ const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                             libraryBase.jspreadsheet.current.resetSelection();
                             // Drag helper
                             libraryBase.jspreadsheet.current.dragging = {
-                                element: e.target.parentNode,
+                                element: e.target.parentNode as HTMLTableRowElement,
                                 row: rowId,
                                 destination: rowId,
                             };
@@ -547,7 +548,7 @@ const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
                             if (libraryBase.jspreadsheet.current.dragging.element != target) {
                                 e.target.parentNode!.parentNode!.insertBefore(libraryBase.jspreadsheet.current.dragging.element, target);
                                 libraryBase.jspreadsheet.current.dragging.destination = Array.prototype.indexOf.call(
-                                    libraryBase.jspreadsheet.current.dragging.element.parentNode.children,
+                                    libraryBase.jspreadsheet.current.dragging.element.parentNode!.children,
                                     libraryBase.jspreadsheet.current.dragging.element
                                 );
                             }
