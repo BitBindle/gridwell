@@ -205,6 +205,52 @@ declare namespace jspreadsheet {
         title?: string;
     }
 
+    /**
+     * The toolbar, which jSuites.toolbar creates. These are the methods that applications use; see the jSuites toolbar
+     * documentation for the others.
+     */
+    interface ToolbarInstance {
+        /** The options that jSuites.toolbar got, with its defaults. */
+        options: Record<string, unknown>;
+        /** Replace the items of the toolbar. */
+        create(items: ToolbarItem[]): void;
+        /** Call updateState on each item, with the two arguments. */
+        update(a?: unknown, b?: unknown): void;
+        /** Move the items that do not fit into the menu of the toolbar, or back. */
+        refresh(): void;
+        /** Mark an item element as selected. */
+        selectItem(element: HTMLElement): void;
+        /** Set the badge of the item at index. The value is HTML. */
+        setBadge(index: number, value: string | number): void;
+        /** Disable or enable the toolbar. */
+        setReadonly(state: boolean): void;
+        /** The element of the toolbar. */
+        get(): HTMLElement;
+        show(): void;
+        hide(): void;
+        /** Open the menu with the items that do not fit. */
+        open(): void;
+        /** Close the menu with the items that do not fit. */
+        close(): void;
+        /** Remove the toolbar from its element. */
+        destroy(): void;
+    }
+
+    /**
+     * The picker of a select item of the toolbar, which jSuites.picker creates. These are the methods that applications
+     * use; see the jSuites picker documentation for the others.
+     */
+    interface PickerInstance {
+        /** The options that jSuites.picker got, with its defaults. */
+        options: Record<string, unknown>;
+        /** The index of the selected option, as text after the user chose one. */
+        getValue(): number | string;
+        /** Select the option at index. With an event, the picker calls its onchange. */
+        setValue(index: number | string, event?: Event): void;
+        open(): void;
+        close(): void;
+    }
+
     interface ToolbarItemBase {
         /** Tooltip shown when hovering over this option. */
         tooltip?: string;
@@ -218,12 +264,13 @@ declare namespace jspreadsheet {
          */
         updateState?: (
             toolbarElement: HTMLDivElement,
-            toolbarInstance: Record<string, any>,
+            toolbarInstance: ToolbarInstance,
             itemElement: HTMLDivElement,
             worksheetInstance: WorksheetInstance
         ) => void;
 
-        [property: string]: any;
+        /** jSuites.toolbar gets the item, and reads more properties than these. */
+        [property: string]: unknown;
     }
 
     interface ToolbarIconItem extends ToolbarItemBase {
@@ -237,7 +284,7 @@ declare namespace jspreadsheet {
          * @param itemElement - Toolbar item HTML element.
          * @param event - Pointer event that triggered the onclick.
          */
-        onclick?: (toolbarElement: HTMLDivElement, toolbarInstance: Record<string, any>, itemElement: HTMLDivElement, event: PointerEvent) => void;
+        onclick?: (toolbarElement: HTMLDivElement, toolbarInstance: ToolbarInstance, itemElement: HTMLDivElement, event: PointerEvent) => void;
     }
 
     interface ToolbarSelectItem extends ToolbarItemBase {
@@ -257,7 +304,7 @@ declare namespace jspreadsheet {
          */
         onchange?: (
             itemElement: HTMLDivElement,
-            pickerInstance: Record<string, any>,
+            pickerInstance: PickerInstance,
             value: string,
             value2: string,
             valueIndex: string,
@@ -275,7 +322,7 @@ declare namespace jspreadsheet {
          * @param pickerInstance - Picker instance. For more information, read the jSuites picker documentation.
          * @returns string representing the HTML of the picker item.
          */
-        render?: (option: string, pickerInstance: Record<string, any>) => string;
+        render?: (option: string, pickerInstance: PickerInstance) => string;
 
         /** The index in {@link ToolbarSelectItem.options} of the option that the item shows first. */
         value?: number | string;
@@ -328,9 +375,10 @@ declare namespace jspreadsheet {
         y: string;
     }
 
+    /** A change that undo reverts. The other properties depend on the action. */
     interface HistoryRecord {
         action: string;
-        [key: string]: any;
+        [key: string]: unknown;
     }
 
     /**
@@ -520,7 +568,22 @@ declare namespace jspreadsheet {
      */
     type SortingItem = [number, CellValue];
 
-    type MetaInformation = Record<string, any>;
+    /** The meta information of a cell: any properties that the application keeps on it. */
+    /** The handlers of the events in {@link SpreadsheetOptions}, by event name. onevent gets every event, so it is not an event. */
+    type EventHandlers = {
+        [K in Exclude<keyof SpreadsheetOptions, 'onevent'> as K extends `on${string}` ? K : never]-?: Extract<
+            SpreadsheetOptions[K],
+            (...args: never[]) => unknown
+        >;
+    };
+
+    /** The name of an event, such as 'onchange'. */
+    type EventName = keyof EventHandlers;
+
+    /** The arguments of onevent: the name of an event, then the arguments of its handler. */
+    type EventArguments = { [E in EventName]: [event: E, ...args: Parameters<EventHandlers[E]>] }[EventName];
+
+    type MetaInformation = Record<string, unknown>;
 
     type ContextMenuItem =
         | {
@@ -537,7 +600,8 @@ declare namespace jspreadsheet {
         icon?: string;
         id?: string;
         disabled?: boolean;
-        onclick?: (instance: any, e: MouseEvent) => void;
+        /** element is the element of the item in the menu. */
+        onclick?: (element: HTMLDivElement, e: MouseEvent) => void;
         shortcut?: string;
         tooltip?: string;
         submenu?: Array<ContextMenuItem>;
@@ -966,10 +1030,10 @@ declare namespace jspreadsheet {
          * Event fired when any other event fires. It runs before the event that was called.
          *
          * If the called event has not been defined, the jss considers the value returned by onevent as the value returned by the called event.
-         * @param event - Name of the event that was called.
-         * @param rest - Arguments of the event that was called.
+         * @param args - The name of the event that was called, then the arguments of the event. A test of the name in
+         * `args[0]` narrows the other arguments.
          */
-        onevent?: (event: string, ...rest: any[]) => unknown;
+        onevent?: (...args: EventArguments) => unknown;
 
         /**
          * Occurs when the table is focused.
@@ -1086,9 +1150,9 @@ declare namespace jspreadsheet {
          * Occurs when persistence on the server succeeds.
          * @param spreadsheetInstance - Spreadsheet instance.
          * @param worksheetInstance - Instance of the worksheet to be saved.
-         * @param data - Data that has been sent to the server.
+         * @param data - Data that has been sent to the server: the changed rows, or what {@link SpreadsheetOptions.onbeforesave} returned.
          */
-        onsave?: (spreadsheetInstance: SpreadsheetInstance, worksheetInstance: WorksheetInstance, data: any) => void;
+        onsave?: (spreadsheetInstance: SpreadsheetInstance, worksheetInstance: WorksheetInstance, data: unknown) => void;
 
         /**
          * Occurs when selection is changed.
@@ -1583,10 +1647,9 @@ declare namespace jspreadsheet {
 
         /**
          * Event fired when any other event fires.
-         * @param event - Name of the event that was called.
-         * @param rest - Arguments of the event that was called.
+         * @param args - The name of the event that was called, then the arguments of the event.
          */
-        onevent?: (event: string, ...rest: any[]) => void;
+        onevent?: (...args: EventArguments) => void;
 
         /**
          * This method is called before the spreadsheet sends data to the server.
@@ -1771,8 +1834,9 @@ declare namespace jspreadsheet {
          * Emit an event.
          * @param event - Event name.
          * @param args - Arguments that should be passed to the event.
+         * @returns The result of the last handler that ran, or null when none ran.
          */
-        dispatch: (event: string, ...args: unknown[]) => any;
+        dispatch: <E extends EventName>(event: E, ...args: Parameters<EventHandlers[E]>) => unknown;
 
         /**
          * Simulates the action of the "arrow down" key. Does nothing when no cell is selected.
@@ -1798,8 +1862,10 @@ declare namespace jspreadsheet {
          * @param expression - Formula to be executed.
          * @param x - Column index of the cell where the formula is.
          * @param y - Row index of the cell where the formula is.
+         * @returns The result of the formula, as the formula engine gives it, or '#ERROR'. A formula that refers to a range
+         * can give an array.
          */
-        executeFormula: (expression: string, x?: number, y?: number) => any;
+        executeFormula: (expression: string, x?: number, y?: number) => unknown;
 
         /**
          * Table row containing filter inputs.
@@ -2577,7 +2643,5 @@ declare namespace jspreadsheet {
          * Basic version information.
          */
         version: Version;
-
-        [key: string]: any;
     }
 }

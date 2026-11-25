@@ -181,3 +181,38 @@ fields can change in any version. `WorksheetInstance` and `SpreadsheetInstance` 
 `create`, `remove`, `getActive` and the others) are on the prototype, as for the worksheets. A method taken off the
 object needs the object as `this`: use `() => tabs.open(1)` instead of `const open = tabs.open`. `Object.keys(tabs)` no
 longer includes the methods. Assigning a method to the object still replaces it, also for the calls that the tabs make.
+
+## The typings have no any
+
+The TypeScript typings no longer use `any`. JavaScript code works as before, but TypeScript code can need a check or a
+cast where it relied on `any`:
+
+| Typing                                          | Version 5                         | Version 6                                               |
+| ----------------------------------------------- | --------------------------------- | ------------------------------------------------------- |
+| `MetaInformation`                               | `Record<string, any>`             | `Record<string, unknown>`                               |
+| The other properties of `HistoryRecord`         | `any`                             | `unknown`                                               |
+| The data of `onsave`                            | `any`                             | `unknown`: the rows, or what `onbeforesave` returned    |
+| `executeFormula()`                              | `any`                             | `unknown`                                               |
+| `dispatch()`                                    | any event name, returns any       | the events of `SpreadsheetOptions` with their arguments |
+| `onevent` of the options and of plugins         | `(event: string, ...rest: any[])` | `(...args: EventArguments)`                             |
+| The first argument of a context menu `onclick`  | `any`                             | `HTMLDivElement`, the element of the item               |
+| The toolbar and picker instances of the toolbar | `Record<string, any>`             | `ToolbarInstance` and `PickerInstance`                  |
+| The other properties of a toolbar item          | `any`                             | `unknown`                                               |
+| Other properties of `jspreadsheet`              | `any`                             | not declared                                            |
+
+-   **onevent.** `EventArguments` is the name of an event, then the arguments of its handler. A test of `args[0]`
+    narrows the other arguments:
+
+    ```ts
+    onevent: function (...args) {
+        if (args[0] === 'onchange') {
+            const worksheet = args[1]; // WorksheetInstance
+        }
+    },
+    ```
+
+    A handler declared as `(event: string, ...rest: unknown[])` still fits. A handler that declares a worksheet as its
+    second parameter no longer fits, because some events, such as `onbeforesave`, give the spreadsheet there.
+
+-   **dispatch.** It takes the name of an event of `SpreadsheetOptions` and the arguments of its handler. To dispatch an
+    event of your own, cast the name, for example `worksheet.dispatch('oncustom' as jspreadsheet.EventName, worksheet)`.

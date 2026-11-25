@@ -86,7 +86,8 @@ const dispatch = function (this: Worksheet | Spreadsheet, event: EventName, ...a
     if (!spreadsheet.ignoreEvents) {
         // Call global event
         if (typeof spreadsheet.config.onevent == 'function') {
-            ret = spreadsheet.config.onevent.call(this, event, ...args);
+            // The arguments match the handler of the event, as the type of dispatch says
+            ret = (spreadsheet.config.onevent as (...args: unknown[]) => unknown).call(this, event, ...args);
         }
         // Call specific events
         const config = spreadsheet.config;
@@ -103,7 +104,8 @@ const dispatch = function (this: Worksheet | Spreadsheet, event: EventName, ...a
                 const plugin = spreadsheet.plugins[key];
 
                 if (typeof plugin.onevent === 'function') {
-                    ret = plugin.onevent.call(this, event, ...args);
+                    // The arguments match the handler of the event, as the type of dispatch says
+                    ret = (plugin.onevent as (...args: unknown[]) => unknown).call(this, event, ...args);
                 }
             }
         }
