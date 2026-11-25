@@ -131,7 +131,8 @@ factory.spreadsheet = async function (el: any, options: jspreadsheet.Spreadsheet
 
         const tableOptions = createFromTable(el, options.worksheets[0]);
 
-        options.worksheets[0] = tableOptions;
+        // el is a table, so the options were created
+        options.worksheets[0] = tableOptions!;
 
         const div = document.createElement('div');
         el.parentNode.insertBefore(div, el);

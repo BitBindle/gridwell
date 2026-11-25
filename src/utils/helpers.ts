@@ -31,8 +31,9 @@ export const getCaretIndex = function (this: Spreadsheet, e: Node) {
 /**
  * Invert keys and values
  */
-export const invert = function (o: any) {
-    const d = [];
+export const invert = function (o: Record<string, string | number>) {
+    // The values become the indexes, or the keys when they are not numbers
+    const d = [] as unknown as string[] & Record<string, string>;
     const k = Object.keys(o);
     for (let i = 0; i < k.length; i++) {
         d[o[k[i]]] = k[i];
@@ -85,7 +86,7 @@ export const getCoordsFromCellName = function (columnName: string): [number, num
 
         // Number
         // parseInt converts the match to a string
-        let number = parseInt(/[0-9]+$/.exec(columnName) as any) || null;
+        let number = parseInt(/[0-9]+$/.exec(columnName) as unknown as string) || null;
         if (number! > 0) {
             number!--;
         }
@@ -177,7 +178,8 @@ export const parseCSV = function (str: string, delimiter?: string) {
     return arr;
 };
 
-export const createFromTable = function (el: HTMLElement, options: any) {
+// The options are optional here: factory.ts passes the first worksheet of the options, which can be missing
+export const createFromTable = function (el: HTMLElement, options?: jspreadsheet.WorksheetOptions) {
     if (el.tagName != 'TABLE') {
         console.log('Element is not a table');
     } else {
@@ -186,8 +188,11 @@ export const createFromTable = function (el: HTMLElement, options: any) {
             options = {};
         }
 
-        options.columns = [];
-        options.data = [];
+        // The columns and the rows of the table are added to these arrays
+        const columns: jspreadsheet.Column[] = [];
+        const data: string[][] = [];
+        options.columns = columns;
+        options.data = data;
 
         // Colgroup
         const colgroup = el.querySelectorAll<HTMLElement>('colgroup > col');
@@ -200,43 +205,45 @@ export const createFromTable = function (el: HTMLElement, options: any) {
                 }
                 // Set column width
                 if (width) {
-                    if (!options.columns[i]) {
-                        options.columns[i] = {};
+                    if (!columns[i]) {
+                        columns[i] = {};
                     }
-                    options.columns[i].width = width;
+                    columns[i].width = width;
                 }
             }
         }
 
         // Parse header
-        const parseHeader = function (header: any, i: number) {
+        const parseHeader = function (header: HTMLElement, i: number) {
             // Get width information
-            let info = header.getBoundingClientRect();
-            const width = info.width > 50 ? info.width : 50;
+            const rect = header.getBoundingClientRect();
+            const width = rect.width > 50 ? rect.width : 50;
 
             // Create column option
-            if (!options.columns[i]) {
-                options.columns[i] = {};
+            if (!columns[i]) {
+                columns[i] = {};
             }
             if (header.getAttribute('data-celltype')) {
-                options.columns[i].type = header.getAttribute('data-celltype');
+                columns[i].type = header.getAttribute('data-celltype') as jspreadsheet.Column['type'];
             } else {
-                options.columns[i].type = 'text';
+                columns[i].type = 'text';
             }
-            options.columns[i].width = width + 'px';
-            options.columns[i].title = header.innerHTML;
+            columns[i].width = width + 'px';
+            columns[i].title = header.innerHTML;
             if (header.style.textAlign) {
-                options.columns[i].align = header.style.textAlign;
+                columns[i].align = header.style.textAlign as jspreadsheet.HorizontalAlign;
             }
 
+            let info;
             if ((info = header.getAttribute('name'))) {
-                options.columns[i].name = info;
+                columns[i].name = info;
             }
             if ((info = header.getAttribute('id'))) {
-                options.columns[i].id = info;
+                // id is not in the typings of the columns
+                (columns[i] as { id?: string }).id = info;
             }
             if ((info = header.getAttribute('data-mask'))) {
-                options.columns[i].mask = info;
+                columns[i].mask = info;
             }
         };
 
@@ -250,7 +257,8 @@ export const createFromTable = function (el: HTMLElement, options: any) {
                 for (let i = 0; i < headers[j].children.length; i++) {
                     const row = {
                         title: headers[j].children[i].textContent,
-                        colspan: headers[j].children[i].getAttribute('colspan') || 1,
+                        // The text of the attribute, which the headers read as a number (issue #53)
+                        colspan: (headers[j].children[i].getAttribute('colspan') || 1) as number,
                     };
                     cells.push(row);
                 }
@@ -260,23 +268,23 @@ export const createFromTable = function (el: HTMLElement, options: any) {
             headers = headers[headers.length - 1].children;
             // Go though the headers
             for (let i = 0; i < headers.length; i++) {
-                parseHeader(headers[i], i);
+                parseHeader(headers[i] as HTMLElement, i);
             }
         }
 
         // Content
         let rowNumber = 0;
-        const mergeCells: Record<string, any> = {};
-        const rows: Record<string, any> = {};
-        const style: Record<string, any> = {};
-        const classes: Record<string, any> = {};
+        const mergeCells: Record<string, [number, number]> = {};
+        const rows: Record<number, jspreadsheet.Row> = {};
+        const style: Record<string, string> = {};
+        const classes: Record<string, string> = {};
 
         let content = el.querySelectorAll<HTMLElement>(':scope > tr, :scope > tbody > tr');
         for (let j = 0; j < content.length; j++) {
-            options.data[rowNumber] = [];
+            data[rowNumber] = [];
             if (options.parseTableFirstRowAsHeader == true && !headers.length && j == 0) {
                 for (let i = 0; i < content[j].children.length; i++) {
-                    parseHeader(content[j].children[i], i);
+                    parseHeader(content[j].children[i] as HTMLElement, i);
                 }
             } else {
                 for (let i = 0; i < content[j].children.length; i++) {
@@ -289,7 +297,7 @@ export const createFromTable = function (el: HTMLElement, options: any) {
                     } else {
                         value = content[j].children[i].innerHTML;
                     }
-                    options.data[rowNumber].push(value);
+                    data[rowNumber].push(value);
 
                     // Key, by the row in the data, which is j - 1 when the first row is the header
                     const cellName = getColumnNameFromId([i, rowNumber]);
@@ -375,13 +383,15 @@ export const createFromTable = function (el: HTMLElement, options: any) {
 
         // I guess in terms the better column type
         if (options.parseTableAutoCellType == true) {
-            const pattern: any[] = [];
-            for (let i = 0; i < options.columns.length; i++) {
+            // The number of times each value is in each column
+            const pattern: Record<string, number>[] = [];
+            for (let i = 0; i < columns.length; i++) {
                 let test = true;
                 let testCalendar = true;
-                pattern[i] = [];
-                for (let j = 0; j < options.data.length; j++) {
-                    const value = options.data[j][i];
+                // An array used as an object, with the values as keys
+                pattern[i] = [] as unknown as Record<string, number>;
+                for (let j = 0; j < data.length; j++) {
+                    const value = data[j][i];
                     if (!pattern[i][value]) {
                         pattern[i][value] = 0;
                     }
@@ -400,10 +410,10 @@ export const createFromTable = function (el: HTMLElement, options: any) {
 
                 const keys = Object.keys(pattern[i]).length;
                 if (testCalendar) {
-                    options.columns[i].type = 'calendar';
-                } else if (test == true && keys > 1 && keys <= parseInt(options.data.length * 0.1)) {
-                    options.columns[i].type = 'dropdown';
-                    options.columns[i].source = Object.keys(pattern[i]);
+                    columns[i].type = 'calendar';
+                } else if (test == true && keys > 1 && keys <= parseInt(data.length * 0.1)) {
+                    columns[i].type = 'dropdown';
+                    (columns[i] as jspreadsheet.DropdownColumn).source = Object.keys(pattern[i]);
                 }
             }
         }
