@@ -146,7 +146,6 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
                     opened: true,
                     value: value,
                     width: '100%',
-                    height: editor.style.minHeight,
                     position: obj.options.tableOverflow == true || obj.parent.config.fullscreen == true ? true : false,
                     onclose: function () {
                         closeEditor.call(obj, cell, true);
