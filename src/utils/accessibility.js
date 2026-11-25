@@ -1,3 +1,5 @@
+import jSuites from 'jsuites';
+
 /**
  * ARIA grid semantics of the worksheet table (https://www.w3.org/WAI/ARIA/apg/patterns/grid/).
  *
@@ -7,6 +9,29 @@
  * so the cell (x, y) has the aria-colindex x + 2. A hidden column is not in the DOM order, so each cell has an
  * explicit aria-colindex. A data cell gets the gridcell role from the grid and its row.
  */
+
+/**
+ * English texts of the accessible names. The spreadsheet option labels gives other texts, for example in the language
+ * of the page. Without the option, jspreadsheet.setDictionary can translate the English texts. {0} in a text stands for
+ * a value, such as the address of a cell.
+ */
+const defaultLabels = {
+    selectAll: 'Select all',
+    editCell: 'Edit cell {0}',
+    clipboardHelper: 'Clipboard helper',
+};
+
+/**
+ * Text of an accessible name
+ */
+export const getLabelText = function (key, value) {
+    const spreadsheet = this;
+
+    const labels = spreadsheet && spreadsheet.config && spreadsheet.config.labels;
+    const text = labels && typeof labels[key] === 'string' ? labels[key] : jSuites.translate(defaultLabels[key]);
+
+    return value === undefined ? text : text.split('{0}').join(value);
+};
 
 /**
  * Number of rows before the first data row
@@ -42,6 +67,21 @@ export const setGridRoles = function () {
 
     // Select all corner
     obj.headerContainer.children[0].setAttribute('aria-colindex', 1);
+};
+
+/**
+ * Accessible names of the table, the select all corner and the clipboard helper
+ */
+export const setGridLabels = function () {
+    const obj = this;
+
+    if (obj.options.worksheetName) {
+        obj.table.setAttribute('aria-label', obj.options.worksheetName);
+    }
+
+    obj.headerContainer.children[0].setAttribute('aria-label', getLabelText.call(obj.parent, 'selectAll'));
+
+    obj.textarea.setAttribute('aria-label', getLabelText.call(obj.parent, 'clipboardHelper'));
 };
 
 /**

@@ -438,6 +438,31 @@ declare namespace jspreadsheet {
          */
         includeHeadersOnDownload?: boolean;
 
+        /**
+         * Texts of the accessible names that assistive technology reads. A missing text is the English default, which
+         * `jspreadsheet.setDictionary` can translate. `{0}` in a text stands for a value. Set `labels` when you create the
+         * spreadsheet.
+         */
+        labels?: {
+            /**
+             * Name of the corner cell that selects all cells.
+             * @default 'Select all'
+             */
+            selectAll?: string;
+
+            /**
+             * Name of the cell editor. `{0}` is the address of the cell, for example B4.
+             * @default 'Edit cell {0}'
+             */
+            editCell?: string;
+
+            /**
+             * Name of the hidden text area that the copy action uses.
+             * @default 'Clipboard helper'
+             */
+            clipboardHelper?: string;
+        };
+
         /** Spreadsheet namespace */
         namespace?: string;
 
