@@ -252,8 +252,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
 
     // Modify data to allow wor extending paste range in multiples of input range
     const srcW = data[0].length;
-    // A bitwise and of booleans, as before
-    if (((w > 1) as any) & (Number.isInteger(w / srcW) as any)) {
+    if (w > 1 && Number.isInteger(w / srcW)) {
         const repeats = w / srcW;
         if (style) {
             const newStyle = [];
@@ -275,7 +274,7 @@ export const paste: WorksheetMethod<'paste'> = function (x, y, data: any) {
         data = arrayB;
     }
     const srcH = data.length;
-    if (((h > 1) as any) & (Number.isInteger(h / srcH) as any)) {
+    if (h > 1 && Number.isInteger(h / srcH)) {
         const repeats = h / srcH;
         if (style) {
             const newStyle = [];
