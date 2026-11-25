@@ -23,6 +23,16 @@ Below are the initial settings related to freezing columns.
 |----------------------------|---------------------------------------------------|
 | **freezeColumns**: number  | Defines the columns to freeze on initialization.  |
 
+### Line of the frozen columns
+
+When the worksheet is scrolled, the last frozen column has a line of 2 pixels on its right side. By default, the line is transparent, so only the shadow of the frozen columns shows. In a forced-colors mode, the browser removes the shadow and shows the line in the text color of the system. Set the CSS custom property `--jss-frozen-line-color` to show the line in all modes.
+
+```css
+.jss_worksheet {
+    --jss-frozen-line-color: #595959;
+}
+```
+
 
 > #### Limitations
 > Freeze columns currently have limited functionality when used with filters and footers. These improvements are planned for the next release.

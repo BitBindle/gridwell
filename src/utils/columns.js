@@ -6,6 +6,7 @@ import { isColMerged, updateMergedColumns } from './merges.js';
 import { createCell, updateTableReferences } from './internal.js';
 import { conditionalSelectionUpdate, updateCornerPosition } from './selection.js';
 import { setFooter } from './footer.js';
+import { updateFreezePosition } from './events.js';
 import { getColumnNameFromId, injectArray } from './internalHelpers.js';
 
 export const getNumberOfColumns = function () {
@@ -664,6 +665,11 @@ export const showColumn = function (colNumber) {
         setFooter.call(obj);
     }
 
+    // The line of the frozen pane moves when a frozen column is shown or hidden
+    if (colNumber.some((columnIndex) => columnIndex < obj.options.freezeColumns)) {
+        updateFreezePosition.call(obj);
+    }
+
     obj.resetSelection();
 };
 
@@ -695,6 +701,11 @@ export const hideColumn = function (colNumber) {
     // Update footers
     if (obj.options.footers) {
         setFooter.call(obj);
+    }
+
+    // The line of the frozen pane moves when a frozen column is shown or hidden
+    if (colNumber.some((columnIndex) => columnIndex < obj.options.freezeColumns)) {
+        updateFreezePosition.call(obj);
     }
 
     obj.resetSelection();

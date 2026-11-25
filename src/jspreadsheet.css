@@ -646,6 +646,19 @@
     -moz-box-shadow: 2px 4px 4px 0.1px #ccc !important;
 }
 
+/* The line of the frozen pane. It is transparent by default, and a forced-colors mode shows it in the text color */
+.jss_worksheet .jss_freezed_last::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    box-sizing: border-box;
+    border-right: 2px solid var(--jss-frozen-line-color, transparent);
+    pointer-events: none;
+}
+
 .red {
     color: red;
 }
