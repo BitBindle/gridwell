@@ -817,7 +817,7 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
 /**
  * The value is a formula
  */
-export const isFormula = function (value: any) {
+export const isFormula = function (value: unknown) {
     const v = ('' + value)[0];
     return v == '=' || v == '#' ? true : false;
 };
@@ -852,7 +852,7 @@ export const getMask = function (o: any): any {
 /**
  * Secure formula
  */
-const secureFormula = function (oldValue: any) {
+const secureFormula = function (oldValue: string) {
     let newValue = '';
     let inside = 0;
 
@@ -914,7 +914,7 @@ export const updateFormulaChain = function (this: Worksheet, x: number, y: numbe
 /**
  * Update formula
  */
-export const updateFormula = function (formula: any, referencesToUpdate: any) {
+export const updateFormula = function (formula: string, referencesToUpdate: Record<string, string>) {
     const testLetter = /[A-Z]/;
     const testNumber = /[0-9]/;
 
@@ -956,7 +956,7 @@ export const updateFormula = function (formula: any, referencesToUpdate: any) {
 /**
  * Update formulas
  */
-const updateFormulas = function (this: Worksheet, referencesToUpdate: any) {
+const updateFormulas = function (this: Worksheet, referencesToUpdate: Record<string, string>) {
     const obj = this;
 
     // Update formulas
@@ -1138,7 +1138,7 @@ export const updateTableReferences = function (this: Worksheet) {
 /**
  * Update scroll position based on the selection
  */
-export const updateScroll = function (this: Worksheet, direction: any) {
+export const updateScroll = function (this: Worksheet, direction: 0 | 1 | 2 | 3) {
     const obj = this;
 
     // Jspreadsheet Container information
@@ -1323,7 +1323,7 @@ export const getLabel = function (this: Worksheet, x: number, y: number) {
  * use programmatically : table.fullscreen(); or table.fullscreen(true); or table.fullscreen(false);
  * @Param {boolean} activate
  */
-export const fullscreen = function (this: Spreadsheet, activate: any) {
+export const fullscreen = function (this: Spreadsheet, activate?: boolean) {
     const spreadsheet = this;
 
     // If activate not defined, get reverse options.fullscreen
