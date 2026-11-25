@@ -113,6 +113,12 @@ that is hard to read but does not need a new owner. They change no behaviour.
     `createNestedHeader` to `headers.ts`.
 12. **The event handlers.** Each handler reads the active worksheet once, and the long handlers (`mouseDownControls`,
     `keyDownControls`) are split into a function for each target or key.
+    Done. Each handler reads `jspreadsheet.current` once, after a press has made its worksheet the active one, and calls
+    its functions with that worksheet as `this`. `mouseDownControls` calls a function for a press on a header, a row
+    number, a cell and the pagination; `mouseUpControls` and `mouseMoveControls` one for the resize, the move and the
+    fill; `keyDownControls` one for the keys of an open editor and one for the keys on the grid, which calls one for
+    Delete, Enter, Tab, the shortcuts and the keys that start an edition. A timer still reads the active worksheet when
+    it runs. The handlers read the global in 26 places instead of 361.
 13. **The tabs.** `createTabs` builds the tabs in one long closure. The tabs become a class, with the methods on the
     prototype.
 14. **The anys in the public typings.** The `any` types left in `src/jspreadsheet.d.ts` get real types.

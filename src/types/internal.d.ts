@@ -176,8 +176,19 @@ export interface Library extends jspreadsheet.JSpreadsheet {
      */
     isMouseAction?: boolean;
 
+    /**
+     * The cell of a long press on a touch screen, which opened its editor. When the touch ends, the input of the editor
+     * gets the focus. Null for a color cell.
+     */
+    tmpElement?: HTMLElement | null;
+
     /** The timer that loads more rows when the content scrolls near its top or its end, with lazyLoading. */
     timeControlLoading: null | number;
+}
+
+/** A worksheet whose editor is open. The functions for the keys of an open editor assume one. */
+export interface EditingWorksheet extends Worksheet {
+    editor: Editor & { cell: HTMLTableCellElement };
 }
 
 /** A worksheet that has a selection. The functions that move the selection assume one. */
