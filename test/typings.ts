@@ -74,3 +74,6 @@ worksheet.insertColumn(1, 0, 1);
 // A worksheet name that the namespace does not have gives undefined
 const worksheetByName = library.getWorksheetInstanceByName('Countries', 'namespace');
 assertType<Equals<typeof worksheetByName, jspreadsheet.WorksheetInstance | Record<string, jspreadsheet.WorksheetInstance> | undefined>>();
+
+// The selection coordinates are numbers
+assertType<Equals<typeof worksheet.selectedCell, undefined | null | [number, number, number, number]>>();

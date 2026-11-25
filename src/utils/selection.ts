@@ -210,6 +210,12 @@ export const updateSelectionFromCoords = function (
         y2 = y1;
     }
 
+    // The mouse events pass the text of data-x and data-y. Keep the selection as numbers.
+    x1 = parseInt(x1);
+    y1 = parseInt(y1);
+    x2 = parseInt(x2);
+    y2 = parseInt(y2);
+
     // Selection must be within the existing data
     if (x1 >= obj.headers.length) {
         x1 = obj.headers.length - 1;

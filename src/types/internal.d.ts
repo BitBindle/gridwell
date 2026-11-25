@@ -32,9 +32,6 @@ export interface Worksheet extends jspreadsheet.WorksheetInstance {
         minDimensions: [number, number];
     };
 
-    /** The public typings allow text, but the library only stores numbers. */
-    selectedCell: undefined | null | [number, number, number, number];
-
     /** The public typings allow any record. The library stores the records in WorksheetHistoryRecord. */
     history: WorksheetHistoryRecord[];
 

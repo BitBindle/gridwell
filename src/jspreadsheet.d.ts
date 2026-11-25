@@ -2123,9 +2123,9 @@ declare namespace jspreadsheet {
         /**
          * Current selection coordinates.
          *
-         * The array is composed respectively by the indices of the leftmost column of the selection [0], the topmost row of the selection [1], the rightmost column of the selection [2] and the bottommost row selection [3].
+         * The column [0] and row [1] of the cell where the selection starts, and the column [2] and row [3] of the cell where it ends. The end can be left of or above the start.
          */
-        selectedCell: undefined | null | [number, number, number, number] | [string, string, string, string];
+        selectedCell: undefined | null | [number, number, number, number];
 
         selectedContainer: undefined | null | [number, number, number, number];
 
