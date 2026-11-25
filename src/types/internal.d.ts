@@ -164,8 +164,17 @@ export interface Library extends jspreadsheet.JSpreadsheet {
 
     spreadsheet: Spreadsheet[];
 
-    /** The timer of a long press on a touch screen, which opens the context menu, and of the search as the user types. */
+    /**
+     * The timer of a long press on a touch screen, which opens the context menu, of a press on a selected header, which
+     * renames the column, and of the search as the user types.
+     */
     timeControl: null | number;
+
+    /**
+     * True from a press on a worksheet, while no editor is open, until the button is released. The mouse move and over
+     * handlers resize, move or extend the selection only while it is true. Undefined before the first press.
+     */
+    isMouseAction?: boolean;
 
     /** The timer that loads more rows when the content scrolls near its top or its end, with lazyLoading. */
     timeControlLoading: null | number;
