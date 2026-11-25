@@ -132,7 +132,7 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
         const columns = [];
 
         if (!Array.isArray(mixed)) {
-            for (let i = 0; i < mixed; i++) {
+            for (let i = 0; i < numOfColumns; i++) {
                 const column = {
                     column: columnNumber + i + (insertBefore ? 0 : 1),
                     options: Object.assign({}, properties[i]),
