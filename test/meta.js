@@ -106,4 +106,23 @@ describe('Meta tests', () => {
 
         expect(instance[0].getMeta('A2')).to.equal(null);
     });
+
+    it('The meta information follows its cell when a row is inserted above it', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['US', 'Apples'],
+                        ['UK', 'Carrots'],
+                    ],
+                    meta: { B1: { id: '1' } },
+                },
+            ],
+        });
+
+        instance[0].insertRow(1, 0, true);
+
+        expect(instance[0].getMeta('B2')).to.eql({ id: '1' });
+        expect(instance[0].getMeta('B1')).to.equal(null);
+    });
 });
