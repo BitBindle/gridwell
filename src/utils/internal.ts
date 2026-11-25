@@ -17,7 +17,7 @@ export const updateTable = function (this: Worksheet) {
     const obj = this;
 
     // Check for spare
-    if (obj.options.minSpareRows > 0) {
+    if (obj.options.minSpareRows! > 0) {
         let numBlankRows = 0;
         for (let j = obj.rows.length - 1; j >= 0; j--) {
             let test = false;
@@ -33,12 +33,12 @@ export const updateTable = function (this: Worksheet) {
             }
         }
 
-        if (obj.options.minSpareRows - numBlankRows > 0) {
-            obj.insertRow(obj.options.minSpareRows - numBlankRows);
+        if (obj.options.minSpareRows! - numBlankRows > 0) {
+            obj.insertRow(obj.options.minSpareRows! - numBlankRows);
         }
     }
 
-    if (obj.options.minSpareCols > 0) {
+    if (obj.options.minSpareCols! > 0) {
         let numBlankCols = 0;
         for (let i = obj.headers.length - 1; i >= 0; i--) {
             let test = false;
@@ -54,8 +54,8 @@ export const updateTable = function (this: Worksheet) {
             }
         }
 
-        if (obj.options.minSpareCols - numBlankCols > 0) {
-            obj.insertColumn(obj.options.minSpareCols - numBlankCols);
+        if (obj.options.minSpareCols! - numBlankCols > 0) {
+            obj.insertColumn(obj.options.minSpareCols! - numBlankCols);
         }
     }
 
@@ -123,12 +123,12 @@ export const executeFormula: WorksheetMethod<'executeFormula'> = function (expre
     const formulaEngine = typeof obj.parent.config.formulaEngine === 'function' ? obj.parent.config.formulaEngine : null;
 
     // Execute formula with loop protection
-    const execute = function (expression: string, x: number, y: number) {
+    const execute = function (expression: string, x?: number, y?: number) {
         // The formula text as typed, for the formula engine
         const text = expression;
 
-        // Parent column identification
-        const parentId = getColumnNameFromId([x, y]);
+        // Parent column identification. executeFormula without x and y runs a formula that is in no cell.
+        const parentId = getColumnNameFromId([x!, y!]);
 
         // Code protection
         if (formulaLoopProtection[parentId]) {
@@ -799,7 +799,7 @@ export const updateCell = function (this: Worksheet, x: number, y: number, value
         }
 
         if (column && typeof column.render === 'function') {
-            column.render(obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : null, value, parseInt(x), parseInt(y), obj, column);
+            column.render(obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : (null as any), value, parseInt(x), parseInt(y), obj, column);
         }
 
         // Accessible name of the active cell
@@ -900,7 +900,8 @@ export const updateFormulaChain = function (this: Worksheet, x: number, y: numbe
                     records.push(updateCell.call(obj, cell[0], cell[1], value, true));
                 } else {
                     // No longer a formula, remove from the chain
-                    Object.keys(obj.formula)[i] = null;
+                    // This changes nothing: Object.keys returns a new array (issue #43)
+                    Object.keys(obj.formula)[i] = null!;
                 }
                 updateFormulaChain.call(obj, cell[0], cell[1], records);
             }
@@ -1101,16 +1102,16 @@ export const updateTableReferences = function (this: Worksheet) {
 
                 const columnIdFrom = keys[i];
                 const columnIdTo = mergeCellUpdates[keys[i]][0];
-                for (let j = 0; j < (obj.options.mergeCells[columnIdFrom] as MergeInfo)[2].length; j++) {
-                    x = parseInt((obj.options.mergeCells[columnIdFrom] as MergeInfo)[2][j].getAttribute('data-x'));
-                    y = parseInt((obj.options.mergeCells[columnIdFrom] as MergeInfo)[2][j].getAttribute('data-y'));
-                    (obj.options.mergeCells[columnIdFrom] as MergeInfo)[2][j].setAttribute('data-x', x + mergeCellUpdates[keys[i]][1]);
-                    (obj.options.mergeCells[columnIdFrom] as MergeInfo)[2][j].setAttribute('aria-colindex', x + mergeCellUpdates[keys[i]][1] + 2);
-                    (obj.options.mergeCells[columnIdFrom] as MergeInfo)[2][j].setAttribute('data-y', y + mergeCellUpdates[keys[i]][2]);
+                for (let j = 0; j < (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]!.length; j++) {
+                    x = parseInt((obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].getAttribute('data-x'));
+                    y = parseInt((obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].getAttribute('data-y'));
+                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-x', x + mergeCellUpdates[keys[i]][1]);
+                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('aria-colindex', x + mergeCellUpdates[keys[i]][1] + 2);
+                    (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-y', y + mergeCellUpdates[keys[i]][2]);
                 }
 
-                obj.options.mergeCells[columnIdTo] = obj.options.mergeCells[columnIdFrom];
-                delete obj.options.mergeCells[columnIdFrom];
+                obj.options.mergeCells![columnIdTo] = obj.options.mergeCells![columnIdFrom];
+                delete obj.options.mergeCells![columnIdFrom];
             }
         }
     }
@@ -1148,7 +1149,7 @@ export const updateScroll = function (this: Worksheet, direction: any) {
     const h1 = contentRect.height;
 
     // Direction Left or Up
-    const reference = obj.records[obj.selectedCell[3]][obj.selectedCell[2]].element;
+    const reference = obj.records[obj.selectedCell![3]][obj.selectedCell![2]].element;
 
     // Reference
     const referenceRect = reference.getBoundingClientRect();
@@ -1192,7 +1193,7 @@ export const updateScroll = function (this: Worksheet, direction: any) {
 
     // Left position check - TODO: change that to the bottom border of the element
     if (
-        (frozen && obj.selectedCell[2] < obj.options.freezeColumns) ||
+        (frozen && obj.selectedCell![2] < obj.options.freezeColumns!) ||
         (!underFreezed && x > obj.content.scrollLeft + freezed && x < obj.content.scrollLeft + w1)
     ) {
         // In the viewport
@@ -1222,8 +1223,8 @@ export const updateResult = function (this: Worksheet) {
     // Page 1
     if (obj.options.lazyLoading == true) {
         total = 100;
-    } else if (obj.options.pagination > 0) {
-        total = obj.options.pagination;
+    } else if (obj.options.pagination! > 0) {
+        total = obj.options.pagination!;
     } else {
         if (obj.results) {
             total = obj.results.length;
@@ -1254,7 +1255,7 @@ export const updateResult = function (this: Worksheet) {
     updateTabStop.call(obj);
 
     // Update pagination
-    if (obj.options.pagination > 0) {
+    if (obj.options.pagination! > 0) {
         updatePagination.call(obj);
     }
 
@@ -1352,7 +1353,7 @@ export const showIndex: WorksheetMethod<'showIndex'> = function () {
     obj.table.classList.remove('jss_hidden_index');
 
     // The position of the frozen columns depends on the width of the index column
-    if (obj.options.freezeColumns > 0) {
+    if (obj.options.freezeColumns! > 0) {
         updateFreezePosition.call(obj);
     }
 };
@@ -1366,7 +1367,7 @@ export const hideIndex: WorksheetMethod<'hideIndex'> = function () {
     obj.table.classList.add('jss_hidden_index');
 
     // The position of the frozen columns depends on the width of the index column
-    if (obj.options.freezeColumns > 0) {
+    if (obj.options.freezeColumns! > 0) {
         updateFreezePosition.call(obj);
     }
 };
