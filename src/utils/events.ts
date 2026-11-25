@@ -16,18 +16,20 @@ import { getCellNameFromCoords } from './helpers.js';
 import { getIndexWidth } from './freeze.js';
 import type { TargetEvent, Worksheet } from '../types/internal';
 
-const getElement = function (element: HTMLElement) {
+// The element of the worksheet that contains the element, which keeps the worksheet, and the section: 1 for the header, 2 for the body
+const getElement = function (element: HTMLElement): [Worksheet['element'] | 0 | null, number] {
     let jssSection = 0;
-    let jssElement: any = 0;
+    let jssElement: Worksheet['element'] | 0 | null = 0;
 
-    function path(element: any) {
+    // The path goes up to the document, which has no className
+    function path(element: HTMLElement) {
         if (element.className) {
             if (element.classList.contains('jss_container')) {
-                jssElement = element;
+                jssElement = element as Worksheet['element'];
             }
 
             if (element.classList.contains('jss_spreadsheet')) {
-                jssElement = element.querySelector(':scope > .jtabs-content > .jtabs-selected');
+                jssElement = element.querySelector(':scope > .jtabs-content > .jtabs-selected') as Worksheet['element'] | null;
             }
         }
 
@@ -39,7 +41,7 @@ const getElement = function (element: HTMLElement) {
 
         if (element.parentNode) {
             if (!jssElement) {
-                path(element.parentNode);
+                path(element.parentNode as HTMLElement);
             }
         }
     }
@@ -813,12 +815,13 @@ const pasteControls = function (e?: TargetEvent<ClipboardEvent>) {
                         e.clipboardData.getData('text')
                     );
                     e.preventDefault();
-                } else if ((window as any).clipboardData) {
+                } else if ((window as Window & { clipboardData?: DataTransfer }).clipboardData) {
+                    // Internet Explorer has the clipboard on the window
                     paste.call(
                         libraryBase.jspreadsheet.current,
                         libraryBase.jspreadsheet.current.selectedCell[0],
                         libraryBase.jspreadsheet.current.selectedCell[1],
-                        (window as any).clipboardData.getData('text')
+                        (window as Window & { clipboardData?: DataTransfer }).clipboardData!.getData('text')
                     );
                 }
             }
@@ -877,8 +880,8 @@ const getRole = function (element: HTMLElement) {
     return 'applications';
 };
 
-const defaultContextMenu = function (worksheet: Worksheet, x: number, y: number, role: any): any[] {
-    const items = [];
+const defaultContextMenu = function (worksheet: Worksheet, x: number, y: number, role: jspreadsheet.ContextMenuRole): jspreadsheet.ContextMenuItem[] {
+    const items: jspreadsheet.ContextMenuItem[] = [];
 
     if (role === 'header') {
         // Insert a new column
