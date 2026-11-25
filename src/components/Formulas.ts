@@ -1,6 +1,6 @@
 /**
  * The formula chain of a worksheet: for each cell that a formula refers to, the cells whose formulas refer to it. When
- * the value of a cell changes, the worksheet calculates these cells again (updateFormulaChain in src/utils/internal.ts).
+ * the value of a cell changes, the worksheet calculates these cells again (updateFormulaChain in src/utils/references.ts).
  *
  * Each worksheet has one, as worksheet.formulas. Calculating a formula reads and writes the cells of the worksheet, so
  * executeFormula and updateFormulaChain stay worksheet functions, and keep the chain here.

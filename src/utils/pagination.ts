@@ -183,3 +183,55 @@ export const quantiyOfPages: WorksheetMethod<'quantiyOfPages'> = function () {
 
     return Math.ceil(results / obj.options.pagination!);
 };
+
+export const updateResult = function (this: Worksheet) {
+    const obj = this;
+
+    let total = 0;
+    let index = 0;
+
+    // Page 1
+    if (obj.options.lazyLoading == true) {
+        total = 100;
+    } else if (obj.options.pagination! > 0) {
+        total = obj.options.pagination!;
+    } else {
+        if (obj.view.results) {
+            total = obj.view.results.length;
+        } else {
+            total = obj.rows.length;
+        }
+    }
+
+    // Reset current nodes
+    while (obj.tbody.firstChild) {
+        obj.tbody.removeChild(obj.tbody.firstChild);
+    }
+
+    // Hide all records from the table
+    for (let j = 0; j < obj.rows.length; j++) {
+        if (!obj.view.results || obj.view.results.indexOf(j) > -1) {
+            if (index < total) {
+                obj.tbody.appendChild(obj.rows[j].element);
+                index++;
+            }
+            obj.rows[j].element.style.display = '';
+        } else {
+            obj.rows[j].element.style.display = 'none';
+        }
+    }
+
+    // The tab stop of the grid can be in a row that is not in the results
+    updateTabStop.call(obj);
+
+    // Update pagination
+    if (obj.options.pagination! > 0) {
+        updatePagination.call(obj);
+    }
+
+    updateCornerPosition.call(obj);
+
+    dispatch.call(obj, 'onupdateresult', obj, obj.view.results);
+
+    return total;
+};

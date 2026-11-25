@@ -1,6 +1,6 @@
 import dispatch from './dispatch.js';
 import { injectArray } from './internalHelpers.js';
-import { updateTableReferences } from './internal.js';
+import { updateTableReferences } from './references.js';
 import { setMerge } from './merges.js';
 import { updateOrder, updateOrderArrow } from './orderBy.js';
 import { conditionalSelectionUpdate } from './selection.js';

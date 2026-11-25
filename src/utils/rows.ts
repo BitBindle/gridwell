@@ -1,11 +1,13 @@
 import jSuites from 'jsuites';
 import { getNumberOfColumns } from './columns.js';
-import { createCell, updateTableReferences } from './internal.js';
+import { createCell } from './render.js';
+import { updateTableReferences } from './references.js';
 import dispatch from './dispatch.js';
 import { isRowMerged } from './merges.js';
 import { conditionalSelectionUpdate, getSelectedRows, updateCornerPosition } from './selection.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import { setRowRole, updateTabStop } from './accessibility.js';
+import { updateFreezePosition } from './freezePosition.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
 
@@ -631,5 +633,33 @@ export const setRowData: WorksheetMethod<'setRowData'> = function (rowNumber, da
         if (data[i] != null) {
             obj.setValue(columnName, data[i]!, force);
         }
+    }
+};
+
+/**
+ * Show index column
+ */
+export const showIndex: WorksheetMethod<'showIndex'> = function () {
+    const obj = this;
+
+    obj.table.classList.remove('jss_hidden_index');
+
+    // The position of the frozen columns depends on the width of the index column
+    if (obj.options.freezeColumns! > 0) {
+        updateFreezePosition.call(obj);
+    }
+};
+
+/**
+ * Hide index column
+ */
+export const hideIndex: WorksheetMethod<'hideIndex'> = function () {
+    const obj = this;
+
+    obj.table.classList.add('jss_hidden_index');
+
+    // The position of the frozen columns depends on the width of the index column
+    if (obj.options.freezeColumns! > 0) {
+        updateFreezePosition.call(obj);
     }
 };

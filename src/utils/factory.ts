@@ -2,7 +2,7 @@ import jSuites from 'jsuites';
 
 import libraryBase from './libraryBase.js';
 import { setEvents } from '../events/index.js';
-import { fullscreen } from './internal.js';
+import { fullscreen } from './fullscreen.js';
 import { getWorksheetActive } from './activeWorksheet.js';
 import { hideToolbar, showToolbar, updateToolbar } from './toolbar.js';
 import { buildWorksheet, createWorksheetObj, getNextDefaultWorksheetName } from './worksheets.js';

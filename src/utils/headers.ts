@@ -1,5 +1,6 @@
 import dispatch from './dispatch.js';
 import { getColumnName } from './helpers.js';
+import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -66,4 +67,60 @@ export const setHeader = function (this: Worksheet, column: number, newValue?: s
         // On onchange header
         dispatch.call(obj, 'onchangeheader', obj, parseInt(column), newValue, onchangeheaderOldValue);
     }
+};
+
+/**
+ * Create a nested header object
+ */
+// The row of nested headers keeps its element
+export const createNestedHeader = function (this: Worksheet, nestedInformation: jspreadsheet.NestedHeaderCell[] & { element?: HTMLTableRowElement }) {
+    const obj = this;
+
+    const tr = document.createElement('tr');
+    tr.classList.add('jss_nested');
+    const td = document.createElement('td');
+    td.classList.add('jss_selectall');
+
+    tr.appendChild(td);
+    // Element
+    nestedInformation.element = tr;
+
+    let headerIndex = 0;
+    for (let i = 0; i < nestedInformation.length; i++) {
+        // Default values
+        if (!nestedInformation[i].colspan) {
+            nestedInformation[i].colspan = 1;
+        }
+        if (!nestedInformation[i].title) {
+            nestedInformation[i].title = '';
+        }
+        if (!nestedInformation[i].id) {
+            nestedInformation[i].id = '';
+        }
+
+        // Number of columns. colspan, title and id have default values above.
+        let numberOfColumns = nestedInformation[i].colspan!;
+
+        // Classes container
+        const column = [];
+        // Header classes for this cell
+        for (let x = 0; x < numberOfColumns; x++) {
+            if (obj.options.columns[headerIndex] && obj.options.columns[headerIndex].type == 'hidden') {
+                numberOfColumns++;
+            }
+            column.push(headerIndex);
+            headerIndex++;
+        }
+
+        // Created the nested cell
+        const td = document.createElement('td');
+        td.setAttribute('data-column', column.join(','));
+        td.setAttribute('colspan', nestedInformation[i].colspan!);
+        td.setAttribute('align', nestedInformation[i].align || 'center');
+        td.setAttribute('id', nestedInformation[i].id!);
+        td.textContent = nestedInformation[i].title!;
+        tr.appendChild(td);
+    }
+
+    return tr;
 };

@@ -1,5 +1,5 @@
-import { updateScroll } from './internal.js';
 import { loadDown, loadPage, loadUp, loadValidation } from './lazyLoading.js';
+import { getFreezeWidth, getIndexWidth } from './freeze.js';
 import type { SelectedWorksheet, Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
@@ -467,4 +467,83 @@ export const last: WorksheetMethod<'last'> = function (shiftKey, ctrlKey) {
 
     obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
     updateScroll.call(obj, 3);
+};
+
+/**
+ * Update scroll position based on the selection
+ */
+export const updateScroll = function (this: Worksheet, direction: 0 | 1 | 2 | 3) {
+    const obj = this;
+
+    // Jspreadsheet Container information
+    const contentRect = obj.content.getBoundingClientRect();
+    const x1 = contentRect.left;
+    const y1 = contentRect.top;
+    const w1 = contentRect.width;
+    const h1 = contentRect.height;
+
+    // Direction Left or Up
+    const reference = obj.records[obj.selection.range![3]][obj.selection.range![2]].element;
+
+    // Reference
+    const referenceRect = reference.getBoundingClientRect();
+    const x2 = referenceRect.left;
+    const y2 = referenceRect.top;
+    const w2 = referenceRect.width;
+    const h2 = referenceRect.height;
+
+    let x, y;
+
+    // Direction
+    if (direction == 0 || direction == 1) {
+        x = x2 - x1 + obj.content.scrollLeft;
+        y = y2 - y1 + obj.content.scrollTop - 2;
+    } else {
+        x = x2 - x1 + obj.content.scrollLeft + w2;
+        y = y2 - y1 + obj.content.scrollTop + h2;
+    }
+
+    // Top position check
+    if (y > obj.content.scrollTop + 30 && y < obj.content.scrollTop + h1) {
+        // In the viewport
+    } else {
+        // Out of viewport
+        if (y < obj.content.scrollTop + 30) {
+            obj.content.scrollTop = y - h2;
+        } else {
+            obj.content.scrollTop = y - (h1 - 2);
+        }
+    }
+
+    // Freeze columns?
+    const freezed = getFreezeWidth.call(obj);
+
+    // The frozen columns stay at the left of the content only when scrollLeft is more than the width of the index column.
+    // Then a cell whose left border is under the frozen columns goes to the right of the frozen columns.
+    const indexWidth = getIndexWidth.call(obj);
+    const frozen = freezed > 0 && obj.content.scrollLeft > indexWidth;
+    const left = x2 - x1 + obj.content.scrollLeft;
+    const underFreezed = frozen && left < obj.content.scrollLeft + freezed;
+
+    // Left position check - TODO: change that to the bottom border of the element
+    if (
+        (frozen && obj.selection.range![2] < obj.options.freezeColumns!) ||
+        (!underFreezed && x > obj.content.scrollLeft + freezed && x < obj.content.scrollLeft + w1)
+    ) {
+        // In the viewport
+    } else if (underFreezed) {
+        obj.content.scrollLeft = left - freezed - 1 < indexWidth ? 0 : left - freezed - 1;
+    } else {
+        // Out of viewport
+        if (x < obj.content.scrollLeft + 30) {
+            obj.content.scrollLeft = x;
+            if (obj.content.scrollLeft < 50) {
+                obj.content.scrollLeft = 0;
+            }
+        } else if (x < obj.content.scrollLeft + freezed) {
+            obj.content.scrollLeft = x - freezed - 1;
+        } else {
+            obj.content.scrollLeft = x - (w1 - 20);
+        }
+    }
 };

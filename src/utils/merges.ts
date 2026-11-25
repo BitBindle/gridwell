@@ -1,7 +1,7 @@
 import jSuites from 'jsuites';
 
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
-import { renderCell, updateCell } from './internal.js';
+import { renderCell, updateCell } from './render.js';
 import dispatch from './dispatch.js';
 import { updateSelection } from './selection.js';
 import type jspreadsheet from '../jspreadsheet';
