@@ -6,7 +6,7 @@ import { setHistory } from './history.js';
 import { updatePagination } from './pagination.js';
 import { setMerge } from './merges.js';
 import { getCoordsFromRange } from './helpers.js';
-import { updateGridSize } from './accessibility.js';
+import { updateGridSize, updateTabStop } from './accessibility.js';
 
 export const setData = function (data) {
     const obj = this;
@@ -128,6 +128,9 @@ export const setData = function (data) {
 
     // Update the size of the grid
     updateGridSize.call(obj);
+
+    // The rows are new, so the tab stop of the grid is new
+    updateTabStop.call(obj);
 
     // Updata table with custom configurations if applicable
     updateTable.call(obj);

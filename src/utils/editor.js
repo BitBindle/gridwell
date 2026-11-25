@@ -4,7 +4,7 @@ import dispatch from './dispatch.js';
 import { getCellColumnIndex, getMask, isFormula, updateCell } from './internal.js';
 import { setHistory } from './history.js';
 import { getColumnNameFromId } from './internalHelpers.js';
-import { getLabelText } from './accessibility.js';
+import { getLabelText, restoreActiveCell } from './accessibility.js';
 
 /**
  * Open the editor
@@ -49,6 +49,10 @@ export const openEditor = function (cell, empty, e) {
             editor.setAttribute('aria-label', label);
         }
 
+        // The editor is the focus target, and it has its own name
+        cell.removeAttribute('tabindex');
+        cell.removeAttribute('aria-label');
+
         // Edit cell
         cell.classList.add('editor');
         cell.innerHTML = '';
@@ -66,6 +70,10 @@ export const openEditor = function (cell, empty, e) {
 
         // If there is a custom editor for it
         if (column && typeof column.type === 'object') {
+            // The editor is the focus target, and it has its own name
+            cell.removeAttribute('tabindex');
+            cell.removeAttribute('aria-label');
+
             // Custom editors
             column.type.openEditor(cell, obj.options.data[y][x], parseInt(x), parseInt(y), obj, column, e);
 
@@ -131,6 +139,10 @@ export const openEditor = function (cell, empty, e) {
                 const dropdown = jSuites.dropdown(editor, options);
                 if (dropdown && dropdown.header) {
                     dropdown.header.setAttribute('aria-label', label);
+                    // The editor is the focus target, as the other editors
+                    if (!editor.contains(document.activeElement)) {
+                        dropdown.header.focus({ preventScroll: true });
+                    }
                 }
             } else if (column && (column.type == 'calendar' || column.type == 'color')) {
                 // Value
@@ -393,6 +405,9 @@ export const closeEditor = function (cell, save) {
 
     // Finish edition
     obj.edition = null;
+
+    // The cell is a focus target again
+    restoreActiveCell.call(obj, cell);
 };
 
 /**

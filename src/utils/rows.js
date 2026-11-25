@@ -6,7 +6,7 @@ import { isRowMerged } from './merges.js';
 import { conditionalSelectionUpdate, getSelectedRows, updateCornerPosition } from './selection.js';
 import { setHistory } from './history.js';
 import { getColumnNameFromId } from './internalHelpers.js';
-import { setRowRole } from './accessibility.js';
+import { setRowRole, updateTabStop } from './accessibility.js';
 
 /**
  * Create row
@@ -588,6 +588,9 @@ export const hideRow = function (rowNumber) {
     rowNumber.forEach(function (rowIndex) {
         obj.rows[rowIndex].element.style.display = 'none';
     });
+
+    // The tab stop of the grid can be in a hidden row
+    updateTabStop.call(obj);
 };
 
 /**

@@ -2,6 +2,7 @@ import jSuites from 'jsuites';
 
 import dispatch from './dispatch.js';
 import { updateCornerPosition } from './selection.js';
+import { updateTabStop } from './accessibility.js';
 
 /**
  * Which page the row is
@@ -155,6 +156,9 @@ export const page = function (pageNumber) {
             obj.tbody.appendChild(obj.rows[j].element);
         }
     }
+
+    // The tab stop of the grid can be in a row of the old page
+    updateTabStop.call(obj);
 
     if (obj.options.pagination > 0) {
         updatePagination.call(obj);

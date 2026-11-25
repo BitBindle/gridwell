@@ -5,6 +5,7 @@ import { setHistory } from './history.js';
 import { updateCell, updateFormula, updateFormulaChain, updateTable } from './internal.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { updateToolbar } from './toolbar.js';
+import { updateActiveCell } from './accessibility.js';
 
 /**
  * Get the number of columns of the merged range that starts at x, y.
@@ -85,6 +86,7 @@ export const resetSelection = function (blur) {
             obj.highlighted[i].element.classList.remove('highlight-top');
             obj.highlighted[i].element.classList.remove('highlight-bottom');
             obj.highlighted[i].element.classList.remove('highlight-selected');
+            obj.highlighted[i].element.removeAttribute('aria-selected');
 
             const px = parseInt(obj.highlighted[i].element.getAttribute('data-x'));
             const py = parseInt(obj.highlighted[i].element.getAttribute('data-y'));
@@ -120,6 +122,11 @@ export const resetSelection = function (blur) {
 
     // Reset highlighted cells
     obj.highlighted = [];
+
+    // The tab stop of the grid stays on the active cell, which is not selected now
+    if (obj.activeCell) {
+        obj.activeCell.setAttribute('aria-selected', 'false');
+    }
 
     // Reset
     obj.selectedCell = null;
@@ -314,6 +321,7 @@ export const updateSelectionFromCoords = function (x1, y1, x2, y2, origin) {
         for (let j = py; j <= uy; j++) {
             if (obj.rows[j].element.style.display != 'none' && obj.records[j][i].element.style.display != 'none') {
                 obj.records[j][i].element.classList.add('highlight');
+                obj.records[j][i].element.setAttribute('aria-selected', 'true');
                 obj.highlighted.push(obj.records[j][i]);
             }
         }
@@ -350,6 +358,9 @@ export const updateSelectionFromCoords = function (x1, y1, x2, y2, origin) {
     }
 
     obj.selectedContainer = [borderLeft, borderTop, borderRight, borderBottom];
+
+    // The selected cell is the tab stop of the grid
+    updateActiveCell.call(obj, x1, y1, origin);
 
     // Handle events
     if (previousState == 0) {
