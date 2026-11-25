@@ -5,6 +5,7 @@ import { renderCell, updateCell } from './internal.js';
 import { setHistory } from './history.js';
 import dispatch from './dispatch.js';
 import { updateSelection } from './selection.js';
+import type jspreadsheet from '../jspreadsheet';
 import type { MergeInfo, Worksheet, WorksheetMethod } from '../types/internal';
 
 /**
@@ -282,7 +283,7 @@ export const setMerge = function (this: Worksheet, cellName: string, colspan: an
  * Remove merge by cellname
  * @param cellName
  */
-export const removeMerge = function (this: Worksheet, cellName: string, data: any, keepOptions?: boolean) {
+export const removeMerge = function (this: Worksheet, cellName: string, data?: jspreadsheet.CellValue[] | null, keepOptions?: boolean) {
     const obj = this;
 
     if (obj.options.mergeCells && obj.options.mergeCells[cellName]) {

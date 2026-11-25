@@ -51,6 +51,7 @@ import { isReadOnly, setReadOnly } from './cells.js';
 import { openFilter, resetFilters } from './filter.js';
 import { redo, undo } from './history.js';
 import { setGridFocusEvents, setGridLabels, setGridRoles } from './accessibility.js';
+import type jspreadsheet from '../jspreadsheet';
 import type { Spreadsheet, Worksheet, WorksheetMethod } from '../types/internal';
 
 const setWorksheetFunctions = function (worksheet: Worksheet) {
@@ -611,7 +612,7 @@ const worksheetPublicMethods: [string, (...args: any[]) => any][] = [
     ['getWidth', getWidth],
     [
         'setWidth',
-        function (this: Worksheet, column: any, width: number) {
+        function (this: Worksheet, column: number | number[], width: number | number[]) {
             return setWidth.call(this, column, width);
         },
     ],
@@ -630,7 +631,7 @@ const worksheetPublicMethods: [string, (...args: any[]) => any][] = [
     ['getHeight', getHeight],
     [
         'setHeight',
-        function (this: Worksheet, row: any, height: number) {
+        function (this: Worksheet, row: number, height: number) {
             return setHeight.call(this, row, height);
         },
     ],
@@ -649,7 +650,7 @@ const worksheetPublicMethods: [string, (...args: any[]) => any][] = [
     ],
     [
         'removeMerge',
-        function (this: Worksheet, cellName: string, data: any) {
+        function (this: Worksheet, cellName: string, data?: jspreadsheet.CellValue[]) {
             return removeMerge.call(this, cellName, data);
         },
     ],

@@ -512,7 +512,8 @@ export const getHeight = function (this: Worksheet, row: any) {
  * @param height - new row height
  * @param oldHeight - old row height
  */
-export const setHeight = function (this: Worksheet, row: any, height: number, oldHeight?: any) {
+// oldHeight is the height attribute as text, or the measured height
+export const setHeight = function (this: Worksheet, row: number, height: number, oldHeight?: number | string | null) {
     const obj = this;
 
     if (height > 0) {
