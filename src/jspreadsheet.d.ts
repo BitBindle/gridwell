@@ -55,7 +55,7 @@ declare namespace jspreadsheet {
 
     interface CustomEditor {
         /**
-         * Event responsible for closing the editor of a cell with a custom editor.
+         * Event responsible for closing the editor of a cell with a custom editor. Without it, closing the editor keeps the value of the cell.
          * @param cell - Td tag whose editor should close.
          * @param save - If true, the value returned by this event will be the cell's new value. Otherwise, the value returned by this event is ignored.
          * @param x - Cell column index.
@@ -79,7 +79,7 @@ declare namespace jspreadsheet {
         createCell?: (cell: HTMLTableCellElement, value: CellValue, x: number, y: number, instance: WorksheetInstance, options: Column) => HTMLTableCellElement;
 
         /**
-         * Event responsible for opening the editor of a cell with a custom editor.
+         * Event responsible for opening the editor of a cell with a custom editor. Without it, the cells of the column cannot be edited.
          * @param cell - Td tag whose editor should open.
          * @param value - Cell value.
          * @param x - Cell column index.

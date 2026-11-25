@@ -88,15 +88,20 @@ export const openEditor: WorksheetMethod<'openEditor'> = function (cell, empty, 
 
         // If there is a custom editor for it
         if (column && typeof column.type === 'object') {
-            // The editor is the focus target, and it has its own name
-            cell.removeAttribute('tabindex');
-            cell.removeAttribute('aria-label');
+            if (typeof column.type.openEditor === 'function') {
+                // The editor is the focus target, and it has its own name
+                cell.removeAttribute('tabindex');
+                cell.removeAttribute('aria-label');
 
-            // Custom editors. The code expects a custom editor to have openEditor and closeEditor (issue #60).
-            column.type.openEditor!(cell, obj.options.data[y][x], x, y, obj, column, e);
+                // Custom editors
+                column.type.openEditor(cell, obj.options.data[y][x], x, y, obj, column, e);
 
-            // On edition start
-            dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+                // On edition start
+                dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+            } else {
+                // A custom type without openEditor has no editor: do not keep edition open
+                obj.edition = null;
+            }
         } else {
             // Native functions
             if (column && column.type == 'hidden') {
@@ -353,8 +358,13 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
     if (save == true) {
         // If custom editor
         if (column && typeof column.type === 'object') {
-            // Custom editor. It throws without closeEditor (issue #60).
-            value = column.type.closeEditor!(cell, save, parseInt(x), parseInt(y), obj, column);
+            if (typeof column.type.closeEditor === 'function') {
+                // Custom editor
+                value = column.type.closeEditor(cell, save, parseInt(x), parseInt(y), obj, column);
+            } else {
+                // A custom type without closeEditor gives no new value: the cell keeps its value
+                value = obj.options.data[y][x];
+            }
         } else {
             // Native functions
             if (column && (column.type == 'checkbox' || column.type == 'radio' || column.type == 'hidden')) {
@@ -413,8 +423,10 @@ export const closeEditor: WorksheetMethod<'closeEditor'> = function (cell, save)
         }
     } else {
         if (column && typeof column.type === 'object') {
-            // Custom editor. It throws without closeEditor (issue #60).
-            column.type.closeEditor!(cell, save, parseInt(x), parseInt(y), obj, column);
+            // Custom editor
+            if (typeof column.type.closeEditor === 'function') {
+                column.type.closeEditor(cell, save, parseInt(x), parseInt(y), obj, column);
+            }
         } else {
             if (column && column.type == 'dropdown') {
                 (cell.children[0] as EditorElement).dropdown.close(true);
