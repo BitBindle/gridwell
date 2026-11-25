@@ -755,6 +755,11 @@ export const isSelected: WorksheetMethod<'isSelected'> = function (x, y) {
 
     const selection = getSelection.call(obj);
 
+    // No cell is selected
+    if (!selection) {
+        return false;
+    }
+
     return x >= selection[0] && x <= selection[2] && y >= selection[1] && y <= selection[3];
 };
 
