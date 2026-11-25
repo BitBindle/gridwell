@@ -120,6 +120,9 @@ assertType<Equals<Handler<'oncomments'>[1], Record<string, string | null | undef
 // onupdateresult gets the shown rows after a search or a filter
 assertType<Equals<Handler<'onupdateresult'>, [instance: jspreadsheet.WorksheetInstance, results: number[] | null]>>();
 
+// The persistence of a plugin gets the changes as onafterchanges gets them
+assertType<Equals<Parameters<NonNullable<jspreadsheet.Plugin['persistence']>>[2], { data: jspreadsheet.CellChange[] }>>();
+
 // onbeforesave gets the values of a row by column name, or by index for a column without a name
 assertType<Equals<Handler<'onbeforesave'>[2], { row: number; data: Record<string, jspreadsheet.CellValue> }[]>>();
 

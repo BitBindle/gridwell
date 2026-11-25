@@ -605,7 +605,7 @@ declare namespace jspreadsheet {
             spreadsheetInstance: SpreadsheetInstance,
             worksheetInstance: WorksheetInstance,
             data: { row: number; data: Record<string, CellValue> }[]
-        ) => any;
+        ) => unknown;
 
         /**
          * Occurs before the selection is changed.
@@ -789,7 +789,7 @@ declare namespace jspreadsheet {
          * @param event - Name of the event that was called.
          * @param rest - Arguments of the event that was called.
          */
-        onevent?: (event: string, ...rest: any[]) => any;
+        onevent?: (event: string, ...rest: any[]) => unknown;
 
         /**
          * Occurs when the table is focused.
@@ -1412,9 +1412,9 @@ declare namespace jspreadsheet {
          * This method is called before the spreadsheet sends data to the server.
          * @param instance - Worksheet instance.
          * @param method - Name of the method whose execution needs to be saved on the server.
-         * @param data - Arguments of the method whose execution needs to be saved on the server.
+         * @param data - Arguments of the method whose execution needs to be saved on the server: the changes, as onafterchanges gets them.
          */
-        persistence?: (instance: WorksheetInstance, method: string, data: any) => void;
+        persistence?: (instance: WorksheetInstance, method: string, data: { data: CellChange[] }) => void;
 
         /**
          * Method called before the context menu is displayed. If this method returns anything other than a falsy value, that value overrides the context menu settings.
@@ -1609,7 +1609,7 @@ declare namespace jspreadsheet {
          * @param event - Event name.
          * @param args - Arguments that should be passed to the event.
          */
-        dispatch: (event: string, ...args: any[]) => any;
+        dispatch: (event: string, ...args: unknown[]) => any;
 
         /**
          * Simulates the action of the "arrow down" key.

@@ -48,7 +48,8 @@ const save = function (this: Worksheet, url: string | undefined, data: SaveData)
     // Parse anything in the data before sending to the server
     const ret = dispatch.call(obj.parent, 'onbeforesave', obj.parent, obj, data);
     if (ret) {
-        data = ret;
+        // The application can return any data to send in place of the rows
+        data = ret as SaveData;
     } else {
         if (ret === false) {
             return false;
@@ -113,7 +114,8 @@ const dispatch = function (this: Worksheet | Spreadsheet, event: EventName, ...a
         if (typeof spreadsheet.plugins === 'object') {
             Object.entries(spreadsheet.plugins).forEach(function ([, plugin]) {
                 if (typeof plugin.persistence === 'function') {
-                    plugin.persistence(worksheet, 'setValue', { data: args[1] });
+                    // The changes of onafterchanges
+                    plugin.persistence(worksheet, 'setValue', { data: args[1] as jspreadsheet.CellChange[] });
                 }
             });
         }
