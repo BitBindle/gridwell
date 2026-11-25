@@ -3,6 +3,7 @@ import { Clipboard } from './components/Clipboard.js';
 import { Editor } from './components/Editor.js';
 import { Formulas } from './components/Formulas.js';
 import { History } from './components/History.js';
+import { Pointer } from './components/Pointer.js';
 import { Selection } from './components/Selection.js';
 import { View } from './components/View.js';
 import type { Spreadsheet, WorksheetState } from './types/internal';
@@ -36,6 +37,7 @@ export class Worksheet {
         this.selection = new Selection();
         this.formulas = new Formulas();
         this.view = new View();
+        this.pointer = new Pointer();
         this.lastScrollLeft = 0;
     }
 }

@@ -33,6 +33,12 @@ export class Selection {
     /** Whether the keyboard focus is in the grid or in its editor. */
     focusInGrid = false;
 
+    /** The column whose header a press selected first, while the selection is of whole columns, or null. */
+    column: number | null = null;
+
+    /** The row whose number a press selected first, while the selection is of whole rows, or null. */
+    row: number | null = null;
+
     /** Remove the fill border from the cells that a drag of the corner was going to fill, and forget them. */
     clearFill() {
         // Remove current selection

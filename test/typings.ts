@@ -178,3 +178,15 @@ assertType<Equals<typeof worksheet.view.pageNumber, number>>();
 void worksheet.results;
 // @ts-expect-error The page is view.pageNumber
 void worksheet.pageNumber;
+
+// The state of a mouse gesture is in pointer, and the pressed header and row number are in selection
+assertType<Equals<typeof worksheet.pointer.corner, boolean>>();
+assertType<Equals<typeof worksheet.pointer.cursor, HTMLElement | null>>();
+assertType<Equals<typeof worksheet.selection.column, number | null>>();
+assertType<Equals<typeof worksheet.selection.row, number | null>>();
+// @ts-expect-error The resize is pointer.resizing
+void worksheet.resizing;
+// @ts-expect-error The move is pointer.dragging
+void worksheet.dragging;
+// @ts-expect-error The element is pointer.cursor
+void worksheet.cursor;

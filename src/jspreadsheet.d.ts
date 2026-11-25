@@ -360,6 +360,12 @@ declare namespace jspreadsheet {
         /** Whether the keyboard focus is in the grid or in its editor. */
         focusInGrid: boolean;
 
+        /** The column whose header a press selected first, while the selection is of whole columns, or null. */
+        column: number | null;
+
+        /** The row whose number a press selected first, while the selection is of whole rows, or null. */
+        row: number | null;
+
         /** Remove the fill border from the cells that a drag of the corner was going to fill, and forget them. */
         clearFill(): void;
     }
@@ -378,6 +384,24 @@ declare namespace jspreadsheet {
 
         /** The page that the worksheet shows, from 0, when it has pagination. */
         pageNumber: number;
+    }
+
+    /**
+     * The state of a mouse gesture on a worksheet, {@link WorksheetInstance.pointer}. The mouse handlers set it when a
+     * button goes down and clear it when it goes up.
+     */
+    interface WorksheetPointer {
+        /** The column or row that the mouse resizes, or null. */
+        resizing: ResizeColumnInfo | ResizeRowInfo | null;
+
+        /** The column or row that the mouse moves, or null. */
+        dragging: DragColumnInfo | DragRowInfo | null;
+
+        /** The header or row element that shows a resize cursor, or null. */
+        cursor: HTMLElement | null;
+
+        /** True while the mouse drags the selection corner to fill cells. */
+        corner: boolean;
     }
 
     /**
@@ -1724,8 +1748,6 @@ declare namespace jspreadsheet {
          */
         createWorksheet: (options: WorksheetOptions) => void;
 
-        cursor: null | HTMLElement;
-
         /**
          * Remove columns.
          *
@@ -1775,11 +1797,6 @@ declare namespace jspreadsheet {
          * @param processed - If true, the result will contain the displayed cell values. Otherwise, the result will contain the actual cell values.
          */
         download: (includeHeaders?: boolean, processed?: boolean) => void;
-
-        /**
-         * Stores information about the row or column being moved.
-         */
-        dragging: null | DragColumnInfo | DragRowInfo;
 
         /**
          * Root HTML element of this worksheet instance.
@@ -2177,6 +2194,11 @@ declare namespace jspreadsheet {
         paste: (x: number, y: number, data: string) => false | undefined;
 
         /**
+         * The state of a mouse gesture: the column or row that the mouse resizes or moves, and the drag of the selection corner.
+         */
+        pointer: WorksheetPointer;
+
+        /**
          * Get the number of pages of the worksheet.
          */
         quantiyOfPages: () => number;
@@ -2224,11 +2246,6 @@ declare namespace jspreadsheet {
          * @param ignoreHistoryAndEvents - If true, do not add this action to history.
          */
         resetStyle: (o: Record<string, string | string[]>, ignoreHistoryAndEvents?: boolean) => void;
-
-        /**
-         * Information about the row or column currently being resized.
-         */
-        resizing: undefined | null | ResizeRowInfo | ResizeColumnInfo;
 
         /**
          * Simulates the action of the "arrow right" key. Does nothing when no cell is selected.

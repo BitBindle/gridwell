@@ -11,12 +11,12 @@ import type { TargetEvent, Worksheet } from '../types/internal';
 export const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
     if (libraryBase.jspreadsheet.current) {
         // Update cell size
-        if (libraryBase.jspreadsheet.current.resizing) {
+        if (libraryBase.jspreadsheet.current.pointer.resizing) {
             // Columns to be updated
-            if (libraryBase.jspreadsheet.current.resizing.column != null) {
+            if (libraryBase.jspreadsheet.current.pointer.resizing.column != null) {
                 // New width
                 const newWidth = parseInt(
-                    libraryBase.jspreadsheet.current.cols[libraryBase.jspreadsheet.current.resizing.column].colElement.getAttribute('width')
+                    libraryBase.jspreadsheet.current.cols[libraryBase.jspreadsheet.current.pointer.resizing.column].colElement.getAttribute('width')
                 );
                 // Columns
                 const columns = libraryBase.jspreadsheet.current.getSelectedColumns();
@@ -26,51 +26,57 @@ export const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
                         currentWidth.push(parseInt(libraryBase.jspreadsheet.current.cols[columns[i]].colElement.getAttribute('width')));
                     }
                     // Previous width
-                    const index = columns.indexOf(parseInt(libraryBase.jspreadsheet.current.resizing.column));
-                    currentWidth[index] = libraryBase.jspreadsheet.current.resizing.width;
+                    const index = columns.indexOf(parseInt(libraryBase.jspreadsheet.current.pointer.resizing.column));
+                    currentWidth[index] = libraryBase.jspreadsheet.current.pointer.resizing.width;
                     setWidth.call(libraryBase.jspreadsheet.current, columns, newWidth, currentWidth);
                 } else {
                     setWidth.call(
                         libraryBase.jspreadsheet.current,
-                        parseInt(libraryBase.jspreadsheet.current.resizing.column),
+                        parseInt(libraryBase.jspreadsheet.current.pointer.resizing.column),
                         newWidth,
-                        libraryBase.jspreadsheet.current.resizing.width
+                        libraryBase.jspreadsheet.current.pointer.resizing.width
                     );
                 }
                 // Remove border
-                libraryBase.jspreadsheet.current.headers[libraryBase.jspreadsheet.current.resizing.column].classList.remove('resizing');
+                libraryBase.jspreadsheet.current.headers[libraryBase.jspreadsheet.current.pointer.resizing.column].classList.remove('resizing');
                 for (let j = 0; j < libraryBase.jspreadsheet.current.records.length; j++) {
-                    if (libraryBase.jspreadsheet.current.records[j][libraryBase.jspreadsheet.current.resizing.column]) {
-                        libraryBase.jspreadsheet.current.records[j][libraryBase.jspreadsheet.current.resizing.column].element.classList.remove('resizing');
+                    if (libraryBase.jspreadsheet.current.records[j][libraryBase.jspreadsheet.current.pointer.resizing.column]) {
+                        libraryBase.jspreadsheet.current.records[j][libraryBase.jspreadsheet.current.pointer.resizing.column].element.classList.remove(
+                            'resizing'
+                        );
                     }
                 }
             } else {
                 // Remove Class
-                libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.children[0].classList.remove('resizing');
+                libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.pointer.resizing.row].element.children[0].classList.remove('resizing');
                 // setHeight parses the height, and it ignores a missing attribute (NaN) as it ignored null
-                const newHeight = parseInt(libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.getAttribute('height'));
+                const newHeight = parseInt(
+                    libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.pointer.resizing.row].element.getAttribute('height')
+                );
                 setHeight.call(
                     libraryBase.jspreadsheet.current,
-                    libraryBase.jspreadsheet.current.resizing.row,
+                    libraryBase.jspreadsheet.current.pointer.resizing.row,
                     newHeight,
-                    libraryBase.jspreadsheet.current.resizing.height
+                    libraryBase.jspreadsheet.current.pointer.resizing.height
                 );
                 // Remove border
-                libraryBase.jspreadsheet.current.resizing.element.classList.remove('resizing');
+                libraryBase.jspreadsheet.current.pointer.resizing.element.classList.remove('resizing');
             }
             // Reset resizing helper
-            libraryBase.jspreadsheet.current.resizing = null;
-        } else if (libraryBase.jspreadsheet.current.dragging) {
+            libraryBase.jspreadsheet.current.pointer.resizing = null;
+        } else if (libraryBase.jspreadsheet.current.pointer.dragging) {
             // Reset dragging helper
-            if (libraryBase.jspreadsheet.current.dragging) {
-                if (libraryBase.jspreadsheet.current.dragging.column != null) {
+            if (libraryBase.jspreadsheet.current.pointer.dragging) {
+                if (libraryBase.jspreadsheet.current.pointer.dragging.column != null) {
                     // Target
                     const columnId = getIndex(e.target, 'data-x');
                     // Remove move style
-                    libraryBase.jspreadsheet.current.headers[libraryBase.jspreadsheet.current.dragging.column].classList.remove('dragging');
+                    libraryBase.jspreadsheet.current.headers[libraryBase.jspreadsheet.current.pointer.dragging.column].classList.remove('dragging');
                     for (let j = 0; j < libraryBase.jspreadsheet.current.rows.length; j++) {
-                        if (libraryBase.jspreadsheet.current.records[j][libraryBase.jspreadsheet.current.dragging.column]) {
-                            libraryBase.jspreadsheet.current.records[j][libraryBase.jspreadsheet.current.dragging.column].element.classList.remove('dragging');
+                        if (libraryBase.jspreadsheet.current.records[j][libraryBase.jspreadsheet.current.pointer.dragging.column]) {
+                            libraryBase.jspreadsheet.current.records[j][libraryBase.jspreadsheet.current.pointer.dragging.column].element.classList.remove(
+                                'dragging'
+                            );
                         }
                     }
                     for (let i = 0; i < libraryBase.jspreadsheet.current.headers.length; i++) {
@@ -79,37 +85,39 @@ export const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
                     }
                     // Update position
                     if (columnId != null) {
-                        if (libraryBase.jspreadsheet.current.dragging.column != libraryBase.jspreadsheet.current.dragging.destination) {
+                        if (libraryBase.jspreadsheet.current.pointer.dragging.column != libraryBase.jspreadsheet.current.pointer.dragging.destination) {
                             libraryBase.jspreadsheet.current.moveColumn(
-                                libraryBase.jspreadsheet.current.dragging.column,
-                                libraryBase.jspreadsheet.current.dragging.destination
+                                libraryBase.jspreadsheet.current.pointer.dragging.column,
+                                libraryBase.jspreadsheet.current.pointer.dragging.destination
                             );
                         }
                     }
                 } else {
                     // A row that moved has a sibling. A row that did not move can be the only row.
-                    if (libraryBase.jspreadsheet.current.dragging.row != libraryBase.jspreadsheet.current.dragging.destination) {
+                    if (libraryBase.jspreadsheet.current.pointer.dragging.row != libraryBase.jspreadsheet.current.pointer.dragging.destination) {
                         let position;
 
-                        if (libraryBase.jspreadsheet.current.dragging.element.nextSibling) {
-                            position = parseInt((libraryBase.jspreadsheet.current.dragging.element.nextSibling as HTMLElement).getAttribute('data-y'));
-                            if (libraryBase.jspreadsheet.current.dragging.row < position) {
+                        if (libraryBase.jspreadsheet.current.pointer.dragging.element.nextSibling) {
+                            position = parseInt((libraryBase.jspreadsheet.current.pointer.dragging.element.nextSibling as HTMLElement).getAttribute('data-y'));
+                            if (libraryBase.jspreadsheet.current.pointer.dragging.row < position) {
                                 position -= 1;
                             }
                         } else {
-                            position = parseInt((libraryBase.jspreadsheet.current.dragging.element.previousSibling as HTMLElement).getAttribute('data-y'));
+                            position = parseInt(
+                                (libraryBase.jspreadsheet.current.pointer.dragging.element.previousSibling as HTMLElement).getAttribute('data-y')
+                            );
                         }
 
-                        moveRow.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.dragging.row, position, true);
+                        moveRow.call(libraryBase.jspreadsheet.current, libraryBase.jspreadsheet.current.pointer.dragging.row, position, true);
                     }
-                    libraryBase.jspreadsheet.current.dragging.element.classList.remove('dragging');
+                    libraryBase.jspreadsheet.current.pointer.dragging.element.classList.remove('dragging');
                 }
-                libraryBase.jspreadsheet.current.dragging = null;
+                libraryBase.jspreadsheet.current.pointer.dragging = null;
             }
         } else {
             // Close any corner selection
-            if (libraryBase.jspreadsheet.current.selectedCorner) {
-                libraryBase.jspreadsheet.current.selectedCorner = false;
+            if (libraryBase.jspreadsheet.current.pointer.corner) {
+                libraryBase.jspreadsheet.current.pointer.corner = false;
 
                 // Data to be copied
                 if (libraryBase.jspreadsheet.current.selection.fill.length > 0) {
@@ -183,7 +191,7 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
             }
         } else if (e.target.classList.contains('jss_corner')) {
             if (libraryBase.jspreadsheet.current.options.editable != false) {
-                libraryBase.jspreadsheet.current.selectedCorner = true;
+                libraryBase.jspreadsheet.current.pointer.corner = true;
             }
         } else {
             // Header found
@@ -195,7 +203,7 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                     const info = e.target.getBoundingClientRect();
                     if (libraryBase.jspreadsheet.current.options.columnResize != false && info.width - e.offsetX < 6) {
                         // Resize helper
-                        libraryBase.jspreadsheet.current.resizing = {
+                        libraryBase.jspreadsheet.current.pointer.resizing = {
                             mousePosition: e.pageX,
                             column: columnId,
                             width: info.width,
@@ -215,7 +223,7 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                             // Reset selection
                             libraryBase.jspreadsheet.current.resetSelection();
                             // Drag helper
-                            libraryBase.jspreadsheet.current.dragging = {
+                            libraryBase.jspreadsheet.current.pointer.dragging = {
                                 element: e.target as HTMLTableCellElement,
                                 column: columnId,
                                 destination: columnId,
@@ -231,13 +239,13 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                     } else {
                         let o, d;
 
-                        if (libraryBase.jspreadsheet.current.selectedHeader != null && (e.shiftKey || e.ctrlKey)) {
-                            o = libraryBase.jspreadsheet.current.selectedHeader;
+                        if (libraryBase.jspreadsheet.current.selection.column != null && (e.shiftKey || e.ctrlKey)) {
+                            o = libraryBase.jspreadsheet.current.selection.column;
                             d = columnId;
                         } else {
                             // Press to rename
                             if (
-                                libraryBase.jspreadsheet.current.selectedHeader == columnId &&
+                                libraryBase.jspreadsheet.current.selection.column == columnId &&
                                 libraryBase.jspreadsheet.current.options.allowRenameColumn != false
                             ) {
                                 libraryBase.jspreadsheet.timeControl = setTimeout(function () {
@@ -246,7 +254,7 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                             }
 
                             // Keep track of which header was selected first
-                            libraryBase.jspreadsheet.current.selectedHeader = columnId;
+                            libraryBase.jspreadsheet.current.selection.column = columnId;
 
                             // Update selection single column
                             o = columnId;
@@ -279,7 +287,7 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                     }
                 }
             } else {
-                libraryBase.jspreadsheet.current.selectedHeader = null;
+                libraryBase.jspreadsheet.current.selection.column = null;
             }
 
             // Body found
@@ -290,7 +298,7 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                     const info = e.target.getBoundingClientRect();
                     if (libraryBase.jspreadsheet.current.options.rowResize != false && info.height - e.offsetY < 6) {
                         // Resize helper
-                        libraryBase.jspreadsheet.current.resizing = {
+                        libraryBase.jspreadsheet.current.pointer.resizing = {
                             element: e.target.parentNode as HTMLTableRowElement,
                             mousePosition: e.pageY,
                             row: rowId,
@@ -307,7 +315,7 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                             // Reset selection
                             libraryBase.jspreadsheet.current.resetSelection();
                             // Drag helper
-                            libraryBase.jspreadsheet.current.dragging = {
+                            libraryBase.jspreadsheet.current.pointer.dragging = {
                                 element: e.target.parentNode as HTMLTableRowElement,
                                 row: rowId,
                                 destination: rowId,
@@ -317,12 +325,12 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                         }
                     } else {
                         let o, d;
-                        if (libraryBase.jspreadsheet.current.selectedRow != null && (e.shiftKey || e.ctrlKey)) {
-                            o = libraryBase.jspreadsheet.current.selectedRow;
+                        if (libraryBase.jspreadsheet.current.selection.row != null && (e.shiftKey || e.ctrlKey)) {
+                            o = libraryBase.jspreadsheet.current.selection.row;
                             d = rowId;
                         } else {
                             // Keep track of which header was selected first
-                            libraryBase.jspreadsheet.current.selectedRow = rowId;
+                            libraryBase.jspreadsheet.current.selection.row = rowId;
 
                             // Update selection single column
                             o = rowId;
@@ -377,13 +385,13 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
                             }
 
                             // No full row selected
-                            libraryBase.jspreadsheet.current.selectedHeader = null;
-                            libraryBase.jspreadsheet.current.selectedRow = null;
+                            libraryBase.jspreadsheet.current.selection.column = null;
+                            libraryBase.jspreadsheet.current.selection.row = null;
                         }
                     }
                 }
             } else {
-                libraryBase.jspreadsheet.current.selectedRow = null;
+                libraryBase.jspreadsheet.current.selection.row = null;
             }
 
             // Pagination
@@ -429,28 +437,31 @@ export const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
     if (libraryBase.jspreadsheet.current) {
         if (libraryBase.jspreadsheet.isMouseAction == true) {
             // Resizing is ongoing
-            if (libraryBase.jspreadsheet.current.resizing) {
-                if (libraryBase.jspreadsheet.current.resizing.column != null) {
-                    const width = e.pageX - libraryBase.jspreadsheet.current.resizing.mousePosition;
+            if (libraryBase.jspreadsheet.current.pointer.resizing) {
+                if (libraryBase.jspreadsheet.current.pointer.resizing.column != null) {
+                    const width = e.pageX - libraryBase.jspreadsheet.current.pointer.resizing.mousePosition;
 
-                    if (libraryBase.jspreadsheet.current.resizing.width + width > 0) {
-                        const tempWidth = libraryBase.jspreadsheet.current.resizing.width + width;
-                        libraryBase.jspreadsheet.current.cols[libraryBase.jspreadsheet.current.resizing.column].colElement.setAttribute('width', tempWidth);
+                    if (libraryBase.jspreadsheet.current.pointer.resizing.width + width > 0) {
+                        const tempWidth = libraryBase.jspreadsheet.current.pointer.resizing.width + width;
+                        libraryBase.jspreadsheet.current.cols[libraryBase.jspreadsheet.current.pointer.resizing.column].colElement.setAttribute(
+                            'width',
+                            tempWidth
+                        );
 
                         updateCornerPosition.call(libraryBase.jspreadsheet.current);
                     }
                 } else {
-                    const height = e.pageY - libraryBase.jspreadsheet.current.resizing.mousePosition;
+                    const height = e.pageY - libraryBase.jspreadsheet.current.pointer.resizing.mousePosition;
 
-                    if (libraryBase.jspreadsheet.current.resizing.height + height > 0) {
-                        const tempHeight = libraryBase.jspreadsheet.current.resizing.height + height;
-                        libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.resizing.row].element.setAttribute('height', tempHeight);
+                    if (libraryBase.jspreadsheet.current.pointer.resizing.height + height > 0) {
+                        const tempHeight = libraryBase.jspreadsheet.current.pointer.resizing.height + height;
+                        libraryBase.jspreadsheet.current.rows[libraryBase.jspreadsheet.current.pointer.resizing.row].element.setAttribute('height', tempHeight);
 
                         updateCornerPosition.call(libraryBase.jspreadsheet.current);
                     }
                 }
-            } else if (libraryBase.jspreadsheet.current.dragging) {
-                if (libraryBase.jspreadsheet.current.dragging.column != null) {
+            } else if (libraryBase.jspreadsheet.current.pointer.dragging) {
+                if (libraryBase.jspreadsheet.current.pointer.dragging.column != null) {
                     const columnId = getIndex(e.target, 'data-x');
                     if (columnId != null) {
                         if (isColMerged.call(libraryBase.jspreadsheet.current, columnId).length) {
@@ -461,21 +472,21 @@ export const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
                                 libraryBase.jspreadsheet.current.headers[i].classList.remove('dragging-right');
                             }
 
-                            if (libraryBase.jspreadsheet.current.dragging.column == columnId) {
-                                libraryBase.jspreadsheet.current.dragging.destination = columnId;
+                            if (libraryBase.jspreadsheet.current.pointer.dragging.column == columnId) {
+                                libraryBase.jspreadsheet.current.pointer.dragging.destination = columnId;
                             } else {
                                 if (e.target.clientWidth / 2 > e.offsetX) {
-                                    if (libraryBase.jspreadsheet.current.dragging.column < columnId) {
-                                        libraryBase.jspreadsheet.current.dragging.destination = columnId - 1;
+                                    if (libraryBase.jspreadsheet.current.pointer.dragging.column < columnId) {
+                                        libraryBase.jspreadsheet.current.pointer.dragging.destination = columnId - 1;
                                     } else {
-                                        libraryBase.jspreadsheet.current.dragging.destination = columnId;
+                                        libraryBase.jspreadsheet.current.pointer.dragging.destination = columnId;
                                     }
                                     libraryBase.jspreadsheet.current.headers[columnId].classList.add('dragging-left');
                                 } else {
-                                    if (libraryBase.jspreadsheet.current.dragging.column < columnId) {
-                                        libraryBase.jspreadsheet.current.dragging.destination = columnId;
+                                    if (libraryBase.jspreadsheet.current.pointer.dragging.column < columnId) {
+                                        libraryBase.jspreadsheet.current.pointer.dragging.destination = columnId;
                                     } else {
-                                        libraryBase.jspreadsheet.current.dragging.destination = columnId + 1;
+                                        libraryBase.jspreadsheet.current.pointer.dragging.destination = columnId + 1;
                                     }
                                     libraryBase.jspreadsheet.current.headers[columnId].classList.add('dragging-right');
                                 }
@@ -489,11 +500,11 @@ export const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
                             console.error('Jspreadsheet: This row is part of a merged cell.');
                         } else {
                             const target = e.target.clientHeight / 2 > e.offsetY ? e.target.parentNode!.nextSibling : e.target.parentNode;
-                            if (libraryBase.jspreadsheet.current.dragging.element != target) {
-                                e.target.parentNode!.parentNode!.insertBefore(libraryBase.jspreadsheet.current.dragging.element, target);
-                                libraryBase.jspreadsheet.current.dragging.destination = Array.prototype.indexOf.call(
-                                    libraryBase.jspreadsheet.current.dragging.element.parentNode!.children,
-                                    libraryBase.jspreadsheet.current.dragging.element
+                            if (libraryBase.jspreadsheet.current.pointer.dragging.element != target) {
+                                e.target.parentNode!.parentNode!.insertBefore(libraryBase.jspreadsheet.current.pointer.dragging.element, target);
+                                libraryBase.jspreadsheet.current.pointer.dragging.destination = Array.prototype.indexOf.call(
+                                    libraryBase.jspreadsheet.current.pointer.dragging.element.parentNode!.children,
+                                    libraryBase.jspreadsheet.current.pointer.dragging.element
                                 );
                             }
                         }
@@ -505,29 +516,29 @@ export const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
             const y = e.target.getAttribute('data-y');
             const rect = e.target.getBoundingClientRect();
 
-            if (libraryBase.jspreadsheet.current.cursor) {
-                libraryBase.jspreadsheet.current.cursor.style.cursor = '';
-                libraryBase.jspreadsheet.current.cursor = null;
+            if (libraryBase.jspreadsheet.current.pointer.cursor) {
+                libraryBase.jspreadsheet.current.pointer.cursor.style.cursor = '';
+                libraryBase.jspreadsheet.current.pointer.cursor = null;
             }
 
             if (e.target.parentNode!.parentNode && (e.target.parentNode!.parentNode as HTMLElement).className) {
                 if ((e.target.parentNode!.parentNode as HTMLElement).classList.contains('resizable')) {
                     if (e.target && x && !y && rect.width - (e.clientX - rect.left) < 6) {
-                        libraryBase.jspreadsheet.current.cursor = e.target;
-                        libraryBase.jspreadsheet.current.cursor.style.cursor = 'col-resize';
+                        libraryBase.jspreadsheet.current.pointer.cursor = e.target;
+                        libraryBase.jspreadsheet.current.pointer.cursor.style.cursor = 'col-resize';
                     } else if (e.target && !x && y && rect.height - (e.clientY - rect.top) < 6) {
-                        libraryBase.jspreadsheet.current.cursor = e.target;
-                        libraryBase.jspreadsheet.current.cursor.style.cursor = 'row-resize';
+                        libraryBase.jspreadsheet.current.pointer.cursor = e.target;
+                        libraryBase.jspreadsheet.current.pointer.cursor.style.cursor = 'row-resize';
                     }
                 }
 
                 if ((e.target.parentNode!.parentNode as HTMLElement).classList.contains('draggable')) {
                     if (e.target && !x && y && rect.width - (e.clientX - rect.left) < 6) {
-                        libraryBase.jspreadsheet.current.cursor = e.target;
-                        libraryBase.jspreadsheet.current.cursor.style.cursor = 'move';
+                        libraryBase.jspreadsheet.current.pointer.cursor = e.target;
+                        libraryBase.jspreadsheet.current.pointer.cursor.style.cursor = 'move';
                     } else if (e.target && x && !y && rect.height - (e.clientY - rect.top) < 6) {
-                        libraryBase.jspreadsheet.current.cursor = e.target;
-                        libraryBase.jspreadsheet.current.cursor.style.cursor = 'move';
+                        libraryBase.jspreadsheet.current.pointer.cursor = e.target;
+                        libraryBase.jspreadsheet.current.pointer.cursor.style.cursor = 'move';
                     }
                 }
             }
@@ -630,14 +641,14 @@ export const mouseOverControls = function (e: TargetEvent<MouseEvent>) {
 
             let columnId = getIndex(e.target, 'data-x');
             const rowId = getIndex(e.target, 'data-y');
-            if (libraryBase.jspreadsheet.current.resizing || libraryBase.jspreadsheet.current.dragging) {
+            if (libraryBase.jspreadsheet.current.pointer.resizing || libraryBase.jspreadsheet.current.pointer.dragging) {
                 // ignore
             } else {
                 // Header found
                 if (jssTable[1] == 1) {
-                    if (libraryBase.jspreadsheet.current.selectedHeader != null) {
+                    if (libraryBase.jspreadsheet.current.selection.column != null) {
                         columnId = getIndex(e.target, 'data-x');
-                        const o = libraryBase.jspreadsheet.current.selectedHeader;
+                        const o = libraryBase.jspreadsheet.current.selection.column;
                         const d = columnId;
                         // Update selection
                         updateSelectionFromCoords.call(libraryBase.jspreadsheet.current, o, 0, d, libraryBase.jspreadsheet.current.options.data.length - 1, e);
@@ -647,8 +658,8 @@ export const mouseOverControls = function (e: TargetEvent<MouseEvent>) {
                 // Body found
                 if (jssTable[1] == 2) {
                     if (e.target.classList.contains('jss_row')) {
-                        if (libraryBase.jspreadsheet.current.selectedRow != null) {
-                            const o = libraryBase.jspreadsheet.current.selectedRow;
+                        if (libraryBase.jspreadsheet.current.selection.row != null) {
+                            const o = libraryBase.jspreadsheet.current.selection.row;
                             const d = rowId;
                             // Update selection
                             updateSelectionFromCoords.call(
@@ -664,7 +675,7 @@ export const mouseOverControls = function (e: TargetEvent<MouseEvent>) {
                         // Do not select edtion is in progress
                         if (!libraryBase.jspreadsheet.current.editor.isOpen()) {
                             if (columnId != null && rowId != null) {
-                                if (libraryBase.jspreadsheet.current.selectedCorner) {
+                                if (libraryBase.jspreadsheet.current.pointer.corner) {
                                     updateCopySelection.call(libraryBase.jspreadsheet.current, columnId, rowId);
                                 } else {
                                     if (libraryBase.jspreadsheet.current.selection.range) {

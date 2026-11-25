@@ -472,12 +472,14 @@ describe('Keyboard focus', () => {
         expect(document.activeElement.getAttribute('aria-label')).to.equal('D2');
     });
 
-    it('Keep the focus outside the grid', () => {
+    it('Keep the focus outside the grid', async () => {
         // The grid never had the focus
         document.activeElement.blur();
         const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3) }] })[0];
         const input = document.createElement('input');
         root.appendChild(input);
+        // The spreadsheet adds its document listeners after it builds its worksheets
+        await wait();
 
         expect(document.activeElement).to.equal(document.body);
 
@@ -660,6 +662,69 @@ describe('Keyboard focus', () => {
         worksheet.hideColumn(0);
 
         expect(document.activeElement).to.equal(worksheet.records[0][1].element);
+    });
+
+    it('Send the keys to the grid that has the focus', async () => {
+        const first = document.createElement('div');
+        const second = document.createElement('div');
+        root.appendChild(first);
+        root.appendChild(second);
+        const a = jspreadsheet(first, { worksheets: [{ data: createData(3, 3) }] })[0];
+        const b = jspreadsheet(second, { worksheets: [{ data: createData(3, 3) }] })[0];
+        // The spreadsheets add their document listeners after they build their worksheets
+        await wait();
+
+        a.records[0][0].element.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, buttons: 1, which: 1 }));
+        document.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+
+        expect(a.selection.range).to.eql([0, 0, 0, 0]);
+
+        // Tab moves the focus to the tab stop of the second grid
+        b.records[0][0].element.focus();
+
+        expect(a.selection.range).to.equal(null);
+        expect(b.selection.range).to.eql([0, 0, 0, 0]);
+
+        keydown(b.records[0][0].element, 'ArrowDown', 40);
+
+        expect(a.selection.range).to.equal(null);
+        expect(b.selection.range).to.eql([0, 1, 0, 1]);
+        expect(document.activeElement).to.equal(b.records[1][0].element);
+    });
+
+    it('Keep the keys of a control outside the grid', async () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3) }] })[0];
+        // root is the element of the spreadsheet, so the input goes next to it
+        const input = document.createElement('input');
+        document.body.appendChild(input);
+        await wait();
+
+        worksheet.records[0][0].element.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, buttons: 1, which: 1 }));
+        document.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+
+        // Tab moves the focus out of the grid
+        input.focus();
+        keydown(input, 'x', 88);
+        keydown(input, 'ArrowDown', 40);
+        keydown(input, 'Delete', 46);
+
+        // Tab on the input moves the focus on (issue #27)
+        const tab = new window.KeyboardEvent('keydown', { bubbles: true, cancelable: true, composed: true, key: 'Tab', keyCode: 9, which: 9 });
+        input.dispatchEvent(tab);
+
+        expect(tab.defaultPrevented).to.equal(false);
+        expect(worksheet.editor.isOpen()).to.equal(false);
+        expect(worksheet.selection.range).to.eql([0, 0, 0, 0]);
+        expect(worksheet.getValueFromCoords(0, 0)).to.equal('0-0');
+        expect(document.activeElement).to.equal(input);
+
+        // The focus that falls to the body leaves the keys to the grid
+        input.blur();
+        keydown(document.body, 'ArrowDown', 40);
+
+        expect(worksheet.selection.range).to.eql([0, 1, 0, 1]);
+
+        input.remove();
     });
 
     it('Move the focus in a shadow root', async () => {

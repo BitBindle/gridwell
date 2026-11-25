@@ -1,5 +1,6 @@
 import { pasteControls } from './clipboard.js';
 import { contextMenuControls } from './contextMenu.js';
+import { focusInControls } from './focus.js';
 import { keyDownControls } from './keyboard.js';
 import { doubleClickControls, mouseDownControls, mouseMoveControls, mouseOverControls, mouseUpControls } from './mouse.js';
 import { touchEndControls, touchStartControls } from './touch.js';
@@ -18,6 +19,7 @@ export const setEvents = function (root: Document | HTMLElement | ShadowRoot) {
     root.addEventListener('touchend', touchEndControls as EventListener);
     root.addEventListener('touchcancel', touchEndControls as EventListener);
     root.addEventListener('touchmove', touchEndControls as EventListener);
+    root.addEventListener('focusin', focusInControls as EventListener);
     document.addEventListener('keydown', keyDownControls as EventListener);
 };
 
@@ -34,5 +36,6 @@ export const destroyEvents = function (root: Document | HTMLElement | ShadowRoot
     root.removeEventListener('touchend', touchEndControls as EventListener);
     root.removeEventListener('touchcancel', touchEndControls as EventListener);
     root.removeEventListener('touchmove', touchEndControls as EventListener);
+    root.removeEventListener('focusin', focusInControls as EventListener);
     document.removeEventListener('keydown', keyDownControls as EventListener);
 };

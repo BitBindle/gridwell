@@ -647,8 +647,8 @@ describe('Drag a column header', () => {
 
         mouse(worksheet.headers[2], 'mousedown');
 
-        expect(worksheet.dragging.column).to.equal(2);
-        expect(worksheet.dragging.destination).to.equal(2);
+        expect(worksheet.pointer.dragging.column).to.equal(2);
+        expect(worksheet.pointer.dragging.destination).to.equal(2);
 
         mouse(worksheet.headers[2], 'mouseup');
     });
@@ -659,7 +659,7 @@ describe('Drag a column header', () => {
 
         mouse(worksheet.headers[2], 'mousedown');
 
-        expect(worksheet.resizing.column).to.equal(2);
+        expect(worksheet.pointer.resizing.column).to.equal(2);
 
         mouse(worksheet.headers[2], 'mouseup');
     });
