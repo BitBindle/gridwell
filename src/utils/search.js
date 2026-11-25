@@ -1,10 +1,14 @@
+// @ts-check
 import { resetFilters } from './filter.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import { updateResult } from './internal.js';
 import { isRowMerged } from './merges.js';
+/** @import { Worksheet } from '../types/internal' */
 
 /**
  * Search
+ * @this {Worksheet}
+ * @param {string} query - The text to find. An empty text shows all rows again.
  */
 export const search = function (query) {
     const obj = this;
@@ -26,7 +30,12 @@ export const search = function (query) {
             obj.searchInput.value = query;
         }
 
-        // Search filter
+        /**
+         * Search filter
+         * @param {any} item - The data of the row.
+         * @param {RegExp} query
+         * @param {number} index - The row.
+         */
         const search = function (item, query, index) {
             for (let i = 0; i < item.length; i++) {
                 if (('' + item[i]).toLowerCase().search(query) >= 0 || ('' + obj.records[index][i].element.innerHTML).toLowerCase().search(query) >= 0) {
@@ -36,13 +45,17 @@ export const search = function (query) {
             return false;
         };
 
-        // Result
+        /**
+         * Result
+         * @param {number} k - The row.
+         */
         const addToResult = function (k) {
             if (obj.results.indexOf(k) == -1) {
                 obj.results.push(k);
             }
         };
 
+        /** @type {string | RegExp} */
         let parsedQuery = query.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
         parsedQuery = new RegExp(parsedQuery, 'i');
 
@@ -73,6 +86,7 @@ export const search = function (query) {
 
 /**
  * Reset search
+ * @this {Worksheet}
  */
 export const resetSearch = function () {
     const obj = this;

@@ -1,12 +1,14 @@
+// @ts-check
 import { setHistory } from './history.js';
 import dispatch from './dispatch.js';
 import { getColumnName } from './helpers.js';
+/** @import { Worksheet } from '../types/internal' */
 
 /**
  * Get the column title
- *
- * @param column - column number (first column is: 0)
- * @param title - new column title
+ * @this {Worksheet}
+ * @param {number} column - column number (first column is: 0)
+ * @returns {string}
  */
 export const getHeader = function (column) {
     const obj = this;
@@ -16,9 +18,9 @@ export const getHeader = function (column) {
 
 /**
  * Get the headers
- *
- * @param asArray
- * @return mixed
+ * @this {Worksheet}
+ * @param {boolean} [asArray] - Return an array instead of a text with the CSV delimiter.
+ * @returns {string | string[]}
  */
 export const getHeaders = function (asArray) {
     const obj = this;
@@ -34,9 +36,9 @@ export const getHeaders = function (asArray) {
 
 /**
  * Set the column title
- *
- * @param column - column number (first column is: 0)
- * @param title - new column title
+ * @this {Worksheet}
+ * @param {number} column - column number (first column is: 0)
+ * @param {string} [newValue] - new column title. Without it, the title is the column name, for example "B".
  */
 export const setHeader = function (column, newValue) {
     const obj = this;

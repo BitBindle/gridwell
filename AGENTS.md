@@ -11,7 +11,7 @@ This is BitBindle's fork of [Jspreadsheet CE](https://github.com/jspreadsheet/ce
 
 The fork has its own fixes (pull requests #5 and later), many of them for accessibility. Changes from upstream are not merged automatically.
 
-A gradual move to TypeScript is planned. Until it is done, the source is JavaScript and the public typings in `src/index.d.ts` are written by hand.
+The code is moving to TypeScript step by step. For now the source is JavaScript, some modules are type-checked through JSDoc (see [Type checking](#type-checking)), and the public typings in `src/index.d.ts` are written by hand.
 
 ## Commands
 
@@ -24,6 +24,7 @@ No `package-lock.json` is committed, so use `npm install`.
 | All tests               | `npm test` (builds first, then runs mocha)                       |
 | One test file           | `npx mocha --require=mocha.config.js test/data.js` (build first) |
 | Lint / format check     | `npm run lint`, `npm run prettier`                               |
+| Type check              | `npm run typecheck`                                              |
 | Fix lint and formatting | `npm run format`                                                 |
 
 Building and testing do not change the source. CI checks the formatting and lint separately, so run `npm run format` before you commit.
@@ -37,6 +38,7 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 -   `src/utils/worksheets.js`: builds a worksheet's DOM. `worksheetPublicMethods` lists every method a worksheet instance gets.
 -   `src/utils/*.js`: one module per feature (`columns`, `rows`, `selection`, `editor`, `events`, `history`, `merges`, `accessibility`, …). `internal.js` and `events.js` are the largest and most connected.
 -   `src/index.d.ts`: the public typings, copied to `dist/` unchanged.
+-   `src/types/`: types for the type check only, not published (see [Type checking](#type-checking)).
 -   `src/jspreadsheet.css`, `src/jspreadsheet.themes.css`: the styles, also copied to `dist/`.
 -   `src/webcomponent.js`: a `<jspreadsheet>` custom element. It is not part of the bundle.
 -   `resources/lang/*.json`: translations for `jspreadsheet.setDictionary`.
@@ -60,6 +62,21 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 4. Add tests that go through the public API.
 
 New options also go in `src/index.d.ts` (`SpreadsheetOptions` or `WorksheetOptions`).
+
+## Type checking
+
+`npm run typecheck` runs TypeScript (version 7) over `src/` with `tsconfig.json`, and CI runs it too. A module is checked only when its first line is `// @ts-check`. To list them: `grep -rl '@ts-check' src`.
+
+-   **Settings.** `strict` is on except `strictNullChecks`. Turn that on once the modules are TypeScript files.
+-   **Internal types.** `src/types/internal.d.ts` has `Worksheet` and `Spreadsheet`: the public instance types and the state only the library uses. Add new internal fields there, with a comment.
+-   **Other declarations.** `src/types/modules.d.ts` declares `@jspreadsheet/formula`, which has no typings. `src/types/jsuites.d.ts` adds the jsuites methods that its typings miss. `src/types/globals.d.ts` lets `parseInt` take numbers, as the code does in many places.
+-   **In a checked module:**
+    -   Import the internal types with `/** @import { Worksheet } from '../types/internal' */`.
+    -   Give each function that uses the worksheet as `this` the tag `@this {Worksheet}`, and type every parameter with `@param`.
+    -   Where the type check cannot follow the code, cast with `/** @type {X} */ (expression)` and say why in a comment.
+-   **TypeScript 7 differences.** It ignores JSDoc `@overload` tags: declare overloads as `@type {{ (a: string): X; (a: number): Y }}` on the constant, as `getIdFromColumnName` does. A function that reads `arguments` is not variadic: give it a function type, as `dispatch` does.
+-   **No behaviour changes.** A commit that adds types changes no behaviour. Fix a bug that the type check finds in a separate commit, with a test.
+-   When you change a module that is not checked yet, consider checking it in the same pull request.
 
 ## Build quirks
 

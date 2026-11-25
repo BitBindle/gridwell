@@ -1,11 +1,15 @@
+// @ts-check
 import dispatch from './dispatch.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
 import { setHistory } from './history.js';
+/** @import { Worksheet } from '../types/internal' */
 
 /**
  * Get style information from cell(s)
- *
- * @return integer
+ * @this {Worksheet}
+ * @param {string | number[]} [cell] - The cell name, for example "B3". Without it, the style of all cells.
+ * @param {any} [key] - A CSS property, for example "color". Without it, the whole style.
+ * @returns {Record<string, string> | string}
  */
 export const getStyle = function (cell, key) {
     const obj = this;
@@ -13,6 +17,7 @@ export const getStyle = function (cell, key) {
     // Cell
     if (!cell) {
         // Control vars
+        /** @type {Record<string, string>} */
         const data = {};
 
         // Column and row length
@@ -37,24 +42,35 @@ export const getStyle = function (cell, key) {
 
         return data;
     } else {
-        cell = getIdFromColumnName(cell, true);
+        cell = getIdFromColumnName(/** @type {string} */ (cell), true);
 
         return key ? obj.records[cell[1]][cell[0]].element.style[key] : obj.records[cell[1]][cell[0]].element.getAttribute('style');
     }
 };
 
 /**
- * Set meta information to cell(s)
- *
- * @return integer
+ * Set the style of cell(s)
+ * @this {Worksheet}
+ * @param {string | Record<string, string | string[]>} o - The cell name, for example "B3", or the styles by cell name.
+ * @param {any} [k] - A CSS property, with a cell name.
+ * @param {string} [v] - The value, with a cell name.
+ * @param {boolean} [force] - Also style read-only cells, and set a value that the cell already has.
+ * @param {boolean} [ignoreHistoryAndEvents] - Add no history. The onchangestyle event still occurs.
  */
 export const setStyle = function (o, k, v, force, ignoreHistoryAndEvents) {
     const obj = this;
 
+    /** @type {Record<string, any>} */
     const newValue = {};
+    /** @type {Record<string, any>} */
     const oldValue = {};
 
-    // Apply style
+    /**
+     * Apply style
+     * @param {string} cellId - The cell name.
+     * @param {any} key - A CSS property.
+     * @param {string} value
+     */
     const applyStyle = function (cellId, key, value) {
         // Position
         const cell = getIdFromColumnName(cellId, true);
@@ -92,7 +108,8 @@ export const setStyle = function (o, k, v, force, ignoreHistoryAndEvents) {
     } else {
         const keys = Object.keys(o);
         for (let i = 0; i < keys.length; i++) {
-            let style = o[keys[i]];
+            /** @type {any} */
+            let style = /** @type {Record<string, any>} */ (o)[keys[i]];
             if (typeof style == 'string') {
                 style = style.split(';');
             }
@@ -129,6 +146,12 @@ export const setStyle = function (o, k, v, force, ignoreHistoryAndEvents) {
     dispatch.call(obj, 'onchangestyle', obj, newValue);
 };
 
+/**
+ * Remove the style of cells.
+ * @this {Worksheet}
+ * @param {Record<string, any>} o - The cells, as the keys.
+ * @param {boolean} [ignoreHistoryAndEvents] - Add no history. The onchangestyle event still occurs.
+ */
 export const resetStyle = function (o, ignoreHistoryAndEvents) {
     const obj = this;
 

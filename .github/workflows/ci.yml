@@ -39,6 +39,9 @@ jobs:
             - name: Lint
               run: npm run lint
 
+            - name: Type check
+              run: npm run typecheck
+
             # `npm test` builds the bundle and then runs the mocha suite
             - name: Run tests
               run: npm test

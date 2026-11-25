@@ -1,10 +1,15 @@
+// @ts-check
 import dispatch from './dispatch.js';
 import { getCoordsFromCellName } from './helpers.js';
 import { setHistory } from './history.js';
 import { getColumnNameFromId, getIdFromColumnName } from './internalHelpers.js';
+/** @import { Worksheet } from '../types/internal' */
 
 /**
  * Get cell comments, null cell for all
+ * @this {Worksheet}
+ * @param {string | number[]} [cell] - The cell name, for example "B3".
+ * @returns {Record<string, string> | string}
  */
 export const getComments = function (cell) {
     const obj = this;
@@ -18,6 +23,7 @@ export const getComments = function (cell) {
 
         return obj.records[cell[1]][cell[0]].element.getAttribute('title') || '';
     } else {
+        /** @type {Record<string, string>} */
         const data = {};
         for (let j = 0; j < obj.options.data.length; j++) {
             for (let i = 0; i < obj.options.columns.length; i++) {
@@ -34,6 +40,9 @@ export const getComments = function (cell) {
 
 /**
  * Set cell comments
+ * @this {Worksheet}
+ * @param {string | Record<string, string>} cellId - The cell name, for example "B3", or the comments by cell name.
+ * @param {string} [comments] - The comment, with a cell name.
  */
 export const setComments = function (cellId, comments) {
     const obj = this;
@@ -46,6 +55,7 @@ export const setComments = function (cellId, comments) {
         commentsObj = cellId;
     }
 
+    /** @type {Record<string, string>} */
     const oldValue = {};
 
     Object.entries(commentsObj).forEach(function ([cellName, comment]) {
