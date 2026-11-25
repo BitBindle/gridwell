@@ -1,4 +1,3 @@
-// @ts-check
 // Basic version information
 export default {
     version: '5.0.0',

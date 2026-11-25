@@ -10,8 +10,9 @@
         "moduleResolution": "bundler",
         "lib": ["dom", "dom.iterable", "es2022"],
         "types": [],
+        "isolatedModules": true,
         "skipLibCheck": true
     },
-    "include": ["src/**/*.js", "src/**/*.d.ts"],
+    "include": ["src/**/*.ts", "src/**/*.js"],
     "exclude": ["src/test.js", "src/webcomponent.js"]
 }

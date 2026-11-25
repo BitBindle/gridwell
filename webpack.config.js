@@ -72,11 +72,18 @@ const webpack = {
         hot: 'only',
     },
     plugins: [],
+    resolve: {
+        extensions: ['.ts', '.js'],
+        // The modules import each other with the .js extension, also when the file is a .ts file
+        extensionAlias: {
+            '.js': ['.ts', '.js'],
+        },
+    },
     module: {
         rules: [
             isProduction
                 ? {
-                      test: /\.js$/,
+                      test: /\.[jt]s$/,
                       use: [
                           {
                               loader: path.resolve('build.cjs'),
@@ -85,6 +92,16 @@ const webpack = {
                       ],
                   }
                 : null,
+            // Remove the types. TypeScript checks them separately (npm run typecheck).
+            {
+                test: /\.ts$/,
+                loader: 'esbuild-loader',
+                options: {
+                    loader: 'ts',
+                    // Keep the syntax as it is, as for the .js files
+                    target: 'esnext',
+                },
+            },
             {
                 test: /\.css$/,
                 use: [isProduction ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader'],

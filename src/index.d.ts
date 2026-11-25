@@ -1664,8 +1664,8 @@ declare namespace jspreadsheet {
 
         /**
          * Get data from a range.
-         * @param range - Range of cells whose values ​​are to be returned.
-         * @param processed - If true, the method returns the values ​​of the HTML elements of the cells. Otherwise, the method returns the values ​​of the cells in the options.data array.
+         * @param range - Range of cells whose values are to be returned.
+         * @param processed - If true, the method returns the values of the HTML elements of the cells. Otherwise, the method returns the values of the cells in the options.data array.
          */
         getDataFromRange: (range: string, processed: true) => CellValue[][];
 
@@ -2111,7 +2111,7 @@ declare namespace jspreadsheet {
 
         /**
          * Set or remove comments.
-         * @param cellId - Object whose keys are cell names and values ​​are cell comments. If the value of a key is a falsy value, the cell comment is removed.
+         * @param cellId - Object whose keys are cell names and values are cell comments. If the value of a key is a falsy value, the cell comment is removed.
          */
         setComments(cellId: Record<string, string>): void;
 

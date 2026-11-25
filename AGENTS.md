@@ -65,7 +65,9 @@ New options also go in `src/index.d.ts` (`SpreadsheetOptions` or `WorksheetOptio
 
 ## Type checking
 
-`npm run typecheck` runs TypeScript (version 7) over `src/` with `tsconfig.json`, and CI runs it too. A module is checked only when its first line is `// @ts-check`. To list them: `grep -rl '@ts-check' src`.
+`npm run typecheck` runs TypeScript 6.0 over `src/` with `tsconfig.json`, and CI runs it too. (TypeScript 7 has no JavaScript API yet, and typescript-eslint needs it. Keep the code valid for TypeScript 7 as well.)
+
+The modules are moving from `.js` to `.ts` files. A `.ts` module is always checked. A `.js` module is checked only when its first line is `// @ts-check`. Modules import each other with the `.js` extension, also when the file is a `.ts` file: TypeScript and webpack find the `.ts` file. esbuild-loader removes the types in the build, so a type-only import must use `import type`.
 
 -   **Settings.** `strict` is on except `strictNullChecks`. Turn that on once the modules are TypeScript files.
 -   **Internal types.** `src/types/internal.d.ts` has `Worksheet` and `Spreadsheet`: the public instance types and the state only the library uses. Add new internal fields there, with a comment.
@@ -74,7 +76,7 @@ New options also go in `src/index.d.ts` (`SpreadsheetOptions` or `WorksheetOptio
     -   Import the internal types with `/** @import { Worksheet } from '../types/internal' */`.
     -   Give each function that uses the worksheet as `this` the tag `@this {Worksheet}`, and type every parameter with `@param`.
     -   Where the type check cannot follow the code, cast with `/** @type {X} */ (expression)` and say why in a comment.
--   **TypeScript 7 differences.** It ignores JSDoc `@overload` tags: declare overloads as `@type {{ (a: string): X; (a: number): Y }}` on the constant, as `getIdFromColumnName` does. A function that reads `arguments` is not variadic: give it a function type, as `dispatch` does.
+-   **JSDoc and TypeScript 7.** TypeScript 7 ignores JSDoc `@overload` tags: declare overloads as `@type {{ (a: string): X; (a: number): Y }}` on the constant, as `getIdFromColumnName` does. A function that reads `arguments` is not variadic: give it a function type, as `dispatch` does.
 -   **No behaviour changes.** A commit that adds types changes no behaviour. Fix a bug that the type check finds in a separate commit, with a test.
 -   When you change a module that is not checked yet, consider checking it in the same pull request.
 
