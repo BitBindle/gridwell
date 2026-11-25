@@ -1204,13 +1204,13 @@ const touchStartControls = function (e) {
             libraryBase.jspreadsheet.current = jssTable[0].jssWorksheet;
         }
     } else {
-        if (libraryBase.jspreadsheet.current) {
+        if (libraryBase.jspreadsheet.current && !e.target.closest('.jss_object')) {
             libraryBase.jspreadsheet.current.resetSelection();
             libraryBase.jspreadsheet.current = null;
         }
     }
 
-    if (libraryBase.jspreadsheet.current) {
+    if (libraryBase.jspreadsheet.current && jssTable[0]) {
         if (!libraryBase.jspreadsheet.current.edition) {
             const columnId = e.target.getAttribute('data-x');
             const rowId = e.target.getAttribute('data-y');
