@@ -1,31 +1,31 @@
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-const jspreadsheet = require('../dist/index.js');
+import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
 
 describe('The default context menu', () => {
     // The spreadsheet adds its event handlers after a promise
-    const load = (options) =>
-        new Promise((resolve) => {
+    const load = (options: Jspreadsheet.SpreadsheetOptions) =>
+        new Promise<Worksheet[]>((resolve) => {
             const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance) });
         });
 
-    const contextmenu = (element) => element.dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    const contextmenu = (element: Element) => element.dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
 
     // The items of the menu that jSuites shows, after its header
-    const menuItems = () => [...root.querySelectorAll('.jss_contextmenu > div:not(.header)')];
+    const menuItems = () => [...root.querySelectorAll<HTMLElement>('.jss_contextmenu > div:not(.header)')];
 
-    const titles = () => menuItems().map((item) => item.querySelector('a').textContent);
+    const titles = () => menuItems().map((item) => item.querySelector('a')!.textContent);
 
-    const click = (title) => {
-        const item = menuItems().find((element) => element.querySelector('a').textContent === title);
+    const click = (title: string) => {
+        const item = menuItems().find((element) => element.querySelector('a')!.textContent === title)!;
         item.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true }));
     };
 
-    let alert;
-    let prompt;
-    let execCommand;
-    let messages;
-    let answers;
+    let alert: typeof window.alert;
+    let prompt: typeof window.prompt;
+    let execCommand: typeof document.execCommand;
+    let messages: (string | [string | undefined, string | undefined])[];
+    let answers: string[];
 
     beforeEach(() => {
         alert = window.alert;
@@ -35,10 +35,10 @@ describe('The default context menu', () => {
         answers = [];
         // jsdom has no execCommand, which a copy calls
         document.execCommand = () => true;
-        window.alert = global.alert = (text) => messages.push(text);
-        window.prompt = global.prompt = (text, value) => {
+        window.alert = global.alert = (text: string) => messages.push(text);
+        window.prompt = global.prompt = (text?: string, value?: string) => {
             messages.push([text, value]);
-            return answers.shift();
+            return answers.shift() ?? null;
         };
     });
 
@@ -59,7 +59,7 @@ describe('The default context menu', () => {
 
             contextmenu(worksheet.headers[1]);
 
-            expect(root.querySelector('.jss_contextmenu').classList.contains('jcontextmenu-focus')).to.equal(true);
+            expect(root.querySelector('.jss_contextmenu')!.classList.contains('jcontextmenu-focus')).to.equal(true);
             expect(titles()).to.eql([
                 'Insert a new column before',
                 'Insert a new column after',
@@ -212,7 +212,7 @@ describe('The default context menu', () => {
 
                 expect(worksheet.getData()).to.eql([['a', 'x', 'y']]);
             } finally {
-                Object.defineProperty(global, 'navigator', descriptor);
+                Object.defineProperty(global, 'navigator', descriptor!);
             }
         });
     });
@@ -248,7 +248,7 @@ describe('The default context menu', () => {
     });
 
     it('selects the columns of a nested header', async () => {
-        let call;
+        let call: [number | string | null, number | string | null, string, (string | undefined)[]] | undefined;
         const [worksheet] = await load({
             worksheets: [
                 {
@@ -266,16 +266,16 @@ describe('The default context menu', () => {
             },
         });
 
-        contextmenu(root.querySelector('.jss_nested td[data-column="0,1"]'));
+        contextmenu(root.querySelector('.jss_nested td[data-column="0,1"]')!);
 
         expect(worksheet.selection.range).to.eql([0, 0, 1, 1]);
-        expect(call[0]).to.equal(0);
-        expect(call[2]).to.equal('nested');
-        expect(call[3]).to.eql(['Save as...', 'About']);
+        expect(call![0]).to.equal(0);
+        expect(call![2]).to.equal('nested');
+        expect(call![3]).to.eql(['Save as...', 'About']);
     });
 
     it('selects all cells from the corner of the headers', async () => {
-        let role;
+        let role: string | undefined;
         const [worksheet] = await load({
             worksheets: [{ minDimensions: [2, 2] }],
             contextMenu: (instance, x, y, e, items, r) => {
@@ -284,14 +284,14 @@ describe('The default context menu', () => {
             },
         });
 
-        contextmenu(root.querySelector('.jss_selectall'));
+        contextmenu(root.querySelector('.jss_selectall')!);
 
         expect(role).to.equal('select-all');
         expect(worksheet.selection.range).to.eql([0, 0, 1, 1]);
     });
 
     it('passes the index of a footer cell', async () => {
-        let call;
+        let call: [number | string | null, number | string | null, string] | undefined;
         await load({
             worksheets: [{ minDimensions: [3, 2], footers: [['a', 'b', 'c']] }],
             contextMenu: (instance, x, y, e, items, role) => {
@@ -300,13 +300,13 @@ describe('The default context menu', () => {
             },
         });
 
-        contextmenu(root.querySelector('tfoot tr td:nth-child(3)'));
+        contextmenu(root.querySelector('tfoot tr td:nth-child(3)')!);
 
         expect(call).to.eql([1, 0, 'footer']);
     });
 
     it('passes the index of a tab', async () => {
-        let call;
+        let call: [number | string | null, string] | undefined;
         await load({
             tabs: true,
             worksheets: [{ minDimensions: [1, 1] }, { minDimensions: [1, 1] }],
@@ -336,7 +336,7 @@ describe('The default context menu', () => {
     });
 
     it('lets a plugin change the items', async () => {
-        const calls = [];
+        const calls: [number | null, number | null, string][] = [];
         const [worksheet] = await load({
             worksheets: [{ minDimensions: [2, 2] }],
             plugins: {

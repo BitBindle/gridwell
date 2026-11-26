@@ -13,5 +13,5 @@
             "jsuites": ["./src/types/jsuites-module.d.ts"]
         }
     },
-    "include": ["src/**/*.ts", "test/typings.ts"]
+    "include": ["src/**/*.ts"]
 }

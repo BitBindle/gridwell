@@ -50,7 +50,7 @@ export default tseslint.config(
     },
     {
         // The rules that need the types
-        files: ['src/**/*.ts'],
+        files: ['src/**/*.ts', 'test/**/*.ts'],
         languageOptions: {
             parserOptions: {
                 projectService: true,
@@ -60,6 +60,22 @@ export default tseslint.config(
         rules: {
             '@typescript-eslint/prefer-includes': 'error',
             '@typescript-eslint/prefer-optional-chain': 'error',
+        },
+    },
+    {
+        files: ['test/**/*.ts'],
+        languageOptions: {
+            globals: {
+                ...globals.mocha,
+            },
+        },
+        rules: {
+            // A test keeps its helpers in arrow functions next to the tests that use them
+            'func-style': ['error', 'declaration', { allowArrowFunctions: true }],
+            // The bundle is a UMD module, which a test requires
+            '@typescript-eslint/no-require-imports': 'off',
+            // Some chai assertions are properties, such as expect(x).to.be.ok
+            '@typescript-eslint/no-unused-expressions': 'off',
         },
     },
     {

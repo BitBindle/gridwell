@@ -24,7 +24,7 @@ No `package-lock.json` is committed, so use `npm install`.
 | Dev server (port 8000)  | `npm start` (entry `src/test.js`, page `public/index.html`)            |
 | Build `dist/`           | `npm run build`                                                        |
 | All tests               | `npm test` (builds first, then runs mocha)                             |
-| One test file           | `npx mocha --require=mocha.config.js test/data.js` (build first)       |
+| One test file           | `npx mocha test/data.ts` (build first)                                 |
 | Lint / format check     | `npm run lint` (also checks for import cycles), `npm run prettier`     |
 | Type check              | `npm run typecheck`                                                    |
 | Test coverage           | `npm run coverage` (thresholds in `.c8rc.json`, report in `coverage/`) |
@@ -34,7 +34,7 @@ Building and testing do not change the source. CI checks the formatting and lint
 
 `npm run coverage` builds `dist/index.js` without minifying it and with a source map, so c8 reports the coverage of the files in `src/`. It fails when the coverage of a file is under the thresholds in `.c8rc.json`: 80% of the lines, the statements and the functions, and 70% of the branches. Add tests with your change so that it stays above them. Run `npm run build` again afterwards for a minified bundle.
 
-The tests import the built bundle (`require('../dist/index.js')`), not `src/`. After you change the source, build again before you run a single test file, or the tests run against old code.
+The tests import the built bundle (through `test/support/jspreadsheet.ts`), not `src/`. After you change the source, build again before you run a single test file, or the tests run against old code.
 
 ## Layout
 
@@ -49,7 +49,8 @@ The tests import the built bundle (`require('../dist/index.js')`), not `src/`. A
 -   `src/jspreadsheet.css`, `src/jspreadsheet.themes.css`: the styles, also copied to `dist/`.
 -   `src/test.js`: the entry of the dev server. `src/webcomponent.js`: a `<jspreadsheet>` custom element. Both are JavaScript and not part of the bundle.
 -   `resources/lang/*.json`: translations for `jspreadsheet.setDictionary`.
--   `test/*.js`: mocha + chai tests in jsdom, one file per feature.
+-   `test/*.ts`: mocha + chai tests in jsdom, one file per feature. `.mocharc.json` runs them with tsx (`test/support/register.cjs`).
+-   `test/support/`: the typed library for the tests (`jspreadsheet.ts`) and the globals of the tests (`globals.d.ts`).
 -   `test/typings.ts`: checks the public typings against what the library returns. `npm run typecheck` checks it; mocha does not run it.
 -   `packages/vue`: a small Vue wrapper, published separately.
 -   `docs/`: old v4 documentation. Prettier skips it.
@@ -73,7 +74,7 @@ New options also go in `src/jspreadsheet.d.ts` (`SpreadsheetOptions` or `Workshe
 
 ## Type checking
 
-`npm run typecheck` runs TypeScript 6.0 over `src/` with `tsconfig.json`, and CI runs it too. (TypeScript 7 has no JavaScript API yet, and typescript-eslint needs it. Keep the code valid for TypeScript 7 as well.)
+`npm run typecheck` runs TypeScript 6.0 over `src/` with `tsconfig.json` and over the tests with `test/tsconfig.json`, and CI runs it too. (TypeScript 7 has no JavaScript API yet, and typescript-eslint needs it. Keep the code valid for TypeScript 7 as well.)
 
 Modules import each other with the `.js` extension, although the files are `.ts` files: TypeScript and webpack find the `.ts` file. esbuild-loader removes the types in the build without checking them, so a type-only import must use `import type`.
 
@@ -94,12 +95,15 @@ Modules import each other with the `.js` extension, although the files are `.ts`
 ## Things to keep
 
 -   **Safe cell rendering.** Cell values are written with `textContent`. `innerHTML` is used only when the application sets `parseHTML: true`, and then after `stripScript`. Do not add new `innerHTML` writes of user data.
--   **Accessibility.** The grid uses the ARIA grid pattern: roles, accessible names, `aria-selected`, and a roving `tabindex` that moves the keyboard focus to the selected cell (`src/components/Accessibility.ts`, `src/components/Selection.ts`, `test/accessibility.js`). Changes to selection, editing, hiding or merging must keep these working.
+-   **Accessibility.** The grid uses the ARIA grid pattern: roles, accessible names, `aria-selected`, and a roving `tabindex` that moves the keyboard focus to the selected cell (`src/components/Accessibility.ts`, `src/components/Selection.ts`, `test/accessibility.ts`). Changes to selection, editing, hiding or merging must keep these working.
 -   **Public API compatibility.** Applications use the worksheet methods, options and event signatures. Call out any change to them as a breaking change.
 
 ## Tests
 
 -   `mocha.config.js` sets up jsdom and a global `root` element. It empties `root` after each test.
+-   The tests are TypeScript, checked as strictly as `src/`. Import the library with `import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';`: it is the built bundle with the public typings, and it returns worksheets of the `Worksheet` class, so a test can read the state that only the library uses. `Jspreadsheet` is the namespace of the public types (`Jspreadsheet.SpreadsheetOptions`, …).
+-   The tests do not load the Node types: `test/support/globals.d.ts` declares `root`, `global` and `require`. tsx gets a tsconfig without the `paths` of `tsconfig.json` (`test/support/tsconfig.run.json`), because those would map `jsuites` to its typings when the bundle requires it.
+-   When a test passes an argument that the types forbid on purpose, mark the line with `// @ts-expect-error -- reason`. When a test needs a cast because a public typing is wrong, fix the typing instead, in its own commit with a case in `test/typings.ts`.
 -   Create a spreadsheet with `jspreadsheet(root, { worksheets: [...] })`. It returns the array of worksheet instances.
 -   The spreadsheet adds its document listeners after it builds its worksheets, a microtask after `jspreadsheet()` returns. Before a test presses or types, wait for them (`await new Promise((resolve) => setTimeout(resolve))`, or resolve in `onload`). Otherwise the test passes only when an earlier test left a listener on the document. `root` is the element of the spreadsheet, so an element that a test puts outside the spreadsheet goes in `document.body`.
 -   Test through the public API and the DOM, as the existing tests do. For a bug fix, add a test that fails before the fix.
