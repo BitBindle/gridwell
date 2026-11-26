@@ -6,14 +6,23 @@
  */
 import type jspreadsheet from '../jspreadsheet';
 import type { Tabs } from '../utils/tabs';
+import type { Toolbar } from '../utils/toolbar';
 import type { Spreadsheet } from '../Spreadsheet';
 import type { Worksheet } from '../Worksheet';
+import type { Cells } from '../components/Cells';
 import type { Clipboard } from '../components/Clipboard';
+import type { Comments } from '../components/Comments';
 import type { Editor } from '../components/Editor';
 import type { Formulas } from '../components/Formulas';
 import type { History } from '../components/History';
+import type { Merges } from '../components/Merges';
+import type { Columns } from '../components/Columns';
+import type { Rows } from '../components/Rows';
+import type { Data } from '../components/Data';
+import type { Meta } from '../components/Meta';
 import type { Pointer } from '../components/Pointer';
 import type { Selection } from '../components/Selection';
+import type { Styles } from '../components/Styles';
 import type { View } from '../components/View';
 
 /** The classes. Their fields are in WorksheetState and SpreadsheetState below. */
@@ -58,6 +67,33 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
     view: View;
 
     pointer: Pointer;
+
+    /** Finds the td of a cell and its label, and makes cells read-only. */
+    cells: Cells;
+
+    /** The styles of the cells. */
+    styles: Styles;
+
+    /** The comments of the cells. */
+    comments: Comments;
+
+    /** The meta information of the cells. */
+    meta: Meta;
+
+    /** The merged cells. */
+    merges: Merges;
+
+    /** Inserts, moves, deletes, hides and shows the columns, and gets and sets their widths, titles and data. */
+    columns: Columns;
+
+    /**
+     * Creates, inserts, moves, deletes, hides and shows the rows, and gets and sets their heights and data. It is not
+     * called rows, because rows is the list of row records.
+     */
+    rowManager: Rows;
+
+    /** Gets and sets the data, the data of a range and the values of the cells. The data is in options.data. */
+    data: Data;
 
     /** The div that holds the link to the Jspreadsheet site, below the table. */
     ads: HTMLDivElement;
@@ -113,6 +149,9 @@ export interface SpreadsheetState extends jspreadsheet.SpreadsheetInstance {
 
     /** The jsuites toolbar, which jsuites keeps on its element. update calls updateState of each item with the worksheet. */
     toolbar: HTMLDivElement & { toolbar: { update(worksheet: Worksheet): void } };
+
+    /** Creates, shows, hides and updates the toolbar. It is not called toolbar, because toolbar is the element. */
+    toolbarManager: Toolbar;
 
     /** True while createWorksheet adds a tab, so that the tab does not create a second worksheet. */
     creationThroughJss?: boolean;

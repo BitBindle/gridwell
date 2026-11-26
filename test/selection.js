@@ -257,6 +257,28 @@ describe('The pointer of a worksheet', () => {
         expect(worksheet.pointer.corner).to.equal(false);
     });
 
+    it('fills the empty cells below the selection on a double click on the corner', async () => {
+        const data = [
+            ['1', 'a'],
+            ['2', 'b'],
+            ['', ''],
+            ['', 'c'],
+        ];
+        const worksheet = await load({ worksheets: [{ data: data }] });
+
+        worksheet.updateSelectionFromCoords(0, 0, 1, 1);
+        mouse(worksheet.corner, 'dblclick');
+
+        // The fill repeats the selected rows, and stops at a cell that has a value
+        expect(worksheet.getData()).to.deep.equal([
+            ['1', 'a'],
+            ['2', 'b'],
+            ['1', 'a'],
+            ['2', 'c'],
+        ]);
+        expect(worksheet.history.records.length).to.equal(1);
+    });
+
     it('keeps the header and the row number that a press selected first', async () => {
         // jsdom gives the headers no size, so a press is at their edge, which resizes or drags unless that is off
         const worksheet = await load({ worksheets: [{ minDimensions: [3, 3], columnResize: false, columnDrag: false, rowResize: false, rowDrag: false }] });

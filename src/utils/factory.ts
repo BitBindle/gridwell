@@ -4,7 +4,7 @@ import libraryBase from './libraryBase.js';
 import { setEvents } from '../events/index.js';
 import { fullscreen } from './fullscreen.js';
 import { getWorksheetActive } from './activeWorksheet.js';
-import { hideToolbar, showToolbar, updateToolbar } from './toolbar.js';
+import { Toolbar } from './toolbar.js';
 import { buildWorksheet, createWorksheetObj, getNextDefaultWorksheetName } from './worksheets.js';
 import dispatch from './dispatch.js';
 import { createFromTable } from './helpers.js';
@@ -49,14 +49,14 @@ const createWorksheets = async function (spreadsheet: Spreadsheet, options: jspr
                 newWorksheet.element = newTabContent as Worksheet['element'];
 
                 buildWorksheet.call(newWorksheet).then(function () {
-                    updateToolbar(newWorksheet);
+                    spreadsheet.toolbarManager.update(newWorksheet);
 
                     dispatch.call(newWorksheet, 'oncreateworksheet', newWorksheet, newWorksheet.options, spreadsheet.worksheets.length - 1);
                 });
             },
             onchange: function (element: HTMLElement, instance: Tabs, tabIndex: number) {
                 if (spreadsheet.worksheets.length != 0 && spreadsheet.worksheets[tabIndex]) {
-                    updateToolbar(spreadsheet.worksheets[tabIndex]);
+                    spreadsheet.toolbarManager.update(spreadsheet.worksheets[tabIndex]);
                 }
             },
         };
@@ -140,6 +140,9 @@ factory.spreadsheet = async function (el: HTMLElement & { spreadsheet?: Spreadsh
     // el gets the spreadsheet at the end
     const spreadsheet = new Spreadsheet(el, options, worksheets);
 
+    // Spreadsheet.ts imports no module at run time, so the factory creates the toolbar
+    spreadsheet.toolbarManager = new Toolbar(spreadsheet);
+
     // setPlugins ignores a missing value
     spreadsheet.setPlugins(options.plugins as Record<string, jspreadsheet.PluginFactory>);
 
@@ -160,7 +163,7 @@ factory.spreadsheet = async function (el: HTMLElement & { spreadsheet?: Spreadsh
         spreadsheet.element.classList.add('fullscreen');
     }
 
-    showToolbar.call(spreadsheet);
+    spreadsheet.toolbarManager.show();
 
     // Build handlers
     if (options.root) {
@@ -195,8 +198,18 @@ const setPlugins = function (this: Spreadsheet, newPlugins: Record<string, jspre
 const spreadsheetPublicMethods: [keyof jspreadsheet.SpreadsheetInstance, (this: Spreadsheet, ...args: never[]) => unknown][] = [
     ['getWorksheetActive', getWorksheetActive],
     ['fullscreen', fullscreen],
-    ['showToolbar', showToolbar],
-    ['hideToolbar', hideToolbar],
+    [
+        'showToolbar',
+        function (this: Spreadsheet) {
+            return this.toolbarManager.show();
+        },
+    ],
+    [
+        'hideToolbar',
+        function (this: Spreadsheet) {
+            return this.toolbarManager.hide();
+        },
+    ],
     ['getConfig', getSpreadsheetConfig],
     ['setConfig', setConfig],
     ['setPlugins', setPlugins],

@@ -1,8 +1,4 @@
-import { closeEditor } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
-import { updateCornerPosition } from '../utils/selection.js';
-import { loadDown, loadUp } from '../utils/lazyLoading.js';
-import { updateFreezePosition } from '../utils/freezePosition.js';
 import type { Worksheet } from '../types/internal';
 
 export const wheelControls = function (this: Worksheet, e?: WheelEvent) {
@@ -12,18 +8,18 @@ export const wheelControls = function (this: Worksheet, e?: WheelEvent) {
         if (libraryBase.jspreadsheet.timeControlLoading == null) {
             libraryBase.jspreadsheet.timeControlLoading = setTimeout(function () {
                 if (obj.content.scrollTop + obj.content.clientHeight >= obj.content.scrollHeight - 10) {
-                    if (loadDown.call(obj)) {
+                    if (obj.view.loadDown()) {
                         if (obj.content.scrollTop + obj.content.clientHeight > obj.content.scrollHeight - 10) {
                             obj.content.scrollTop = obj.content.scrollTop - obj.content.clientHeight;
                         }
-                        updateCornerPosition.call(obj);
+                        obj.selection.updateCorner();
                     }
                 } else if (obj.content.scrollTop <= obj.content.clientHeight) {
-                    if (loadUp.call(obj)) {
+                    if (obj.view.loadUp()) {
                         if (obj.content.scrollTop < 10) {
                             obj.content.scrollTop = obj.content.scrollTop + obj.content.clientHeight;
                         }
-                        updateCornerPosition.call(obj);
+                        obj.selection.updateCorner();
                     }
                 }
 
@@ -40,13 +36,13 @@ export const scrollControls = function (this: Worksheet, e: Event) {
 
     if (obj.options.freezeColumns! > 0 && obj.content.scrollLeft != obj.lastScrollLeft) {
         obj.lastScrollLeft = obj.content.scrollLeft;
-        updateFreezePosition.call(obj);
+        obj.columns.updateFreezePosition();
     }
 
     // Close a floating editor. The text editor is inside the cell and scrolls with it.
     if (obj.options.lazyLoading == true || obj.options.tableOverflow == true) {
         if (obj.editor.isOpen() && hasFloatingEditor.call(obj, obj.editor.x) && (e.target as HTMLElement).className.substr(0, 9) != 'jdropdown') {
-            closeEditor.call(obj, obj.editor.cell, true);
+            obj.editor.close(obj.editor.cell, true);
         }
     }
 };

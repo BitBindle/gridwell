@@ -403,68 +403,61 @@ const getFullscreenItem = function (spreadsheet: Spreadsheet): jspreadsheet.Tool
 };
 
 /**
- * The items of the default toolbar.
+ * The toolbar of a spreadsheet: it builds the default items, creates the jSuites toolbar, shows and hides it, and updates
+ * the state of its items for a worksheet.
+ *
+ * Each spreadsheet has one, as spreadsheet.toolbarManager, which the factory creates. spreadsheet.toolbar is the element
+ * of the toolbar while it is shown, which applications use.
  */
-export const getDefault = function (this: Spreadsheet): jspreadsheet.ToolbarItem[] {
-    const spreadsheet = this;
+export class Toolbar {
+    readonly spreadsheet: Spreadsheet;
 
-    return [
-        ...getHistoryItems(spreadsheet),
-        { type: 'divisor' },
-        ...getFontItems(spreadsheet),
-        getVerticalAlignItem(spreadsheet),
-        getMergeItem(spreadsheet),
-        getBordersItem(spreadsheet),
-        { type: 'divisor' },
-        getFullscreenItem(spreadsheet),
-    ];
-};
+    constructor(spreadsheet: Spreadsheet) {
+        this.spreadsheet = spreadsheet;
+    }
 
-const adjustToolbarSettingsForJSuites = function (this: Spreadsheet, toolbar: jspreadsheet.ToolbarOptions) {
-    const spreadsheet = this;
+    /**
+     * The items of the default toolbar.
+     */
+    getDefault(): jspreadsheet.ToolbarItem[] {
+        const spreadsheet = this.spreadsheet;
 
-    // The items are changed in place into items of jSuites.toolbar. A divisor has no other properties.
-    const items = toolbar.items as jspreadsheet.ToolbarItemBase[];
+        return [
+            ...getHistoryItems(spreadsheet),
+            { type: 'divisor' },
+            ...getFontItems(spreadsheet),
+            getVerticalAlignItem(spreadsheet),
+            getMergeItem(spreadsheet),
+            getBordersItem(spreadsheet),
+            { type: 'divisor' },
+            getFullscreenItem(spreadsheet),
+        ];
+    }
 
-    for (let i = 0; i < items.length; i++) {
-        // Tooltip
-        if (items[i].tooltip) {
-            items[i].title = items[i].tooltip;
+    private adjustForJSuites(toolbar: jspreadsheet.ToolbarOptions) {
+        const spreadsheet = this.spreadsheet;
 
-            delete items[i].tooltip;
-        }
+        // The items are changed in place into items of jSuites.toolbar. A divisor has no other properties.
+        const items = toolbar.items as jspreadsheet.ToolbarItemBase[];
 
-        if (items[i].type == 'select') {
-            if (items[i].options) {
-                items[i].data = items[i].options;
-                delete items[i].options;
-            } else {
-                items[i].data = items[i].v;
-                delete items[i].v;
+        for (let i = 0; i < items.length; i++) {
+            // Tooltip
+            if (items[i].tooltip) {
+                items[i].title = items[i].tooltip;
 
-                if (items[i].k && !items[i].onchange) {
-                    items[i].onchange = function (el: HTMLElement, config: object, value: string) {
-                        const worksheet = getWorksheetInstance.call(spreadsheet);
-
-                        const cells = worksheet.getSelected(true);
-
-                        worksheet.setStyle(
-                            Object.fromEntries(
-                                cells.map(function (cellName: string) {
-                                    return [cellName, items[i].k + ': ' + value];
-                                })
-                            )
-                        );
-                    };
-                }
+                delete items[i].tooltip;
             }
-        } else if (items[i].type == 'color') {
-            items[i].type = 'i';
 
-            items[i].onclick = function (a: HTMLElement, b: object, c: HTMLElement & { color?: Color }) {
-                if (!c.color) {
-                    jSuites.color(c, {
-                        onchange: function (o: HTMLElement, v: string) {
+            if (items[i].type == 'select') {
+                if (items[i].options) {
+                    items[i].data = items[i].options;
+                    delete items[i].options;
+                } else {
+                    items[i].data = items[i].v;
+                    delete items[i].v;
+
+                    if (items[i].k && !items[i].onchange) {
+                        items[i].onchange = function (el: HTMLElement, config: object, value: string) {
                             const worksheet = getWorksheetInstance.call(spreadsheet);
 
                             const cells = worksheet.getSelected(true);
@@ -472,95 +465,114 @@ const adjustToolbarSettingsForJSuites = function (this: Spreadsheet, toolbar: js
                             worksheet.setStyle(
                                 Object.fromEntries(
                                     cells.map(function (cellName: string) {
-                                        return [cellName, items[i].k + ': ' + v];
+                                        return [cellName, items[i].k + ': ' + value];
                                     })
                                 )
                             );
-                        },
-                        onopen: function (o: HTMLElement & { color: Color }) {
-                            o.color.select('');
-                        },
-                    });
-
-                    c.color!.open();
+                        };
+                    }
                 }
-            };
-        }
-    }
-};
+            } else if (items[i].type == 'color') {
+                items[i].type = 'i';
 
-/**
- * Create toolbar
- */
-export const createToolbar = function (this: Spreadsheet, toolbar: jspreadsheet.ToolbarOptions) {
-    const spreadsheet = this;
+                items[i].onclick = function (a: HTMLElement, b: object, c: HTMLElement & { color?: Color }) {
+                    if (!c.color) {
+                        jSuites.color(c, {
+                            onchange: function (o: HTMLElement, v: string) {
+                                const worksheet = getWorksheetInstance.call(spreadsheet);
 
-    const toolbarElement = document.createElement('div');
-    toolbarElement.classList.add('jss_toolbar');
+                                const cells = worksheet.getSelected(true);
 
-    adjustToolbarSettingsForJSuites.call(spreadsheet, toolbar);
+                                worksheet.setStyle(
+                                    Object.fromEntries(
+                                        cells.map(function (cellName: string) {
+                                            return [cellName, items[i].k + ': ' + v];
+                                        })
+                                    )
+                                );
+                            },
+                            onopen: function (o: HTMLElement & { color: Color }) {
+                                o.color.select('');
+                            },
+                        });
 
-    if (typeof spreadsheet.plugins === 'object') {
-        Object.entries(spreadsheet.plugins).forEach(function ([, plugin]) {
-            if (typeof plugin.toolbar === 'function') {
-                const result = plugin.toolbar(toolbar);
-
-                if (result) {
-                    toolbar = result;
-                }
-            }
-        });
-    }
-
-    jSuites.toolbar(toolbarElement, toolbar);
-
-    return toolbarElement;
-};
-
-export const updateToolbar = function (worksheet: Worksheet) {
-    if (worksheet.parent.toolbar) {
-        // jsuites keeps the toolbar instance on the element
-        worksheet.parent.toolbar.toolbar.update(worksheet);
-    }
-};
-
-export const showToolbar = function (this: Spreadsheet) {
-    const spreadsheet = this;
-
-    if (spreadsheet.config.toolbar && !spreadsheet.toolbar) {
-        let toolbar: jspreadsheet.ToolbarOptions;
-
-        if (Array.isArray(spreadsheet.config.toolbar)) {
-            toolbar = {
-                items: spreadsheet.config.toolbar,
-            };
-        } else if (typeof spreadsheet.config.toolbar === 'object') {
-            toolbar = spreadsheet.config.toolbar;
-        } else {
-            toolbar = {
-                items: getDefault.call(spreadsheet),
-            };
-
-            if (typeof spreadsheet.config.toolbar === 'function') {
-                toolbar = spreadsheet.config.toolbar(toolbar);
+                        c.color!.open();
+                    }
+                };
             }
         }
-
-        // jSuites.toolbar in createToolbar added the toolbar instance
-        spreadsheet.toolbar = spreadsheet.element.insertBefore(
-            createToolbar.call(spreadsheet, toolbar),
-            spreadsheet.element.children[1]
-        ) as Spreadsheet['toolbar'];
     }
-};
 
-export const hideToolbar = function (this: Spreadsheet) {
-    const spreadsheet = this;
+    /**
+     * Create toolbar
+     */
+    create(toolbar: jspreadsheet.ToolbarOptions) {
+        const spreadsheet = this.spreadsheet;
 
-    if (spreadsheet.toolbar) {
-        spreadsheet.toolbar.parentNode!.removeChild(spreadsheet.toolbar);
+        const toolbarElement = document.createElement('div');
+        toolbarElement.classList.add('jss_toolbar');
 
-        // The public typings declare the toolbar as always there
-        delete (spreadsheet as Partial<Spreadsheet>).toolbar;
+        this.adjustForJSuites(toolbar);
+
+        if (typeof spreadsheet.plugins === 'object') {
+            Object.entries(spreadsheet.plugins).forEach(function ([, plugin]) {
+                if (typeof plugin.toolbar === 'function') {
+                    const result = plugin.toolbar(toolbar);
+
+                    if (result) {
+                        toolbar = result;
+                    }
+                }
+            });
+        }
+
+        jSuites.toolbar(toolbarElement, toolbar);
+
+        return toolbarElement;
     }
-};
+
+    update(worksheet: Worksheet) {
+        if (worksheet.parent.toolbar) {
+            // jsuites keeps the toolbar instance on the element
+            worksheet.parent.toolbar.toolbar.update(worksheet);
+        }
+    }
+
+    show() {
+        const spreadsheet = this.spreadsheet;
+
+        if (spreadsheet.config.toolbar && !spreadsheet.toolbar) {
+            let toolbar: jspreadsheet.ToolbarOptions;
+
+            if (Array.isArray(spreadsheet.config.toolbar)) {
+                toolbar = {
+                    items: spreadsheet.config.toolbar,
+                };
+            } else if (typeof spreadsheet.config.toolbar === 'object') {
+                toolbar = spreadsheet.config.toolbar;
+            } else {
+                toolbar = {
+                    items: this.getDefault(),
+                };
+
+                if (typeof spreadsheet.config.toolbar === 'function') {
+                    toolbar = spreadsheet.config.toolbar(toolbar);
+                }
+            }
+
+            // jSuites.toolbar in createToolbar added the toolbar instance
+            spreadsheet.toolbar = spreadsheet.element.insertBefore(this.create(toolbar), spreadsheet.element.children[1]) as Spreadsheet['toolbar'];
+        }
+    }
+
+    hide() {
+        const spreadsheet = this.spreadsheet;
+
+        if (spreadsheet.toolbar) {
+            spreadsheet.toolbar.parentNode!.removeChild(spreadsheet.toolbar);
+
+            // The public typings declare the toolbar as always there
+            delete (spreadsheet as Partial<Spreadsheet>).toolbar;
+        }
+    }
+}

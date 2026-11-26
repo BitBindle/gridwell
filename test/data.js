@@ -270,3 +270,82 @@ describe('Use the data method', () => {
         expect(firstRow.children[1].innerHTML).to.include('New Value');
     });
 });
+
+describe('Get the data as text, as objects or from a range', () => {
+    const create = () =>
+        jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        [1, 2, '=A1+B1'],
+                        [4, 5, '=A2+B2'],
+                    ],
+                },
+            ],
+        })[0];
+
+    it('getData with a delimiter returns the rows as text', () => {
+        const worksheet = create();
+
+        expect(worksheet.getData(false, false, ';')).to.equal('1;2;=A1+B1\r\n4;5;=A2+B2\r\n');
+        expect(worksheet.getData(false, true, ',')).to.equal('1,2,3\r\n4,5,9\r\n');
+    });
+
+    it('getData with asJson returns each row as an object', () => {
+        const worksheet = create();
+
+        expect(worksheet.getData(false, false, null, true)).to.eql([
+            { 0: 1, 1: 2, 2: '=A1+B1' },
+            { 0: 4, 1: 5, 2: '=A2+B2' },
+        ]);
+    });
+
+    it('getData with highlighted returns only the selected cells', () => {
+        const worksheet = create();
+
+        worksheet.updateSelectionFromCoords(1, 0, 2, 1);
+
+        expect(worksheet.getData(true)).to.eql([
+            [2, '=A1+B1'],
+            [5, '=A2+B2'],
+        ]);
+        expect(worksheet.getData(true, true)).to.eql([
+            ['2', '3'],
+            ['5', '9'],
+        ]);
+    });
+
+    it('getDataFromRange returns the values of a range', () => {
+        const worksheet = create();
+
+        expect(worksheet.getDataFromRange('B1:C2')).to.eql([
+            [2, '=A1+B1'],
+            [5, '=A2+B2'],
+        ]);
+        expect(worksheet.getDataFromRange('B1:C2', true)).to.eql([
+            ['2', '3'],
+            ['5', '9'],
+        ]);
+    });
+
+    it('setData changes rows of objects to arrays by the column names', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    columns: [{ name: 'city' }, { name: 'country' }],
+                },
+            ],
+        })[0];
+
+        worksheet.setData([
+            { country: 'France', city: 'Paris' },
+            { city: 'Rome', country: 'Italy' },
+        ]);
+
+        expect(worksheet.getData()).to.eql([
+            ['Paris', 'France'],
+            ['Rome', 'Italy'],
+        ]);
+        expect(worksheet.getValue('A2')).to.equal('Rome');
+    });
+});

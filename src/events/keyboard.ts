@@ -1,10 +1,6 @@
 import jSuites from 'jsuites';
-import { closeEditor, openEditor, setCheckRadioValue } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
-import { down, first, last, left, right, up } from '../utils/keys.js';
 import { getCellColumnIndex } from '../utils/values.js';
-import { selectAll } from '../utils/selection.js';
-import { copy } from '../utils/copyPaste.js';
 import { copyControls, cutControls, pasteControls } from './clipboard.js';
 import { getElement, isCtrl } from './helpers.js';
 import type { EditingWorksheet, SelectedWorksheet, TargetEvent } from '../types/internal';
@@ -21,13 +17,13 @@ const editorKeys = function (this: EditingWorksheet, e: TargetEvent<KeyboardEven
         // Escape
         if (obj.editor.isOpen()) {
             // Exit without saving
-            closeEditor.call(obj, obj.editor.cell, false);
+            obj.editor.close(obj.editor.cell, false);
         }
         e.preventDefault();
     } else if (e.which == 13) {
         // Enter
         if (column && column.type == 'calendar') {
-            closeEditor.call(obj, obj.editor.cell, true);
+            obj.editor.close(obj.editor.cell, true);
         } else if (column && column.type == 'dropdown') {
             // Do nothing
         } else {
@@ -54,7 +50,7 @@ const editorKeys = function (this: EditingWorksheet, e: TargetEvent<KeyboardEven
     } else if (e.which == 9) {
         // Tab
         if (column && ['calendar', 'html'].includes(column.type as string)) {
-            closeEditor.call(obj, obj.editor.cell, true);
+            obj.editor.close(obj.editor.cell, true);
         } else {
             (obj.editor.cell.children[0] as HTMLElement).blur();
         }
@@ -100,7 +96,7 @@ const enterKey = function (this: SelectedWorksheet, e: TargetEvent<KeyboardEvent
 
     // Move cursor
     if (e.shiftKey) {
-        up.call(obj);
+        obj.selection.up();
     } else {
         if (obj.options.allowInsertRow != false) {
             if (obj.options.allowManualInsertRow != false) {
@@ -111,7 +107,7 @@ const enterKey = function (this: SelectedWorksheet, e: TargetEvent<KeyboardEvent
             }
         }
 
-        down.call(obj);
+        obj.selection.down();
     }
     e.preventDefault();
 };
@@ -124,7 +120,7 @@ const tabKey = function (this: SelectedWorksheet, e: TargetEvent<KeyboardEvent>)
 
     // Tab
     if (e.shiftKey) {
-        left.call(obj);
+        obj.selection.left();
     } else {
         if (obj.options.allowInsertColumn != false) {
             if (obj.options.allowManualInsertColumn != false) {
@@ -135,7 +131,7 @@ const tabKey = function (this: SelectedWorksheet, e: TargetEvent<KeyboardEvent>)
             }
         }
 
-        right.call(obj);
+        obj.selection.right();
     }
     e.preventDefault();
 };
@@ -148,7 +144,7 @@ const shortcutKeys = function (this: SelectedWorksheet, e: TargetEvent<KeyboardE
 
     if (e.which == 65) {
         // Ctrl + A
-        selectAll.call(obj);
+        obj.selection.selectAll();
         e.preventDefault();
     } else if (e.which == 83) {
         // Ctrl + S
@@ -164,7 +160,7 @@ const shortcutKeys = function (this: SelectedWorksheet, e: TargetEvent<KeyboardE
         e.preventDefault();
     } else if (e.which == 67) {
         // Ctrl + C
-        copy.call(obj, true);
+        obj.clipboard.copy(true);
         e.preventDefault();
     } else if (e.which == 88) {
         // Ctrl + X
@@ -197,17 +193,17 @@ const typingKeys = function (this: SelectedWorksheet, e: TargetEvent<KeyboardEve
             // Space
             e.preventDefault();
             if (column.type == 'checkbox' || column.type == 'radio') {
-                setCheckRadioValue.call(obj);
+                obj.editor.setCheckRadioValue();
             } else {
                 // Start edition
-                openEditor.call(obj, obj.records[rowId][columnId].element, true, e);
+                obj.editor.open(obj.records[rowId][columnId].element, true, e);
             }
         } else if (e.keyCode == 113) {
             // Start edition with current content F2
-            openEditor.call(obj, obj.records[rowId][columnId].element, false, e);
+            obj.editor.open(obj.records[rowId][columnId].element, false, e);
         } else if ((e.key.length === 1 || e.key === 'Process') && !(e.altKey || isCtrl(e))) {
             // Start edition
-            openEditor.call(obj, obj.records[rowId][columnId].element, true, e);
+            obj.editor.open(obj.records[rowId][columnId].element, true, e);
             // Prevent entries in the calendar
             if (column && column.type == 'calendar') {
                 e.preventDefault();
@@ -225,22 +221,22 @@ const gridKeys = function (this: SelectedWorksheet, e: TargetEvent<KeyboardEvent
 
     // Which key
     if (e.which == 37) {
-        left.call(obj, e.shiftKey, e.ctrlKey);
+        obj.selection.left(e.shiftKey, e.ctrlKey);
         e.preventDefault();
     } else if (e.which == 39) {
-        right.call(obj, e.shiftKey, e.ctrlKey);
+        obj.selection.right(e.shiftKey, e.ctrlKey);
         e.preventDefault();
     } else if (e.which == 38) {
-        up.call(obj, e.shiftKey, e.ctrlKey);
+        obj.selection.up(e.shiftKey, e.ctrlKey);
         e.preventDefault();
     } else if (e.which == 40) {
-        down.call(obj, e.shiftKey, e.ctrlKey);
+        obj.selection.down(e.shiftKey, e.ctrlKey);
         e.preventDefault();
     } else if (e.which == 36) {
-        first.call(obj, e.shiftKey, e.ctrlKey);
+        obj.selection.first(e.shiftKey, e.ctrlKey);
         e.preventDefault();
     } else if (e.which == 35) {
-        last.call(obj, e.shiftKey, e.ctrlKey);
+        obj.selection.last(e.shiftKey, e.ctrlKey);
         e.preventDefault();
     } else if (e.which == 46 || e.which == 8) {
         // Delete

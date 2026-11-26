@@ -181,22 +181,65 @@ that changes it.
     Done.
 19. **The data of the cells.** `Styles` (`style.ts`), `Comments` (`comments.ts`), `Meta` (`meta.ts`) and `Cells`
     (`cells.ts`: finding a cell, its label, read-only).
+    Done. The four modules are the components `worksheet.styles`, `worksheet.comments`, `worksheet.meta` and
+    `worksheet.cells`. The methods have shorter names in their class (`setStyle` is `styles.set`, `getCellFromCoords` is
+    `cells.getFromCoords`), and the public methods call them. The references rename the cells of the meta information
+    with `obj.meta.update`.
 20. **Merges.** `Merges` (`merges.ts`).
+    Done. `worksheet.merges` gets, sets and removes the merged ranges (`get`, `set`, `remove`, `destroy`), tells which
+    ranges a row or a column is in (`isRowMerged`, `isColMerged`), and updates the first cell of a range when its
+    columns are hidden or shown (`updateColumns`).
 21. **Formulas.** The references (`references.ts`), the footers (`footer.ts`) and the calculation of a formula
     (`executeFormula` and what only it uses in `values.ts`) move into `Formulas`.
+    Done. `worksheet.formulas` calculates a formula (`execute`, with the private `parseNumber`), calculates the chain of
+    a cell again (`updateChain`), renames the references (`updateFormula`, `updateTableReferences`) and shows the
+    footers (`setFooter`). `parseValue` stays in `values.ts` and calls `obj.formulas.execute`.
 22. **The view.** Search, the filters, pagination, the order and the lazy loading (`search.ts`, `filter.ts`,
     `pagination.ts`, `orderBy.ts`, `lazyLoading.ts`) move into `View`.
+    Done. The functions of the five modules are methods of `worksheet.view`, with the same names, except
+    `quantiyOfPages`, which is `countPages` in the class. The public methods keep their names.
 23. **The editor.** `editor.ts` moves into `Editor`.
+    Done. `worksheet.editor` opens the editor of the column type (`open`, with the private `openCustom`,
+    `toggleCheckbox`, `openDropdown`, `openPicker`, `openHtml`, `openImage` and `openText`), closes it and saves the
+    value (`close`), and toggles the highlighted checkboxes (`setCheckRadioValue`). `openEditor` and `closeEditor` call it.
 24. **The clipboard.** `copyPaste.ts` moves into `Clipboard`.
+    Done. `worksheet.clipboard` copies the cells (`copy`, with the private `getNestedHeadersText` and `getCopiedRows`)
+    and pastes text (`paste`, with the private `insertSpaceForPaste` and `pasteRows`). `quote` and `repeatToSelection`
+    use no worksheet and stay functions in `Clipboard.ts`. The public `copy`, `paste` and `download` call it.
 25. **The selection.** `selection.ts`, the moves of `keys.ts` and the accessibility code that follows the selection move
     into `Selection`; the fill with the selection corner (`fill.ts`) into `Pointer`.
+    Done. `worksheet.selection` selects cells (`updateFromCoords`, `update`, `reset`, `refresh`, `conditionalUpdate`,
+    `selectAll`), places the corner (`updateCorner`), tells which cells are selected (`get`, `getSelected`,
+    `getSelectedColumns`, `getSelectedRows`, `getRange`, `isSelected`, `getHighlighted`), moves the selection with the
+    keys (`up`, `down`, `left`, `right`, `first`, `last`, and `rightGet` and `downGet`, which the paste uses), and keeps
+    the selected cell the tab stop of the grid (`updateActiveCell`, `updateTabStop`, `restoreActiveCell`,
+    `setFocusEvents`). The roles and the labels of the grid stay in `accessibility.ts`. `worksheet.pointer.fill` fills
+    the cells after a drag or a double click of the corner (`copyData` before).
 26. **Columns.** `Columns` (`columns.ts`, the headers in `headers.ts`, and the frozen columns in `freeze.ts` and
     `freezePosition.ts`).
+    Done. `worksheet.columns` counts the columns (`count`), creates their headers (`createHeader`,
+    `createNestedHeader`), inserts, moves, deletes, shows and hides them (`insert`, `move`, `delete`, `show`, `hide`),
+    gets and sets their widths, titles and data (`getWidth`, `setWidth`, `getHeader`, `getHeaders`, `setHeader`,
+    `getData`, `setData`), and places the frozen columns (`getIndexWidth`, `getFreezeWidth`, `updateFreezePosition`).
 27. **Rows.** `Rows` (`rows.ts`).
+    Done. `worksheet.rowManager` creates a row (`create`), inserts, moves, deletes, shows and hides the rows (`insert`,
+    with the private `getInserted` and `add`, `move`, `delete`, `show`, `hide`), gets and sets their heights and data
+    (`getHeight`, `setHeight`, `getData`, `setData`) and shows or hides the index column (`showIndex`, `hideIndex`). It
+    is not `worksheet.rows`, because that is the list of row records, which applications use.
 28. **The data.** `Data` (`data.ts`: getting and setting the data and the values).
+    Done. `worksheet.data` gets and sets all the data (`get`, `set`), the data of a range (`getFromRange`) and the value
+    of a cell (`getValue`, `getValueFromCoords`, `setValue`, `setValueFromCoords`). The data stays in `options.data`.
 29. **History.** Applying a record to undo or redo it (`history.ts`) moves into `History`. It comes last because it calls
     every other feature.
+    Done. `worksheet.history.undo` and `worksheet.history.redo` apply a record, with the private `processRow` and
+    `processColumn` for the records that insert or delete rows and columns. `History` gets its worksheet in its
+    constructor, as the other components do.
 30. **The toolbar.** `toolbar.ts` becomes the class `Toolbar` of the spreadsheet, as `Tabs` did.
+    Done. `spreadsheet.toolbarManager` builds the default items (`getDefault`), creates the jSuites toolbar (`create`,
+    with the private `adjustForJSuites`), shows and hides it (`show`, `hide`) and updates its items for a worksheet
+    (`update`). `spreadsheet.toolbar` stays the element, which applications use. `Spreadsheet.ts` imports no module at
+    run time, so the factory creates the `Toolbar` right after the spreadsheet. The functions that build the items stay
+    module functions in `toolbar.ts`.
 
 ## Rules for each step
 

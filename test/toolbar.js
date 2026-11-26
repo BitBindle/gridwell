@@ -233,4 +233,81 @@ describe('Toolbar', () => {
             expect(root.querySelectorAll('.jss_toolbar .jtoolbar-item').length).to.equal(2);
         });
     });
+
+    describe('Show, hide and update', () => {
+        it('hideToolbar removes the toolbar, and showToolbar adds it again', async () => {
+            const instance = await createWithToolbar();
+            const spreadsheet = instance[0].parent;
+
+            expect(spreadsheet.toolbar).to.equal(root.querySelector('.jss_toolbar'));
+
+            spreadsheet.hideToolbar();
+
+            expect(root.querySelector('.jss_toolbar')).to.equal(null);
+            expect(spreadsheet.toolbar).to.equal(undefined);
+
+            spreadsheet.showToolbar();
+
+            expect(root.querySelectorAll('.jss_toolbar').length).to.equal(1);
+            expect(spreadsheet.toolbar).to.equal(root.querySelector('.jss_toolbar'));
+            expect(spreadsheet.toolbar.querySelectorAll('.jtoolbar-item').length).to.equal(15);
+        });
+
+        it('setConfig with toolbar hides and shows the toolbar', async () => {
+            const instance = await createWithToolbar();
+            const spreadsheet = instance[0].parent;
+
+            spreadsheet.setConfig({ toolbar: false });
+            expect(root.querySelector('.jss_toolbar')).to.equal(null);
+
+            spreadsheet.setConfig({ toolbar: true });
+            expect(root.querySelector('.jss_toolbar')).to.equal(spreadsheet.toolbar);
+        });
+
+        it('gives updateState the worksheet whose cells are selected, and the worksheet of the open tab', async () => {
+            const states = [];
+            const instance = jspreadsheet(root, {
+                toolbar: [
+                    {
+                        type: 'i',
+                        content: 'info',
+                        tooltip: 'Information',
+                        updateState: (toolbarElement, toolbarInstance, itemElement, worksheet) => {
+                            states.push(worksheet);
+                        },
+                    },
+                ],
+                worksheets: [{ minDimensions: [3, 3] }, { minDimensions: [3, 3] }],
+            });
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            // The tooltip is the title of the item
+            expect(root.querySelector('.jss_toolbar .jtoolbar-item').title).to.equal('Information');
+
+            states.length = 0;
+            instance[0].updateSelectionFromCoords(0, 0, 0, 0);
+            expect(states[states.length - 1]).to.equal(instance[0]);
+
+            states.length = 0;
+            root.tabs.open(1);
+            expect(states).to.eql([instance[1]]);
+        });
+
+        it('a select item with a style property styles the selected cells with the chosen value', async () => {
+            const changes = [];
+            const instance = jspreadsheet(root, {
+                toolbar: [{ type: 'select', k: 'text-align', v: ['left', 'right'] }],
+                worksheets: [{ minDimensions: [3, 3] }],
+                onchangestyle: (worksheet, newValue) => {
+                    changes.push(newValue);
+                },
+            });
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            instance[0].updateSelectionFromCoords(0, 0, 1, 0);
+            root.querySelector('.jss_toolbar .jpicker').querySelectorAll('.jpicker-item')[1].click();
+
+            expect(changes).to.eql([{ A1: 'text-align: right', B1: 'text-align: right' }]);
+        });
+    });
 });

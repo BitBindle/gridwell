@@ -360,4 +360,58 @@ describe('Merge tests', () => {
         instance[0].setMerge('B1', 2);
         expect(instance[0].getMerge('B1')).to.eql([2, 1]);
     });
+    describe('Insert a row or a column inside a merged range', () => {
+        const confirm = globalThis.confirm;
+
+        afterEach(() => {
+            globalThis.confirm = confirm;
+        });
+
+        const create = () =>
+            jspreadsheet(root, {
+                worksheets: [{ minDimensions: [4, 4], mergeCells: { B2: [2, 2] } }],
+            })[0];
+
+        it('Keeps the merge and the rows when the user cancels', () => {
+            const worksheet = create();
+            globalThis.confirm = () => false;
+
+            worksheet.insertRow(1, 2, true);
+
+            expect(worksheet.getMerge()).to.eql({ B2: [2, 2] });
+            expect(worksheet.rows.length).to.equal(4);
+        });
+
+        it('Removes the merges and inserts the row when the user agrees', () => {
+            const worksheet = create();
+            globalThis.confirm = () => true;
+
+            worksheet.insertRow(1, 2, true);
+
+            expect(worksheet.getMerge()).to.eql({});
+            expect(worksheet.rows.length).to.equal(5);
+        });
+
+        it('Removes the merges and inserts the column when the user agrees', () => {
+            const worksheet = create();
+            globalThis.confirm = () => true;
+
+            worksheet.insertColumn(1, 2, true);
+
+            expect(worksheet.getMerge()).to.eql({});
+            expect(worksheet.headers.length).to.equal(5);
+        });
+
+        it('Does not ask when the row is outside the merged range', () => {
+            const worksheet = create();
+            globalThis.confirm = () => {
+                throw new Error('confirm');
+            };
+
+            worksheet.insertRow(1, 3);
+
+            expect(worksheet.getMerge()).to.eql({ B2: [2, 2] });
+            expect(worksheet.rows.length).to.equal(5);
+        });
+    });
 });

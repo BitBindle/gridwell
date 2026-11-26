@@ -228,3 +228,110 @@ describe('The undo history', () => {
         expect(worksheets[0].history).to.not.equal(worksheets[1].history);
     });
 });
+
+describe('Undo and redo the changes to columns, rows and the order', () => {
+    const create = () =>
+        jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        [1, 2, 3],
+                        [4, 5, 6],
+                        [7, 8, 9],
+                    ],
+                    columns: [{ width: 100 }, { width: 100 }, { width: 100 }],
+                },
+            ],
+        })[0];
+
+    const original = [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+    ];
+
+    it('deleteColumn', () => {
+        const worksheet = create();
+
+        worksheet.deleteColumn(1);
+        const deleted = [
+            [1, 3],
+            [4, 6],
+            [7, 9],
+        ];
+        expect(worksheet.getData()).to.eql(deleted);
+
+        worksheet.undo();
+        expect(worksheet.getData()).to.eql(original);
+        expect(worksheet.headers.length).to.equal(3);
+
+        worksheet.redo();
+        expect(worksheet.getData()).to.eql(deleted);
+        expect(worksheet.headers.length).to.equal(2);
+    });
+
+    it('moveColumn', () => {
+        const worksheet = create();
+
+        worksheet.moveColumn(0, 2);
+        const moved = [
+            [2, 3, 1],
+            [5, 6, 4],
+            [8, 9, 7],
+        ];
+        expect(worksheet.getData()).to.eql(moved);
+
+        worksheet.undo();
+        expect(worksheet.getData()).to.eql(original);
+
+        worksheet.redo();
+        expect(worksheet.getData()).to.eql(moved);
+    });
+
+    it('orderBy', () => {
+        const worksheet = create();
+
+        worksheet.orderBy(0, 1);
+        const ordered = [
+            [7, 8, 9],
+            [4, 5, 6],
+            [1, 2, 3],
+        ];
+        expect(worksheet.getData()).to.eql(ordered);
+
+        worksheet.undo();
+        expect(worksheet.getData()).to.eql(original);
+
+        worksheet.redo();
+        expect(worksheet.getData()).to.eql(ordered);
+    });
+
+    it('setWidth', () => {
+        const worksheet = create();
+
+        worksheet.setWidth(0, 200);
+        expect(worksheet.getWidth(0)).to.equal(200);
+
+        worksheet.undo();
+        expect(worksheet.getWidth(0)).to.equal(100);
+
+        worksheet.redo();
+        expect(worksheet.getWidth(0)).to.equal(200);
+    });
+
+    it('setHeight', () => {
+        const worksheet = create();
+
+        // The old height is the height that the browser measures. jsdom has no layout.
+        worksheet.rows[1].element.getBoundingClientRect = () => ({ height: 25 });
+
+        worksheet.setHeight(1, 50);
+        expect(worksheet.getHeight(1)).to.equal('50px');
+
+        worksheet.undo();
+        expect(worksheet.getHeight(1)).to.equal('25px');
+
+        worksheet.redo();
+        expect(worksheet.getHeight(1)).to.equal('50px');
+    });
+});

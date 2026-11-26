@@ -1,5 +1,3 @@
-import { updateCornerPosition } from './selection.js';
-import { setFooter } from './footer.js';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -54,7 +52,7 @@ export const updateTable = function (this: Worksheet) {
 
     // Update footers
     if (obj.options.footers) {
-        setFooter.call(obj);
+        obj.formulas.setFooter();
     }
 
     if (obj.options.columns.length < obj.options.minDimensions[0]) {
@@ -63,6 +61,6 @@ export const updateTable = function (this: Worksheet) {
 
     // Update corner position
     setTimeout(function () {
-        updateCornerPosition.call(obj);
+        obj.selection.updateCorner();
     }, 0);
 };

@@ -1,11 +1,4 @@
-import { closeEditor, openEditor } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
-import { isColMerged, isRowMerged } from '../utils/merges.js';
-import { resetSelection, selectAll, updateCornerPosition, updateSelectionFromCoords } from '../utils/selection.js';
-import { copyData } from '../utils/fill.js';
-import { openFilter } from '../utils/filter.js';
-import { setWidth } from '../utils/columns.js';
-import { moveRow, setHeight } from '../utils/rows.js';
 import { getElement, getIndex } from './helpers.js';
 import type { TargetEvent, Worksheet } from '../types/internal';
 
@@ -74,9 +67,9 @@ const endResize = function (this: Worksheet) {
             // Previous width
             const index = columns.indexOf(parseInt(resizing.column));
             currentWidth[index] = resizing.width;
-            setWidth.call(obj, columns, newWidth, currentWidth);
+            obj.columns.setWidth(columns, newWidth, currentWidth);
         } else {
-            setWidth.call(obj, parseInt(resizing.column), newWidth, resizing.width);
+            obj.columns.setWidth(parseInt(resizing.column), newWidth, resizing.width);
         }
         // Remove border
         obj.headers[resizing.column].classList.remove('resizing');
@@ -90,7 +83,7 @@ const endResize = function (this: Worksheet) {
         obj.rows[resizing.row].element.children[0].classList.remove('resizing');
         // setHeight parses the height, and it ignores a missing attribute (NaN) as it ignored null
         const newHeight = parseInt(obj.rows[resizing.row].element.getAttribute('height'));
-        setHeight.call(obj, resizing.row, newHeight, resizing.height);
+        obj.rowManager.setHeight(resizing.row, newHeight, resizing.height);
         // Remove border
         resizing.element.classList.remove('resizing');
     }
@@ -139,7 +132,7 @@ const endDrag = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
                 position = parseInt((dragging.element.previousSibling as HTMLElement).getAttribute('data-y'));
             }
 
-            moveRow.call(obj, dragging.row, position, true);
+            obj.rowManager.move(dragging.row, position, true);
         }
         dragging.element.classList.remove('dragging');
     }
@@ -160,7 +153,7 @@ const endFill = function (this: Worksheet) {
         // Data to be copied
         if (obj.selection.fill.length > 0) {
             // Copy data
-            copyData.call(obj, obj.selection.fill[0], obj.selection.fill[obj.selection.fill.length - 1]);
+            obj.pointer.fill(obj.selection.fill[0], obj.selection.fill[obj.selection.fill.length - 1]);
 
             // Remove selection
             obj.selection.clearFill();
@@ -220,7 +213,7 @@ const pressHeader = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
                 }
             }
         } else if (obj.options.columnDrag != false && info.height - e.offsetY < 6) {
-            if (isColMerged.call(obj, columnId).length) {
+            if (obj.merges.isColMerged(columnId).length) {
                 console.error('Jspreadsheet: This column is part of a merged cell.');
             } else {
                 // Reset selection
@@ -263,7 +256,7 @@ const pressHeader = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
             }
 
             // Update selection
-            updateSelectionFromCoords.call(obj, o, 0, d, obj.options.data.length - 1, e);
+            obj.selection.updateFromCoords(o, 0, d, obj.options.data.length - 1, e);
         }
     } else {
         if ((e.target.parentNode as HTMLElement).classList.contains('jss_nested')) {
@@ -277,7 +270,7 @@ const pressHeader = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
                 c1 = 0;
                 c2 = obj.options.columns.length - 1;
             }
-            updateSelectionFromCoords.call(obj, c1, 0, c2, obj.options.data.length - 1, e);
+            obj.selection.updateFromCoords(c1, 0, c2, obj.options.data.length - 1, e);
         }
     }
 };
@@ -302,7 +295,7 @@ const pressRowNumber = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
         // Border indication
         (e.target.parentNode as HTMLElement).classList.add('resizing');
     } else if (obj.options.rowDrag != false && info.width - e.offsetX < 6) {
-        if (isRowMerged.call(obj, rowId).length) {
+        if (obj.merges.isRowMerged(rowId).length) {
             console.error('Jspreadsheet: This row is part of a merged cell');
         } else if (obj.options.search == true && obj.view.results) {
             console.error('Jspreadsheet: Please clear your search before perform this action');
@@ -333,7 +326,7 @@ const pressRowNumber = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
         }
 
         // Update selection
-        updateSelectionFromCoords.call(obj, null, o, null, d, e);
+        obj.selection.updateFromCoords(null, o, null, d, e);
     }
 };
 
@@ -346,7 +339,7 @@ const pressCell = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
 
     // Jclose
     if (e.target.classList.contains('jclose') && e.target.clientWidth - e.offsetX < 50 && e.offsetY < 50) {
-        closeEditor.call(obj, obj.editor.cell!, true);
+        obj.editor.close(obj.editor.cell!, true);
     } else {
         const position = getCellPosition(e.target);
         if (position) {
@@ -355,16 +348,16 @@ const pressCell = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
             // Close edition
             if (obj.editor.isOpen()) {
                 if (obj.editor.x != columnId || obj.editor.y != rowId) {
-                    closeEditor.call(obj, obj.editor.cell, true);
+                    obj.editor.close(obj.editor.cell, true);
                 }
             }
 
             if (!obj.editor.isOpen()) {
                 // Update cell selection
                 if (e.shiftKey) {
-                    updateSelectionFromCoords.call(obj, obj.selection.range![0], obj.selection.range![1], columnId, rowId, e);
+                    obj.selection.updateFromCoords(obj.selection.range![0], obj.selection.range![1], columnId, rowId, e);
                 } else {
-                    updateSelectionFromCoords.call(obj, columnId, rowId, undefined, undefined, e);
+                    obj.selection.updateFromCoords(columnId, rowId, undefined, undefined, e);
                 }
             }
 
@@ -402,7 +395,7 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
         if (previous != jssTable[0].jssWorksheet) {
             if (previous) {
                 if (previous.editor.isOpen()) {
-                    closeEditor.call(previous, previous.editor.cell, true);
+                    previous.editor.close(previous.editor.cell, true);
                 }
                 previous.resetSelection();
             }
@@ -411,11 +404,11 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
     } else {
         if (previous) {
             if (previous.editor.isOpen()) {
-                closeEditor.call(previous, previous.editor.cell, true);
+                previous.editor.close(previous.editor.cell, true);
             }
 
             if (!e.target.closest('.jss_object')) {
-                resetSelection.call(previous, true);
+                previous.selection.reset(true);
                 libraryBase.jspreadsheet.current = null;
             }
         }
@@ -425,7 +418,7 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
 
     if (current && mouseButton == 1) {
         if (e.target.classList.contains('jss_selectall')) {
-            selectAll.call(current);
+            current.selection.selectAll();
         } else if (e.target.classList.contains('jss_corner')) {
             if (current.options.editable != false) {
                 current.pointer.corner = true;
@@ -479,7 +472,7 @@ const moveResize = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
             const tempWidth = resizing.width + width;
             obj.cols[resizing.column].colElement.setAttribute('width', tempWidth);
 
-            updateCornerPosition.call(obj);
+            obj.selection.updateCorner();
         }
     } else {
         const height = e.pageY - resizing.mousePosition;
@@ -488,7 +481,7 @@ const moveResize = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
             const tempHeight = resizing.height + height;
             obj.rows[resizing.row].element.setAttribute('height', tempHeight);
 
-            updateCornerPosition.call(obj);
+            obj.selection.updateCorner();
         }
     }
 };
@@ -504,7 +497,7 @@ const moveDrag = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
     if (dragging.column != null) {
         const columnId = getIndex(e.target, 'data-x');
         if (columnId != null) {
-            if (isColMerged.call(obj, columnId).length) {
+            if (obj.merges.isColMerged(columnId).length) {
                 console.error('Jspreadsheet: This column is part of a merged cell.');
             } else {
                 for (let i = 0; i < obj.headers.length; i++) {
@@ -536,7 +529,7 @@ const moveDrag = function (this: Worksheet, e: TargetEvent<MouseEvent>) {
     } else {
         const rowId = getIndex(e.target, 'data-y');
         if (rowId != null) {
-            if (isRowMerged.call(obj, rowId).length) {
+            if (obj.merges.isRowMerged(rowId).length) {
                 console.error('Jspreadsheet: This row is part of a merged cell.');
             } else {
                 const target = e.target.clientHeight / 2 > e.offsetY ? e.target.parentNode!.nextSibling : e.target.parentNode;
@@ -695,7 +688,7 @@ const extendSelection = function (this: Worksheet, e: TargetEvent<MouseEvent>, s
                 const o = obj.selection.column;
                 const d = columnId;
                 // Update selection
-                updateSelectionFromCoords.call(obj, o, 0, d, obj.options.data.length - 1, e);
+                obj.selection.updateFromCoords(o, 0, d, obj.options.data.length - 1, e);
             }
         }
 
@@ -706,7 +699,7 @@ const extendSelection = function (this: Worksheet, e: TargetEvent<MouseEvent>, s
                     const o = obj.selection.row;
                     const d = rowId;
                     // Update selection
-                    updateSelectionFromCoords.call(obj, 0, o, obj.options.data[0].length - 1, d, e);
+                    obj.selection.updateFromCoords(0, o, obj.options.data[0].length - 1, d, e);
                 }
             } else {
                 // Do not select edtion is in progress
@@ -716,7 +709,7 @@ const extendSelection = function (this: Worksheet, e: TargetEvent<MouseEvent>, s
                             updateCopySelection.call(obj, columnId, rowId);
                         } else {
                             if (obj.selection.range) {
-                                updateSelectionFromCoords.call(obj, obj.selection.range[0], obj.selection.range[1], columnId, rowId, e);
+                                obj.selection.updateFromCoords(obj.selection.range[0], obj.selection.range[1], columnId, rowId, e);
                             }
                         }
                     }
@@ -772,7 +765,7 @@ const fillDown = function (this: Worksheet) {
         const x2 = parseInt(last.getAttribute('data-x'));
         const y2 = obj.records.length - 1;
         // Execute copy
-        copyData.call(obj, obj.records[y1][x1].element, obj.records[y2][x2].element);
+        obj.pointer.fill(obj.records[y1][x1].element, obj.records[y2][x2].element);
     }
 };
 
@@ -788,7 +781,7 @@ export const doubleClickControls = function (e: TargetEvent<MouseEvent>) {
             // Column
             const columnId = parseInt(e.target.getAttribute('data-x'));
             // Open filter
-            openFilter.call(current, columnId);
+            current.view.openFilter(columnId);
         } else {
             // Get table
             const jssTable = getElement(e.target);
@@ -807,7 +800,7 @@ export const doubleClickControls = function (e: TargetEvent<MouseEvent>) {
                 if (!current.editor.isOpen()) {
                     const cell = getCell(e.target);
                     if (cell && cell.classList.contains('highlight')) {
-                        openEditor.call(current, cell as HTMLTableCellElement, undefined, e);
+                        current.editor.open(cell as HTMLTableCellElement, undefined, e);
                     }
                 }
             }

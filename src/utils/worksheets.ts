@@ -3,59 +3,14 @@ import jSuites from 'jsuites';
 import libraryBase from './libraryBase.js';
 
 import { parseCSV } from './helpers.js';
-import {
-    createCellHeader,
-    deleteColumn,
-    getColumnData,
-    getNumberOfColumns,
-    getWidth,
-    hideColumn,
-    insertColumn,
-    moveColumn,
-    setColumnData,
-    setWidth,
-    showColumn,
-} from './columns.js';
-import { getData, getDataFromRange, getValue, getValueFromCoords, setData, setValue, setValueFromCoords } from './data.js';
 import { cutControls } from '../events/clipboard.js';
 import { scrollControls, wheelControls } from '../events/scroll.js';
-import {
-    getHighlighted,
-    getRange,
-    getSelected,
-    getSelectedColumns,
-    getSelectedRows,
-    getSelection,
-    isSelected,
-    resetSelection,
-    selectAll,
-    updateSelectionFromCoords,
-} from './selection.js';
-import { deleteRow, getHeight, getRowData, hideRow, insertRow, moveRow, setHeight, setRowData, showRow } from './rows.js';
-import { destroyMerge, getMerge, removeMerge, setMerge } from './merges.js';
-import { resetSearch, search } from './search.js';
-import { getHeader, getHeaders, setHeader } from './headers.js';
-import { getStyle, resetStyle, setStyle } from './style.js';
-import { page, quantiyOfPages, whichPage } from './pagination.js';
 import { download } from './download.js';
-import { down, first, last, left, right, up } from './keys.js';
-import { createNestedHeader } from './headers.js';
-import { getCell, getCellFromCoords, getLabel } from './cells.js';
-import { hideIndex, showIndex } from './rows.js';
-import { executeFormula } from './values.js';
 import { getWorksheetActive } from './activeWorksheet.js';
-import { getComments, setComments } from './comments.js';
-import { orderBy } from './orderBy.js';
 import { getWorksheetConfig, setConfig } from './config.js';
-import { getMeta, setMeta } from './meta.js';
-import { closeEditor, openEditor } from './editor.js';
 import dispatch from './dispatch.js';
 import { getIdFromColumnName } from './internalHelpers.js';
-import { copy, paste } from './copyPaste.js';
-import { isReadOnly, setReadOnly } from './cells.js';
-import { openFilter, resetFilters } from './filter.js';
-import { redo, undo } from './history.js';
-import { setGridFocusEvents, setGridLabels, setGridRoles } from './accessibility.js';
+import { setGridLabels, setGridRoles } from './accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import { Worksheet } from '../Worksheet.js';
 import type { Spreadsheet, WorksheetMethod } from '../types/internal';
@@ -148,7 +103,7 @@ const createHead = function (this: Worksheet) {
     // Nested
     if (obj.options.nestedHeaders && obj.options.nestedHeaders.length > 0 && obj.options.nestedHeaders[0] && obj.options.nestedHeaders[0][0]) {
         for (let j = 0; j < obj.options.nestedHeaders.length; j++) {
-            obj.thead.appendChild(createNestedHeader.call(obj, obj.options.nestedHeaders[j]));
+            obj.thead.appendChild(obj.columns.createNestedHeader(obj.options.nestedHeaders[j]));
         }
     }
 
@@ -158,11 +113,11 @@ const createHead = function (this: Worksheet) {
     tempCol.classList.add('jss_selectall');
     obj.headerContainer.appendChild(tempCol);
 
-    const numberOfColumns = getNumberOfColumns.call(obj);
+    const numberOfColumns = obj.columns.count();
 
     for (let i = 0; i < numberOfColumns; i++) {
         // Create header
-        createCellHeader.call(obj, i);
+        obj.columns.createHeader(i);
         // Append cell to the container
         obj.headerContainer.appendChild(obj.headers[i]);
         obj.colgroupContainer.appendChild(obj.cols[i].colElement);
@@ -208,7 +163,7 @@ const createGrid = function (this: Worksheet) {
     obj.table.appendChild(obj.thead);
     obj.table.appendChild(obj.tbody);
     setGridRoles.call(obj);
-    setGridFocusEvents.call(obj);
+    obj.selection.setFocusEvents();
 
     if (!obj.options.textOverflow) {
         obj.table.classList.add('jss_overflow');
@@ -316,7 +271,7 @@ const loadContent = function (this: Worksheet) {
     const obj = this;
 
     // Load data
-    obj.setData.call(obj);
+    obj.data.set();
 
     // Style
     if (obj.options.style) {
@@ -642,80 +597,210 @@ export const deleteWorksheet: WorksheetMethod<'deleteWorksheet'> = function (pos
 
 // never[]: each method has its own parameters
 const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Worksheet, ...args: never[]) => unknown][] = [
-    ['selectAll', selectAll],
+    [
+        'selectAll',
+        function (this: Worksheet) {
+            return this.selection.selectAll();
+        },
+    ],
     [
         'updateSelectionFromCoords',
         function (this: Worksheet, x1: number, y1: number, x2: number, y2: number) {
-            return updateSelectionFromCoords.call(this, x1, y1, x2, y2);
+            return this.selection.updateFromCoords(x1, y1, x2, y2);
         },
     ],
     [
         'resetSelection',
         function (this: Worksheet) {
-            return resetSelection.call(this);
+            return this.selection.reset();
         },
     ],
-    ['getSelection', getSelection],
-    ['getSelected', getSelected],
-    ['getSelectedColumns', getSelectedColumns],
-    ['getSelectedRows', getSelectedRows],
-    ['getData', getData],
-    ['setData', setData],
-    ['getValue', getValue],
-    ['getValueFromCoords', getValueFromCoords],
-    ['setValue', setValue],
-    ['setValueFromCoords', setValueFromCoords],
-    ['getWidth', getWidth],
+    [
+        'getSelection',
+        function (this: Worksheet) {
+            return this.selection.get();
+        },
+    ],
+    [
+        'getSelected',
+        function (this: Worksheet, columnNameOnly?: boolean) {
+            return this.selection.getSelected(columnNameOnly);
+        },
+    ],
+    [
+        'getSelectedColumns',
+        function (this: Worksheet, visibleOnly?: boolean) {
+            return this.selection.getSelectedColumns(visibleOnly);
+        },
+    ],
+    [
+        'getSelectedRows',
+        function (this: Worksheet, visibleOnly?: boolean) {
+            return this.selection.getSelectedRows(visibleOnly);
+        },
+    ],
+    [
+        'getData',
+        function (this: Worksheet, highlighted?: boolean, processed?: boolean, delimiter?: string, asJson?: boolean) {
+            return this.data.get(highlighted, processed, delimiter, asJson);
+        },
+    ],
+    [
+        'setData',
+        function (this: Worksheet, data?: jspreadsheet.CellValue[][] | Record<string, jspreadsheet.CellValue>[]) {
+            return this.data.set(data);
+        },
+    ],
+    [
+        'getValue',
+        function (this: Worksheet, cell: string, processedValue?: boolean) {
+            return this.data.getValue(cell, processedValue);
+        },
+    ],
+    [
+        'getValueFromCoords',
+        function (this: Worksheet, x: number, y: number, processedValue?: boolean) {
+            return this.data.getValueFromCoords(x, y, processedValue);
+        },
+    ],
+    [
+        'setValue',
+        function (this: Worksheet, cell: Parameters<jspreadsheet.WorksheetInstance['setValue']>[0], value?: jspreadsheet.CellValue, force?: boolean) {
+            return this.data.setValue(cell, value, force);
+        },
+    ],
+    [
+        'setValueFromCoords',
+        function (this: Worksheet, x: number, y: number, value: jspreadsheet.CellValue, force?: boolean) {
+            return this.data.setValueFromCoords(x, y, value, force);
+        },
+    ],
+    [
+        'getWidth',
+        function (this: Worksheet, column?: number) {
+            return this.columns.getWidth(column);
+        },
+    ],
     [
         'setWidth',
         function (this: Worksheet, column: number | number[], width: number | number[]) {
-            return setWidth.call(this, column, width);
+            return this.columns.setWidth(column, width);
         },
     ],
-    ['insertRow', insertRow],
+    [
+        'insertRow',
+        function (this: Worksheet, mixed?: number | jspreadsheet.CellValue[], rowNumber?: number, insertBefore?: boolean | number) {
+            return this.rowManager.insert(mixed, rowNumber, insertBefore);
+        },
+    ],
     [
         'moveRow',
         function (this: Worksheet, rowNumber: number, newPositionNumber: number) {
-            return moveRow.call(this, rowNumber, newPositionNumber);
+            return this.rowManager.move(rowNumber, newPositionNumber);
         },
     ],
-    ['deleteRow', deleteRow],
-    ['hideRow', hideRow],
-    ['showRow', showRow],
-    ['getRowData', getRowData],
-    ['setRowData', setRowData],
-    ['getHeight', getHeight],
+    [
+        'deleteRow',
+        function (this: Worksheet, rowNumber?: number, numOfRows?: number) {
+            return this.rowManager.delete(rowNumber, numOfRows);
+        },
+    ],
+    [
+        'hideRow',
+        function (this: Worksheet, rowNumber: number | number[]) {
+            return this.rowManager.hide(rowNumber);
+        },
+    ],
+    [
+        'showRow',
+        function (this: Worksheet, rowNumber: number | number[]) {
+            return this.rowManager.show(rowNumber);
+        },
+    ],
+    [
+        'getRowData',
+        function (this: Worksheet, rowNumber: number, processed?: boolean) {
+            return this.rowManager.getData(rowNumber, processed);
+        },
+    ],
+    [
+        'setRowData',
+        function (this: Worksheet, rowNumber: number, data: (jspreadsheet.CellValue | null)[], force?: boolean) {
+            return this.rowManager.setData(rowNumber, data, force);
+        },
+    ],
+    [
+        'getHeight',
+        function (this: Worksheet, row?: number) {
+            return this.rowManager.getHeight(row);
+        },
+    ],
     [
         'setHeight',
         function (this: Worksheet, row: number, height: number) {
-            return setHeight.call(this, row, height);
+            return this.rowManager.setHeight(row, height);
         },
     ],
-    ['getMerge', getMerge],
+    [
+        'getMerge',
+        function (this: Worksheet, cellName?: string) {
+            return this.merges.get(cellName);
+        },
+    ],
     [
         'setMerge',
         function (this: Worksheet, cellName: string, colspan: number, rowspan: number) {
-            return setMerge.call(this, cellName, colspan, rowspan);
+            return this.merges.set(cellName, colspan, rowspan);
         },
     ],
     [
         'destroyMerge',
         function (this: Worksheet) {
-            return destroyMerge.call(this);
+            return this.merges.destroy();
         },
     ],
     [
         'removeMerge',
         function (this: Worksheet, cellName: string, data?: jspreadsheet.CellValue[]) {
-            return removeMerge.call(this, cellName, data);
+            return this.merges.remove(cellName, data);
         },
     ],
-    ['search', search],
-    ['resetSearch', resetSearch],
-    ['getHeader', getHeader],
-    ['getHeaders', getHeaders],
-    ['setHeader', setHeader],
-    ['getStyle', getStyle],
+    [
+        'search',
+        function (this: Worksheet, query: string) {
+            return this.view.search(query);
+        },
+    ],
+    [
+        'resetSearch',
+        function (this: Worksheet) {
+            return this.view.resetSearch();
+        },
+    ],
+    [
+        'getHeader',
+        function (this: Worksheet, column: number) {
+            return this.columns.getHeader(column);
+        },
+    ],
+    [
+        'getHeaders',
+        function (this: Worksheet, asArray?: boolean) {
+            return this.columns.getHeaders(asArray);
+        },
+    ],
+    [
+        'setHeader',
+        function (this: Worksheet, column: number, newValue?: string) {
+            return this.columns.setHeader(column, newValue);
+        },
+    ],
+    [
+        'getStyle',
+        function (this: Worksheet, cell?: string | number[], key?: string) {
+            return this.styles.get(cell, key);
+        },
+    ],
     [
         'setStyle',
         function (
@@ -726,42 +811,163 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             forceOverwrite: boolean,
             ignoreHistoryAndEvents?: boolean
         ) {
-            return setStyle.call(this, cell, property, value, forceOverwrite, ignoreHistoryAndEvents);
+            return this.styles.set(cell, property, value, forceOverwrite, ignoreHistoryAndEvents);
         },
     ],
-    ['resetStyle', resetStyle],
-    ['insertColumn', insertColumn],
-    ['moveColumn', moveColumn],
-    ['deleteColumn', deleteColumn],
-    ['getColumnData', getColumnData],
-    ['setColumnData', setColumnData],
-    ['whichPage', whichPage],
-    ['page', page],
+    [
+        'resetStyle',
+        function (this: Worksheet, o: Record<string, string | string[]>, ignoreHistoryAndEvents?: boolean) {
+            return this.styles.reset(o, ignoreHistoryAndEvents);
+        },
+    ],
+    [
+        'insertColumn',
+        function (
+            this: Worksheet,
+            mixed?: number | jspreadsheet.CellValue[],
+            columnNumber?: number,
+            insertBefore?: boolean | number,
+            properties?: jspreadsheet.Column[]
+        ) {
+            return this.columns.insert(mixed, columnNumber, insertBefore, properties);
+        },
+    ],
+    [
+        'moveColumn',
+        function (this: Worksheet, o: number, d: number) {
+            return this.columns.move(o, d);
+        },
+    ],
+    [
+        'deleteColumn',
+        function (this: Worksheet, columnNumber?: number, numOfColumns?: number) {
+            return this.columns.delete(columnNumber, numOfColumns);
+        },
+    ],
+    [
+        'getColumnData',
+        function (this: Worksheet, columnNumber: number, processed?: boolean) {
+            return this.columns.getData(columnNumber, processed);
+        },
+    ],
+    [
+        'setColumnData',
+        function (this: Worksheet, colNumber: number, data: (jspreadsheet.CellValue | null)[], force?: boolean) {
+            return this.columns.setData(colNumber, data, force);
+        },
+    ],
+    [
+        'whichPage',
+        function (this: Worksheet, row: number) {
+            return this.view.whichPage(row);
+        },
+    ],
+    [
+        'page',
+        function (this: Worksheet, pageNumber: number) {
+            return this.view.page(pageNumber);
+        },
+    ],
     ['download', download],
-    ['getComments', getComments],
-    ['setComments', setComments],
-    ['orderBy', orderBy],
-    ['undo', undo],
-    ['redo', redo],
-    ['getCell', getCell],
-    ['getCellFromCoords', getCellFromCoords],
-    ['getLabel', getLabel],
+    [
+        'getComments',
+        function (this: Worksheet, cell?: string | number[]) {
+            return this.comments.get(cell);
+        },
+    ],
+    [
+        'setComments',
+        function (this: Worksheet, cellId: string | Record<string, string | null | undefined>, comments?: string | null) {
+            return this.comments.set(cellId, comments);
+        },
+    ],
+    [
+        'orderBy',
+        function (this: Worksheet, column: number, order?: 0 | 1) {
+            return this.view.orderBy(column, order);
+        },
+    ],
+    [
+        'undo',
+        function (this: Worksheet) {
+            return this.history.undo();
+        },
+    ],
+    [
+        'redo',
+        function (this: Worksheet) {
+            return this.history.redo();
+        },
+    ],
+    [
+        'getCell',
+        function (this: Worksheet, x: number, y: number) {
+            return this.cells.get(x, y);
+        },
+    ],
+    [
+        'getCellFromCoords',
+        function (this: Worksheet, x: number, y: number) {
+            return this.cells.getFromCoords(x, y);
+        },
+    ],
+    [
+        'getLabel',
+        function (this: Worksheet, x: number, y: number) {
+            return this.cells.getLabel(x, y);
+        },
+    ],
     ['getConfig', getWorksheetConfig],
     ['setConfig', setConfig],
     [
         'getMeta',
         function (this: Worksheet, cell: string) {
-            return getMeta.call(this, cell);
+            return this.meta.get(cell);
         },
     ],
-    ['setMeta', setMeta],
-    ['showColumn', showColumn],
-    ['hideColumn', hideColumn],
-    ['showIndex', showIndex],
-    ['hideIndex', hideIndex],
+    [
+        'setMeta',
+        function (this: Worksheet, o: string | Record<string, jspreadsheet.MetaInformation>, k?: string, v?: string) {
+            return this.meta.set(o, k, v);
+        },
+    ],
+    [
+        'showColumn',
+        function (this: Worksheet, colNumber: number | number[]) {
+            return this.columns.show(colNumber);
+        },
+    ],
+    [
+        'hideColumn',
+        function (this: Worksheet, colNumber: number | number[]) {
+            return this.columns.hide(colNumber);
+        },
+    ],
+    [
+        'showIndex',
+        function (this: Worksheet) {
+            return this.rowManager.showIndex();
+        },
+    ],
+    [
+        'hideIndex',
+        function (this: Worksheet) {
+            return this.rowManager.hideIndex();
+        },
+    ],
     ['getWorksheetActive', getWorksheetActive],
-    ['openEditor', openEditor],
-    ['closeEditor', closeEditor],
+    [
+        'openEditor',
+        function (this: Worksheet, cell: HTMLTableCellElement, empty?: boolean, e?: KeyboardEvent | MouseEvent | TouchEvent) {
+            return this.editor.open(cell, empty, e);
+        },
+    ],
+    [
+        'closeEditor',
+        function (this: Worksheet, cell: HTMLTableCellElement, save: boolean) {
+            return this.editor.close(cell, save);
+        },
+    ],
     ['createWorksheet', createWorksheet],
     ['openWorksheet', openWorksheet],
     ['deleteWorksheet', deleteWorksheet],
@@ -771,29 +977,114 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             if (cut) {
                 cutControls();
             } else {
-                copy.call(this, true);
+                this.clipboard.copy(true);
             }
         },
     ],
-    ['paste', paste],
-    ['executeFormula', executeFormula],
-    ['getDataFromRange', getDataFromRange],
-    ['quantiyOfPages', quantiyOfPages],
-    ['getRange', getRange],
-    ['isSelected', isSelected],
-    ['setReadOnly', setReadOnly],
-    ['isReadOnly', isReadOnly],
-    ['getHighlighted', getHighlighted],
+    [
+        'paste',
+        function (this: Worksheet, x: number, y: number, data: string) {
+            return this.clipboard.paste(x, y, data);
+        },
+    ],
+    [
+        'executeFormula',
+        function (this: Worksheet, expression: string, x?: number, y?: number) {
+            return this.formulas.execute(expression, x, y);
+        },
+    ],
+    [
+        'getDataFromRange',
+        function (this: Worksheet, range: string, processed: true) {
+            return this.data.getFromRange(range, processed);
+        },
+    ],
+    [
+        'quantiyOfPages',
+        function (this: Worksheet) {
+            return this.view.countPages();
+        },
+    ],
+    [
+        'getRange',
+        function (this: Worksheet) {
+            return this.selection.getRange();
+        },
+    ],
+    [
+        'isSelected',
+        function (this: Worksheet, x: number, y: number) {
+            return this.selection.isSelected(x, y);
+        },
+    ],
+    [
+        'setReadOnly',
+        function (this: Worksheet, cell: string | HTMLElement, state: boolean) {
+            return this.cells.setReadOnly(cell, state);
+        },
+    ],
+    [
+        'isReadOnly',
+        function (this: Worksheet, x: number | string, y?: number) {
+            return this.cells.isReadOnly(x, y);
+        },
+    ],
+    [
+        'getHighlighted',
+        function (this: Worksheet) {
+            return this.selection.getHighlighted();
+        },
+    ],
     // The public dispatch takes any event name, and dispatch is typed for the events of the library
     ['dispatch', dispatch as (this: Worksheet, ...args: never[]) => unknown],
-    ['down', down],
-    ['first', first],
-    ['last', last],
-    ['left', left],
-    ['right', right],
-    ['up', up],
-    ['openFilter', openFilter],
-    ['resetFilters', resetFilters],
+    [
+        'down',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.down(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'first',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.first(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'last',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.last(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'left',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.left(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'right',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.right(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'up',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.up(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'openFilter',
+        function (this: Worksheet, columnId: number) {
+            return this.view.openFilter(columnId);
+        },
+    ],
+    [
+        'resetFilters',
+        function (this: Worksheet) {
+            return this.view.resetFilters();
+        },
+    ],
 ];
 
 // The public methods are on the prototype, as the methods of a class: not enumerable, and an instance can replace one

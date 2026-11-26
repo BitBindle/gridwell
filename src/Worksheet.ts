@@ -1,10 +1,18 @@
 import type jspreadsheet from './jspreadsheet';
+import { Cells } from './components/Cells.js';
 import { Clipboard } from './components/Clipboard.js';
+import { Columns } from './components/Columns.js';
+import { Comments } from './components/Comments.js';
+import { Data } from './components/Data.js';
 import { Editor } from './components/Editor.js';
 import { Formulas } from './components/Formulas.js';
 import { History } from './components/History.js';
+import { Merges } from './components/Merges.js';
+import { Meta } from './components/Meta.js';
 import { Pointer } from './components/Pointer.js';
+import { Rows } from './components/Rows.js';
 import { Selection } from './components/Selection.js';
+import { Styles } from './components/Styles.js';
 import { View } from './components/View.js';
 import type { Spreadsheet, WorksheetState } from './types/internal';
 
@@ -31,13 +39,21 @@ export class Worksheet {
             // buildWorksheet adds jssWorksheet
             this.element = element as Worksheet['element'];
         }
-        this.history = new History();
-        this.clipboard = new Clipboard();
-        this.editor = new Editor();
-        this.selection = new Selection();
-        this.formulas = new Formulas();
-        this.view = new View();
-        this.pointer = new Pointer();
+        this.history = new History(this);
+        this.clipboard = new Clipboard(this);
+        this.editor = new Editor(this);
+        this.selection = new Selection(this);
+        this.formulas = new Formulas(this);
+        this.view = new View(this);
+        this.pointer = new Pointer(this);
+        this.cells = new Cells(this);
+        this.styles = new Styles(this);
+        this.comments = new Comments(this);
+        this.meta = new Meta(this);
+        this.merges = new Merges(this);
+        this.columns = new Columns(this);
+        this.rowManager = new Rows(this);
+        this.data = new Data(this);
         this.lastScrollLeft = 0;
     }
 }

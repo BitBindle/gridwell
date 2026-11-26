@@ -1,5 +1,4 @@
 import libraryBase from '../utils/libraryBase.js';
-import { copy, paste } from '../utils/copyPaste.js';
 import { getElement } from './helpers.js';
 import type { TargetEvent } from '../types/internal';
 
@@ -15,12 +14,11 @@ export const pasteControls = function (e?: TargetEvent<ClipboardEvent>) {
         if (!current.editor.isOpen()) {
             if (current.options.editable != false) {
                 if (e && e.clipboardData) {
-                    paste.call(current, current.selection.range[0], current.selection.range[1], e.clipboardData.getData('text'));
+                    current.clipboard.paste(current.selection.range[0], current.selection.range[1], e.clipboardData.getData('text'));
                     e.preventDefault();
                 } else if ((window as Window & { clipboardData?: DataTransfer }).clipboardData) {
                     // Internet Explorer has the clipboard on the window
-                    paste.call(
-                        current,
+                    current.clipboard.paste(
                         current.selection.range[0],
                         current.selection.range[1],
                         (window as Window & { clipboardData?: DataTransfer }).clipboardData!.getData('text')
@@ -37,7 +35,7 @@ export const cutControls = function (e?: TargetEvent<ClipboardEvent>) {
     if (current) {
         // Without a selection, there is nothing to cut
         if (!current.editor.isOpen() && current.selection.range) {
-            const copied = copy.call(current, true, undefined, undefined, undefined, undefined, true);
+            const copied = current.clipboard.copy(true, undefined, undefined, undefined, undefined, true);
             // oncopy can cancel the cut
             if (copied !== false && current.options.editable != false) {
                 current.setValue(
@@ -56,7 +54,7 @@ export const copyControls = function (e?: TargetEvent<ClipboardEvent>) {
 
     if (current) {
         if (!current.editor.isOpen()) {
-            copy.call(current, true);
+            current.clipboard.copy(true);
         }
     }
 };
