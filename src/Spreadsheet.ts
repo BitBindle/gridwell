@@ -2,7 +2,6 @@ import jSuites from 'jsuites';
 import libraryBase from './utils/libraryBase.js';
 import { setEvents } from './events/index.js';
 import { Toolbar } from './utils/toolbar.js';
-import { buildWorksheet, createWorksheetObj, getNextDefaultWorksheetName } from './utils/worksheets.js';
 import { Tabs } from './utils/tabs.js';
 import { Worksheet } from './Worksheet.js';
 import type jspreadsheet from './jspreadsheet';
@@ -92,14 +91,14 @@ export class Spreadsheet {
                     if (title) {
                         return title;
                     } else {
-                        return getNextDefaultWorksheetName(spreadsheet);
+                        return spreadsheet.getNextDefaultWorksheetName();
                     }
                 },
                 oncreate: function (element: HTMLElement & { tabs: Tabs }, newTabContent: HTMLDivElement | undefined) {
                     if (!spreadsheet.creationThroughJss) {
                         const worksheetName = element.tabs.headers.children[element.tabs.headers.children.length - 2].innerHTML;
 
-                        createWorksheetObj.call(spreadsheet.worksheets[0], {
+                        spreadsheet.createWorksheetObj({
                             minDimensions: [10, 15],
                             worksheetName: worksheetName,
                         });
@@ -109,11 +108,11 @@ export class Spreadsheet {
 
                     const newWorksheet = spreadsheet.worksheets[spreadsheet.worksheets.length - 1];
 
-                    // buildWorksheet adds jssWorksheet
+                    // build adds jssWorksheet
                     // onbeforecreate always gives a title, so the tab has its content
                     newWorksheet.element = newTabContent as Worksheet['element'];
 
-                    buildWorksheet.call(newWorksheet).then(function () {
+                    newWorksheet.build().then(function () {
                         spreadsheet.toolbarManager.update(newWorksheet);
 
                         newWorksheet.dispatch('oncreateworksheet', newWorksheet, newWorksheet.options, spreadsheet.worksheets.length - 1);
@@ -171,11 +170,48 @@ export class Spreadsheet {
 
                 spreadsheet.worksheets.push(new Worksheet(spreadsheet, o[i], tabs.content.children[i] as HTMLElement));
 
-                await buildWorksheet.call(spreadsheet.worksheets[i]);
+                await spreadsheet.worksheets[i].build();
             }
         } else {
             throw new Error('JSS: worksheets are not defined');
         }
+    }
+
+    /**
+     * The name of a new worksheet: Sheet and the number after the largest number of the worksheets called Sheet and a number.
+     */
+    private getNextDefaultWorksheetName() {
+        const spreadsheet = this;
+        const defaultWorksheetNameRegex = /^Sheet(\d+)$/;
+
+        let largestWorksheetNumber = 0;
+
+        spreadsheet.worksheets.forEach(function (worksheet) {
+            const regexResult = defaultWorksheetNameRegex.exec(worksheet.options.worksheetName!);
+            if (regexResult) {
+                largestWorksheetNumber = Math.max(largestWorksheetNumber, parseInt(regexResult[1]));
+            }
+        });
+
+        return 'Sheet' + (largestWorksheetNumber + 1);
+    }
+
+    /**
+     * Create a worksheet and add it and its options to the spreadsheet. The worksheet is built when its tab is created.
+     */
+    createWorksheetObj(options: jspreadsheet.WorksheetOptions) {
+        const spreadsheet = this;
+
+        if (!options.worksheetName) {
+            options.worksheetName = spreadsheet.getNextDefaultWorksheetName();
+        }
+
+        const newWorksheet = new Worksheet(spreadsheet, options);
+
+        spreadsheet.config.worksheets.push(newWorksheet.options);
+        spreadsheet.worksheets.push(newWorksheet);
+
+        return newWorksheet;
     }
 
     /**
