@@ -456,7 +456,7 @@ export class View {
 
     updateResult() {
         const worksheet = this.worksheet;
-        const before = this.attachedRows();
+        const before = worksheet.options.lazyLoading === true ? this.attachedRows() : null;
 
         let total;
         let index = 0;
@@ -504,7 +504,7 @@ export class View {
 
         worksheet.dispatch('onupdateresult', worksheet, worksheet.view.results);
 
-        if (worksheet.options.lazyLoading === true) {
+        if (before) {
             this.attached(before);
         }
 
@@ -715,6 +715,7 @@ export class View {
         if (worksheet.options.lazyLoading !== true || !frozen) {
             return;
         }
+        const before = this.attachedRows();
 
         const tbody = worksheet.tbody;
         function y(row: Element) {
@@ -759,6 +760,8 @@ export class View {
                 tbody.insertBefore(wanted[k], tbody.children[k] || null);
             }
         }
+
+        this.attached(before);
     }
 
     /**

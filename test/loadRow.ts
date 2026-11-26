@@ -1,6 +1,10 @@
 import { expect } from 'chai';
 
+import type { Dropdown } from '../src/utils/dropdown';
+
 import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+
+type DropdownElement = HTMLElement & { dropdown: Dropdown };
 
 function rows(count: number) {
     return Array.from({ length: count }, (row, y) => [`${y}`, `b${y}`]);
@@ -179,5 +183,35 @@ describe('onrowsattached', () => {
         worksheet.loadRow(120);
 
         expect(events).to.eql([[[110, 139]]]);
+    });
+
+    it('gives the frozen rows that a sort puts first in the table again', () => {
+        const { worksheet, events } = build({ freezeRows: 3 });
+        worksheet.loadRow(500);
+        events.length = 0;
+
+        worksheet.orderBy(1, 1);
+
+        expect(events.flat().filter(([from]) => from < 3)).to.eql([[0, 2]]);
+    });
+
+    it('gives the rows of the results of a filter', () => {
+        const data = rows(1000).map(([a, b], y) => [y % 2 ? 'odd' : a, b]);
+        const { worksheet, events } = build({ data, filters: true });
+        worksheet.loadRow(500);
+        events.length = 0;
+
+        worksheet.openFilter(0);
+        const dropdown = worksheet.filter!.children[1].querySelector<DropdownElement>('.jdropdown')!.dropdown;
+        dropdown.setValue(['odd']);
+        dropdown.close();
+
+        // The filter shows all rows from the first row, then the results. The odd rows to 99 are in the table already.
+        expect(events[0]).to.eql([[0, 99]]);
+        expect(events[events.length - 1][0]).to.eql([101, 101]);
+
+        events.length = 0;
+        worksheet.resetFilters();
+        expect(events.length).to.equal(1);
     });
 });
