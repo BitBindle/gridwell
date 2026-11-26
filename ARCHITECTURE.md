@@ -297,6 +297,14 @@ on the prototypes. The next steps move each of them into a class, so that no fun
     constructor of `Spreadsheet` creates the `Toolbar`.
 35. **The worksheet.** The build of a worksheet (`worksheets.ts`), its configuration, and creating, opening and deleting
     worksheets become methods of `Worksheet`; `download` moves into `Clipboard`.
+    Done. `worksheet.build` runs the `beforeinit` of the plugins, loads the data of the `csv` or `url` option, creates
+    the table (the private `prepareTable`, which loads the sources of the dropdown columns with a `url`, and
+    `createTable`, which calls `createContent`, `createSearch`, `createHead`, `createGrid`, `createCorner`,
+    `createAbout`, `createPagination`, `setLayout` and `loadContent`) and runs the `init` of the plugins.
+    `createWorksheet`, `openWorksheet` and `deleteWorksheet` are methods of `Worksheet`. `createWorksheetObj` and
+    `getNextDefaultWorksheetName` read only the spreadsheet, so they are methods of `Spreadsheet`. `download.ts` goes:
+    `worksheet.clipboard.download` downloads the CSV file. `worksheets.ts` keeps only `worksheetPublicMethods`, which
+    `Worksheet.ts` imports and puts on the prototype.
 36. **The public methods.** `Worksheet` declares its public methods, and `worksheetPublicMethods` goes (step 34 already
     removed `spreadsheetPublicMethods`).
 
