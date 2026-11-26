@@ -236,3 +236,9 @@ jspreadsheet(element, { worksheets: [{ editable: false }] });
 
 The values of the cells are still compared loosely where the library reads them: `1`, `'1'`, `true` and `'true'` check a
 checkbox, and a text that is a number equals the number.
+
+## getValue returns null for a cell that is missing
+
+`getValue` and `getValueFromCoords` return `null` for a cell outside the data, also when the row exists and the column
+does not. Version 5 returned `undefined` for a column that the row did not have, and `null` for a cell that held the
+text `undefined` (#36, #49). An application that checked the result with `=== undefined` checks it with `== null`.

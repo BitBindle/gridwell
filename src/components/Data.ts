@@ -164,7 +164,7 @@ export class Data {
             if (worksheet.records[y]?.[x] && processedValue) {
                 value = worksheet.records[y][x].element.innerHTML;
             } else {
-                if (worksheet.options.data[y] && worksheet.options.data[y][x] !== 'undefined') {
+                if (typeof worksheet.options.data[y]?.[x] !== 'undefined') {
                     value = worksheet.options.data[y][x];
                 }
             }
@@ -188,7 +188,7 @@ export class Data {
             if (worksheet.records[y]?.[x] && processedValue) {
                 value = worksheet.records[y][x].element.innerHTML;
             } else {
-                if (worksheet.options.data[y] && worksheet.options.data[y][x] !== 'undefined') {
+                if (typeof worksheet.options.data[y]?.[x] !== 'undefined') {
                     value = worksheet.options.data[y][x];
                 }
             }
