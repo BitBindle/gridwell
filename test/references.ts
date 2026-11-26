@@ -79,4 +79,54 @@ describe('The updateReferences option', () => {
 
         expect(worksheet.getMeta('D6')).to.eql({ note: 'x' });
     });
+
+    it('shows the result of each formula text after each change, as a new worksheet with the same data does', () => {
+        const numbers = () => Array.from({ length: 8 }, (row, j) => [`${j + 1}`, `${(j + 1) * 10}`, '', '']);
+        const data = numbers();
+        data[0][2] = '=A5+B6';
+        data[1][3] = '=SUM(A1:A8)';
+        data[7][2] = '=A8*2';
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data }], updateReferences: false });
+        const steps: [string, () => void][] = [
+            ['insertRow', () => worksheet.insertRow(1, 2)],
+            ['deleteRow', () => worksheet.deleteRow(0, 1)],
+            ['deleteRow at the end', () => worksheet.deleteRow(worksheet.rows.length - 1, 1)],
+            ['moveRow', () => worksheet.moveRow(4, 0)],
+            ['orderBy', () => worksheet.orderBy(1, 1)],
+            ['undo', () => worksheet.undo()],
+            ['insertColumn', () => worksheet.insertColumn(1, 0, true)],
+            ['moveColumn', () => worksheet.moveColumn(0, 2)],
+            ['deleteColumn', () => worksheet.deleteColumn(0, 1)],
+        ];
+
+        for (const [name, step] of steps) {
+            step();
+            const element = document.createElement('div');
+            root.appendChild(element);
+            const [fresh] = jspreadsheet(element, { worksheets: [{ data: worksheet.getData() }] });
+            const shown = worksheet.getData(false, true);
+            expect(shown, name).to.eql(fresh.getData(false, true));
+            fresh.parent.destroy?.();
+        }
+    });
+
+    it('shows #ERROR for a formula that a move puts on a cell that its text names', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '=A2'],
+                        ['5', ''],
+                    ],
+                },
+            ],
+            updateReferences: false,
+        });
+
+        worksheet.moveColumn(1, 0);
+        worksheet.moveRow(0, 1);
+
+        expect(worksheet.getValue('A2')).to.equal('=A2');
+        expect(worksheet.getValue('A2', true)).to.equal('#ERROR');
+    });
 });

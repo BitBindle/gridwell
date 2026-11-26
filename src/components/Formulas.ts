@@ -558,6 +558,19 @@ export class Formulas {
             if (worksheet.parent.config.updateReferences === false) {
                 // The formula texts stay, so the chain keeps the names that they refer to. The formula cells moved.
                 this.rename(affectedTokens, false);
+                // A cell at or after the start can have other contents now, also a cell that a delete removed, so the
+                // formulas that name it calculate again
+                for (const name of Object.keys(this.chain)) {
+                    const [x, y] = getIdFromColumnName(name);
+                    if (x >= firstColumn && y >= firstRow) {
+                        // A formula cell that a delete removed leaves the chain
+                        this.chain[name] = this.chain[name].filter((dependent) => {
+                            const [i, j] = getIdFromColumnName(dependent);
+                            return !!worksheet.records[j]?.[i];
+                        });
+                        this.updateChain(x, y, []);
+                    }
+                }
             } else {
                 // Update formulas
                 this.updateFormulas(affectedTokens);

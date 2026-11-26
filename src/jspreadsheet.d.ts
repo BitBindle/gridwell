@@ -1382,8 +1382,9 @@ declare namespace jspreadsheet {
 
         /**
          * Change the references of the formulas when rows or columns are inserted, deleted, moved or sorted. With false,
-         * each formula text stays as it is, for example when a server changes the references. The copy of a formula with
-         * the clipboard or the fill handle still moves its relative references.
+         * each formula text stays as it is, for example when a server changes the references, and each formula calculates
+         * again with the cells that its text names after the change. The fill handle still moves the relative references
+         * of a formula that it copies.
          * @default true
          */
         updateReferences?: boolean;
