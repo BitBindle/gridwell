@@ -86,12 +86,12 @@ export class Worksheet {
 
         if (event == 'onafterchanges') {
             if (typeof spreadsheet.plugins === 'object') {
-                Object.entries(spreadsheet.plugins).forEach(([, plugin]) => {
+                for (const plugin of Object.values(spreadsheet.plugins)) {
                     if (typeof plugin.persistence === 'function') {
                         // The changes of onafterchanges
                         plugin.persistence(this, 'setValue', { data: args[1] as jspreadsheet.CellChange[] });
                     }
-                });
+                }
             }
 
             if (this.options.persistence) {
@@ -111,9 +111,9 @@ export class Worksheet {
      */
     private prepareJson(data: ChangeRecord[]) {
         const rows: SaveData = [];
-        for (let i = 0; i < data.length; i++) {
-            const x = data[i].x;
-            const y = data[i].y;
+        for (const change of data) {
+            const x = change.x;
+            const y = change.y;
             const k = this.options.columns[x].name ? this.options.columns[x].name : x;
 
             // Create row
@@ -124,7 +124,7 @@ export class Worksheet {
                 };
             }
             // A read-only cell has no value (issue #58)
-            rows[y].data[k] = data[i].value!;
+            rows[y].data[k] = change.value!;
         }
 
         // Filter rows
@@ -180,11 +180,9 @@ export class Worksheet {
             return;
         }
 
-        const keys = Object.keys(config);
-
-        keys.forEach((key) => {
-            (this.options as Record<string, unknown>)[key] = (config as Record<string, unknown>)[key];
-        });
+        for (const [key, value] of Object.entries(config)) {
+            (this.options as Record<string, unknown>)[key] = value;
+        }
     }
 
     /**
@@ -631,10 +629,10 @@ export class Worksheet {
                 this.page(0);
             };
 
-            for (let i = 0; i < this.options.paginationOptions.length; i++) {
+            for (const paginationOption of this.options.paginationOptions) {
                 const temp = document.createElement('option');
-                temp.value = String(this.options.paginationOptions[i]);
-                temp.innerHTML = String(this.options.paginationOptions[i]);
+                temp.value = String(paginationOption);
+                temp.innerHTML = String(paginationOption);
                 this.paginationDropdown.appendChild(temp);
             }
 
@@ -668,8 +666,8 @@ export class Worksheet {
 
         // Nested
         if (this.options.nestedHeaders && this.options.nestedHeaders.length > 0 && this.options.nestedHeaders[0] && this.options.nestedHeaders[0][0]) {
-            for (let j = 0; j < this.options.nestedHeaders.length; j++) {
-                this.thead.appendChild(this.columns.createNestedHeader(this.options.nestedHeaders[j]));
+            for (const nestedHeader of this.options.nestedHeaders) {
+                this.thead.appendChild(this.columns.createNestedHeader(nestedHeader));
             }
         }
 
@@ -849,10 +847,9 @@ export class Worksheet {
 
         // Classes
         if (this.options.classes) {
-            const k = Object.keys(this.options.classes);
-            for (let i = 0; i < k.length; i++) {
-                const cell = getIdFromColumnName(k[i], true);
-                this.records[cell[1]][cell[0]].element.classList.add(this.options.classes[k[i]]);
+            for (const [cellName, className] of Object.entries(this.options.classes)) {
+                const cell = getIdFromColumnName(cellName, true);
+                this.records[cell[1]][cell[0]].element.classList.add(className);
             }
         }
     }
@@ -970,8 +967,8 @@ export class Worksheet {
                                 this.options.columns[i].source = [];
                             }
 
-                            for (let j = 0; j < data.length; j++) {
-                                this.options.columns[i].source.push(data[j]);
+                            for (const option of data) {
+                                this.options.columns[i].source.push(option);
                             }
                         },
                     });
@@ -995,11 +992,11 @@ export class Worksheet {
         const spreadsheet = this.parent;
 
         if (typeof spreadsheet.plugins === 'object') {
-            Object.entries(spreadsheet.plugins).forEach(([, plugin]) => {
+            for (const plugin of Object.values(spreadsheet.plugins)) {
                 if (typeof plugin.beforeinit === 'function') {
                     plugin.beforeinit(this);
                 }
-            });
+            }
         }
 
         libraryBase.jspreadsheet.current = this;
@@ -1076,11 +1073,11 @@ export class Worksheet {
         await Promise.all(promises);
 
         if (typeof spreadsheet.plugins === 'object') {
-            Object.entries(spreadsheet.plugins).forEach(([, plugin]) => {
+            for (const plugin of Object.values(spreadsheet.plugins)) {
                 if (typeof plugin.init === 'function') {
                     plugin.init(this);
                 }
-            });
+            }
         }
     }
 }

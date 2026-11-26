@@ -35,7 +35,7 @@ export class Formulas {
             this.chain[cell] = [];
         }
 
-        if (this.chain[cell].indexOf(dependent) < 0) {
+        if (!this.chain[cell].includes(dependent)) {
             this.chain[cell].push(dependent);
         }
     }
@@ -122,9 +122,9 @@ export class Formulas {
 
             // Convert range tokens
             function tokensUpdate(tokens: string[]) {
-                for (let index = 0; index < tokens.length; index++) {
+                for (const range of tokens) {
                     const f = [];
-                    const token = tokens[index].split(':');
+                    const token = range.split(':');
                     const e1 = getIdFromColumnName(token[0], true);
                     const e2 = getIdFromColumnName(token[1], true);
 
@@ -154,7 +154,7 @@ export class Formulas {
                         }
                     }
 
-                    expression = expression.replace(tokens[index], f.join(','));
+                    expression = expression.replace(range, f.join(','));
                 }
             }
 
@@ -172,7 +172,7 @@ export class Formulas {
             tokens = expression.match(/([A-Z]+[0-9]+)/g);
 
             // Direct self-reference protection
-            if (tokens && tokens.indexOf(parentId) > -1) {
+            if (tokens && tokens.includes(parentId)) {
                 console.error('Self Reference detected');
                 return '#ERROR';
             } else {
@@ -180,14 +180,14 @@ export class Formulas {
                 const formulaExpressions: Record<string, unknown> = {};
 
                 if (tokens) {
-                    for (let i = 0; i < tokens.length; i++) {
+                    for (const reference of tokens) {
                         // Keep chain
-                        worksheet.formulas.add(tokens[i], parentId);
+                        worksheet.formulas.add(reference, parentId);
 
                         // Do not calculate again. The formula engine reads the values of the references itself.
-                        if (!formulaEngine && typeof (globalThis as unknown as Record<string, unknown>)[tokens[i]] === 'undefined') {
+                        if (!formulaEngine && typeof (globalThis as unknown as Record<string, unknown>)[reference] === 'undefined') {
                             // Coords
-                            const position = getIdFromColumnName(tokens[i], true);
+                            const position = getIdFromColumnName(reference, true);
                             // Get value
                             let value: unknown;
 
@@ -201,29 +201,29 @@ export class Formulas {
                             }
                             // Get column data
                             if (('' + value).substr(0, 1) == '=') {
-                                if (typeof formulaResults[tokens[i]] !== 'undefined') {
-                                    value = formulaResults[tokens[i]];
+                                if (typeof formulaResults[reference] !== 'undefined') {
+                                    value = formulaResults[reference];
                                 } else {
                                     value = execute(value as string, position[0], position[1]);
-                                    formulaResults[tokens[i]] = value;
+                                    formulaResults[reference] = value;
                                 }
                             }
                             // Type!
                             if (('' + value).trim() == '') {
                                 // Null
-                                formulaExpressions[tokens[i]] = null;
+                                formulaExpressions[reference] = null;
                             } else {
                                 if (value == Number(value) && worksheet.parent.config.autoCasting != false) {
                                     // Number
-                                    formulaExpressions[tokens[i]] = Number(value);
+                                    formulaExpressions[reference] = Number(value);
                                 } else {
                                     // Trying any formatted number
                                     const number = worksheet.formulas.parseNumber(value, position[0]);
                                     if (worksheet.parent.config.autoCasting != false && number) {
-                                        formulaExpressions[tokens[i]] = number;
+                                        formulaExpressions[reference] = number;
                                     } else {
                                         // Text as a string literal, with its quotes and backslashes escaped
-                                        formulaExpressions[tokens[i]] = JSON.stringify('' + value);
+                                        formulaExpressions[reference] = JSON.stringify('' + value);
                                     }
                                 }
                             }
@@ -325,6 +325,8 @@ export class Formulas {
         let number = null;
         let token = '';
 
+        // for...of would read the string by code points, and this loop reads its UTF-16 code units
+        // eslint-disable-next-line @typescript-eslint/prefer-for-of
         for (let index = 0; index < formula.length; index++) {
             if (testLetter.exec(formula[index])) {
                 letter = 1;
@@ -362,15 +364,15 @@ export class Formulas {
         const worksheet = this.worksheet;
 
         // Update formulas
-        for (let j = 0; j < worksheet.options.data.length; j++) {
+        for (const row of worksheet.options.data) {
             for (let i = 0; i < worksheet.options.data[0].length; i++) {
-                const value = '' + worksheet.options.data[j][i];
+                const value = '' + row[i];
                 // Is formula
                 if (value.substr(0, 1) == '=') {
                     // Replace tokens
                     const newFormula = this.updateFormula(value, referencesToUpdate);
                     if (newFormula != value) {
-                        worksheet.options.data[j][i] = newFormula;
+                        row[i] = newFormula;
                     }
                 }
             }
@@ -475,22 +477,22 @@ export class Formulas {
         // Update merged if applicable
         const keys = Object.keys(mergeCellUpdates);
         if (keys.length) {
-            for (let i = 0; i < keys.length; i++) {
-                const update = mergeCellUpdates[keys[i]];
+            for (const key of keys) {
+                const update = mergeCellUpdates[key];
                 if (update) {
-                    const info = getIdFromColumnName(keys[i], true);
+                    const info = getIdFromColumnName(key, true);
                     let x = info[0];
                     let y = info[1];
                     updatePosition(x, y, x + update[1], y + update[2]);
 
-                    const columnIdFrom = keys[i];
+                    const columnIdFrom = key;
                     const columnIdTo = update[0];
-                    for (let j = 0; j < (worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]!.length; j++) {
-                        x = parseInt((worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].getAttribute('data-x'));
-                        y = parseInt((worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].getAttribute('data-y'));
-                        (worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-x', x + update[1]);
-                        (worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('aria-colindex', x + update[1] + 2);
-                        (worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-y', y + update[2]);
+                    for (const cell of (worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]!) {
+                        x = parseInt(cell.getAttribute('data-x'));
+                        y = parseInt(cell.getAttribute('data-y'));
+                        cell.setAttribute('data-x', x + update[1]);
+                        cell.setAttribute('aria-colindex', x + update[1] + 2);
+                        cell.setAttribute('data-y', y + update[2]);
                     }
 
                     worksheet.options.mergeCells![columnIdTo] = worksheet.options.mergeCells![columnIdFrom];

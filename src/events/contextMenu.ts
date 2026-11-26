@@ -287,7 +287,7 @@ export function contextMenuControls(e: TargetEvent<PointerEvent>) {
             }
 
             if (typeof spreadsheet.plugins === 'object') {
-                Object.entries(spreadsheet.plugins).forEach(([, plugin]) => {
+                for (const plugin of Object.values(spreadsheet.plugins)) {
                     if (typeof plugin.contextMenu === 'function') {
                         const result = plugin.contextMenu(
                             current,
@@ -304,7 +304,7 @@ export function contextMenuControls(e: TargetEvent<PointerEvent>) {
                             items = result;
                         }
                     }
-                });
+                }
             }
 
             // The id is depending on header and body

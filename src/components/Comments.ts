@@ -62,7 +62,7 @@ export class Comments {
 
         const oldValue: Record<string, string | null> = {};
 
-        Object.entries(commentsObj).forEach(([cellName, comment]) => {
+        for (const [cellName, comment] of Object.entries(commentsObj)) {
             const cellCoords = getCoordsFromCellName(cellName);
 
             // Keep old value
@@ -87,7 +87,7 @@ export class Comments {
                     delete worksheet.options.comments[cellName];
                 }
             }
-        });
+        }
 
         // Save history
         worksheet.history.add({

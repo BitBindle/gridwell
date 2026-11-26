@@ -160,8 +160,8 @@ export class Pointer {
                                 if (tokens) {
                                     // An array used as a map, as before
                                     const affectedTokens = [] as unknown as Record<string, string>;
-                                    for (let index = 0; index < tokens.length; index++) {
-                                        const position = getIdFromColumnName(tokens[index], true);
+                                    for (const reference of tokens) {
+                                        const position = getIdFromColumnName(reference, true);
                                         position[0] += colNumber;
                                         position[1] += rowNumber;
                                         if (position[1] < 0) {
@@ -169,8 +169,8 @@ export class Pointer {
                                         }
                                         const token = getColumnNameFromId([position[0], position[1]]);
 
-                                        if (token != tokens[index]) {
-                                            affectedTokens[tokens[index]] = token;
+                                        if (token != reference) {
+                                            affectedTokens[reference] = token;
                                         }
                                     }
                                     // Update formula
@@ -251,8 +251,8 @@ export class Pointer {
             const columns = worksheet.getSelectedColumns();
             if (columns.length > 1) {
                 const currentWidth = [];
-                for (let i = 0; i < columns.length; i++) {
-                    currentWidth.push(parseInt(worksheet.cols[columns[i]].colElement.getAttribute('width')));
+                for (const columnIndex of columns) {
+                    currentWidth.push(parseInt(worksheet.cols[columnIndex].colElement.getAttribute('width')));
                 }
                 // Previous width
                 const index = columns.indexOf(parseInt(resizing.column));
@@ -263,9 +263,9 @@ export class Pointer {
             }
             // Remove border
             worksheet.headers[resizing.column].classList.remove('resizing');
-            for (let j = 0; j < worksheet.records.length; j++) {
-                if (worksheet.records[j][resizing.column]) {
-                    worksheet.records[j][resizing.column].element.classList.remove('resizing');
+            for (const record of worksheet.records) {
+                if (record[resizing.column]) {
+                    record[resizing.column].element.classList.remove('resizing');
                 }
             }
         } else {
@@ -298,9 +298,9 @@ export class Pointer {
                     worksheet.records[j][dragging.column].element.classList.remove('dragging');
                 }
             }
-            for (let i = 0; i < worksheet.headers.length; i++) {
-                worksheet.headers[i].classList.remove('dragging-left');
-                worksheet.headers[i].classList.remove('dragging-right');
+            for (const header of worksheet.headers) {
+                header.classList.remove('dragging-left');
+                header.classList.remove('dragging-right');
             }
             // Update position
             if (columnId != null) {
@@ -373,9 +373,9 @@ export class Pointer {
 
                 // Border indication
                 worksheet.headers[columnId].classList.add('resizing');
-                for (let j = 0; j < worksheet.records.length; j++) {
-                    if (worksheet.records[j][columnId]) {
-                        worksheet.records[j][columnId].element.classList.add('resizing');
+                for (const record of worksheet.records) {
+                    if (record[columnId]) {
+                        record[columnId].element.classList.add('resizing');
                     }
                 }
             } else if (worksheet.options.columnDrag != false && info.height - e.offsetY < 6) {
@@ -392,9 +392,9 @@ export class Pointer {
                     };
                     // Border indication
                     worksheet.headers[columnId].classList.add('dragging');
-                    for (let j = 0; j < worksheet.records.length; j++) {
-                        if (worksheet.records[j][columnId]) {
-                            worksheet.records[j][columnId].element.classList.add('dragging');
+                    for (const record of worksheet.records) {
+                        if (record[columnId]) {
+                            record[columnId].element.classList.add('dragging');
                         }
                     }
                 }
@@ -589,9 +589,9 @@ export class Pointer {
                 if (worksheet.merges.isColMerged(columnId).length) {
                     console.error('Jspreadsheet: This column is part of a merged cell.');
                 } else {
-                    for (let i = 0; i < worksheet.headers.length; i++) {
-                        worksheet.headers[i].classList.remove('dragging-left');
-                        worksheet.headers[i].classList.remove('dragging-right');
+                    for (const header of worksheet.headers) {
+                        header.classList.remove('dragging-left');
+                        header.classList.remove('dragging-right');
                     }
 
                     if (dragging.column == columnId) {
@@ -624,7 +624,7 @@ export class Pointer {
                     const target = e.target.clientHeight / 2 > e.offsetY ? e.target.parentNode!.nextSibling : e.target.parentNode;
                     if (dragging.element != target) {
                         e.target.parentNode!.parentNode!.insertBefore(dragging.element, target);
-                        dragging.destination = Array.prototype.indexOf.call(dragging.element.parentNode!.children, dragging.element);
+                        dragging.destination = Array.from(dragging.element.parentNode!.children).indexOf(dragging.element);
                     }
                 }
             }

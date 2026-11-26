@@ -350,6 +350,17 @@ behaviour, and turns on the ESLint rule that keeps the new style, so that new co
     `Object.keys` with a lookup becomes `for (const [key, value] of Object.entries(...))`, `indexOf(...) >= 0` becomes
     `includes`, and `Array.prototype.x.call(list, ...)` becomes `Array.from(list).x(...)`. Rules:
     `@typescript-eslint/prefer-for-of`, `@typescript-eslint/prefer-includes`.
+    Done. A script with the type checker turned the 77 loops that `prefer-for-of` found, and the 8 nested loops that it
+    found after them, into `for...of` loops, and named each item after its array (`for (const key of keys)`); where the
+    first statement only copied the item (`const columnIndex = colNumber[i]`), the loop takes that name. A `for...of`
+    loop reads the length of the array at each step, as the index loops did. Two loops over strings stay index loops,
+    because `for...of` reads a string by code points. The `Object.keys` loops that only read the object take
+    `Object.entries`, and the `Object.entries(...).forEach` calls are loops (`Object.values` where the key is not used);
+    the loops whose body can change the object keep `Object.keys`. `indexOf` comparisons are `includes`,
+    `Array.prototype.push.apply` is a spread, `Array.prototype.indexOf.call` is `Array.from(...).indexOf`, and the
+    checks whether a row is in the table compare its `parentNode` with the tbody: `Array.from` of the rows for each
+    inserted row made the paste of a large range slow. `prefer-includes` needs the types, so ESLint reads `src/` with
+    the TypeScript project. `destroyAll` skips every other spreadsheet (#114), as before.
 40. **Strings.** Strings joined with `+` become template literals. Rule: `prefer-template`.
 41. **Equality.** `==` and `!=` become `===` and `!==` where the type check shows both sides have the same primitive
     type, so that the result is the same; `x == null` stays, as the one loose comparison that is clearer. The other

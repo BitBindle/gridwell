@@ -33,9 +33,8 @@ export function getCaretIndex(this: Spreadsheet, e: Node) {
 export function invert(o: Record<string, string | number>) {
     // The values become the indexes, or the keys when they are not numbers
     const d = [] as unknown as string[] & Record<string, string>;
-    const k = Object.keys(o);
-    for (let i = 0; i < k.length; i++) {
-        d[o[k[i]]] = k[i];
+    for (const [key, value] of Object.entries(o)) {
+        d[value] = key;
     }
     return d;
 }
@@ -253,11 +252,11 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
         if (headers.length) {
             for (let j = 0; j < headers.length - 1; j++) {
                 const cells = [];
-                for (let i = 0; i < headers[j].children.length; i++) {
+                for (const child of headers[j].children) {
                     const row = {
-                        title: headers[j].children[i].textContent,
+                        title: child.textContent,
                         // The text of the attribute, which the headers read as a number (issue #53)
-                        colspan: (headers[j].children[i].getAttribute('colspan') || 1) as number,
+                        colspan: (child.getAttribute('colspan') || 1) as number,
                     };
                     cells.push(row);
                 }
@@ -367,10 +366,10 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
         content = el.querySelectorAll<HTMLElement>('tfoot tr');
         if (content.length) {
             const footers = [];
-            for (let j = 0; j < content.length; j++) {
+            for (const rowElement of content) {
                 const footer = [];
-                for (let i = 0; i < content[j].children.length; i++) {
-                    footer.push(content[j].children[i].textContent);
+                for (const cell of rowElement.children) {
+                    footer.push(cell.textContent);
                 }
                 footers.push(footer);
             }
@@ -389,8 +388,8 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
                 let testCalendar = true;
                 // An array used as an object, with the values as keys
                 pattern[i] = [] as unknown as Record<string, number>;
-                for (let j = 0; j < data.length; j++) {
-                    const value = data[j][i];
+                for (const dataRow of data) {
+                    const value = dataRow[i];
                     if (!pattern[i][value]) {
                         pattern[i][value] = 0;
                     }

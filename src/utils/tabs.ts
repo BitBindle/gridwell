@@ -99,7 +99,7 @@ export class Tabs {
             return -1;
         }
 
-        return Array.prototype.indexOf.call(this.headers.children, element);
+        return Array.from(this.headers.children).indexOf(element);
     }
 
     private updateControls(x: number) {
@@ -216,7 +216,7 @@ export class Tabs {
     }
 
     selectIndex(a: Element) {
-        const index = Array.prototype.indexOf.call(this.headers.children, a);
+        const index = Array.from(this.headers.children).indexOf(a);
 
         if (index >= 0) {
             this.open(index);
@@ -517,11 +517,11 @@ export class Tabs {
             this.el.classList.add('jtabs-animation');
         }
 
-        for (let i = 0; i < this.options.data.length; i++) {
-            const div = this.appendElement(this.options.data[i].title, null, false);
+        for (const tab of this.options.data) {
+            const div = this.appendElement(tab.title, null, false);
 
-            if (this.options.data[i].content) {
-                div!.innerHTML = this.options.data[i].content;
+            if (tab.content) {
+                div!.innerHTML = tab.content;
             }
         }
 

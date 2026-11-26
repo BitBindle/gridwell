@@ -74,7 +74,7 @@ export class View {
              * @param k - The row.
              */
             function addToResult(k: number) {
-                if (worksheet.view.results!.indexOf(k) == -1) {
+                if (!worksheet.view.results!.includes(k)) {
                     worksheet.view.results!.push(k);
                 }
             }
@@ -88,9 +88,9 @@ export class View {
                     // Merged rows found
                     const rows = worksheet.merges.isRowMerged(k);
                     if (rows.length) {
-                        for (let i = 0; i < rows.length; i++) {
-                            const row = getIdFromColumnName(rows[i], true);
-                            for (let j = 0; j < worksheet.options.mergeCells![rows[i]][1]; j++) {
+                        for (const cellName of rows) {
+                            const row = getIdFromColumnName(cellName, true);
+                            for (let j = 0; j < worksheet.options.mergeCells![cellName][1]; j++) {
                                 addToResult(row[1] + j);
                             }
                         }
@@ -149,10 +149,9 @@ export class View {
                         hasBlanks = true;
                     }
                 }
-                const keys = Object.keys(options);
                 optionsFiltered = [];
-                for (let j = 0; j < keys.length; j++) {
-                    optionsFiltered.push({ id: keys[j], name: options[keys[j]] });
+                for (const [id, name] of Object.entries(options)) {
+                    optionsFiltered.push({ id, name });
                 }
                 // Has blank options
                 if (hasBlanks) {
@@ -208,10 +207,10 @@ export class View {
 
         // Search filter
         function search(query: string[], x: number, y: number) {
-            for (let i = 0; i < query.length; i++) {
+            for (const term of query) {
                 const value = '' + worksheet.options.data[y][x];
                 const label = '' + worksheet.records[y][x].element.innerHTML;
-                if (query[i] == value || query[i] == label) {
+                if (term == value || term == label) {
                     return true;
                 }
             }
@@ -456,7 +455,7 @@ export class View {
 
         // Hide all records from the table
         for (let j = 0; j < worksheet.rows.length; j++) {
-            if (!worksheet.view.results || worksheet.view.results.indexOf(j) > -1) {
+            if (!worksheet.view.results || worksheet.view.results.includes(j)) {
                 if (index < total) {
                     worksheet.tbody.appendChild(worksheet.rows[j].element);
                     index++;
@@ -489,9 +488,9 @@ export class View {
         const worksheet = this.worksheet;
 
         // Remove order
-        for (let i = 0; i < worksheet.headers.length; i++) {
-            worksheet.headers[i].classList.remove('arrow-up');
-            worksheet.headers[i].classList.remove('arrow-down');
+        for (const header of worksheet.headers) {
+            header.classList.remove('arrow-up');
+            header.classList.remove('arrow-down');
         }
 
         // No order specified then toggle order
@@ -519,8 +518,8 @@ export class View {
         for (let j = 0; j < rows.length; j++) {
             records[j] = worksheet.records[rows[j]];
 
-            for (let i = 0; i < records[j].length; i++) {
-                records[j][i].y = j;
+            for (const cell of records[j]) {
+                cell.y = j;
             }
         }
         worksheet.records = records;
@@ -552,8 +551,8 @@ export class View {
             } else if (worksheet.options.lazyLoading == true) {
                 this.loadPage(0);
             } else {
-                for (let j = 0; j < worksheet.rows.length; j++) {
-                    worksheet.tbody.appendChild(worksheet.rows[j].element);
+                for (const row of worksheet.rows) {
+                    worksheet.tbody.appendChild(row.element);
                 }
                 // A moved row loses the focus
                 worksheet.selection.updateTabStop();
@@ -754,7 +753,7 @@ export class View {
             const totalPages = parseInt(total / 100);
 
             if (currentPage != selectedPage && selectedPage <= totalPages) {
-                if (Array.prototype.indexOf.call(worksheet.tbody.children, worksheet.rows[worksheet.selection.range[3] as number].element) < 0) {
+                if (worksheet.rows[worksheet.selection.range[3] as number].element.parentNode !== worksheet.tbody) {
                     this.loadPage(selectedPage);
                     return true;
                 }
@@ -911,6 +910,6 @@ export class View {
             return false;
         }
 
-        return typeof column.type === 'object' || ['dropdown', 'calendar', 'color', 'html', 'image'].indexOf(column.type) >= 0;
+        return typeof column.type === 'object' || ['dropdown', 'calendar', 'color', 'html', 'image'].includes(column.type);
     }
 }

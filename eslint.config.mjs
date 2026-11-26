@@ -40,6 +40,21 @@ export default tseslint.config(
             'func-style': ['error', 'declaration'],
             'prefer-arrow-callback': 'error',
             'object-shorthand': ['error', 'always'],
+            // A loop reads the items of an array with for...of, and a list is searched with includes
+            '@typescript-eslint/prefer-for-of': 'error',
+        },
+    },
+    {
+        // The rules that need the types
+        files: ['src/**/*.ts'],
+        languageOptions: {
+            parserOptions: {
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
+        rules: {
+            '@typescript-eslint/prefer-includes': 'error',
         },
     },
     {

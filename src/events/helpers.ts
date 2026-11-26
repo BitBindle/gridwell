@@ -110,7 +110,7 @@ export function getElementIndex(element: HTMLElement) {
 }
 
 function isMac() {
-    return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    return navigator.platform.toUpperCase().includes('MAC');
 }
 
 export function isCtrl(e: TargetEvent<KeyboardEvent | MouseEvent>) {
