@@ -1,0 +1,7 @@
+{
+    "exclude": ["mocha.config.js", "test/**", "node_modules/**", "dist/webpack/**"],
+    "excludeAfterRemap": true,
+    "reporter": ["text-summary", "text", "lcov"],
+    "checkCoverage": true,
+    "lines": 80
+}

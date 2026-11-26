@@ -45,3 +45,9 @@ jobs:
             # `npm test` builds the bundle and then runs the mocha suite
             - name: Run tests
               run: npm test
+
+            # `npm run coverage` builds the bundle with a source map and fails when the coverage is under the thresholds
+            # in .c8rc.json. Once is enough.
+            - name: Coverage
+              if: matrix.node-version == 22
+              run: npm run coverage
