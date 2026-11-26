@@ -89,6 +89,7 @@ Modules import each other with the `.js` extension, although the files are `.ts`
 
 - A webpack plugin wraps the bundle in a UMD header. The bundle imports no package: do not import `@jspreadsheet/formula` in `src/`, except in the dev page `src/test.js`: the application registers it.
 - The build produces one minified UMD file, `dist/index.js`. There is no ES module build.
+- `jspreadsheet.version()` gives the version in `package.json`: webpack replaces `__VERSION__` in `src/utils/version.ts` with it. The major and minor version are set by hand in `package.json`, and the publish workflow gives the patch (see [Releases](#releases)).
 - The npm package has only `dist/` and `resources/lang/` (`files` in `package.json`), with the README and the license.
 
 ## Things to keep

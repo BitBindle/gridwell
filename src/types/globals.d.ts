@@ -11,6 +11,9 @@
  * options that can be undefined. parseInt returns NaN for null and undefined, and the code checks the result or reads
  * attributes that its own elements always have.
  */
+/** The version in package.json. webpack (webpack.config.js) puts it in the bundle. */
+declare const __VERSION__: string;
+
 declare function parseInt(value: string | number | null | undefined, radix?: number): number;
 
 interface Element {

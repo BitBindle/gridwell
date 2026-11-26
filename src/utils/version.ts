@@ -1,6 +1,6 @@
-// Basic version information
+// Basic version information. The build takes the version from package.json.
 export default {
-    version: '5.0.0',
+    version: __VERSION__,
     host: 'https://github.com/BitBindle/jspreadsheet-ce',
     license: 'MIT',
     print(): [string] {
