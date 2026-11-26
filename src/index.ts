@@ -13,24 +13,26 @@ import type { Library, Spreadsheet, Worksheet } from './types/internal';
  * Create a spreadsheet in an element. It returns the worksheets, which the spreadsheet builds after it returns.
  */
 function jspreadsheet(el: HTMLDivElement | HTMLTableElement, options: jspreadsheet.SpreadsheetOptions) {
-    try {
-        const worksheets: Worksheet[] = [];
-
-        // Create spreadsheet
-        createSpreadsheet(el, options, worksheets).then((spreadsheet) => {
-            libraryBase.jspreadsheet.spreadsheet.push(spreadsheet);
-
-            // Global onload event
-            spreadsheet.dispatch('onload', spreadsheet);
-        });
-
-        return worksheets;
-    } catch (e) {
-        console.error(e);
+    // A table is replaced by a div in its parent. Without a parent, the spreadsheet could not be reached, and the error
+    // would be lost in the promise of createSpreadsheet.
+    if (el.tagName === 'TABLE' && !el.parentNode) {
+        throw new Error('Jspreadsheet: the table must be in a parent element, which gets the spreadsheet in its place');
     }
+
+    const worksheets: Worksheet[] = [];
+
+    // Create spreadsheet
+    createSpreadsheet(el, options, worksheets).then((spreadsheet) => {
+        libraryBase.jspreadsheet.spreadsheet.push(spreadsheet);
+
+        // Global onload event
+        spreadsheet.dispatch('onload', spreadsheet);
+    });
+
+    return worksheets;
 }
 
-// The other properties are added below. createSpreadsheet is async, so it never throws in jspreadsheet, and jspreadsheet always returns the worksheets.
+// The other properties are added below
 libraryBase.jspreadsheet = jspreadsheet as unknown as Library;
 
 libraryBase.jspreadsheet.getWorksheetInstanceByName = (worksheetName: string | null | undefined, namespace: string) => {

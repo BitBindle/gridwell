@@ -309,3 +309,10 @@ keyboard, an application handles a key itself and calls `insertColumn`.
 The hidden textarea that a worksheet uses for the clipboard has no `id` any more. Version 5 gave the textarea of every
 worksheet the id `jss_textarea`, so a page with two worksheets had duplicate ids (#68). Select it by its class,
 `.jss_textarea`, or through `worksheet.clipboard.textarea`.
+
+## jspreadsheet throws for a table without a parent
+
+`jspreadsheet(table, options)` replaces the table with a div in its parent. When the table has no parent, for example
+before it is added to the document, it now throws an `Error` (#55). Version 5 failed in a promise: it returned an empty
+array, created no spreadsheet and gave an unhandled rejection. Add the table to an element before you call
+`jspreadsheet`.
