@@ -159,13 +159,12 @@ describe('Keys on the grid', () => {
         return event;
     };
 
-    it('adds a row with Enter on the last row and a column with Tab on the last column', async () => {
-        const worksheet = await load({ worksheets: [{ data: [['a', 'b']] }] });
+    it('adds a row with Enter on the last row, and moves the selection with Tab and Shift+Tab', async () => {
+        const worksheet = await load({ worksheets: [{ data: [['a', 'b', 'c']] }] });
 
         worksheet.updateSelectionFromCoords(1, 0, 1, 0);
         expect(keydown(worksheet.records[0][1].element, 'Tab', 9).defaultPrevented).to.equal(true);
 
-        expect(worksheet.headers.length).to.equal(3);
         expect(worksheet.getSelection()).to.eql([2, 0, 2, 0]);
 
         keydown(worksheet.records[0][2].element, 'Enter', 13);
@@ -174,11 +173,26 @@ describe('Keys on the grid', () => {
         expect(worksheet.getSelection()).to.eql([2, 1, 2, 1]);
 
         keydown(worksheet.records[1][2].element, 'Enter', 13, { shiftKey: true });
-        keydown(worksheet.records[0][2].element, 'Tab', 9, { shiftKey: true });
+        expect(keydown(worksheet.records[0][2].element, 'Tab', 9, { shiftKey: true }).defaultPrevented).to.equal(true);
 
         expect(worksheet.getSelection()).to.eql([1, 0, 1, 0]);
         expect(worksheet.rows.length).to.equal(2);
         expect(worksheet.headers.length).to.equal(3);
+    });
+
+    it('leaves the default action of Tab on the last column and of Shift+Tab on the first column, so that the focus leaves the grid (issue #28)', async () => {
+        const worksheet = await load({ worksheets: [{ data: [['a', 'b']] }] });
+
+        worksheet.updateSelectionFromCoords(1, 0, 1, 0);
+        expect(keydown(worksheet.records[0][1].element, 'Tab', 9).defaultPrevented).to.equal(false);
+
+        // No column is added, and the selection stays
+        expect(worksheet.headers.length).to.equal(2);
+        expect(worksheet.getSelection()).to.eql([1, 0, 1, 0]);
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        expect(keydown(worksheet.records[0][0].element, 'Tab', 9, { shiftKey: true }).defaultPrevented).to.equal(false);
+        expect(worksheet.getSelection()).to.eql([0, 0, 0, 0]);
     });
 
     it('clears the selected cells with Delete', async () => {

@@ -1285,13 +1285,15 @@ declare namespace jspreadsheet {
         allowInsertRow?: boolean;
 
         /**
-         * Allow user to insert a new column using tab key on last column.
+         * It has no effect. Version 5 let Tab on the last column insert a column; Tab there now moves the focus out of
+         * the grid.
+         * @deprecated
          * @default true
          */
         allowManualInsertColumn?: boolean;
 
         /**
-         * Allow user to insert a new row using space key on last row.
+         * Allow user to insert a new row using the Enter key on the last row.
          * @default true
          */
         allowManualInsertRow?: boolean;
