@@ -32,7 +32,7 @@ No `package-lock.json` is committed, so use `npm install`.
 
 Building and testing do not change the source. CI checks the formatting and lint separately, so run `npm run format` before you commit.
 
-`npm run coverage` builds `dist/index.js` without minifying it and with a source map, so c8 reports the coverage of the files in `src/`. It fails when the coverage is under the thresholds in `.c8rc.json`. Add tests with your change so that it stays above them. Run `npm run build` again afterwards for a minified bundle.
+`npm run coverage` builds `dist/index.js` without minifying it and with a source map, so c8 reports the coverage of the files in `src/`. It fails when the coverage of a file is under the thresholds in `.c8rc.json`: 80% of the lines, the statements and the functions, and 70% of the branches. Add tests with your change so that it stays above them. Run `npm run build` again afterwards for a minified bundle.
 
 The tests import the built bundle (`require('../dist/index.js')`), not `src/`. After you change the source, build again before you run a single test file, or the tests run against old code.
 
