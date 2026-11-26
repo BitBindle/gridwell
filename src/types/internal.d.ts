@@ -11,6 +11,7 @@ import type { Spreadsheet } from '../Spreadsheet';
 import type { Worksheet } from '../Worksheet';
 import type { Accessibility } from '../components/Accessibility';
 import type { Cells } from '../components/Cells';
+import type { Keyboard } from '../components/Keyboard';
 import type { Clipboard } from '../components/Clipboard';
 import type { Comments } from '../components/Comments';
 import type { Editor } from '../components/Editor';
@@ -98,6 +99,9 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
 
     /** The roles, the accessible names and the size of the grid. */
     accessibility: Accessibility;
+
+    /** The keys of an open editor and of the grid. */
+    keyboard: Keyboard;
 
     /** The div that holds the link to the Jspreadsheet site, below the table. */
     ads: HTMLDivElement;

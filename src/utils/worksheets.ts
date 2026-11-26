@@ -4,7 +4,6 @@ import libraryBase from './libraryBase.js';
 
 import { parseCSV } from './helpers.js';
 import { cutControls } from '../events/clipboard.js';
-import { scrollControls, wheelControls } from '../events/scroll.js';
 import { download } from './download.js';
 import { getWorksheetActive } from './activeWorksheet.js';
 import { getWorksheetConfig, setConfig } from './config.js';
@@ -24,10 +23,10 @@ const createContent = function (this: Worksheet) {
     obj.content = document.createElement('div');
     obj.content.classList.add('jss_content');
     obj.content.onscroll = function (e) {
-        scrollControls.call(obj, e);
+        obj.view.scroll(e);
     };
     obj.content.onwheel = function (e) {
-        wheelControls.call(obj, e);
+        obj.view.wheel(e);
     };
 };
 

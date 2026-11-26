@@ -1,12 +1,13 @@
 import jSuites from 'jsuites';
 import dispatch from '../utils/dispatch.js';
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
+import libraryBase from '../utils/libraryBase.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { CellValue } from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
 
 /**
- * Which rows a worksheet shows: the search, the filters, the pagination, the order of the rows and the lazy loading. It
+ * Which rows a worksheet shows: the search, the filters, the pagination, the order of the rows, the lazy loading and the scrolling. It
  * keeps the rows that a search or the filters found, the values of the filters and the page.
  *
  * Each worksheet has one, as worksheet.view. The public methods search, resetSearch, openFilter, resetFilters, page,
@@ -840,5 +841,71 @@ export class View {
         obj.selection.updateTabStop();
 
         return test;
+    }
+
+    /**
+     * Load more rows of the lazy loading when the content is scrolled near its top or its bottom.
+     */
+    wheel(e?: WheelEvent) {
+        const obj = this.worksheet;
+
+        if (obj.options.lazyLoading == true) {
+            if (libraryBase.jspreadsheet.timeControlLoading == null) {
+                libraryBase.jspreadsheet.timeControlLoading = setTimeout(function () {
+                    if (obj.content.scrollTop + obj.content.clientHeight >= obj.content.scrollHeight - 10) {
+                        if (obj.view.loadDown()) {
+                            if (obj.content.scrollTop + obj.content.clientHeight > obj.content.scrollHeight - 10) {
+                                obj.content.scrollTop = obj.content.scrollTop - obj.content.clientHeight;
+                            }
+                            obj.selection.updateCorner();
+                        }
+                    } else if (obj.content.scrollTop <= obj.content.clientHeight) {
+                        if (obj.view.loadUp()) {
+                            if (obj.content.scrollTop < 10) {
+                                obj.content.scrollTop = obj.content.scrollTop + obj.content.clientHeight;
+                            }
+                            obj.selection.updateCorner();
+                        }
+                    }
+
+                    libraryBase.jspreadsheet.timeControlLoading = null;
+                }, 100);
+            }
+        }
+    }
+
+    /**
+     * The content of the worksheet scrolls: load more rows, place the frozen columns and close a floating editor.
+     */
+    scroll(e: Event) {
+        const obj = this.worksheet;
+
+        this.wheel();
+
+        if (obj.options.freezeColumns! > 0 && obj.content.scrollLeft != obj.lastScrollLeft) {
+            obj.lastScrollLeft = obj.content.scrollLeft;
+            obj.columns.updateFreezePosition();
+        }
+
+        // Close a floating editor. The text editor is inside the cell and scrolls with it.
+        if (obj.options.lazyLoading == true || obj.options.tableOverflow == true) {
+            if (obj.editor.isOpen() && this.hasFloatingEditor(obj.editor.x) && (e.target as HTMLElement).className.substr(0, 9) != 'jdropdown') {
+                obj.editor.close(obj.editor.cell, true);
+            }
+        }
+    }
+
+    /**
+     * Check if the editor of a column floats over the page. It does not move with the cell.
+     */
+    private hasFloatingEditor(x: number) {
+        const obj = this.worksheet;
+
+        const column = obj.options.columns && obj.options.columns[x];
+        if (!column || !column.type) {
+            return false;
+        }
+
+        return typeof column.type === 'object' || ['dropdown', 'calendar', 'color', 'html', 'image'].indexOf(column.type) >= 0;
     }
 }
