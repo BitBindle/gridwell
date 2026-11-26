@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 
+import formula from '@jspreadsheet/formula';
+
 import jspreadsheet, { type Jspreadsheet } from './support/jspreadsheet';
 
 describe('Calculations', () => {
@@ -666,5 +668,91 @@ describe('The formula chain', () => {
         expect(worksheet.formulas.chain.A1).to.deep.equal(['C1']);
         expect(worksheet.getData()).to.deep.equal([['2', '5', '=A1*3']]);
         expect(worksheet.getValue('C1', true)).to.equal('6');
+    });
+});
+
+describe('Without a formula engine', () => {
+    const warn = console.warn;
+    let warnings: unknown[][] = [];
+
+    beforeEach(() => {
+        jspreadsheet.setFormulaEngine(null);
+        warnings = [];
+        console.warn = (...args: unknown[]) => warnings.push(args);
+    });
+
+    afterEach(() => {
+        console.warn = warn;
+        jspreadsheet.setFormulaEngine(formula);
+    });
+
+    // The first test, because the console says it once
+    it('shows #ENGINE for the formulas, and says once in the console why', () => {
+        const test = jspreadsheet(root, {
+            worksheets: [{ data: [['1', '=A1+1', '=B1*2']] }],
+        });
+        jspreadsheet(root, {
+            worksheets: [{ data: [['=1+1']] }],
+        });
+
+        expect(test[0].getValue('A1', true)).to.equal('1');
+        expect(test[0].getValue('B1', true)).to.equal('#ENGINE');
+        expect(test[0].getValue('C1', true)).to.equal('#ENGINE');
+        // The data keeps the formulas
+        expect(test[0].getData()).to.eql([['1', '=A1+1', '=B1*2']]);
+        expect(warnings.length).to.equal(1);
+        expect(String(warnings[0][0])).to.contain('jspreadsheet.setFormulaEngine');
+    });
+
+    it('gives #ENGINE from executeFormula', () => {
+        const test = jspreadsheet(root, {
+            worksheets: [{ data: [['1']] }],
+        });
+
+        expect(test[0].executeFormula('=A1+1')).to.equal('#ENGINE');
+    });
+
+    it('calculates with the formulaEngine option of the spreadsheet', () => {
+        const test = jspreadsheet(root, {
+            worksheets: [{ data: [['1', '=A1+1']] }],
+            formulaEngine: () => 'calculated',
+        });
+
+        expect(test[0].getValue('B1', true)).to.equal('calculated');
+    });
+
+    it('calculates a formula with an engine that is registered later, when the formula is calculated again', () => {
+        const test = jspreadsheet(root, {
+            worksheets: [{ data: [['1', '=A1+1']] }],
+        });
+
+        expect(test[0].getValue('B1', true)).to.equal('#ENGINE');
+
+        jspreadsheet.setFormulaEngine(formula);
+        test[0].setValue('A1', '5');
+
+        expect(test[0].getValue('B1', true)).to.equal('6');
+    });
+
+    it('gives the engine the formula, the values of its references and the worksheet', () => {
+        const calls: [string, Record<string, unknown>, number | undefined, number | undefined, Jspreadsheet.WorksheetInstance][] = [];
+        jspreadsheet.setFormulaEngine((expression, variables, x, y, instance) => {
+            calls.push([expression, variables, x, y, instance]);
+            return 3;
+        });
+
+        const test = jspreadsheet(root, {
+            worksheets: [{ data: [['1', 'a', '=A1&B1']] }],
+        });
+
+        expect(test[0].getValue('C1', true)).to.equal('3');
+        expect(calls.length).to.equal(1);
+        expect(calls[0].slice(0, 4)).to.eql(['A1&B1', { A1: 1, B1: '"a"' }, 2, 0]);
+        expect(calls[0][4]).to.equal(test[0]);
+    });
+
+    it('throws for an engine that is not a function', () => {
+        // @ts-expect-error -- an application without the typings can pass the module object
+        expect(() => jspreadsheet.setFormulaEngine({ formula })).to.throw(TypeError);
     });
 });

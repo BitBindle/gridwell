@@ -711,7 +711,7 @@ declare namespace jspreadsheet {
         debugFormulas?: boolean;
 
         /**
-         * Calculate formulas with an engine of the application in place of the formula plugin.
+         * Calculate formulas with an engine of the application in place of the engine of `jspreadsheet.setFormulaEngine`.
          * The worksheet does not calculate the referenced cells first. The engine reads their raw values and calculates referenced formulas itself.
          * The worksheet still calculates the dependent cells again when a referenced cell changes.
          * A formula that refers to its own cell shows "#ERROR", and the engine does not get it.
@@ -1913,7 +1913,7 @@ declare namespace jspreadsheet {
          * @param x - Column index of the cell where the formula is.
          * @param y - Row index of the cell where the formula is.
          * @returns The result of the formula, as the formula engine gives it, or '#ERROR'. A formula that refers to a range
-         * can give an array.
+         * can give an array. Without a formula engine, '#ENGINE'.
          */
         executeFormula: (expression: string, x?: number, y?: number) => unknown;
 
@@ -2661,6 +2661,24 @@ declare namespace jspreadsheet {
      */
     type TableSpreadsheetOptions = Omit<SpreadsheetOptions, 'worksheets'> & { worksheets?: WorksheetOptions[] };
 
+    /**
+     * An engine that calculates formulas, such as the default export of `@jspreadsheet/formula`. See
+     * `jspreadsheet.setFormulaEngine`.
+     * @param expression - The formula without the "=". Its references, and its text literals, are names of `variables`.
+     * @param variables - The values of the references and the text literals, by name. A text is a JavaScript string literal.
+     * @param x - Column index of the cell. Undefined for a footer, and when `executeFormula` gets no coordinates.
+     * @param y - Row index of the cell. Undefined for a footer, and when `executeFormula` gets no coordinates.
+     * @param instance - Worksheet of the formula.
+     * @returns Value that the cell shows. If the function throws or returns a function, the cell shows "#ERROR".
+     */
+    type FormulaEngine = (
+        expression: string,
+        variables: Record<string, unknown>,
+        x: number | undefined,
+        y: number | undefined,
+        instance: WorksheetInstance
+    ) => unknown;
+
     interface JSpreadsheet {
         /**
          * Create a spreadsheet from a table, which is replaced by a div in its parent, so it must have a parent: without
@@ -2709,6 +2727,15 @@ declare namespace jspreadsheet {
         ) => WorksheetInstance | Record<string, WorksheetInstance> | undefined;
 
         helpers: JssHelpers;
+
+        /**
+         * Register the engine that calculates the formulas of all spreadsheets, such as the default export of
+         * `@jspreadsheet/formula`. Without an engine, a formula shows "#ENGINE", unless the spreadsheet has the
+         * `formulaEngine` option. Register it before you create the spreadsheets: a formula that was calculated without an
+         * engine shows "#ENGINE" until it is calculated again.
+         * @param engine - The engine, or null to remove it.
+         */
+        setFormulaEngine: (engine: FormulaEngine | null) => void;
 
         /**
          * Defines translations.

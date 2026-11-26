@@ -48,11 +48,19 @@
         "datasheet"
     ],
     "dependencies": {
-        "@jspreadsheet/formula": "^2.0.2",
         "jsuites": "^5.12.0"
+    },
+    "peerDependencies": {
+        "@jspreadsheet/formula": "^2.0.2"
+    },
+    "peerDependenciesMeta": {
+        "@jspreadsheet/formula": {
+            "optional": true
+        }
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
+        "@jspreadsheet/formula": "^2.0.2",
         "@types/chai": "^5.2.3",
         "@types/mocha": "^10.0.10",
         "c8": "^12.0.0",

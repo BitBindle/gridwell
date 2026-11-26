@@ -48,6 +48,26 @@ Jspreadsheet CE is an extensible framework for building sophisticated data-orien
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsuites/dist/jsuites.min.css" type="text/css" />
 ```
 
+### Formulas
+
+The formula engine is a separate package. Install it and register it once, before you create the spreadsheets. Without an engine, a formula shows `#ENGINE`.
+
+```javascript
+import jspreadsheet from 'jspreadsheet-ce';
+import formula from '@jspreadsheet/formula';
+
+jspreadsheet.setFormulaEngine(formula);
+```
+
+With the scripts of a CDN, the engine is the global `formula`:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@jspreadsheet/formula/dist/index.js"></script>
+<script>
+    jspreadsheet.setFormulaEngine(formula);
+</script>
+```
+
 ### Basic Demo
 
 A basic example to integrate the Jspreadsheet in your website to create your first data grid with spreadsheet controls. <https://codepen.io/hchiam/pen/qBRzXKK>
