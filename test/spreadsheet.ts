@@ -1,10 +1,7 @@
 import { expect } from 'chai';
-import jSuites from 'jsuites';
 
+import { stubFetch } from './support/fetch';
 import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
-
-// A request of the persistence, as the stub of jSuites.ajax reads it
-type Request = { url: string; method: string; data: { data: string }; success: (result: object) => void };
 
 describe('Events of the spreadsheet', () => {
     it('gives the handlers the worksheet or the spreadsheet that triggers the event as this', () => {
@@ -69,23 +66,22 @@ describe('Events of the spreadsheet', () => {
     });
 
     describe('Persistence', () => {
-        let ajax: typeof jSuites.ajax;
-        let requests: Request[];
+        let server: ReturnType<typeof stubFetch>;
+
+        // The rows that a request posted, in the data field of its form
+        const posted = (index: number) => JSON.parse((server.requests[index].init.body as FormData).get('data') as string);
 
         beforeEach(() => {
-            ajax = jSuites.ajax;
-            requests = [];
-            jSuites.ajax = function (options: Request) {
-                requests.push(options);
-                options.success({});
-            };
+            server = stubFetch();
+            server.responses['/save'] = { body: {} };
+            server.responses['/other'] = { body: {} };
         });
 
         afterEach(() => {
-            jSuites.ajax = ajax;
+            server.restore();
         });
 
-        it('posts the changed rows to the url and triggers onsave', () => {
+        it('posts the changed rows to the url and triggers onsave', async () => {
             const saved: unknown[] = [];
             const worksheet = jspreadsheet(root, {
                 worksheets: [{ data: [{ first: 'a', second: 'b' }], columns: [{ name: 'first' }, { name: 'second' }], persistence: '/save' }],
@@ -96,12 +92,13 @@ describe('Events of the spreadsheet', () => {
 
             worksheet.setValue('A1', 'x');
             worksheet.setValue('B1', 'y');
+            await server.settle();
 
-            expect(requests.length).to.equal(2);
-            expect(requests[0].url).to.equal('/save');
-            expect(requests[0].method).to.equal('POST');
-            expect(JSON.parse(requests[0].data.data)).to.eql([{ row: 0, data: { first: 'x' } }]);
-            expect(JSON.parse(requests[1].data.data)).to.eql([{ row: 0, data: { second: 'y' } }]);
+            expect(server.requests.length).to.equal(2);
+            expect(server.requests[0].url).to.equal('/save');
+            expect(server.requests[0].init.method).to.equal('POST');
+            expect(posted(0)).to.eql([{ row: 0, data: { first: 'x' } }]);
+            expect(posted(1)).to.eql([{ row: 0, data: { second: 'y' } }]);
             expect(saved).to.eql([[{ row: 0, data: { first: 'x' } }], [{ row: 0, data: { second: 'y' } }]]);
         });
 
@@ -116,17 +113,17 @@ describe('Events of the spreadsheet', () => {
 
             worksheet.setValue('A1', 'x');
 
-            expect(requests.length).to.equal(1);
-            expect(requests[0].url).to.equal('/other');
-            expect(JSON.parse(requests[0].data.data)).to.eql({ replaced: true });
+            expect(server.requests.length).to.equal(1);
+            expect(server.requests[0].url).to.equal('/other');
+            expect(posted(0)).to.eql({ replaced: true });
 
             result = false;
             worksheet.setValue('A1', 'y');
 
-            expect(requests.length).to.equal(1);
+            expect(server.requests.length).to.equal(1);
         });
 
-        it('triggers onbeforesave and onsave for an undo and a redo, so that onbeforesave can cancel the post (issue #57)', () => {
+        it('triggers onbeforesave and onsave for an undo and a redo, so that onbeforesave can cancel the post (issue #57)', async () => {
             const calls: unknown[][] = [];
             let result: false | undefined = undefined;
             const worksheet = jspreadsheet(root, {
@@ -139,9 +136,11 @@ describe('Events of the spreadsheet', () => {
             })[0];
 
             worksheet.setValue('B1', 'x');
+            await server.settle();
             worksheet.undo();
+            await server.settle();
 
-            expect(requests.length).to.equal(2);
+            expect(server.requests.length).to.equal(2);
             expect(calls).to.eql([
                 ['onbeforesave', [{ row: 0, data: { 1: 'x' } }]],
                 ['onsave', [{ row: 0, data: { 1: 'x' } }]],
@@ -152,8 +151,41 @@ describe('Events of the spreadsheet', () => {
             result = false;
             worksheet.redo();
 
-            expect(requests.length).to.equal(2);
+            expect(server.requests.length).to.equal(2);
             expect(worksheet.parent.ignoreEvents).to.equal(false);
+        });
+
+        it('sends the headers that jSuites.ajax sent', async () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: [['a']], persistence: '/save' }] })[0];
+
+            worksheet.setValue('A1', 'x');
+            await server.settle();
+
+            expect(server.requests[0].init.headers).to.eql({ 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' });
+            expect(server.requests[0].init.cache).to.equal('no-cache');
+        });
+
+        it('does not trigger onsave when the server answers with an error, and logs it', async () => {
+            const saved: unknown[] = [];
+            const errors: unknown[] = [];
+            const error = console.error;
+            console.error = (message: unknown) => errors.push(message);
+            server.responses['/save'] = { status: 500 };
+
+            try {
+                const worksheet = jspreadsheet(root, {
+                    worksheets: [{ data: [['a']], persistence: '/save' }],
+                    onsave: (spreadsheet, instance, data) => saved.push(data),
+                })[0];
+
+                worksheet.setValue('A1', 'x');
+                await server.settle();
+            } finally {
+                console.error = error;
+            }
+
+            expect(saved).to.eql([]);
+            expect(String(errors[0])).to.contain('the POST request to /save failed with the status 500');
         });
 
         it('gives the changes to the persistence of a plugin', () => {
@@ -174,7 +206,7 @@ describe('Events of the spreadsheet', () => {
             worksheet.setValue('A1', 'x');
 
             expect(changes).to.eql([[worksheet, 'setValue', ['x']]]);
-            expect(requests.length).to.equal(0);
+            expect(server.requests.length).to.equal(0);
         });
     });
 });

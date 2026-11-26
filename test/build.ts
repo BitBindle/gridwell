@@ -1,10 +1,7 @@
 import { expect } from 'chai';
-import jSuites from 'jsuites';
 
+import { stubFetch } from './support/fetch';
 import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
-
-// A request of the worksheet, as the stub of jSuites.ajax reads it
-type Request = { url: string; dataType?: string; success: (result: unknown) => void };
 
 // Create a spreadsheet and wait until it is built
 function create(options: Jspreadsheet.SpreadsheetOptions) {
@@ -19,40 +16,24 @@ function create(options: Jspreadsheet.SpreadsheetOptions) {
 }
 
 describe('Build of a worksheet', () => {
-    let ajax: typeof jSuites.ajax;
-    let requests: Request[];
-    // The response of the stubbed ajax, by url
-    let responses: Record<string, unknown>;
+    let server: ReturnType<typeof stubFetch>;
 
     beforeEach(() => {
-        ajax = jSuites.ajax;
-        requests = [];
-        responses = {};
-        jSuites.ajax = function (options: object | object[], complete?: () => void) {
-            // An array of requests, then a callback when all of them are done
-            const list = (Array.isArray(options) ? options : [options]) as Request[];
-            for (const request of list) {
-                requests.push(request);
-                request.success.call(request, responses[request.url]);
-            }
-            if (complete) {
-                complete();
-            }
-        };
+        server = stubFetch();
     });
 
     afterEach(() => {
-        jSuites.ajax = ajax;
+        server.restore();
     });
 
     it('loads the data and the headers of a CSV file', async () => {
-        responses['/data.csv'] = 'Name;Age\nAnn;30\nBob;40';
+        server.responses['/data.csv'] = { body: 'Name;Age\nAnn;30\nBob;40' };
 
         const [worksheet] = await create({
             worksheets: [{ csv: '/data.csv', csvHeaders: true, csvDelimiter: ';', columns: [{}, { title: 'Years' }] }],
         });
 
-        expect(requests[0].dataType).to.equal('text');
+        expect(server.requests[0].init.method).to.equal('GET');
         expect(worksheet.getData()).to.deep.equal([
             ['Ann', '30'],
             ['Bob', '40'],
@@ -63,8 +44,8 @@ describe('Build of a worksheet', () => {
     });
 
     it('loads the data from a url, as an array or in the data property of an object', async () => {
-        responses['/rows'] = [['a', 'b']];
-        responses['/object'] = { data: [['c', 'd']] };
+        server.responses['/rows'] = { body: [['a', 'b']] };
+        server.responses['/object'] = { body: { data: [['c', 'd']] } };
 
         const [first, second] = await create({
             worksheets: [{ url: '/rows' }, { url: '/object' }],
@@ -75,16 +56,17 @@ describe('Build of a worksheet', () => {
     });
 
     it('loads the source of a dropdown column from its url before it creates the table', async () => {
-        responses['/options'] = [
+        const options = [
             { id: 1, name: 'One' },
             { id: 2, name: 'Two' },
         ];
+        server.responses['/options'] = { body: options };
 
         const [worksheet] = await create({
             worksheets: [{ data: [[2]], columns: [{ type: 'dropdown', url: '/options' }] }],
         });
 
-        expect(worksheet.options.columns[0].source).to.deep.equal(responses['/options']);
+        expect(worksheet.options.columns[0].source).to.deep.equal(options);
         expect(worksheet.getCell('A1').textContent).to.equal('Two');
     });
 

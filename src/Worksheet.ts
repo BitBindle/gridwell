@@ -1,5 +1,5 @@
-import jSuites from 'jsuites';
 import { translate } from './utils/dictionary.js';
+import { request } from './utils/request.js';
 import libraryBase from './utils/libraryBase.js';
 import { parseCSV } from './utils/helpers.js';
 import { getIdFromColumnName } from './utils/internalHelpers.js';
@@ -147,17 +147,17 @@ export class Worksheet {
             }
         }
 
-        // Remove update
-        jSuites.ajax({
-            url,
-            method: 'POST',
-            dataType: 'json',
-            data: { data: JSON.stringify(data) },
-            success: (result: unknown) => {
+        // Post the data as JSON in the data field of a form
+        const body = new FormData();
+        body.append('data', JSON.stringify(data));
+        // fetch, as jSuites.ajax did, posts to the address "undefined" when there is no url (issue to be opened)
+        request(String(url), 'json', body).then(
+            () => {
                 // Event
                 this.dispatch('onsave', this.parent, this, data);
             },
-        });
+            (error) => console.error(error)
+        );
     }
 
     /**
@@ -939,8 +939,8 @@ export class Worksheet {
             size = this.options.minDimensions[0];
         }
 
-        // Requests
-        const multiple = [];
+        // The requests of the sources of the dropdown columns
+        const requests: Promise<void>[] = [];
 
         // Preparations
         for (let i = 0; i < size; i++) {
@@ -956,30 +956,30 @@ export class Worksheet {
             if (this.options.columns[i].type === 'dropdown') {
                 // if remote content
                 if (this.options.columns[i].url) {
-                    multiple.push({
-                        url: this.options.columns[i].url,
-                        index: i,
-                        method: 'GET',
-                        dataType: 'json',
-                        success: (data: unknown[]) => {
-                            if (!this.options.columns[i].source) {
-                                this.options.columns[i].source = [];
-                            }
+                    const column = this.options.columns[i];
+                    requests.push(
+                        request(column.url!, 'json').then(
+                            (data) => {
+                                if (!column.source) {
+                                    column.source = [];
+                                }
 
-                            for (const option of data) {
-                                this.options.columns[i].source.push(option);
-                            }
-                        },
-                    });
+                                for (const option of data as NonNullable<typeof column.source>) {
+                                    column.source.push(option);
+                                }
+                            },
+                            (error) => console.error(error)
+                        )
+                    );
                 }
             }
         }
 
         // Create the table when is ready
-        if (!multiple.length) {
+        if (!requests.length) {
             this.createTable();
         } else {
-            jSuites.ajax(multiple, () => {
+            Promise.all(requests).then(() => {
                 this.createTable();
             });
         }
@@ -1006,13 +1006,10 @@ export class Worksheet {
         if (this.options.csv) {
             const promise = new Promise<void>((resolve) => {
                 // Load CSV file
-                jSuites.ajax({
-                    url: this.options.csv,
-                    method: 'GET',
-                    dataType: 'text',
-                    success: (result: string) => {
+                request(this.options.csv!, 'text').then(
+                    (result) => {
                         // Convert data
-                        const newData = parseCSV(result, this.options.csvDelimiter);
+                        const newData = parseCSV(result as string, this.options.csvDelimiter);
 
                         // Headers
                         if (this.options.csvHeaders === true && newData.length > 0) {
@@ -1041,26 +1038,27 @@ export class Worksheet {
 
                         resolve();
                     },
-                });
+                    // The worksheet is not built (issue to be opened)
+                    (error) => console.error(error)
+                );
             });
 
             promises.push(promise);
         } else if (this.options.url) {
             const promise = new Promise<void>((resolve) => {
-                jSuites.ajax({
-                    url: this.options.url,
-                    method: 'GET',
-                    dataType: 'json',
+                request(this.options.url!, 'json').then(
                     // The data, or an object with the data in its data property. setData changes rows of objects to arrays.
-                    success: (result: { data?: jspreadsheet.CellValue[][] }) => {
+                    (result) => {
                         // Data
-                        this.options.data = result.data ? result.data : (result as jspreadsheet.CellValue[][]);
+                        this.options.data = (result as { data?: jspreadsheet.CellValue[][] }).data || (result as jspreadsheet.CellValue[][]);
                         // Prepare table
                         this.prepareTable();
 
                         resolve();
                     },
-                });
+                    // The worksheet is not built (issue to be opened)
+                    (error) => console.error(error)
+                );
             });
 
             promises.push(promise);

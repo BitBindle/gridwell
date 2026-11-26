@@ -354,3 +354,12 @@ Jspreadsheet keeps its own dictionary and no longer reads the dictionary of jSui
 `jSuites.setDictionary`, or set `document.dictionary`, to translate the texts of the spreadsheet calls
 `jspreadsheet.setDictionary` instead. It takes the same object, and still passes it to jSuites for the controls that
 jSuites shows, such as the calendar. An empty translation shows the English text again.
+
+## The requests are sent with fetch
+
+The worksheet loads the `csv` and `url` options and the `url` of a dropdown column, and posts the changes of the
+`persistence` option, with `fetch` in place of `jSuites.ajax`. The requests have the same method, body and
+`X-Requested-With` header, but a GET request no longer has the header `Content-Type: text/json`. The `beforeSend`
+handlers of `jSuites.ajax` and `document.ajax` no longer see these requests. A request that fails, or that the server
+answers with a status that is not 2xx, is logged with `console.error`. A dropdown column whose `url` fails is now
+created without its source, where a network error left the worksheet without its table before.
