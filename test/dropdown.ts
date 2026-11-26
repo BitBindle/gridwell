@@ -369,6 +369,89 @@ describe('The dropdown', () => {
         });
     });
 
+    describe('The place of the list', () => {
+        const original = HTMLElement.prototype.getBoundingClientRect;
+
+        afterEach(() => {
+            HTMLElement.prototype.getBoundingClientRect = original;
+            root.removeAttribute('style');
+        });
+
+        /**
+         * Give the dropdown, its list and the root the sizes of a layout, which jsdom does not have. The window is 768 pixels
+         * high.
+         */
+        const layout = (cell: [number, number], list: number, container?: [number, number]) => {
+            HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+                if (this.classList.contains('jdropdown')) {
+                    return { top: cell[0], bottom: cell[1], height: cell[1] - cell[0], left: 10, width: 100 } as DOMRect;
+                }
+                if (this.classList.contains('jdropdown-container')) {
+                    return { height: list } as DOMRect;
+                }
+                if (this === root && container) {
+                    return { top: container[0], bottom: container[1] } as DOMRect;
+                }
+                return original.call(this);
+            };
+        };
+
+        it('opens the list under the cell when it fits', async () => {
+            layout([100, 126], 215);
+            const { list } = await open({});
+
+            expect(list.parentElement!.style.bottom).to.equal('');
+            expect(list.style.maxHeight).to.equal('');
+        });
+
+        it('opens the list over the cell when there is no room under it in the window', async () => {
+            layout([700, 726], 215);
+            const { list } = await open({});
+
+            expect(list.parentElement!.style.bottom).to.equal('27px');
+        });
+
+        it('opens the list over the cell when the element that scrolls has no room under it', async () => {
+            root.style.cssText = 'position: relative; overflow: auto';
+            layout([250, 276], 215, [0, 300]);
+            const { list } = await open({});
+
+            expect(list.parentElement!.style.bottom).to.equal('27px');
+        });
+
+        it('opens the list under the cell when it fits on neither side and there is more room under it, and the list scrolls', async () => {
+            layout([300, 326], 600);
+            const { list } = await open({});
+
+            expect(list.parentElement!.style.bottom).to.equal('');
+            expect(list.style.maxHeight).to.equal('440px');
+        });
+
+        it('opens the list over the cell when it fits on neither side and there is more room over it, and the list scrolls', async () => {
+            layout([450, 476], 600);
+            const { list } = await open({});
+
+            expect(list.parentElement!.style.bottom).to.equal('27px');
+            expect(list.style.maxHeight).to.equal('448px');
+        });
+
+        it('places a list with a fixed position under the cell', async () => {
+            layout([100, 126], 215);
+            const { list } = await open({}, 2, { tableOverflow: true });
+
+            expect(list.parentElement!.style.top).to.equal('126px');
+            expect(list.parentElement!.style.left).to.equal('10px');
+        });
+
+        it('places a list with a fixed position over the cell when there is no room under it in the window', async () => {
+            layout([700, 726], 215);
+            const { list } = await open({}, 2, { tableOverflow: true });
+
+            expect(list.parentElement!.style.top).to.equal('');
+            expect(list.parentElement!.style.bottom).to.equal('69px');
+        });
+    });
+
     describe('The filters of the columns', () => {
         const data = [
             ['Honda', 1],

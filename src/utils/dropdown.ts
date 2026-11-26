@@ -1,4 +1,8 @@
 import { createId } from './ids.js';
+import { getPopupSide } from './position.js';
+
+/** The smallest height in pixels of a list that scrolls because it fits on neither side of its header. */
+const minHeight = 60;
 
 /** An item of a dropdown: a text or a number, which is its value and its label, or an object with an id and a name. */
 export type DropdownItem =
@@ -259,28 +263,41 @@ export class Dropdown {
         const first = this.items.find((item) => this.values.has(item.value));
         this.setCursor(first && !first.element.hidden ? first : null);
 
-        const rect = this.element.getBoundingClientRect();
-        const rectContainer = this.container.getBoundingClientRect();
-        if (this.options.position) {
-            this.container.style.position = 'fixed';
-            if (window.innerHeight < rect.bottom + rectContainer.height) {
-                this.container.style.top = '';
-                this.container.style.bottom = `${window.innerHeight - rect.top + 1}px`;
-            } else {
-                this.container.style.top = `${rect.bottom}px`;
-                this.container.style.bottom = '';
-            }
-            this.container.style.left = `${rect.left}px`;
-        } else {
-            this.container.style.top = '';
-            this.container.style.bottom = window.innerHeight < rect.bottom + rectContainer.height ? `${rect.height + 1}px` : '';
-        }
-        this.container.style.minWidth = `${rect.width}px`;
         this.updateContent();
+        this.place();
 
         this.header.focus({ preventScroll: true });
 
         this.options.onopen?.(this.element, this);
+    }
+
+    /**
+     * Place the list under the header, or over it when it does not fit under it and there is more room over it. A list
+     * that fits on neither side scrolls.
+     */
+    private place() {
+        const rect = this.element.getBoundingClientRect();
+        const container = this.container.style;
+        if (this.options.position) {
+            container.position = 'fixed';
+            container.left = `${rect.left}px`;
+        }
+        container.minWidth = `${rect.width}px`;
+        this.content.style.maxHeight = '';
+
+        const { above, room } = getPopupSide(this.element, this.container, this.options.position);
+        if (this.container.getBoundingClientRect().height > room) {
+            // The border and the margin of the list take two pixels
+            this.content.style.maxHeight = `${Math.max(room - 2, minHeight)}px`;
+        }
+
+        if (this.options.position) {
+            container.top = above ? '' : `${rect.bottom}px`;
+            container.bottom = above ? `${window.innerHeight - rect.top + 1}px` : '';
+        } else {
+            container.top = '';
+            container.bottom = above ? `${rect.height + 1}px` : '';
+        }
     }
 
     /**

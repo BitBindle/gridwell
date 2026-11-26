@@ -484,8 +484,9 @@ They keep the class names of jSuites (`jdropdown`, `jdropdown-header`, `jdropdow
   press on the title of a group no longer chooses its items, and the groups can no longer be collapsed.
 - With `autocomplete`, the items are filtered as you type, without a delay, by the text that their name, title or group
   contains; jSuites read the text as a regular expression.
-- The `options.type` of a dropdown column (`picker`, `searchbar`, `list`) is ignored: the list always opens under the
-  cell, also in a window narrower than 800 pixels, where jSuites showed a picker at the bottom of the screen or a search
+- The `options.type` of a dropdown column (`picker`, `searchbar`, `list`) is ignored: the list opens under the cell, or
+  over it when there is no room under it in the window or in the element that scrolls (a list that fits on neither side
+  opens on the side with more room, and scrolls), also in a window narrower than 800 pixels, where jSuites showed a picker at the bottom of the screen or a search
   bar over the whole screen.
 - The dropdown has none of the other methods of jSuites (`setData`, `setUrl`, `add`, `getPosition`, `setId`, …), no
   sorting, no lazy loading and no `newOptions`.
