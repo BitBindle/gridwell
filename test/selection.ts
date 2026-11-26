@@ -387,3 +387,94 @@ describe('A move that onbeforeselection cancels', () => {
         expect(worksheet.getSelection()).to.eql([1, 0, 1, 0]);
     });
 });
+
+describe('The scroll to the active cell below the header', () => {
+    function rect(left: number, top: number, width: number, height: number) {
+        // The rectangle has no toJSON, which the code does not call
+        return () => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top }) as DOMRect;
+    }
+
+    // The content is 300 pixels high and scrolls 500 pixels. Each header row has the given height.
+    function scrolledWorksheet(headerRowHeights: number[], nestedHeaders?: { title: string; colspan: number }[][]) {
+        const data: string[][] = [];
+        for (let j = 0; j < 60; j++) {
+            data.push([`A${j + 1}`, `B${j + 1}`]);
+        }
+        const worksheet = jspreadsheet(root, { worksheets: [{ data, nestedHeaders, tableOverflow: true }] })[0];
+
+        Object.defineProperty(worksheet.content, 'scrollTop', { value: 500, writable: true });
+        worksheet.content.getBoundingClientRect = rect(0, 0, 400, 300);
+        // The first row starts below the header rows and the top border of the table
+        const header = headerRowHeights.reduce((sum, height) => sum + height, 0);
+        worksheet.tbody.getBoundingClientRect = rect(0, 1 + header - 500, 400, 1200);
+        Array.from(worksheet.thead.children).forEach((row, i) => {
+            Object.defineProperty(row, 'offsetHeight', { value: headerRowHeights[i] });
+        });
+
+        return worksheet;
+    }
+
+    function up(worksheet: Worksheet, cellTop: number) {
+        worksheet.records[30][0].element.getBoundingClientRect = rect(50, cellTop, 100, 20);
+        worksheet.updateSelectionFromCoords(0, 31, 0, 31);
+        worksheet.up();
+        expect(worksheet.selection.range!.map(Number)).to.eql([0, 30, 0, 30]);
+    }
+
+    it('ArrowUp puts the top edge of a cell that the header row covers in part below the header row', () => {
+        const worksheet = scrolledWorksheet([40]);
+
+        up(worksheet, 35);
+
+        expect(worksheet.content.scrollTop).to.equal(500 + 35 - 40);
+    });
+
+    it('ArrowUp puts the top edge of a cell above the view below the header row', () => {
+        const worksheet = scrolledWorksheet([40]);
+
+        up(worksheet, -20);
+
+        expect(worksheet.content.scrollTop).to.equal(500 - 20 - 40);
+    });
+
+    it('keeps the scroll position when ArrowUp selects a cell below the header row', () => {
+        const worksheet = scrolledWorksheet([40]);
+
+        up(worksheet, 40);
+
+        expect(worksheet.content.scrollTop).to.equal(500);
+    });
+
+    it('ArrowRight puts the top edge of a cell that the header row covers in part below the header row', () => {
+        const worksheet = scrolledWorksheet([40]);
+
+        worksheet.records[30][1].element.getBoundingClientRect = rect(150, 35, 100, 20);
+        worksheet.updateSelectionFromCoords(0, 30, 0, 30);
+        worksheet.right();
+
+        expect(worksheet.selection.range!.map(Number)).to.eql([1, 30, 1, 30]);
+        expect(worksheet.content.scrollTop).to.equal(500 + 35 - 40);
+    });
+
+    it('scrolls to the top when ArrowUp selects a cell of the first row, so all the header rows show', () => {
+        const worksheet = scrolledWorksheet([24, 26], [[{ title: 'Group', colspan: 2 }]]);
+
+        // The first row starts 51 pixels below the top of the content when the content does not scroll
+        worksheet.content.scrollTop = 40;
+        worksheet.tbody.getBoundingClientRect = rect(0, 51 - 40, 400, 1200);
+        worksheet.records[0][0].element.getBoundingClientRect = rect(50, 51 - 40, 100, 20);
+        worksheet.updateSelectionFromCoords(0, 1, 0, 1);
+        worksheet.up();
+
+        expect(worksheet.selection.range!.map(Number)).to.eql([0, 0, 0, 0]);
+        expect(worksheet.content.scrollTop).to.equal(0);
+    });
+
+    it('uses the highest header row for nested headers, because each header row sticks at the top', () => {
+        const worksheet = scrolledWorksheet([24, 26], [[{ title: 'Group', colspan: 2 }]]);
+
+        up(worksheet, 20);
+
+        expect(worksheet.content.scrollTop).to.equal(500 + 20 - 26);
+    });
+});
