@@ -190,9 +190,9 @@ export class Accessibility {
         let text = td.textContent;
         if (!text && !td.querySelector('img')) {
             const value = worksheet.getValueFromCoords(x, y);
-            text = value === null || value === undefined ? '' : '' + value;
+            text = value === null || value === undefined ? '' : `${value}`;
         }
 
-        td.setAttribute('aria-label', getColumnNameFromId([x, y]) + (text ? ' ' + text : ''));
+        td.setAttribute('aria-label', getColumnNameFromId([x, y]) + (text ? ` ${text}` : ''));
     }
 }

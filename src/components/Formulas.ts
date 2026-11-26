@@ -66,7 +66,7 @@ export class Formulas {
 
         // Parse both parts of the number
         // Text, then its parts, then the digits of the integer part, then the digits as text
-        let number: string | (string | string[] | null)[] = '' + value;
+        let number: string | (string | string[] | null)[] = `${value}`;
         number = number.split(decimal);
         number[0] = (number[0] as string).match(/[+-]?[0-9]/g);
         if (number[0]) {
@@ -80,9 +80,9 @@ export class Formulas {
         // Is a valid number
         if (number[0] && Number.isInteger(Number(number[0]))) {
             if (!number[1]) {
-                value = Number(number[0] + '.00');
+                value = Number(`${number[0]}.00`);
             } else {
-                value = Number(number[0] + '.' + number[1]);
+                value = Number(`${number[0]}.${number[1]}`);
             }
         } else {
             value = null;
@@ -200,7 +200,7 @@ export class Formulas {
                                 value = '';
                             }
                             // Get column data
-                            if (('' + value).substr(0, 1) == '=') {
+                            if (`${value}`.substr(0, 1) == '=') {
                                 if (typeof formulaResults[reference] !== 'undefined') {
                                     value = formulaResults[reference];
                                 } else {
@@ -209,7 +209,7 @@ export class Formulas {
                                 }
                             }
                             // Type!
-                            if (('' + value).trim() == '') {
+                            if (`${value}`.trim() == '') {
                                 // Null
                                 formulaExpressions[reference] = null;
                             } else {
@@ -223,7 +223,7 @@ export class Formulas {
                                         formulaExpressions[reference] = number;
                                     } else {
                                         // Text as a string literal, with its quotes and backslashes escaped
-                                        formulaExpressions[reference] = JSON.stringify('' + value);
+                                        formulaExpressions[reference] = JSON.stringify(`${value}`);
                                     }
                                 }
                             }
@@ -245,8 +245,8 @@ export class Formulas {
                 // interpreted as part of the formula syntax
                 let literalIndex = 0;
                 const parsedExpression = expression.substr(1).replace(/"(?:[^"]|"")*"/g, (literal) => {
-                    const name = '__JSSSTR' + literalIndex++ + '__';
-                    formulaExpressions[name] = '"' + literal.slice(1, -1).replace(/""/g, '\\"') + '"';
+                    const name = `__JSSSTR${literalIndex++}__`;
+                    formulaExpressions[name] = `"${literal.slice(1, -1).replace(/""/g, '\\"')}"`;
                     return name;
                 });
 
@@ -297,7 +297,7 @@ export class Formulas {
                 for (let i = 0; i < worksheet.formulas.chain[cellId].length; i++) {
                     const cell = getIdFromColumnName(worksheet.formulas.chain[cellId][i], true);
                     // Update cell
-                    const value = '' + worksheet.options.data[cell[1]][cell[0]];
+                    const value = `${worksheet.options.data[cell[1]][cell[0]]}`;
                     if (value.substr(0, 1) == '=') {
                         records.push(worksheet.cells.update(cell[0], cell[1], value, true));
                     } else {
@@ -366,7 +366,7 @@ export class Formulas {
         // Update formulas
         for (const row of worksheet.options.data) {
             for (let i = 0; i < worksheet.options.data[0].length; i++) {
-                const value = '' + row[i];
+                const value = `${row[i]}`;
                 // Is formula
                 if (value.substr(0, 1) == '=') {
                     // Replace tokens

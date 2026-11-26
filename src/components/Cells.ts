@@ -7,7 +7,7 @@ import type jspreadsheet from '../jspreadsheet';
 
 // The date, then the date as text, then its parts
 function validDate(date: jspreadsheet.CellValue | string[] | undefined) {
-    date = '' + date;
+    date = `${date}`;
     if (date.substr(4, 1) == '-' && date.substr(7, 1) == '-') {
         return true;
     } else {
@@ -253,7 +253,7 @@ export class Cells {
 
             // Guarantee single multiple compatibility
             const delimiter = worksheet.options.columns[column].delimiter || ';';
-            const keys = Array.isArray(key) ? key : ('' + key).split(delimiter);
+            const keys = Array.isArray(key) ? key : `${key}`.split(delimiter);
 
             for (const optionKey of keys) {
                 if (typeof optionKey === 'object') {
@@ -293,7 +293,7 @@ export class Cells {
             td.style.display = 'none';
         }
         // Security
-        if (('' + value).substr(0, 1) == '=' && worksheet.options.secureFormulas == true) {
+        if (`${value}`.substr(0, 1) == '=' && worksheet.options.secureFormulas == true) {
             const val = secureFormula(value as string);
             if (val != value) {
                 // Update the data container
@@ -320,7 +320,7 @@ export class Cells {
                 // Create input
                 const element = document.createElement('input');
                 element.type = column.type;
-                element.name = 'c' + c;
+                element.name = `c${c}`;
                 element.checked = value == 1 || value == true || value == 'true' ? true : false;
                 element.onclick = () => {
                     worksheet.setValue(td, element.checked);
@@ -362,7 +362,7 @@ export class Cells {
                 }
             } else if (column && column.type == 'image') {
                 // The value can be a number or a boolean
-                if (value && ('' + value).substr(0, 10) == 'data:image') {
+                if (value && `${value}`.substr(0, 10) == 'data:image') {
                     const img = document.createElement('img');
                     img.src = value as string;
                     td.appendChild(img);
@@ -445,7 +445,7 @@ export class Cells {
             };
         } else {
             // Security
-            if (('' + value).substr(0, 1) == '=' && worksheet.options.secureFormulas == true) {
+            if (`${value}`.substr(0, 1) == '=' && worksheet.options.secureFormulas == true) {
                 const val = secureFormula(value as string);
                 if (val != value) {
                     // Update the data container
@@ -538,7 +538,7 @@ export class Cells {
                         worksheet.records[y][x].element.textContent = value as string;
                     }
                 } else if (column && column.type == 'image') {
-                    value = '' + value;
+                    value = `${value}`;
                     worksheet.options.data[y][x] = value;
                     worksheet.records[y][x].element.innerHTML = '';
                     if (value && value.substr(0, 10) == 'data:image') {
@@ -655,7 +655,7 @@ export class Cells {
     parseValue(i: number, j: number, value: jspreadsheet.CellValue | undefined, cell?: HTMLElement) {
         const worksheet = this.worksheet;
 
-        if (('' + value).substr(0, 1) == '=' && worksheet.parent.config.parseFormulas != false) {
+        if (`${value}`.substr(0, 1) == '=' && worksheet.parent.config.parseFormulas != false) {
             // The cell shows the result as text, as the DOM converts it. An array from a range shows its items with commas.
             value = worksheet.formulas.execute(value as string, i, j) as jspreadsheet.CellValue;
         }
@@ -688,7 +688,7 @@ export class Cells {
                             const t2 = t[1].match(new RegExp('\\(', 'gi'));
                             if (t2) {
                                 if ((value as number) < 0) {
-                                    masked = '(' + masked + ')';
+                                    masked = `(${masked})`;
                                 }
                             }
                         }

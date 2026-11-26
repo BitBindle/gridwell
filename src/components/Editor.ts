@@ -32,9 +32,9 @@ function createEditor<K extends keyof HTMLElementTagNameMap>(cell: HTMLTableCell
 
     // Create dropdown
     const editor = document.createElement(type);
-    editor.style.width = info.width + 'px';
-    editor.style.height = info.height - 2 + 'px';
-    editor.style.minHeight = info.height - 2 + 'px';
+    editor.style.width = `${info.width}px`;
+    editor.style.height = `${info.height - 2}px`;
+    editor.style.minHeight = `${info.height - 2}px`;
 
     // Accessible name of a text editor
     if (type === 'input' || type === 'textarea') {
@@ -152,7 +152,7 @@ export class Editor {
         let value = worksheet.options.data[y][x] as string | number | string[];
         if (column.multiple && !Array.isArray(value)) {
             // A number has no split
-            value = ('' + value).split(column.delimiter || ';');
+            value = `${value}`.split(column.delimiter || ';');
         }
 
         // Create dropdown
@@ -240,8 +240,8 @@ export class Editor {
 
             if (options.position) {
                 // The color picker adds its container after the input
-                ((editor.nextSibling as HTMLElement).children[1] as HTMLElement).style.top = rect.top + rect.height + 'px';
-                ((editor.nextSibling as HTMLElement).children[1] as HTMLElement).style.left = rect.left + 'px';
+                ((editor.nextSibling as HTMLElement).children[1] as HTMLElement).style.top = `${rect.top + rect.height}px`;
+                ((editor.nextSibling as HTMLElement).children[1] as HTMLElement).style.left = `${rect.left}px`;
             }
         } else {
             if (!options.format) {
@@ -284,15 +284,15 @@ export class Editor {
         const rect = cell.getBoundingClientRect();
         const rectContent = div.getBoundingClientRect();
         if (window.innerHeight < rect.bottom + rectContent.height) {
-            div.style.top = rect.bottom - (rectContent.height + 2) + 'px';
+            div.style.top = `${rect.bottom - (rectContent.height + 2)}px`;
         } else {
-            div.style.top = rect.top + 'px';
+            div.style.top = `${rect.top}px`;
         }
 
         if (window.innerWidth < rect.left + rectContent.width) {
-            div.style.left = rect.right - (rectContent.width + 2) + 'px';
+            div.style.left = `${rect.right - (rectContent.width + 2)}px`;
         } else {
-            div.style.left = rect.left + 'px';
+            div.style.left = `${rect.left}px`;
         }
     }
 
@@ -320,12 +320,12 @@ export class Editor {
         const rect = cell.getBoundingClientRect();
         const rectContent = div.getBoundingClientRect();
         if (window.innerHeight < rect.bottom + rectContent.height) {
-            div.style.top = rect.top - (rectContent.height + 2) + 'px';
+            div.style.top = `${rect.top - (rectContent.height + 2)}px`;
         } else {
-            div.style.top = rect.top + 'px';
+            div.style.top = `${rect.top}px`;
         }
 
-        div.style.left = rect.left + 'px';
+        div.style.left = `${rect.left}px`;
     }
 
     /**
@@ -516,7 +516,7 @@ export class Editor {
                     value = img && img.tagName == 'IMG' ? img.src : '';
                 } else if (column && column.type == 'numeric') {
                     value = (cell.children[0] as EditorElement).value;
-                    if (('' + value).substr(0, 1) != '=') {
+                    if (`${value}`.substr(0, 1) != '=') {
                         if (value == '') {
                             value = column.allowEmpty ? '' : 0;
                         }

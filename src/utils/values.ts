@@ -8,7 +8,7 @@ import type { MaskOptions } from '../types/jsuites';
  * The value is a formula
  */
 export function isFormula(value: unknown) {
-    const v = ('' + value)[0];
+    const v = `${value}`[0];
     return v == '=' || v == '#' ? true : false;
 }
 

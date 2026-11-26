@@ -136,7 +136,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
     // Copy
     if (role === 'header' || role === 'row' || role === 'cell') {
         items.push({
-            title: jSuites.translate('Copy') + '...',
+            title: `${jSuites.translate('Copy')}...`,
             shortcut: 'Ctrl + C',
             onclick() {
                 worksheet.clipboard.copy(true);
@@ -146,7 +146,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
         // Paste
         if (navigator && navigator.clipboard) {
             items.push({
-                title: jSuites.translate('Paste') + '...',
+                title: `${jSuites.translate('Paste')}...`,
                 shortcut: 'Ctrl + V',
                 onclick() {
                     if (worksheet.selection.range) {
@@ -164,7 +164,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
     // Save
     if (worksheet.parent.config.allowExport != false) {
         items.push({
-            title: jSuites.translate('Save as') + '...',
+            title: `${jSuites.translate('Save as')}...`,
             shortcut: 'Ctrl + S',
             onclick() {
                 worksheet.download();

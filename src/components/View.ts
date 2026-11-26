@@ -59,10 +59,7 @@ export class View {
              */
             function search(item: CellValue[], query: RegExp, index: number) {
                 for (let i = 0; i < item.length; i++) {
-                    if (
-                        ('' + item[i]).toLowerCase().search(query) >= 0 ||
-                        ('' + worksheet.records[index][i].element.innerHTML).toLowerCase().search(query) >= 0
-                    ) {
+                    if (`${item[i]}`.toLowerCase().search(query) >= 0 || `${worksheet.records[index][i].element.innerHTML}`.toLowerCase().search(query) >= 0) {
                         return true;
                     }
                 }
@@ -208,8 +205,8 @@ export class View {
         // Search filter
         function search(query: string[], x: number, y: number) {
             for (const term of query) {
-                const value = '' + worksheet.options.data[y][x];
-                const label = '' + worksheet.records[y][x].element.innerHTML;
+                const value = `${worksheet.options.data[y][x]}`;
+                const label = `${worksheet.records[y][x].element.innerHTML}`;
                 if (term == value || term == label) {
                     return true;
                 }
