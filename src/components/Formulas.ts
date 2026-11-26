@@ -299,9 +299,9 @@ export class Formulas {
                     if (value.substr(0, 1) === '=') {
                         records.push(worksheet.cells.update(cell[0], cell[1], value, true));
                     } else {
-                        // No longer a formula, remove from the chain
-                        // This changes nothing: Object.keys returns a new array (issue #43)
-                        Object.keys(worksheet.formulas.chain)[i] = null!;
+                        // No longer a formula: remove it from the chain, and read the next cell at the same index
+                        worksheet.formulas.chain[cellId].splice(i, 1);
+                        i--;
                     }
                     this.updateChain(cell[0], cell[1], records);
                 }

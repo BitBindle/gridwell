@@ -349,3 +349,22 @@ describe('Get the data as text, as objects or from a range', () => {
         expect(worksheet.getValue('A2')).to.equal('Rome');
     });
 });
+
+describe('Get the value of a cell that is missing or holds the text undefined', () => {
+    it('getValue and getValueFromCoords return the text undefined of a cell (issue #36)', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['undefined', 'x']] }] })[0];
+
+        expect(worksheet.getValue('A1')).to.equal('undefined');
+        expect(worksheet.getValueFromCoords(0, 0)).to.equal('undefined');
+        expect(worksheet.getValue('B1')).to.equal('x');
+    });
+
+    it('getValue and getValueFromCoords return null for a column outside the data (issue #49)', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['a', 'b'], ['c']], columns: [{}, {}] }] })[0];
+
+        expect(worksheet.getValue('C1')).to.equal(null);
+        expect(worksheet.getValueFromCoords(2, 0)).to.equal(null);
+        expect(worksheet.getValue('A5')).to.equal(null);
+        expect(worksheet.getValueFromCoords(0, 4)).to.equal(null);
+    });
+});

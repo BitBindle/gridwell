@@ -663,8 +663,11 @@ export class Columns {
                     if (!(oldWidth as number[])[i]) {
                         (oldWidth as number[])[i] = parseInt(worksheet.cols[column[i]].colElement.getAttribute('width'));
                     }
-                    // w is the whole array when the array of widths has no value for this column (issue #47)
-                    const w = (Array.isArray(width) && width[i] ? width[i] : width) as number;
+                    // A column without a width in the array of widths keeps its width
+                    const w = Array.isArray(width) ? width[i] : width;
+                    if (!w) {
+                        continue;
+                    }
                     worksheet.cols[column[i]].colElement.setAttribute('width', w);
 
                     if (!worksheet.options.columns) {

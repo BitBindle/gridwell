@@ -839,3 +839,27 @@ describe('Insert columns', () => {
         expect(Array.from(worksheet.rows[0].element.children).slice(1)).to.eql(worksheet.records[0].map((cell) => cell.element));
     });
 });
+
+describe('Set the widths of columns with an array', () => {
+    it('setWidth keeps the width of a column that the array of widths has no width for (issue #47)', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 2], defaultColWidth: 80 }] })[0];
+
+        worksheet.setWidth([0, 1, 2], [100, 120]);
+
+        expect(worksheet.getWidth(0)).to.equal(100);
+        expect(worksheet.getWidth(1)).to.equal(120);
+        expect(worksheet.getWidth(2)).to.equal(80);
+        expect(worksheet.options.columns[2].width).to.not.be.an('array');
+
+        worksheet.setWidth([0, 1], [90]);
+
+        expect(worksheet.getWidth(0)).to.equal(90);
+        expect(worksheet.getWidth(1)).to.equal(120);
+        expect(worksheet.options.columns[1].width).to.equal(120);
+
+        worksheet.undo();
+
+        expect(worksheet.getWidth(0)).to.equal(100);
+        expect(worksheet.getWidth(1)).to.equal(120);
+    });
+});

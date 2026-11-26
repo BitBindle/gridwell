@@ -559,3 +559,18 @@ describe('The formula chain of a worksheet', () => {
         expect(worksheets[1].formulas.chain).to.eql({});
     });
 });
+
+describe('The formula chain', () => {
+    it('removes a cell that is no longer a formula from the chain of the cell it referred to (issue #43)', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['1', '=A1*2', '=A1*3']] }] })[0];
+
+        expect(worksheet.formulas.chain.A1).to.deep.equal(['B1', 'C1']);
+
+        worksheet.setValue('B1', '5');
+        worksheet.setValue('A1', '2');
+
+        expect(worksheet.formulas.chain.A1).to.deep.equal(['C1']);
+        expect(worksheet.getData()).to.deep.equal([['2', '5', '=A1*3']]);
+        expect(worksheet.getValue('C1', true)).to.equal('6');
+    });
+});

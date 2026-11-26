@@ -253,8 +253,7 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
                 for (const child of headers[j].children) {
                     const row = {
                         title: child.textContent,
-                        // The text of the attribute, which the headers read as a number (issue #53)
-                        colspan: (child.getAttribute('colspan') || 1) as number,
+                        colspan: parseInt(child.getAttribute('colspan')) || 1,
                     };
                     cells.push(row);
                 }
