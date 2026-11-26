@@ -670,6 +670,22 @@ declare namespace jspreadsheet {
         about?: boolean | string;
 
         /**
+         * Show a message in place of the alert dialog of the browser, for example "There is a conflict with another merged
+         * cell". False shows no message.
+         * @param text - The translated message.
+         */
+        alert?: false | ((text: string) => void);
+
+        /**
+         * Ask the user to confirm an action in place of the confirm dialog of the browser, for example before an insert of
+         * rows destroys merged cells, or before an action clears the results of a search. The function must answer at once,
+         * and each answer other than true cancels the action. False confirms each action without a dialog.
+         * @param text - The translated question.
+         * @returns True to do the action.
+         */
+        confirm?: false | ((text: string) => boolean);
+
+        /**
          * Spreadsheet plugins. Each function is called with the spreadsheet, an empty object and the spreadsheet options, and returns the plugin.
          */
         plugins?: Record<string, PluginFactory>;

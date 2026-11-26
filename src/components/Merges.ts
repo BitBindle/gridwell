@@ -2,6 +2,7 @@ import { translate } from '../utils/dictionary.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { MergeInfo, Worksheet } from '../types/internal';
+import { showAlert } from '../utils/dialogs.js';
 
 /**
  * The merged cells of a worksheet. The ranges are in options.mergeCells: the colspan, the rowspan and the td elements
@@ -186,7 +187,7 @@ export class Merges {
 
         if (!cellName) {
             if (!worksheet.selection.highlighted.length) {
-                alert(translate('No cells selected'));
+                showAlert(worksheet.parent.config, translate('No cells selected'));
                 return null;
             } else {
                 // The highlighted items are cell records, not td elements
@@ -207,7 +208,7 @@ export class Merges {
         const test = this.check(cellName, colspan, rowspan);
 
         if (test) {
-            alert(translate(test));
+            showAlert(worksheet.parent.config, translate(test));
         } else {
             const cell = getIdFromColumnName(cellName);
             // A missing span becomes 1

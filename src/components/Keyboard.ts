@@ -2,6 +2,7 @@ import { translate } from '../utils/dictionary.js';
 import { copyControls, cutControls, pasteControls } from '../events/clipboard.js';
 import { isCtrl } from '../events/helpers.js';
 import type { EditingWorksheet, SelectedWorksheet, TargetEvent, Worksheet } from '../types/internal';
+import { askConfirm } from '../utils/dialogs.js';
 
 /**
  * The keys on a worksheet: the keys of an open editor, and the keys of the grid, which move the selection, delete,
@@ -81,13 +82,13 @@ export class Keyboard {
         if (worksheet.options.editable !== false) {
             if (worksheet.selection.row != null) {
                 if (worksheet.options.allowDeleteRow !== false) {
-                    if (confirm(translate('Are you sure to delete the selected rows?'))) {
+                    if (askConfirm(worksheet.parent.config, translate('Are you sure to delete the selected rows?'))) {
                         worksheet.deleteRow();
                     }
                 }
             } else if (worksheet.selection.column != null) {
                 if (worksheet.options.allowDeleteColumn !== false) {
-                    if (confirm(translate('Are you sure to delete the selected columns?'))) {
+                    if (askConfirm(worksheet.parent.config, translate('Are you sure to delete the selected columns?'))) {
                         worksheet.deleteColumn();
                     }
                 }

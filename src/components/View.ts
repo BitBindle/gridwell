@@ -5,6 +5,7 @@ import libraryBase from '../utils/libraryBase.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { CellValue } from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
+import { askConfirm } from '../utils/dialogs.js';
 
 /**
  * The row that a load of the lazy loading keeps in place, and its offsetTop: the last row that shows for a load at the
@@ -592,7 +593,7 @@ export class View {
         if (column >= 0) {
             // Merged cells
             if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
-                if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                     return false;
                 } else {
                     // Remove merged cells
