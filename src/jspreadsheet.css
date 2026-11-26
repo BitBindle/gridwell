@@ -769,6 +769,7 @@
 }
 
 .jtoolbar > div {
+    position: relative;
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
@@ -920,6 +921,69 @@
 
 .jtoolbar .jpicker-content > div {
     padding: 6px;
+}
+
+/* The borders item of the toolbar, and its dialog */
+.jtoolbar .jss_borders_button {
+    padding-right: 18px;
+    background-repeat: no-repeat;
+    background-position: top 50% right 0;
+    background-image: url('data:image/svg+xml,%0A%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27none%27 d=%27M0 0h24v24H0V0z%27/%3E%3Cpath d=%27M7 10l5 5 5-5H7z%27 fill=%27gray%27/%3E%3C/svg%3E');
+}
+
+.jss_borders {
+    position: absolute;
+    z-index: 50;
+    box-shadow:
+        0 4px 5px 0 rgba(0, 0, 0, 0.14),
+        0 1px 10px 0 rgba(0, 0, 0, 0.12),
+        0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    background-color: #fff;
+    padding: 4px;
+    cursor: default;
+}
+
+.jss_borders[hidden] {
+    display: none;
+}
+
+.jss_borders button {
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    padding: 6px;
+    margin: 0;
+    color: #333;
+    font: inherit;
+    cursor: pointer;
+}
+
+.jss_borders button:hover {
+    background-color: #efefef;
+}
+
+.jss_borders button:focus-visible {
+    outline: 2px solid var(--jss-border-color);
+    outline-offset: -2px;
+}
+
+.jss_borders button > i {
+    color: inherit;
+}
+
+.jss_borders_types {
+    display: grid;
+    grid-template-columns: repeat(5, auto);
+}
+
+.jss_borders_controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid #eee;
 }
 
 .jcolor {

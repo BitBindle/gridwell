@@ -225,34 +225,34 @@ describe('The color picker', () => {
         it('the color of the borders stays open, and colors the borders', async () => {
             const worksheet = await createWithToolbar();
             const borders = root.querySelector<HTMLElement>('.jss_toolbar [aria-label="Borders"]')!;
-            borders.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            borders.click();
+            const dialog = document.getElementById(borders.getAttribute('aria-controls')!)!;
 
-            const lens = borders.querySelector<HTMLElement>('[aria-label="Border color"]')!;
+            const lens = dialog.querySelector<HTMLElement>('button[aria-label="Border color"]')!;
             lens.click();
-            const picker = borders.querySelector<HTMLElement>('.jcolor')!;
+            const picker = dialog.querySelector<HTMLElement>('.jcolor')!;
             expect(picker.classList.contains('jcolor-focus')).to.equal(true);
 
             picker.querySelector<HTMLElement>('td[data-value="#f44336"]')!.click();
             expect(picker.classList.contains('jcolor-focus')).to.equal(true);
             expect(lens.style.color).to.equal('rgb(244, 67, 54)');
-            picker.querySelector<HTMLButtonElement>('.jcolor-close')!.click();
+            const done = picker.querySelector<HTMLButtonElement>('.jcolor-close')!;
+            done.focus();
+            done.click();
             expect(picker.classList.contains('jcolor-focus')).to.equal(false);
+            // The focus goes back to the button that opened the color picker
+            expect(document.activeElement).to.equal(lens);
 
             // The thickness and the style
-            const [thickness, style] = Array.from(borders.querySelectorAll<HTMLElement>('.jpicker-content .jpicker'));
-            expect(thickness.getAttribute('aria-label')).to.equal('Border thickness');
-            expect(style.getAttribute('aria-label')).to.equal('Border style');
+            const thickness = dialog.querySelector<HTMLElement>('[aria-label="Border thickness"]')!;
+            const style = dialog.querySelector<HTMLElement>('[aria-label="Border style"]')!;
             thickness.querySelectorAll<HTMLElement>('.jpicker-item')[2].click();
             style.querySelectorAll<HTMLElement>('.jpicker-item')[1].click();
 
-            // The borders picker stayed open: border_all
-            expect(borders.classList.contains('jpicker-focus')).to.equal(true);
-            borders.querySelectorAll<HTMLElement>(':scope > .jpicker-content > .jpicker-item')[0].click();
+            // The dialog stayed open: border_all
+            expect(dialog.hidden).to.equal(false);
+            dialog.querySelector<HTMLElement>('button[aria-label="All borders"]')!.click();
             expect(worksheet.getCell('A1').getAttribute('style')).to.contain('border-top: 3px dotted rgb(244, 67, 54)');
-
-            // The key on the lens opens the color picker too
-            lens.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-            expect(picker.classList.contains('jcolor-focus')).to.equal(true);
         });
     });
 });
