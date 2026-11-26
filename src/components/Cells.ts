@@ -448,7 +448,10 @@ export class Cells {
             // On change
             const val = worksheet.dispatch('onbeforechange', worksheet, worksheet.records[y][x].element, x, y, value);
 
-            // If you return something this will overwrite the value
+            // False cancels the change, and another value is the new value
+            if (val === false) {
+                return null;
+            }
             if (val != null) {
                 value = val;
             }

@@ -548,6 +548,10 @@ export class Editor {
             if (worksheet.options.data[y][x] == value) {
                 cell.innerHTML = worksheet.editor.html;
             } else {
+                // A built-in editor goes first, so that a change that onbeforechange cancels leaves the cell as it was
+                if (!(column && typeof column.type === 'object')) {
+                    cell.innerHTML = worksheet.editor.html;
+                }
                 worksheet.setValue(cell, value);
             }
         } else {

@@ -338,6 +338,39 @@ describe('Dispatch events', () => {
         expect(calls).to.eql([[0, 50, 40]]);
     });
 
+    it('cancels the change when onbeforechange returns false (issue #38)', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b']] }],
+            onbeforechange: (instance, cell, x, y, value) => (value === 'no' ? false : undefined),
+            onchange: () => calls.push('onchange'),
+            onafterchanges: () => calls.push('onafterchanges'),
+        })[0];
+
+        worksheet.setValueFromCoords(0, 0, 'no');
+
+        expect(worksheet.getValueFromCoords(0, 0)).to.equal('a');
+        expect(worksheet.getCell('A1').textContent).to.equal('a');
+        expect(calls).to.eql([]);
+        expect(worksheet.history.records.length).to.equal(0);
+
+        // A typed edit that is cancelled leaves the text of the cell
+        const td = worksheet.getCell('B1');
+        worksheet.openEditor(td);
+        td.children[0].value = 'no';
+        worksheet.closeEditor(td, true);
+
+        expect(worksheet.getValueFromCoords(1, 0)).to.equal('b');
+        expect(td.textContent).to.equal('b');
+        expect(td.children.length).to.equal(0);
+        expect(calls).to.eql([]);
+
+        // Another value is written
+        worksheet.setValueFromCoords(0, 0, 'yes');
+
+        expect(worksheet.getValueFromCoords(0, 0)).to.equal('yes');
+    });
+
     it('gives no change, history entry or onafterchanges for a read-only cell (issue #58)', () => {
         const calls = [];
         const worksheet = jspreadsheet(root, {

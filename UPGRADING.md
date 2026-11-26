@@ -256,3 +256,10 @@ otherwise the last result that is not `undefined`. A plugin's `onevent` that ret
 the cell in the history and in `onafterchanges`, with the coordinates and without a value (#58). Now a cell that did
 not change has no record: `onafterchanges` has only the cells that changed, and when no cell changed it does not occur
 and the history gets no entry.
+
+## onbeforechange can cancel a change
+
+Returning `false` from `onbeforechange` cancels the change of the cell, as `false` cancels the other `onbefore…` events.
+Version 5 wrote `false` into the cell instead (#38). Another value that the handler returns is still written instead of
+the new value. A handler that wants the cell to hold `false` returns nothing when the new value is `false`; it cannot
+replace another value with `false`.

@@ -751,7 +751,8 @@ declare namespace jspreadsheet {
         onafterchanges?: (instance: WorksheetInstance, changes: CellChange[]) => void;
 
         /**
-         * Occurs before a column value is changed. If any value is returned, it will be the cell's new value.
+         * Occurs before the value of a cell changes. Return false to cancel the change, or another value to write it
+         * instead of the new value. To write the value false, return nothing: newValue is written.
          * @param instance - Instance of the worksheet where the changes will occur.
          * @param cell - HTML element that represents the cell being changed.
          * @param colIndex - Cell column index being changed.
