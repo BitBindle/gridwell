@@ -548,3 +548,17 @@ global `jSuites` or calls `require('jsuites')`. A page needs only the script and
   jSuites controls of its own translates them with `jSuites.setDictionary`.
 - A press near the top right corner of an element with the class `jclose`, the close icon of the jSuites image editor, no
   longer closes the editor of the cell.
+
+## The pagination puts a space before "entries"
+
+The text after the number of rows on a page starts with a space: "Show 10 entries", where it showed "Show 10entries".
+A translation of `entries` with `jspreadsheet.setDictionary` needs no space at its start any more.
+
+## The language files translate by English text
+
+The files in `resources/lang` have the English texts as their keys, as `jspreadsheet.setDictionary` reads them, such as
+`"Insert a new column before": "Eine neue Spalte davor einfügen"`. Their keys were the names of version 4, such as
+`insertANewColumnBefore`, so they translated nothing (issue #153). They also translate the texts that were added since,
+such as those of the toolbar, the calendar, the filters and the image editor. An application that read the old keys
+reads the English texts instead. The `Copy`, `Paste` and `Save as` items add the dots after the translation, so their
+translations have none.

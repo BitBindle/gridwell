@@ -13,7 +13,7 @@ describe('Translate the texts with setDictionary', () => {
 
     afterEach(() => {
         // An empty translation shows the English text again
-        jspreadsheet.setDictionary({ 'Insert a new column before': '', 'Delete selected columns': '', Update: '' });
+        jspreadsheet.setDictionary({ 'Insert a new column before': '', 'Delete selected columns': '', Update: '', '(Blanks)': '' });
     });
 
     it('translates the items of the context menu', async () => {
@@ -45,5 +45,15 @@ describe('Translate the texts with setDictionary', () => {
         const buttons = [...document.querySelectorAll('.jcalendar-controls button')].map((button) => button.textContent);
         expect(buttons).to.include('Übernehmen');
         worksheet.closeEditor(worksheet.records[0][0].element, false);
+    });
+
+    it('translates the item of the empty cells in the filter of a column (issue #150)', async () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ filters: true, data: [['a'], ['']] }] })[0];
+        jspreadsheet.setDictionary({ '(Blanks)': '(Leer)' });
+
+        worksheet.openFilter(0);
+
+        const items = [...worksheet.filter!.querySelectorAll('.jdropdown-item .jdropdown-description')].map((item) => item.textContent);
+        expect(items).to.eql(['a', '(Leer)']);
     });
 });

@@ -66,6 +66,20 @@ With the scripts of a CDN, the engine is the global `formula`:
 </script>
 ```
 
+### Translations
+
+`jspreadsheet.setDictionary` translates the texts of the spreadsheet: the context menu, the toolbar, the editors, the
+search and the pagination. It takes the translations by English text. The package has translations in
+`resources/lang` (German, Danish, French, Italian, Polish, Portuguese, Vietnamese and Chinese), and `en_GB.json` lists
+all the texts.
+
+```javascript
+import jspreadsheet from 'jspreadsheet-ce';
+import de from 'jspreadsheet-ce/resources/lang/de_DE.json';
+
+jspreadsheet.setDictionary(de);
+```
+
 ### Basic Demo
 
 A basic example to integrate the Jspreadsheet in your website to create your first data grid with spreadsheet controls. <https://codepen.io/hchiam/pen/qBRzXKK>
