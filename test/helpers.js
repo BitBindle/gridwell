@@ -38,3 +38,16 @@ describe('Create the options from a table', () => {
         expect(options.rows).to.eql({ 1: { height: '50px' } });
     });
 });
+
+describe('Create the nested headers from a table', () => {
+    it('createFromTable gives the colspan of the nested headers as a number (issue #53)', () => {
+        const table = document.createElement('table');
+        table.innerHTML =
+            '<thead><tr><th colspan="2">Group</th><th>Single</th></tr><tr><th>A</th><th>B</th><th>C</th></tr></thead><tbody><tr><td>1</td><td>2</td><td>3</td></tr></tbody>';
+
+        const options = jspreadsheet.helpers.createFromTable(table, {});
+
+        expect(options.nestedHeaders[0][0].colspan).to.equal(2);
+        expect(options.nestedHeaders[0][1].colspan).to.equal(1);
+    });
+});
