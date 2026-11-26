@@ -4,16 +4,16 @@ import { getIndex } from '../events/helpers.js';
 import type { DragColumnInfo, DragRowInfo, ResizeColumnInfo, ResizeRowInfo, CellChange, CellValue } from '../jspreadsheet';
 import type { Worksheet, TargetEvent } from '../types/internal';
 
-const doubleDigitFormat = function (v: number | string) {
+function doubleDigitFormat(v: number | string) {
     v = '' + v;
     if (v.length == 1) {
         v = '0' + v;
     }
     return v;
-};
+}
 
 /** The column and the row of the cell that contains the element, from its data-x and data-y attributes. */
-const getCellPosition = function (element: HTMLElement): number[] | undefined {
+function getCellPosition(element: HTMLElement): number[] | undefined {
     const x = element.getAttribute('data-x');
     const y = element.getAttribute('data-y');
     if (x && y) {
@@ -23,7 +23,7 @@ const getCellPosition = function (element: HTMLElement): number[] | undefined {
             return getCellPosition(element.parentNode as HTMLElement);
         }
     }
-};
+}
 
 /**
  * The mouse gestures on a worksheet and their state: a press on a header, a row number, a cell or the pagination, the
@@ -213,7 +213,7 @@ export class Pointer {
         // Update history
         obj.history.add({
             action: 'setValue',
-            records: records,
+            records,
             selection: obj.selection.range && [...obj.selection.range],
         });
 
@@ -221,7 +221,7 @@ export class Pointer {
         obj.data.updateTable();
 
         // On after changes
-        const onafterchangesRecords = records.map(function (record) {
+        const onafterchangesRecords = records.map((record) => {
             return {
                 x: record.x,
                 y: record.y,
@@ -406,7 +406,7 @@ export class Pointer {
                     // Press to rename
                     if (obj.selection.column == columnId && obj.options.allowRenameColumn != false) {
                         // The active worksheet when the timer runs
-                        libraryBase.jspreadsheet.timeControl = setTimeout(function () {
+                        libraryBase.jspreadsheet.timeControl = setTimeout(() => {
                             libraryBase.jspreadsheet.current!.setHeader(columnId);
                         }, 800);
                     }

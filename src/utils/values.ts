@@ -7,15 +7,15 @@ import type { MaskOptions } from '../types/jsuites';
 /**
  * The value is a formula
  */
-export const isFormula = function (value: unknown) {
+export function isFormula(value: unknown) {
     const v = ('' + value)[0];
     return v == '=' || v == '#' ? true : false;
-};
+}
 
 /**
  * Get the mask in the jSuites.mask format
  */
-export const getMask = function (o: Worksheet['options']['columns'][number]): MaskOptions | null {
+export function getMask(o: Worksheet['options']['columns'][number]): MaskOptions | null {
     if (o.format || o.mask || o.locale) {
         const opt: MaskOptions = {};
         if (o.mask) {
@@ -37,4 +37,4 @@ export const getMask = function (o: Worksheet['options']['columns'][number]): Ma
     }
 
     return null;
-};
+}

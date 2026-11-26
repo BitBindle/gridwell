@@ -106,6 +106,7 @@ Modules import each other with the `.js` extension, although the files are `.ts`
 ## Style
 
 -   Prettier: 4 spaces, single quotes, semicolons, a print width of 160 (`.prettierrc`). ESLint uses the recommended rules (`eslint.config.mjs`).
+-   Write a function outside a class as a function declaration (`export function getCellName(...) { ... }`), a callback as an arrow function, and a function in an object literal as a method (`onclick() { ... }`). A handler that reads its element as `this` stays a function expression. ESLint checks these (`func-style`, `prefer-arrow-callback`, `object-shorthand`).
 -   Follow the style of the code around your change. Keep changes small and focused.
 
 ## Commits and pull requests

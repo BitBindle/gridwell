@@ -266,12 +266,12 @@ export class Rows {
             // Keep history
             obj.history.add({
                 action: 'insertRow',
-                rowNumber: rowNumber,
-                numOfRows: numOfRows,
-                insertBefore: insertBefore,
-                rowRecords: rowRecords,
-                rowData: rowData,
-                rowNode: rowNode,
+                rowNumber,
+                numOfRows,
+                insertBefore,
+                rowRecords,
+                rowData,
+                rowNode,
             });
 
             // Remove table references
@@ -492,12 +492,12 @@ export class Rows {
                     // Keep history
                     obj.history.add({
                         action: 'deleteRow',
-                        rowNumber: rowNumber,
-                        numOfRows: numOfRows,
+                        rowNumber,
+                        numOfRows,
                         insertBefore: 1,
-                        rowRecords: rowRecords,
-                        rowData: rowData,
-                        rowNode: rowNode,
+                        rowRecords,
+                        rowData,
+                        rowNode,
                     });
 
                     // Remove table references
@@ -587,7 +587,7 @@ export class Rows {
             // Keeping history of changes
             obj.history.add({
                 action: 'setHeight',
-                row: row,
+                row,
                 oldValue: oldHeight,
                 newValue: height,
             });
@@ -610,7 +610,7 @@ export class Rows {
             rowNumber = [rowNumber];
         }
 
-        rowNumber.forEach(function (rowIndex) {
+        rowNumber.forEach((rowIndex) => {
             obj.rows[rowIndex].element.style.display = '';
         });
     }
@@ -625,7 +625,7 @@ export class Rows {
             rowNumber = [rowNumber];
         }
 
-        rowNumber.forEach(function (rowIndex) {
+        rowNumber.forEach((rowIndex) => {
             obj.rows[rowIndex].element.style.display = 'none';
         });
 
@@ -640,7 +640,7 @@ export class Rows {
         const obj = this.worksheet;
 
         if (processed) {
-            return obj.records[rowNumber].map(function (record) {
+            return obj.records[rowNumber].map((record) => {
                 return record.element.innerHTML;
             });
         } else {

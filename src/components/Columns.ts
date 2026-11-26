@@ -285,7 +285,7 @@ export class Columns {
             // Current column number
             const currentNumOfColumns = Math.max(
                 obj.options.columns.length,
-                ...obj.options.data.map(function (row) {
+                ...obj.options.data.map((row) => {
                     return row.length;
                 })
             );
@@ -362,9 +362,9 @@ export class Columns {
             // Keep history
             obj.history.add({
                 action: 'insertColumn',
-                columnNumber: columnNumber,
-                numOfColumns: numOfColumns,
-                insertBefore: insertBefore,
+                columnNumber,
+                numOfColumns,
+                insertBefore,
                 columns: properties,
                 headers: historyHeaders,
                 cols: historyColgroup,
@@ -604,10 +604,10 @@ export class Columns {
                     // Keeping history of changes
                     obj.history.add({
                         action: 'deleteColumn',
-                        columnNumber: columnNumber,
-                        numOfColumns: numOfColumns,
+                        columnNumber,
+                        numOfColumns,
                         insertBefore: 1,
-                        columns: columns,
+                        columns,
                         headers: historyHeaders,
                         cols: historyColgroup,
                         records: historyRecords,
@@ -708,7 +708,7 @@ export class Columns {
             // Keeping history of changes
             obj.history.add({
                 action: 'setWidth',
-                column: column,
+                column,
                 oldValue: oldWidth,
                 newValue: width,
             });
@@ -890,9 +890,9 @@ export class Columns {
 
             obj.history.add({
                 action: 'setHeader',
-                column: column,
-                oldValue: oldValue,
-                newValue: newValue,
+                column,
+                oldValue,
+                newValue,
             });
 
             // On onchange header

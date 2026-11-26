@@ -3,10 +3,11 @@ import type jspreadsheet from '../jspreadsheet';
 import { Spreadsheet } from '../Spreadsheet.js';
 import type { Worksheet } from '../types/internal';
 
-const factory = function () {};
-
-// A table is replaced by a div. The div gets the spreadsheet in its spreadsheet property.
-factory.spreadsheet = async function (el: HTMLElement & { spreadsheet?: Spreadsheet }, options: jspreadsheet.SpreadsheetOptions, worksheets: Worksheet[]) {
+/**
+ * Create a spreadsheet in an element and build it. A table is replaced by a div. The div gets the spreadsheet in its
+ * spreadsheet property.
+ */
+export async function createSpreadsheet(el: HTMLElement & { spreadsheet?: Spreadsheet }, options: jspreadsheet.SpreadsheetOptions, worksheets: Worksheet[]) {
     if (el.tagName == 'TABLE') {
         if (!options) {
             // The worksheets are added below
@@ -35,6 +36,4 @@ factory.spreadsheet = async function (el: HTMLElement & { spreadsheet?: Spreadsh
     await spreadsheet.build();
 
     return spreadsheet;
-};
-
-export default factory;
+}

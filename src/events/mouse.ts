@@ -10,7 +10,7 @@ import type { TargetEvent } from '../types/internal';
  */
 
 /** The button that is down: buttons, or button, or which in old browsers. */
-const getMouseButton = function (e: MouseEvent) {
+function getMouseButton(e: MouseEvent) {
     if (e.buttons) {
         return e.buttons;
     } else if (e.button) {
@@ -18,10 +18,10 @@ const getMouseButton = function (e: MouseEvent) {
     } else {
         return e.which;
     }
-};
+}
 
 /** The cell that contains the element: the first element up the tree with data-x and data-y. */
-const getCell = function (element: HTMLElement): HTMLElement | undefined {
+function getCell(element: HTMLElement): HTMLElement | undefined {
     if (element.parentNode) {
         const x = element.getAttribute('data-x');
         const y = element.getAttribute('data-y');
@@ -31,9 +31,9 @@ const getCell = function (element: HTMLElement): HTMLElement | undefined {
             return getCell(element.parentNode as HTMLElement);
         }
     }
-};
+}
 
-export const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
+export function mouseUpControls(e: TargetEvent<MouseEvent>) {
     const current = libraryBase.jspreadsheet.current;
 
     if (current) {
@@ -55,9 +55,9 @@ export const mouseUpControls = function (e: TargetEvent<MouseEvent>) {
 
     // Mouse up
     libraryBase.jspreadsheet.isMouseAction = false;
-};
+}
 
-export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
+export function mouseDownControls(e: TargetEvent<MouseEvent>) {
     e = e || window.event;
 
     const mouseButton = getMouseButton(e);
@@ -132,10 +132,10 @@ export const mouseDownControls = function (e: TargetEvent<MouseEvent>) {
     } else {
         libraryBase.jspreadsheet.isMouseAction = false;
     }
-};
+}
 
 // Mouse move controls
-export const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
+export function mouseMoveControls(e: TargetEvent<MouseEvent>) {
     e = e || window.event;
 
     if (!getMouseButton(e)) {
@@ -156,9 +156,9 @@ export const mouseMoveControls = function (e: TargetEvent<MouseEvent>) {
             current.pointer.updateCursor(e);
         }
     }
-};
+}
 
-export const mouseOverControls = function (e: TargetEvent<MouseEvent>) {
+export function mouseOverControls(e: TargetEvent<MouseEvent>) {
     e = e || window.event;
 
     if (!getMouseButton(e)) {
@@ -186,9 +186,9 @@ export const mouseOverControls = function (e: TargetEvent<MouseEvent>) {
         clearTimeout(libraryBase.jspreadsheet.timeControl);
         libraryBase.jspreadsheet.timeControl = null;
     }
-};
+}
 
-export const doubleClickControls = function (e: TargetEvent<MouseEvent>) {
+export function doubleClickControls(e: TargetEvent<MouseEvent>) {
     const current = libraryBase.jspreadsheet.current;
 
     // Jss is selected
@@ -225,4 +225,4 @@ export const doubleClickControls = function (e: TargetEvent<MouseEvent>) {
             }
         }
     }
-};
+}

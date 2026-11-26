@@ -93,7 +93,7 @@ export class Keyboard {
             } else {
                 // Change value
                 obj.setValue(
-                    obj.selection.highlighted.map(function (record) {
+                    obj.selection.highlighted.map((record) => {
                         return record.element;
                     }),
                     ''

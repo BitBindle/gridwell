@@ -2,7 +2,7 @@ import libraryBase from '../utils/libraryBase.js';
 import { getElement } from './helpers.js';
 import type { TargetEvent } from '../types/internal';
 
-export const pasteControls = function (e?: TargetEvent<ClipboardEvent>) {
+export function pasteControls(e?: TargetEvent<ClipboardEvent>) {
     // A paste on a control with the class jss_object outside the worksheet goes to that control
     if (e && e.target && typeof e.target.closest === 'function' && !getElement(e.target)[0] && e.target.closest('.jss_object')) {
         return;
@@ -27,9 +27,9 @@ export const pasteControls = function (e?: TargetEvent<ClipboardEvent>) {
             }
         }
     }
-};
+}
 
-export const cutControls = function (e?: TargetEvent<ClipboardEvent>) {
+export function cutControls(e?: TargetEvent<ClipboardEvent>) {
     const current = libraryBase.jspreadsheet.current;
 
     if (current) {
@@ -39,7 +39,7 @@ export const cutControls = function (e?: TargetEvent<ClipboardEvent>) {
             // oncopy can cancel the cut
             if (copied !== false && current.options.editable != false) {
                 current.setValue(
-                    current.selection.highlighted.map(function (record) {
+                    current.selection.highlighted.map((record) => {
                         return record.element;
                     }),
                     ''
@@ -47,9 +47,9 @@ export const cutControls = function (e?: TargetEvent<ClipboardEvent>) {
             }
         }
     }
-};
+}
 
-export const copyControls = function (e?: TargetEvent<ClipboardEvent>) {
+export function copyControls(e?: TargetEvent<ClipboardEvent>) {
     const current = libraryBase.jspreadsheet.current;
 
     if (current) {
@@ -57,4 +57,4 @@ export const copyControls = function (e?: TargetEvent<ClipboardEvent>) {
             current.clipboard.copy(true);
         }
     }
-};
+}

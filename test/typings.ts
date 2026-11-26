@@ -63,7 +63,7 @@ worksheet.setComments({ A1: 'Comment', B1: null, C1: undefined, D1: '' });
 declare const shadowRoot: ShadowRoot;
 
 // root, plugins and style are spreadsheet options. A number in a worksheet style is the index of a spreadsheet style.
-const pluginFactory = function (spreadsheetInstance: jspreadsheet.SpreadsheetInstance, options: object, spreadsheetConfig: jspreadsheet.SpreadsheetOptions) {
+function pluginFactory(spreadsheetInstance: jspreadsheet.SpreadsheetInstance, options: object, spreadsheetConfig: jspreadsheet.SpreadsheetOptions) {
     return {
         getConfig: () => spreadsheetConfig,
         onevent: () => {},
@@ -71,7 +71,7 @@ const pluginFactory = function (spreadsheetInstance: jspreadsheet.SpreadsheetIns
         contextMenu: (instance: jspreadsheet.WorksheetInstance, x: number | null, y: number | null, e: PointerEvent, items: jspreadsheet.ContextMenuItem[]) =>
             items,
     } as unknown as jspreadsheet.Plugin;
-};
+}
 library(document.createElement('div'), {
     root: shadowRoot,
     plugins: { pluginFactory },
@@ -222,7 +222,7 @@ worksheet.dispatch('oncustom');
 // onevent gets the name of the event, then its arguments. A test of the name in args[0] narrows the arguments.
 const eventOptions: jspreadsheet.SpreadsheetOptions = {
     worksheets: [],
-    onevent: function (...args) {
+    onevent(...args) {
         if (args[0] === 'onselection') {
             assertType<Equals<(typeof args)[1], jspreadsheet.WorksheetInstance>>();
             assertType<Equals<(typeof args)[2], number>>();
@@ -231,14 +231,14 @@ const eventOptions: jspreadsheet.SpreadsheetOptions = {
 };
 void eventOptions;
 // A handler that takes any arguments still fits, but not one that expects a worksheet for every event
-const looseOnevent = function (event: string, ...rest: unknown[]) {
+function looseOnevent(event: string, ...rest: unknown[]) {
     return [event, rest];
-};
+}
 const looseOptions: jspreadsheet.SpreadsheetOptions = { worksheets: [], onevent: looseOnevent };
 void looseOptions;
-const worksheetOnevent = function (event: string, instance: jspreadsheet.WorksheetInstance) {
+function worksheetOnevent(event: string, instance: jspreadsheet.WorksheetInstance) {
     return [event, instance];
-};
+}
 // @ts-expect-error onbeforesave and others give the spreadsheet first
 const worksheetOptions: jspreadsheet.SpreadsheetOptions = { worksheets: [], onevent: worksheetOnevent };
 void worksheetOptions;

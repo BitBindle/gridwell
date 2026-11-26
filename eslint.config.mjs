@@ -38,6 +38,10 @@ export default tseslint.config(
             // any is allowed while the code moves to TypeScript
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-unused-vars': 'off',
+            // Functions are declarations, callbacks arrow functions and functions in objects methods
+            'func-style': ['error', 'declaration'],
+            'prefer-arrow-callback': 'error',
+            'object-shorthand': ['error', 'always'],
         },
     },
     {

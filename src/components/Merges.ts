@@ -283,7 +283,7 @@ export class Merges {
                     column: cellName,
                     colspan: colspan!,
                     rowspan: rowspan!,
-                    data: data,
+                    data,
                 });
 
                 obj.dispatch('onmerge', obj, { [cellName]: [colspan!, rowspan!] });

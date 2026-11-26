@@ -6,7 +6,7 @@ import type { Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
 
 // The date, then the date as text, then its parts
-const validDate = function (date: jspreadsheet.CellValue | string[] | undefined) {
+function validDate(date: jspreadsheet.CellValue | string[] | undefined) {
     date = '' + date;
     if (date.substr(4, 1) == '-' && date.substr(7, 1) == '-') {
         return true;
@@ -18,24 +18,24 @@ const validDate = function (date: jspreadsheet.CellValue | string[] | undefined)
         }
     }
     return false;
-};
+}
 
 /**
  * Strip tags. a is the HTML, then the scripts in it. The DOM converts a number, a boolean or undefined to text.
  */
-const stripScript = function (a: jspreadsheet.CellValue | undefined | HTMLCollectionOf<HTMLScriptElement>) {
+function stripScript(a: jspreadsheet.CellValue | undefined | HTMLCollectionOf<HTMLScriptElement>) {
     const b = new Option();
     b.innerHTML = a as string;
     let c = null;
     // A script in b has a parent
     for (a = b.getElementsByTagName('script'); (c = a[0]); ) c.parentNode!.removeChild(c);
     return b.innerHTML;
-};
+}
 
 /**
  * Secure formula
  */
-const secureFormula = function (oldValue: string) {
+function secureFormula(oldValue: string) {
     let newValue = '';
     let inside = 0;
 
@@ -56,7 +56,7 @@ const secureFormula = function (oldValue: string) {
     }
 
     return newValue;
-};
+}
 
 // The offset from the column of a cell to the column whose options the cell uses, when it is not 0. See getColumnIndex.
 // An offset stays valid when a column outside a merged range is inserted, deleted or moved.
@@ -195,9 +195,9 @@ export class Cells {
 
         const td = this.create(x, y, obj.options.data[y][x], true);
 
-        const getOptions = function (i: number) {
+        function getOptions(i: number) {
             return (obj.options.columns && obj.options.columns[i]) || {};
-        };
+        }
         const before = getOptions(previous);
         const after = getOptions(c);
 
@@ -436,8 +436,8 @@ export class Cells {
         if (obj.records[y][x].element.classList.contains('readonly') == true && !force) {
             // Do nothing
             record = {
-                x: x,
-                y: y,
+                x,
+                y,
                 col: x,
                 row: y,
             };
@@ -469,11 +469,11 @@ export class Cells {
 
             // History format
             record = {
-                x: x,
-                y: y,
+                x,
+                y,
                 col: x,
                 row: y,
-                value: value,
+                value,
                 oldValue: obj.options.data[y][x],
             };
 

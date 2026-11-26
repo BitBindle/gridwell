@@ -2,7 +2,7 @@ import libraryBase from '../utils/libraryBase.js';
 import { getElement } from './helpers.js';
 import type { TargetEvent } from '../types/internal';
 
-export const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
+export function keyDownControls(e: TargetEvent<KeyboardEvent>) {
     // Keys on the worksheet tabs and on the button to add a worksheet do not go to the grid
     const keyPath = typeof e.composedPath === 'function' ? e.composedPath() : [];
     // The first node of the path can be a node without closest, such as the document. The code checks for closest.
@@ -43,10 +43,10 @@ export const keyDownControls = function (e: TargetEvent<KeyboardEvent>) {
                 }
 
                 // The active worksheet when the timer runs
-                libraryBase.jspreadsheet.timeControl = setTimeout(function () {
+                libraryBase.jspreadsheet.timeControl = setTimeout(() => {
                     libraryBase.jspreadsheet.current!.search((e.target as HTMLInputElement).value);
                 }, 200);
             }
         }
     }
-};
+}

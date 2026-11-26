@@ -26,7 +26,7 @@ type ColumnOptions = Worksheet['options']['columns'][number];
  * Put a new editor of the given tag in a cell, with the size of the cell. The editor is the focus target in place of the
  * cell, and a text editor gets the accessible name.
  */
-const createEditor = function <K extends keyof HTMLElementTagNameMap>(cell: HTMLTableCellElement, type: K, label: string) {
+function createEditor<K extends keyof HTMLElementTagNameMap>(cell: HTMLTableCellElement, type: K, label: string) {
     // Cell information
     const info = cell.getBoundingClientRect();
 
@@ -51,7 +51,7 @@ const createEditor = function <K extends keyof HTMLElementTagNameMap>(cell: HTML
     cell.appendChild(editor);
 
     return editor;
-};
+}
 
 /**
  * The cell editor of a worksheet: which cell is being edited, where it is, and its HTML before the editor opened. It
@@ -179,14 +179,14 @@ export class Editor {
         obj.dispatch('oncreateeditor', obj, cell, x, y, null, column);
 
         const options: DropdownOptions = {
-            data: data,
+            data,
             multiple: column.multiple ? true : false,
             autocomplete: column.autocomplete ? true : false,
             opened: true,
-            value: value,
+            value,
             width: '100%',
             position: obj.options.tableOverflow == true || obj.parent.config.fullscreen == true ? true : false,
-            onclose: function () {
+            onclose() {
                 obj.editor.close(cell, true);
             },
         };
@@ -229,7 +229,7 @@ export class Editor {
         options.value = obj.options.data[y][x] as string;
         options.opened = true;
         // The color picker gives its instance as the second argument, and the calendar nothing
-        options.onclose = function (el: HTMLElement, value?: unknown) {
+        options.onclose = (el: HTMLElement, value?: unknown) => {
             obj.editor.close(cell, true);
         };
         // Current value
@@ -391,7 +391,7 @@ export class Editor {
             }
         }
 
-        editor.onblur = function () {
+        editor.onblur = () => {
             obj.editor.close(cell, true);
         };
         editor.scrollLeft = editor.scrollWidth;
@@ -609,12 +609,12 @@ export class Editor {
             // Update history
             obj.history.add({
                 action: 'setValue',
-                records: records,
+                records,
                 selection: obj.selection.range && [...obj.selection.range],
             });
 
             // On after changes
-            const onafterchangesRecords = records.map(function (record) {
+            const onafterchangesRecords = records.map((record) => {
                 return {
                     x: record.x,
                     y: record.y,
