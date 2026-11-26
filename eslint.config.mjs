@@ -79,18 +79,10 @@ export default tseslint.config(
         },
     },
     {
-        files: ['test/**/*.js', 'mocha.config.js'],
+        files: ['mocha.config.js'],
         languageOptions: {
             globals: {
                 ...globals.node,
-                ...globals.mocha,
-                describe: 'readonly',
-                it: 'readonly',
-                before: 'readonly',
-                after: 'readonly',
-                beforeEach: 'readonly',
-                afterEach: 'readonly',
-                root: 'readonly',
             },
         },
     },
