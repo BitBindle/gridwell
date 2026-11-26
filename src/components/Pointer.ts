@@ -100,7 +100,6 @@ export class Pointer {
         }
 
         // Copy data procedure
-        let posx = 0;
         let posy = 0;
 
         for (let j = y1; j <= y2; j++) {
@@ -113,7 +112,7 @@ export class Pointer {
             if (data[posy] == null) {
                 posy = 0;
             }
-            posx = 0;
+            let posx = 0;
 
             // Data columns
             if (left !== x1) {

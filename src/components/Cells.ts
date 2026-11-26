@@ -27,7 +27,7 @@ function validDate(date: jspreadsheet.CellValue | string[] | undefined) {
 function stripScript(a: jspreadsheet.CellValue | undefined | HTMLCollectionOf<HTMLScriptElement>) {
     const b = new Option();
     b.innerHTML = a as string;
-    let c = null;
+    let c;
     // A script in b has a parent
     for (a = b.getElementsByTagName('script'); (c = a[0]); ) c.parentNode!.removeChild(c);
     return b.innerHTML;
@@ -662,8 +662,8 @@ export class Cells {
         const options = worksheet.options.columns?.[this.getColumnIndex(i, j)];
         if (options && !isFormula(value)) {
             // Mask options
-            let opt = null;
-            if ((opt = getMask(options))) {
+            const opt = getMask(options);
+            if (opt) {
                 // eslint-disable-next-line eqeqeq -- a text that is a number equals the number
                 if (value && value == Number(value)) {
                     value = Number(value);
