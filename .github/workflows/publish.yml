@@ -1,0 +1,66 @@
+# Publish the package to npm, with npm trusted publishing (OIDC): npm takes the identity of this workflow instead of a
+# token, and adds the provenance of the package. Run it by hand from the Actions tab, on master.
+#
+# The major and minor version come from package.json. The patch is the next one on npm for that minor version, so
+# change package.json only for a new major or minor version.
+name: Publish
+
+on:
+    workflow_dispatch:
+
+# One publish at a time, so that two runs do not take the same patch
+concurrency:
+    group: publish
+    cancel-in-progress: false
+
+permissions:
+    contents: write # push the tag of the version
+    id-token: write # npm trusted publishing
+
+jobs:
+    publish:
+        if: github.ref == 'refs/heads/master'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org
+
+            # Trusted publishing needs npm 11.5.1 or later
+            - run: npm install -g npm@latest
+
+            - run: npm install --no-audit --no-fund
+
+            - name: Choose the version
+              id: version
+              run: |
+                  version=$(node .github/scripts/next-version.cjs)
+                  if [ -n "$(git ls-remote --tags origin "refs/tags/v$version")" ]; then
+                      echo "The tag v$version exists already" >&2
+                      exit 1
+                  fi
+                  echo "version=$version" >> "$GITHUB_OUTPUT"
+                  echo "Publishing $version" >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Set the version
+              env:
+                  VERSION: ${{ steps.version.outputs.version }}
+              run: npm version "$VERSION" --no-git-tag-version
+
+            - run: npm run prettier
+            - run: npm run lint
+            - run: npm run typecheck
+            # Builds with the version, then runs the tests
+            - run: npm test
+
+            - run: npm publish --access public --provenance
+
+            - name: Tag the version
+              env:
+                  VERSION: ${{ steps.version.outputs.version }}
+              run: |
+                  git tag "v$VERSION"
+                  git push origin "v$VERSION"

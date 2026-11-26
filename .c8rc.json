@@ -1,5 +1,5 @@
 {
-    "exclude": ["mocha.config.js", "test/**", "node_modules/**", "dist/webpack/**"],
+    "exclude": ["mocha.config.js", "test/**", ".github/**", "node_modules/**", "dist/webpack/**"],
     "excludeAfterRemap": true,
     "reporter": ["text-summary", "text", "lcov"],
     "checkCoverage": true,

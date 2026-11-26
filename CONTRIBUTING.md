@@ -11,6 +11,30 @@
 [AGENTS.md](AGENTS.md) describes the code, the commands and the conventions. `npm start` serves a page with a grid on
 [http://localhost:8000](http://localhost:8000/).
 
+## Releases
+
+The **Publish** workflow (`.github/workflows/publish.yml`) publishes `@bitbindle/gridwell` to npm. Run it from the
+Actions tab, on `master`. The major and minor version come from `package.json`, and the workflow gives the next patch:
+with `6.0.0` in `package.json` and `6.0.0` to `6.0.4` on npm, it publishes `6.0.5`. For a new minor or major version,
+change `package.json` to `6.1.0` or `7.0.0` in a pull request. The workflow runs the checks and the tests, publishes
+with provenance, and pushes the tag `v6.0.5`.
+
+The workflow uses npm trusted publishing: npm trusts this workflow, and no npm token is stored in GitHub. A maintainer
+sets it up once on npmjs.com:
+
+1. Create the npm organization `bitbindle`, which owns the scope `@bitbindle`.
+2. The trusted publisher is a setting of a package, so publish the first version by hand. Log in with `npm login`, then
+   on an up-to-date `master` run `npm install` and `npm publish --access public`. It publishes the version in
+   `package.json`, `6.0.0`.
+3. In the settings of the package on npmjs.com, add a trusted publisher for GitHub Actions: the organization
+   `BitBindle`, the repository `jspreadsheet-ce`, the workflow `publish.yml`, and no environment.
+4. In the same settings, set the publishing access to require two-factor authentication and disallow tokens. The
+   workflow still publishes, and a stolen token cannot.
+
+Trusted publishing needs npm 11.5.1 or later, which the workflow installs, and a runner hosted by GitHub. The
+`repository` in `package.json` must stay `https://github.com/BitBindle/jspreadsheet-ce`, the repository that the
+provenance names.
+
 # Code of Conduct
 
 ### Our Pledge
