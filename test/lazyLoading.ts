@@ -52,6 +52,46 @@ describe('Lazy loading', () => {
         expect(worksheet.selection.range!.map(Number)).to.eql([0, first, 0, first]);
     });
 
+    it('attaches only the rows of the page when more than 100 rows are attached', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }],
+        });
+
+        const worksheet = instance[0];
+
+        // The keyboard attaches the last page, and an insert on the last page attaches all the new rows
+        worksheet.updateSelectionFromCoords(0, 298, 0, 298);
+        worksheet.down();
+        worksheet.insertRow(150);
+        expect(worksheet.tbody.children.length).to.equal(250);
+
+        // The keyboard attaches the first page
+        worksheet.updateSelectionFromCoords(0, 1, 0, 1);
+        worksheet.up();
+
+        const attached = Array.from(worksheet.tbody.children).map((row) => Number(row.getAttribute('data-y')));
+        expect(attached).to.eql(rows(100).map((row, y) => y));
+    });
+
+    it('attaches only the rows of the page after an insert in the middle of the attached rows', () => {
+        const instance = jspreadsheet(root, {
+            worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }],
+        });
+
+        const worksheet = instance[0];
+
+        // The first page is attached, and an insert next to an attached row attaches all the new rows
+        worksheet.insertRow(150, 50);
+        expect(worksheet.tbody.children.length).to.equal(250);
+
+        // The keyboard attaches the last page
+        worksheet.updateSelectionFromCoords(0, 448, 0, 448);
+        worksheet.down();
+
+        const attached = Array.from(worksheet.tbody.children).map((row) => Number(row.getAttribute('data-y')));
+        expect(attached).to.eql(rows(100).map((row, y) => 350 + y));
+    });
+
     it('loads the page of the selected result when the keyboard moves with a search', () => {
         const data: string[][] = [];
         for (let j = 0; j < 600; j++) {
