@@ -823,7 +823,7 @@ describe('Keyboard focus', () => {
         const container = document.createElement('div');
         root.appendChild(container);
         const lazy = jspreadsheet(container, { worksheets: [{ data: createData(300, 2), lazyLoading: true, tableOverflow: true, tableHeight: '300px' }] })[0];
-        lazy.content.dispatchEvent(new window.WheelEvent('wheel', { bubbles: true }));
+        lazy.content.dispatchEvent(new window.WheelEvent('wheel', { bubbles: true, deltaY: 100 }));
         await new Promise((resolve) => {
             setTimeout(resolve, 150);
         });

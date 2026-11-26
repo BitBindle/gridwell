@@ -625,3 +625,11 @@ in English and as the dictionary translates them.
 The header of the days in the calendar shows their short names, such as `Mon`, where it showed their first letters. The
 full names are still their accessible names. The language files in `resources/lang` translate the names of the months
 and the days, full and short.
+
+## Lazy loading loads rows in the direction of the scroll
+
+With `lazyLoading`, a load keeps the rows in the view in place, and rows load only in the direction of the scroll. The
+direction comes from `deltaY` of the last wheel event, else from the change of `scrollTop`. A wheel event without
+`deltaY`, for example a horizontal scroll, and a scroll event that does not change `scrollTop`, load no rows. Version 5
+loaded rows for such an event when the view was near the bottom. To load rows from code, use the keyboard methods, such
+as `down`.
