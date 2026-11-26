@@ -86,11 +86,7 @@ export class Styles {
             // Position
             const cell = getIdFromColumnName(cellId, true);
 
-            if (
-                worksheet.records[cell[1]] &&
-                worksheet.records[cell[1]][cell[0]] &&
-                (worksheet.records[cell[1]][cell[0]].element.classList.contains('readonly') === false || force)
-            ) {
+            if (worksheet.records[cell[1]]?.[cell[0]] && (worksheet.records[cell[1]][cell[0]].element.classList.contains('readonly') === false || force)) {
                 // Current value
                 const currentValue = (worksheet.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key];
 
@@ -175,7 +171,7 @@ export class Styles {
         for (const key of Object.keys(o)) {
             // Position
             const cell = getIdFromColumnName(key, true);
-            if (worksheet.records[cell[1]] && worksheet.records[cell[1]][cell[0]]) {
+            if (worksheet.records[cell[1]]?.[cell[0]]) {
                 worksheet.records[cell[1]][cell[0]].element.setAttribute('style', '');
             }
         }

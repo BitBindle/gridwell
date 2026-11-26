@@ -215,11 +215,7 @@ export class Clipboard {
                     // Labels
                     let label;
 
-                    if (
-                        worksheet.options.columns &&
-                        worksheet.options.columns[i] &&
-                        (worksheet.options.columns[i].type === 'checkbox' || worksheet.options.columns[i].type === 'radio')
-                    ) {
+                    if (worksheet.options.columns?.[i] && (worksheet.options.columns[i].type === 'checkbox' || worksheet.options.columns[i].type === 'radio')) {
                         label = value;
                     } else {
                         label = quote(worksheet.records[j][i].element.innerHTML, div);
@@ -254,11 +250,14 @@ export class Clipboard {
     }
 
     /**
-     * Copy method
-     *
-     * @param bool highlighted - Get only highlighted cells
-     * @param delimiter - \t default to keep compatibility with excel
-     * @return string value
+     * Copy the selected cells, or give them as text.
+     * @param highlighted - Copy only the highlighted cells.
+     * @param delimiter - The delimiter of the columns. A tab by default, as spreadsheet applications use.
+     * @param returnData - Return the text instead of copying it.
+     * @param includeHeaders - Put the headers before the first row.
+     * @param download - The text is for a download.
+     * @param isCut - The cells are cut.
+     * @param processed - Copy the shown values instead of the data.
      */
     copy(highlighted: boolean, delimiter?: string, returnData?: boolean, includeHeaders?: boolean, download?: boolean, isCut?: boolean, processed?: boolean) {
         const worksheet = this.worksheet;
@@ -394,12 +393,9 @@ export class Clipboard {
             while (row[i] != null) {
                 let value = row[i];
 
-                if (worksheet.options.columns && worksheet.options.columns[i] && worksheet.options.columns[i].type === 'calendar') {
+                if (worksheet.options.columns?.[i]?.type === 'calendar') {
                     // The jsuites typings miss extractDateFromString
-                    value = jSuites.calendar.extractDateFromString(
-                        value,
-                        (worksheet.options.columns[i].options && worksheet.options.columns[i].options.format) || 'YYYY-MM-DD'
-                    );
+                    value = jSuites.calendar.extractDateFromString(value, worksheet.options.columns[i].options?.format || 'YYYY-MM-DD');
                 }
 
                 // Update and keep history
@@ -409,7 +405,7 @@ export class Clipboard {
                 // Update all formulas in the chain
                 worksheet.formulas.updateChain(colIndex, rowIndex, records);
                 // Style
-                if (style && style[styleIndex]) {
+                if (style?.[styleIndex]) {
                     const columnName = getColumnNameFromId([colIndex, rowIndex]);
                     newStyle[columnName] = style[styleIndex];
                     // The style text of one cell
@@ -451,12 +447,10 @@ export class Clipboard {
     }
 
     /**
-     * Jspreadsheet paste method
-     *
-     * @param x target column
-     * @param y target row
-     * @param data paste data. if data hash is the same as the copied data, apply style from copied cells
-     * @return string value
+     * Paste text in the cells from a cell.
+     * @param x - The column of the first cell.
+     * @param y - The row of the first cell.
+     * @param data - The text. When it is the text that the worksheet copied, the cells also get the styles of the copied cells.
      */
     paste(x: number, y: number, data: string) {
         const worksheet = this.worksheet;
@@ -580,23 +574,17 @@ export class Clipboard {
             // Get data
             data += worksheet.clipboard.copy(false, worksheet.options.csvDelimiter, true, includeHeaders, true, undefined, processed);
 
-            // Download element
+            // A link that downloads the file
             const blob = new Blob([`\uFEFF${data}`], { type: 'text/csv;charset=utf-8;' });
 
-            // IE Compatibility
-            if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-                window.navigator.msSaveOrOpenBlob(blob, `${worksheet.options.csvFileName || worksheet.options.worksheetName}.csv`);
-            } else {
-                // Download element
-                const pom = document.createElement('a');
-                pom.setAttribute('target', '_top');
-                const url = URL.createObjectURL(blob);
-                pom.href = url;
-                pom.setAttribute('download', `${worksheet.options.csvFileName || worksheet.options.worksheetName}.csv`);
-                document.body.appendChild(pom);
-                pom.click();
-                pom.parentNode!.removeChild(pom);
-            }
+            const pom = document.createElement('a');
+            pom.setAttribute('target', '_top');
+            const url = URL.createObjectURL(blob);
+            pom.href = url;
+            pom.setAttribute('download', `${worksheet.options.csvFileName || worksheet.options.worksheetName}.csv`);
+            document.body.appendChild(pom);
+            pom.click();
+            pom.parentNode!.removeChild(pom);
         }
     }
 }

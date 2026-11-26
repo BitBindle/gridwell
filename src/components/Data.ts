@@ -31,7 +31,7 @@ export class Data {
         }
 
         // Prepare data
-        if (worksheet.options.data && worksheet.options.data[0]) {
+        if (worksheet.options.data?.[0]) {
             if (!Array.isArray(worksheet.options.data[0])) {
                 const rows: CellValue[][] = [];
                 for (const record of worksheet.options.data) {
@@ -50,7 +50,7 @@ export class Data {
         // Adjust minimal dimensions
         let j = 0;
         let i = 0;
-        const size_i = (worksheet.options.columns && worksheet.options.columns.length) || 0;
+        const size_i = worksheet.options.columns?.length || 0;
         const size_j = worksheet.options.data.length;
         const min_i = worksheet.options.minDimensions[0];
         const min_j = worksheet.options.minDimensions[1];
@@ -143,10 +143,9 @@ export class Data {
     }
 
     /**
-     * Get the value from a cell
-     *
-     * @param object cell
-     * @return string value
+     * Get the value of a cell.
+     * @param cell - The cell name, for example "B3".
+     * @param processedValue - Get the value that the cell shows instead of the data.
      */
     getValue(cell: string, processedValue?: boolean): CellValue | null {
         const worksheet = this.worksheet;
@@ -162,7 +161,7 @@ export class Data {
         let value = null;
 
         if (x != null && y != null) {
-            if (worksheet.records[y] && worksheet.records[y][x] && processedValue) {
+            if (worksheet.records[y]?.[x] && processedValue) {
                 value = worksheet.records[y][x].element.innerHTML;
             } else {
                 if (worksheet.options.data[y] && worksheet.options.data[y][x] !== 'undefined') {
@@ -175,11 +174,10 @@ export class Data {
     }
 
     /**
-     * Get the value from a coords
-     *
-     * @param int x
-     * @param int y
-     * @return string value
+     * Get the value of a cell from its coordinates.
+     * @param x - The column.
+     * @param y - The row.
+     * @param processedValue - Get the value that the cell shows instead of the data.
      */
     getValueFromCoords(x: number, y: number, processedValue?: boolean): CellValue | null {
         const worksheet = this.worksheet;
@@ -187,7 +185,7 @@ export class Data {
         let value = null;
 
         if (x != null && y != null) {
-            if (worksheet.records[y] && worksheet.records[y][x] && processedValue) {
+            if (worksheet.records[y]?.[x] && processedValue) {
                 value = worksheet.records[y][x].element.innerHTML;
             } else {
                 if (worksheet.options.data[y] && worksheet.options.data[y][x] !== 'undefined') {
@@ -200,11 +198,10 @@ export class Data {
     }
 
     /**
-     * Set a cell value
-     *
-     * @param mixed cell destination cell
-     * @param string value value
-     * @return void
+     * Set the value of cells.
+     * @param cell - The cell name, the td of the cell, or a list of cell names, tds or { x, y, value } objects.
+     * @param value - The new value.
+     * @param force - Also change read-only cells.
      */
     // any: a cell element gives the text of data-x and data-y to updateCell (issue #52)
     setValue(cell: any, value?: CellValue, force?: boolean): void {
@@ -225,7 +222,7 @@ export class Data {
         } else {
             let x = null;
             let y = null;
-            if (cell && cell.getAttribute) {
+            if (cell?.getAttribute) {
                 x = cell.getAttribute('data-x');
                 y = cell.getAttribute('data-y');
             }
@@ -299,12 +296,11 @@ export class Data {
     }
 
     /**
-     * Set a cell value based on coordinates
-     *
-     * @param int x destination cell
-     * @param int y destination cell
-     * @param string value
-     * @return void
+     * Set the value of a cell from its coordinates.
+     * @param x - The column.
+     * @param y - The row.
+     * @param value - The new value.
+     * @param force - Also change a read-only cell.
      */
     setValueFromCoords(x: number, y: number, value: CellValue, force?: boolean): void {
         const worksheet = this.worksheet;
@@ -340,10 +336,11 @@ export class Data {
     }
 
     /**
-     * Get the whole table data
-     *
-     * @param bool get highlighted cells only
-     * @return array data
+     * Get the data of the worksheet.
+     * @param highlighted - Get only the highlighted cells.
+     * @param processed - Get the values that the cells show instead of the data.
+     * @param delimiter - Return text, with this delimiter between the columns.
+     * @param asJson - Return the rows as objects, by column name.
      */
     // The public typings have one overload for each kind of result: rows of values, text with a delimiter, or objects with asJson
     get(highlighted?: boolean, processed?: boolean, delimiter?: string | null, asJson?: boolean) {

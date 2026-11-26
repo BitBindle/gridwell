@@ -665,7 +665,7 @@ export class Worksheet {
         this.colgroupContainer.appendChild(tempCol);
 
         // Nested
-        if (this.options.nestedHeaders && this.options.nestedHeaders.length > 0 && this.options.nestedHeaders[0] && this.options.nestedHeaders[0][0]) {
+        if (this.options.nestedHeaders && this.options.nestedHeaders.length > 0 && this.options.nestedHeaders[0]?.[0]) {
             for (const nestedHeader of this.options.nestedHeaders) {
                 this.thead.appendChild(this.columns.createNestedHeader(nestedHeader));
             }
@@ -895,9 +895,7 @@ export class Worksheet {
     }
 
     /**
-     * Prepare the jspreadsheet table
-     *
-     * @Param config
+     * Prepare the table of the worksheet.
      */
     private prepareTable() {
         // Lazy loading
@@ -914,7 +912,7 @@ export class Worksheet {
         let size = this.options.columns.length;
         let keys;
 
-        if (this.options.data && typeof this.options.data[0] !== 'undefined') {
+        if (typeof this.options.data?.[0] !== 'undefined') {
             if (!Array.isArray(this.options.data[0])) {
                 // Data keys
                 keys = Object.keys(this.options.data[0]);
@@ -949,7 +947,7 @@ export class Worksheet {
             if (!this.options.columns[i]) {
                 this.options.columns[i] = {};
             }
-            if (!this.options.columns[i].name && keys && keys[i]) {
+            if (!this.options.columns[i].name && keys?.[i]) {
                 this.options.columns[i].name = keys[i];
             }
 

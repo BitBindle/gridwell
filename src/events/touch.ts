@@ -57,7 +57,7 @@ export function touchEndControls(e: TargetEvent<TouchEvent>) {
         clearTimeout(libraryBase.jspreadsheet.timeControl);
         libraryBase.jspreadsheet.timeControl = null;
         // Element
-        if (libraryBase.jspreadsheet.tmpElement && libraryBase.jspreadsheet.tmpElement.children[0].tagName === 'INPUT') {
+        if (libraryBase.jspreadsheet.tmpElement?.children[0].tagName === 'INPUT') {
             // The test of the tag name above
             (libraryBase.jspreadsheet.tmpElement.children[0] as HTMLInputElement).focus();
         }

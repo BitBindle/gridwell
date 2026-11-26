@@ -24,7 +24,7 @@ export class Keyboard {
     editorKeys(e: TargetEvent<KeyboardEvent>) {
         // keyDownControls calls it only while an editor is open
         const worksheet = this.worksheet as EditingWorksheet;
-        const column = worksheet.options.columns && worksheet.options.columns[worksheet.cells.getColumnIndex(worksheet.editor.x, worksheet.editor.y)];
+        const column = worksheet.options.columns?.[worksheet.cells.getColumnIndex(worksheet.editor.x, worksheet.editor.y)];
 
         if (e.which === 27) {
             // Escape
@@ -35,15 +35,15 @@ export class Keyboard {
             e.preventDefault();
         } else if (e.which === 13) {
             // Enter
-            if (column && column.type === 'calendar') {
+            if (column?.type === 'calendar') {
                 worksheet.editor.close(worksheet.editor.cell, true);
-            } else if (column && column.type === 'dropdown') {
+            } else if (column?.type === 'dropdown') {
                 // Do nothing
             } else {
                 // Alt enter -> do not close editor
                 if (
                     (worksheet.options.wordWrap === true ||
-                        (column && column.wordWrap === true) ||
+                        column?.wordWrap === true ||
                         (worksheet.options.data[worksheet.editor.y][worksheet.editor.x] &&
                             (worksheet.options.data[worksheet.editor.y][worksheet.editor.x] as string).length > 200)) &&
                     e.altKey
@@ -224,7 +224,7 @@ export class Keyboard {
                 // Start edition
                 worksheet.editor.open(worksheet.records[rowId][columnId].element, true, e);
                 // Prevent entries in the calendar
-                if (column && column.type === 'calendar') {
+                if (column?.type === 'calendar') {
                     e.preventDefault();
                 }
             }

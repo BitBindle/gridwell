@@ -218,7 +218,7 @@ export function doubleClickControls(e: TargetEvent<MouseEvent>) {
             if (jssTable[1] === 2 && current.options.editable !== false) {
                 if (!current.editor.isOpen()) {
                     const cell = getCell(e.target);
-                    if (cell && cell.classList.contains('highlight')) {
+                    if (cell?.classList.contains('highlight')) {
                         current.editor.open(cell as HTMLTableCellElement, undefined, e);
                     }
                 }

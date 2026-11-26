@@ -83,7 +83,7 @@ export class Comments {
             } else {
                 worksheet.records[cellCoords![1]!][cellCoords![0]].element.classList.remove('jss_comments');
 
-                if (worksheet.options.comments && worksheet.options.comments[cellName]) {
+                if (worksheet.options.comments?.[cellName]) {
                     delete worksheet.options.comments[cellName];
                 }
             }

@@ -275,9 +275,8 @@ export class Spreadsheet {
     }
 
     /**
-     * Activate/Disable fullscreen
-     * use programmatically : table.fullscreen(); or table.fullscreen(true); or table.fullscreen(false);
-     * @Param {boolean} activate
+     * Show the spreadsheet in full screen, or show it in the page again.
+     * @param activate - Whether to show it in full screen. Without it, the spreadsheet switches.
      */
     fullscreen(activate?: boolean) {
         // If activate not defined, get reverse options.fullscreen

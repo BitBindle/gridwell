@@ -7,7 +7,7 @@ export function getCaretIndex(this: Spreadsheet, e: Node) {
     let d;
 
     // Applications call it as jspreadsheet.helpers.getCaretIndex, so this is a spreadsheet only when the caller sets it.
-    if (this && this.config && this.config.root) {
+    if (this && this.config?.root) {
         // An element has no getSelection, and a shadow root has it only in some browsers (issue #46)
         d = this.config.root as unknown as Window;
     } else {
@@ -40,10 +40,8 @@ export function invert(o: Record<string, string | number>) {
 }
 
 /**
- * Get letter based on a number
- *
- * @param {number} columnNumber
- * @return string letter
+ * Get the letters of a column, for example "B" for 1.
+ * @param columnNumber - The column, from 0.
  */
 export function getColumnName(columnNumber: number) {
     let dividend = columnNumber + 1;
@@ -314,7 +312,7 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
                     }
 
                     // Avoid problems with hidden cells
-                    if ((content[j].children[i] as HTMLElement).style && (content[j].children[i] as HTMLElement).style.display === 'none') {
+                    if ((content[j].children[i] as HTMLElement).style?.display === 'none') {
                         (content[j].children[i] as HTMLElement).style.display = '';
                     }
                     // Get style
@@ -333,7 +331,7 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
                 }
 
                 // Row Height
-                if (content[j].style && content[j].style.height) {
+                if (content[j].style?.height) {
                     rows[rowNumber] = { height: content[j].style.height };
                 }
 

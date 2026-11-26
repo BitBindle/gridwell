@@ -382,6 +382,14 @@ behaviour, and turns on the ESLint rule that keeps the new style, so that new co
 42. **The rest.** Optional chaining and `??` where they mean the same as the `&&` chain they replace, the code for
     Internet Explorer (which cannot run the classes of the bundle) goes, and the JSDoc comments left from the old code
     (`@Param`, `@return string value`) describe their parameters.
+    Done. `prefer-optional-chain` found 138 chains. ESLint's fix changed the 43 that mean the same in any place. The
+    other 95 are optional chains only where the chain is a condition (of an `if`, a loop, `!`, `? :`, or the left side
+    of `&&` and `||`), where `undefined` and the falsy value of the old chain both count as false, or where the object
+    of the chain is an array or an object that is there or `undefined`, as `options.columns` is. `??` is not used:
+    the defaults with `||` also replace `0` and the empty text, and the code may rely on that. The `download` of the
+    CSV used `navigator.msSaveOrOpenBlob` when it was there, which only Internet Explorer and the old Edge had; it
+    uses the link with the `download` attribute in every browser. 31 JSDoc comments with the old tags
+    (`@param int x`, `@Param {boolean} activate`, `@return void`) describe each parameter as `@param name - text`.
 
 ## Rules for each step
 

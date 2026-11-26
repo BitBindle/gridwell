@@ -119,7 +119,7 @@ export class Merges {
         }
 
         // A first cell in a column with the type hidden shows the range with the options of another column
-        if (worksheet.options.columns && worksheet.options.columns[cell[0]] && worksheet.options.columns[cell[0]].type === 'hidden') {
+        if (worksheet.options.columns?.[cell[0]]?.type === 'hidden') {
             worksheet.cells.render(cell[0], cell[1]);
         }
     }
@@ -149,18 +149,15 @@ export class Merges {
     }
 
     /**
-     * Merge cells
-     * @param cellName
-     * @param colspan
-     * @param rowspan
-     * @param ignoreHistoryAndEvents
+     * Get a merged range, or all of them.
+     * @param cellName - The first cell of the range. Without it, the ranges by first cell.
      */
     get(cellName?: string) {
         const worksheet = this.worksheet;
 
         let data: Record<string, [number, number]> | [number, number] | null = {};
         if (cellName) {
-            if (worksheet.options.mergeCells && worksheet.options.mergeCells[cellName]) {
+            if (worksheet.options.mergeCells?.[cellName]) {
                 data = [worksheet.options.mergeCells[cellName][0], worksheet.options.mergeCells[cellName][1]];
             } else {
                 data = null;
@@ -177,11 +174,11 @@ export class Merges {
     }
 
     /**
-     * Merge cells
-     * @param cellName
-     * @param colspan
-     * @param rowspan
-     * @param ignoreHistoryAndEvents
+     * Merge cells.
+     * @param cellName - The first cell of the range. Without it, the highlighted cells.
+     * @param colspan - The number of columns.
+     * @param rowspan - The number of rows.
+     * @param ignoreHistoryAndEvents - Add no history and trigger no event.
      */
     set(cellName?: string, colspan?: number, rowspan?: number, ignoreHistoryAndEvents?: boolean | 1): null | undefined {
         const worksheet = this.worksheet;
@@ -210,7 +207,7 @@ export class Merges {
 
         const cell = getIdFromColumnName(cellName, true);
 
-        if (worksheet.options.mergeCells && worksheet.options.mergeCells[cellName]) {
+        if (worksheet.options.mergeCells?.[cellName]) {
             if (worksheet.records[cell[1]][cell[0]].element.getAttribute('data-merged')) {
                 test = 'Cell already merged';
             }
@@ -286,13 +283,15 @@ export class Merges {
     }
 
     /**
-     * Remove merge by cellname
-     * @param cellName
+     * Split a merged range.
+     * @param cellName - The first cell of the range.
+     * @param data - The values of the other cells of the range, which the history kept.
+     * @param keepOptions - Keep the range in the options.
      */
     remove(cellName: string, data?: jspreadsheet.CellValue[] | null, keepOptions?: boolean) {
         const worksheet = this.worksheet;
 
-        if (worksheet.options.mergeCells && worksheet.options.mergeCells[cellName]) {
+        if (worksheet.options.mergeCells?.[cellName]) {
             const beforeMerges = { [cellName]: worksheet.options.mergeCells[cellName] };
             const cell = getIdFromColumnName(cellName, true);
             worksheet.records[cell[1]][cell[0]].element.removeAttribute('colspan');
@@ -313,7 +312,7 @@ export class Merges {
                         worksheet.records[cell[1] + j][cell[0] + i].element.style.display =
                             worksheet.headers[cell[0] + i].style.display === 'none' ? 'none' : '';
                         // Recover data
-                        if (data && data[index]) {
+                        if (data?.[index]) {
                             worksheet.cells.update(cell[0] + i, cell[1] + j, data[index]);
                         }
                         index++;
@@ -329,7 +328,7 @@ export class Merges {
             }
 
             // A first cell in a column with the type hidden uses the options of its own column again
-            if (worksheet.options.columns && worksheet.options.columns[cell[0]] && worksheet.options.columns[cell[0]].type === 'hidden') {
+            if (worksheet.options.columns?.[cell[0]]?.type === 'hidden') {
                 worksheet.cells.render(cell[0], cell[1]);
             }
 

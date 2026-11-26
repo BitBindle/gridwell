@@ -144,7 +144,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
         });
 
         // Paste
-        if (navigator && navigator.clipboard) {
+        if (navigator?.clipboard) {
             items.push({
                 title: `${jSuites.translate('Paste')}...`,
                 shortcut: 'Ctrl + V',

@@ -22,9 +22,9 @@ export class Columns {
     count() {
         const worksheet = this.worksheet;
 
-        let numberOfColumns = (worksheet.options.columns && worksheet.options.columns.length) || 0;
+        let numberOfColumns = worksheet.options.columns?.length || 0;
 
-        if (worksheet.options.data && typeof worksheet.options.data[0] !== 'undefined') {
+        if (typeof worksheet.options.data?.[0] !== 'undefined') {
             // Data keys
             const keys = Object.keys(worksheet.options.data[0]);
 
@@ -44,28 +44,21 @@ export class Columns {
         const worksheet = this.worksheet;
 
         // Create col global control
-        const colWidth =
-            (worksheet.options.columns && worksheet.options.columns[colNumber] && worksheet.options.columns[colNumber].width) ||
-            worksheet.options.defaultColWidth ||
-            100;
-        const colAlign =
-            (worksheet.options.columns && worksheet.options.columns[colNumber] && worksheet.options.columns[colNumber].align) ||
-            worksheet.options.defaultColAlign ||
-            'center';
+        const colWidth = worksheet.options.columns?.[colNumber]?.width || worksheet.options.defaultColWidth || 100;
+        const colAlign = worksheet.options.columns?.[colNumber]?.align || worksheet.options.defaultColAlign || 'center';
 
         // Create header cell
         worksheet.headers[colNumber] = document.createElement('td');
-        worksheet.headers[colNumber].textContent =
-            (worksheet.options.columns && worksheet.options.columns[colNumber] && worksheet.options.columns[colNumber].title) || getColumnName(colNumber);
+        worksheet.headers[colNumber].textContent = worksheet.options.columns?.[colNumber]?.title || getColumnName(colNumber);
 
         worksheet.headers[colNumber].setAttribute('data-x', colNumber);
         setHeaderRole(worksheet.headers[colNumber], colNumber);
         worksheet.headers[colNumber].style.textAlign = colAlign;
-        if (worksheet.options.columns && worksheet.options.columns[colNumber] && worksheet.options.columns[colNumber].title) {
+        if (worksheet.options.columns?.[colNumber]?.title) {
             worksheet.headers[colNumber].setAttribute('title', worksheet.headers[colNumber].innerText);
         }
         // id is not in the public typings of a column
-        if (worksheet.options.columns && worksheet.options.columns[colNumber] && worksheet.options.columns[colNumber].id) {
+        if (worksheet.options.columns?.[colNumber]?.id) {
             worksheet.headers[colNumber].setAttribute('id', worksheet.options.columns[colNumber].id);
         }
 
@@ -79,7 +72,7 @@ export class Columns {
         };
 
         // Hidden column
-        if (worksheet.options.columns && worksheet.options.columns[colNumber] && worksheet.options.columns[colNumber].type === 'hidden') {
+        if (worksheet.options.columns?.[colNumber]?.type === 'hidden') {
             worksheet.headers[colNumber].style.display = 'none';
             colElement.style.display = 'none';
         }
@@ -203,7 +196,7 @@ export class Columns {
                     worksheet.rows[row].element.insertBefore(td, worksheet.rows[row].element.children[col + 1]);
                 }
 
-                if (worksheet.options.columns && worksheet.options.columns[col] && typeof worksheet.options.columns[col].render === 'function') {
+                if (worksheet.options.columns?.[col] && typeof worksheet.options.columns[col].render === 'function') {
                     // The test above makes it a function, which TypeScript does not narrow through the index
                     (worksheet.options.columns[col].render as NonNullable<jspreadsheet.BaseColumn['render']>)(
                         td,
@@ -234,12 +227,7 @@ export class Columns {
     private widenNestedHeaders(columnIndex: number, numOfColumns: number) {
         const worksheet = this.worksheet;
 
-        if (
-            worksheet.options.nestedHeaders &&
-            worksheet.options.nestedHeaders.length > 0 &&
-            worksheet.options.nestedHeaders[0] &&
-            worksheet.options.nestedHeaders[0][0]
-        ) {
+        if (worksheet.options.nestedHeaders && worksheet.options.nestedHeaders.length > 0 && worksheet.options.nestedHeaders[0]?.[0]) {
             for (let j = 0; j < worksheet.options.nestedHeaders.length; j++) {
                 const colspan = parseInt(worksheet.options.nestedHeaders[j][worksheet.options.nestedHeaders[j].length - 1].colspan) + numOfColumns;
                 worksheet.options.nestedHeaders[j][worksheet.options.nestedHeaders[j].length - 1].colspan = colspan;
@@ -256,13 +244,11 @@ export class Columns {
     }
 
     /**
-     * Insert a new column
-     *
-     * @param mixed - num of columns to be added or data to be added in one single column
-     * @param int columnNumber - number of columns to be created
-     * @param bool insertBefore
-     * @param object properties - column properties
-     * @return void
+     * Insert columns.
+     * @param mixed - The number of columns, or the data of one new column.
+     * @param columnNumber - The column next to which the columns go. The last column by default.
+     * @param insertBefore - Put the columns before that column instead of after it.
+     * @param properties - The options of the new columns.
      */
     insert(
         mixed?: number | jspreadsheet.CellValue[],
@@ -392,9 +378,9 @@ export class Columns {
     }
 
     /**
-     * Move column
-     *
-     * @return void
+     * Move a column.
+     * @param o - The column to move.
+     * @param d - The position it goes to.
      */
     move(o: number, d: number): false | undefined {
         const worksheet = this.worksheet;
@@ -479,11 +465,9 @@ export class Columns {
     }
 
     /**
-     * Delete a column by number
-     *
-     * @param integer columnNumber - reference column to be excluded
-     * @param integer numOfColumns - number of columns to be excluded from the reference column
-     * @return void
+     * Delete columns.
+     * @param columnNumber - The first column to delete. Without it, the selected columns, or the last column.
+     * @param numOfColumns - The number of columns to delete.
      */
     delete(columnNumber?: number, numOfColumns?: number): false | undefined {
         const worksheet = this.worksheet;
@@ -603,12 +587,7 @@ export class Columns {
                     worksheet.selection.conditionalUpdate(0, columnNumber, columnNumber + numOfColumns - 1);
 
                     // Adjust nested headers
-                    if (
-                        worksheet.options.nestedHeaders &&
-                        worksheet.options.nestedHeaders.length > 0 &&
-                        worksheet.options.nestedHeaders[0] &&
-                        worksheet.options.nestedHeaders[0][0]
-                    ) {
+                    if (worksheet.options.nestedHeaders && worksheet.options.nestedHeaders.length > 0 && worksheet.options.nestedHeaders[0]?.[0]) {
                         for (let j = 0; j < worksheet.options.nestedHeaders.length; j++) {
                             const colspan = parseInt(worksheet.options.nestedHeaders[j][worksheet.options.nestedHeaders[j].length - 1].colspan) - numOfColumns;
                             worksheet.options.nestedHeaders[j][worksheet.options.nestedHeaders[j].length - 1].colspan = colspan;
@@ -643,10 +622,8 @@ export class Columns {
     }
 
     /**
-     * Get the column width
-     *
-     * @param int column column number (first column is: 0)
-     * @return int current width
+     * Get the width of a column.
+     * @param column - The column, from 0. Without it, the widths of all columns.
      */
     getWidth(column?: number): number | (number | string)[] {
         const worksheet = this.worksheet;
@@ -657,11 +634,7 @@ export class Columns {
             // Get all headers
             data = [];
             for (let i = 0; i < worksheet.headers.length; i++) {
-                data.push(
-                    (worksheet.options.columns && worksheet.options.columns[i] && worksheet.options.columns[i].width) ||
-                        worksheet.options.defaultColWidth ||
-                        100
-                );
+                data.push(worksheet.options.columns?.[i]?.width || worksheet.options.defaultColWidth || 100);
             }
         } else {
             data = parseInt(worksheet.cols[column].colElement.getAttribute('width'));
@@ -671,11 +644,10 @@ export class Columns {
     }
 
     /**
-     * Set the column width
-     *
-     * @param int column number (first column is: 0)
-     * @param int new column width
-     * @param int old column width
+     * Set the width of columns.
+     * @param column - The column, from 0, or the columns.
+     * @param width - The new width, or the widths of the columns.
+     * @param oldWidth - The width before the change, for the history. Read from the column by default.
      */
     setWidth(column: number | number[], width: number | number[], oldWidth?: number | number[]) {
         const worksheet = this.worksheet;
@@ -885,7 +857,7 @@ export class Columns {
 
         if (worksheet.headers[column]) {
             const oldValue = worksheet.headers[column].textContent;
-            const onchangeheaderOldValue = (worksheet.options.columns && worksheet.options.columns[column] && worksheet.options.columns[column].title) || '';
+            const onchangeheaderOldValue = worksheet.options.columns?.[column]?.title || '';
 
             if (!newValue) {
                 newValue = getColumnName(column);
@@ -951,7 +923,7 @@ export class Columns {
             const column = [];
             // Header classes for this cell
             for (let x = 0; x < numberOfColumns; x++) {
-                if (worksheet.options.columns[headerIndex] && worksheet.options.columns[headerIndex].type === 'hidden') {
+                if (worksheet.options.columns[headerIndex]?.type === 'hidden') {
                     numberOfColumns++;
                 }
                 column.push(headerIndex);
@@ -984,7 +956,7 @@ export class Columns {
         if (worksheet.options.freezeColumns! > 0) {
             for (let i = 0; i < worksheet.options.freezeColumns!; i++) {
                 let columnWidth;
-                if (worksheet.options.columns && worksheet.options.columns[i] && worksheet.options.columns[i].width !== undefined) {
+                if (worksheet.options.columns?.[i]?.width !== undefined) {
                     columnWidth = parseInt(worksheet.options.columns[i].width);
                 } else {
                     columnWidth = worksheet.options.defaultColWidth !== undefined ? parseInt(worksheet.options.defaultColWidth) : 100;
@@ -1017,9 +989,9 @@ export class Columns {
             for (let i = 0; i < freezeColumns; i++) {
                 if (i > 0) {
                     // Must check if the previous column is hidden or not to determin whether the width shoule be added or not!
-                    if (!worksheet.options.columns || !worksheet.options.columns[i - 1] || worksheet.options.columns[i - 1].type !== 'hidden') {
+                    if (worksheet.options.columns?.[i - 1]?.type !== 'hidden') {
                         let columnWidth;
-                        if (worksheet.options.columns && worksheet.options.columns[i - 1] && worksheet.options.columns[i - 1].width !== undefined) {
+                        if (worksheet.options.columns?.[i - 1]?.width !== undefined) {
                             columnWidth = parseInt(worksheet.options.columns[i - 1].width);
                         } else {
                             columnWidth = worksheet.options.defaultColWidth !== undefined ? parseInt(worksheet.options.defaultColWidth) : 100;

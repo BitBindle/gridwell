@@ -109,6 +109,8 @@ Modules import each other with the `.js` extension, although the files are `.ts`
 -   Write a function outside a class as a function declaration (`export function getCellName(...) { ... }`), a callback as an arrow function, and a function in an object literal as a method (`onclick() { ... }`). A handler that reads its element as `this` stays a function expression. ESLint checks these (`func-style`, `prefer-arrow-callback`, `object-shorthand`).
 -   Build strings with template literals (`` `${width}px` ``), not `+`. ESLint checks this (`prefer-template`).
 -   Compare with `===` and `!==`. `x == null` tests for null and undefined. Where a loose comparison is wanted, such as a cell value that can be a number or its text, keep `==` with an `eslint-disable-next-line eqeqeq -- reason` comment. ESLint checks this (`eqeqeq`).
+-   Read a property of a value that can be missing with optional chaining (`column?.type`), not `column && column.type`. ESLint checks this (`@typescript-eslint/prefer-optional-chain`).
+-   Write JSDoc comments as a sentence, then `@param name - text` for each parameter, without types: the types are in the code.
 -   Loop over the items with `for (const item of items)`, and over an object with `for (const [key, value] of Object.entries(o))`; keep an index loop when the index is needed. Search a list with `includes`. ESLint checks these (`@typescript-eslint/prefer-for-of`, `@typescript-eslint/prefer-includes`).
 -   Follow the style of the code around your change. Keep changes small and focused.
 

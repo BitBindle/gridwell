@@ -91,7 +91,7 @@ export class Selection {
     private getMergedColspan(element: HTMLElement, x: number, y: number) {
         const worksheet = this.worksheet;
 
-        const merged = worksheet.options.mergeCells && worksheet.options.mergeCells[getColumnNameFromId([x, y])];
+        const merged = worksheet.options.mergeCells?.[getColumnNameFromId([x, y])];
 
         return merged ? parseInt(merged[0]) : parseInt(element.getAttribute('colspan'));
     }
@@ -100,7 +100,7 @@ export class Selection {
         const worksheet = this.worksheet;
 
         // If any selected cells
-        if (!worksheet.selection.highlighted || !worksheet.selection.highlighted.length) {
+        if (!worksheet.selection.highlighted?.length) {
             worksheet.corner.style.top = '-2000px';
             worksheet.corner.style.left = '-2000px';
         } else {
@@ -151,7 +151,7 @@ export class Selection {
         let previousStatus: 0 | 1;
 
         // Remove style
-        if (!worksheet.selection.highlighted || !worksheet.selection.highlighted.length) {
+        if (!worksheet.selection.highlighted?.length) {
             previousStatus = 0;
         } else {
             previousStatus = 1;
@@ -317,7 +317,7 @@ export class Selection {
         // Verify merged columns
         for (let i = px; i <= ux; i++) {
             for (let j = py; j <= uy; j++) {
-                if (worksheet.records[j][i] && worksheet.records[j][i].element.getAttribute('data-merged')) {
+                if (worksheet.records[j][i]?.element.getAttribute('data-merged')) {
                     const x = parseInt(worksheet.records[j][i].element.getAttribute('data-x'));
                     const y = parseInt(worksheet.records[j][i].element.getAttribute('data-y'));
                     const colspan = this.getMergedColspan(worksheet.records[j][i].element, x, y);
@@ -357,7 +357,7 @@ export class Selection {
         for (let i = px; i <= ux; i++) {
             for (let j = py; j <= uy; j++) {
                 // Horizontal limits
-                if (!worksheet.options.columns || !worksheet.options.columns[i] || worksheet.options.columns[i].type !== 'hidden') {
+                if (worksheet.options.columns?.[i]?.type !== 'hidden') {
                     if (borderLeft == null) {
                         borderLeft = i;
                     }
@@ -404,16 +404,16 @@ export class Selection {
 
         for (let i = borderLeft; i <= borderRight; i++) {
             if (
-                (!worksheet.options.columns || !worksheet.options.columns[i] || worksheet.options.columns[i].type !== 'hidden') &&
+                worksheet.options.columns?.[i]?.type !== 'hidden' &&
                 worksheet.cols[i].colElement.style &&
                 worksheet.cols[i].colElement.style.display !== 'none'
             ) {
                 // Top border. The borders are null when each row of the range is hidden.
-                if (worksheet.records[borderTop!] && worksheet.records[borderTop!][i]) {
+                if (worksheet.records[borderTop!]?.[i]) {
                     worksheet.records[borderTop!][i].element.classList.add('highlight-top');
                 }
                 // Bottom border
-                if (worksheet.records[borderBottom!] && worksheet.records[borderBottom!][i]) {
+                if (worksheet.records[borderBottom!]?.[i]) {
                     worksheet.records[borderBottom!][i].element.classList.add('highlight-bottom');
                 }
                 // Add selected from headers
@@ -452,9 +452,8 @@ export class Selection {
     }
 
     /**
-     * Get selected column numbers
-     *
-     * @return array
+     * Get the selected columns.
+     * @param visibleOnly - Leave out the hidden columns.
      */
     getSelectedColumns(visibleOnly?: boolean) {
         const worksheet = this.worksheet;
@@ -523,9 +522,8 @@ export class Selection {
     }
 
     /**
-     * Get selected rows numbers
-     *
-     * @return array
+     * Get the selected rows.
+     * @param visibleOnly - Leave out the hidden rows.
      */
     getSelectedRows(visibleOnly?: boolean) {
         const worksheet = this.worksheet;
@@ -731,7 +729,7 @@ export class Selection {
         if (worksheet.selection.range) {
             const x = worksheet.selection.range[0];
             const y = worksheet.selection.range[1];
-            td = worksheet.records[y] && worksheet.records[y][x] ? worksheet.records[y][x].element : null;
+            td = worksheet.records[y]?.[x] ? worksheet.records[y][x].element : null;
         }
 
         if (!this.isVisibleCell(td)) {
@@ -772,7 +770,7 @@ export class Selection {
     updateActiveCell(x: number, y: number, origin: Event | undefined) {
         const worksheet = this.worksheet;
 
-        const td = worksheet.records[y] && worksheet.records[y][x] && worksheet.records[y][x].element;
+        const td = worksheet.records[y]?.[x]?.element;
         if (!td) {
             return;
         }
@@ -780,7 +778,7 @@ export class Selection {
         this.setActiveCell(td);
 
         const active = this.getActiveElement();
-        const pointer = origin && origin.target && (origin.target as Node).nodeType === 1 && worksheet.table.contains(origin.target as Node);
+        const pointer = origin?.target && (origin.target as Node).nodeType === 1 && worksheet.table.contains(origin.target as Node);
         const inGrid =
             pointer || (!!active && (active === worksheet.parent.element || active === worksheet.clipboard.textarea || worksheet.table.contains(active)));
         const dropped = isFocusLost() && libraryBase.jspreadsheet.current === worksheet;

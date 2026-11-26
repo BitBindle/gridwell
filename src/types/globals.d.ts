@@ -13,11 +13,6 @@
  */
 declare function parseInt(value: string | number | null | undefined, radix?: number): number;
 
-interface Navigator {
-    /** Internet Explorer and the old Edge only. download() uses it when it is there. */
-    msSaveOrOpenBlob?: (blob: Blob, defaultName?: string) => boolean;
-}
-
 interface Element {
     /**
      * The code sets attributes to numbers in many places, for example colspan and data-x. The DOM converts the number
