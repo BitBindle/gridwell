@@ -6,7 +6,10 @@
 import type Jspreadsheet from '../../src/jspreadsheet';
 import type { Worksheet } from '../../src/types/internal';
 
-type Library = ((element: HTMLElement, options: Jspreadsheet.SpreadsheetOptions) => Worksheet[]) & Jspreadsheet.JSpreadsheet;
+type Library = {
+    (element: HTMLTableElement, options?: Jspreadsheet.TableSpreadsheetOptions): Worksheet[];
+    (element: HTMLElement, options: Jspreadsheet.SpreadsheetOptions): Worksheet[];
+} & Jspreadsheet.JSpreadsheet;
 
 // The bundle is a UMD module, so it is required. The tests import the bundle and not src/, which the build makes.
 const jspreadsheet = require('../../dist/index.js') as Library;

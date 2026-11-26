@@ -307,3 +307,12 @@ worksheet.parent.setConfig({ toolbar: true });
 
 // A footer can show numbers
 library(document.createElement('div'), { worksheets: [{ footers: [['Total', 3, '=SUM(A1:A2)']] }] });
+
+// A table needs no options and no worksheets, because the first worksheet is created from the table
+declare const table: HTMLTableElement;
+library(table);
+library(table, { tabs: true });
+assertType<Equals<ReturnType<typeof library.helpers.createFromTable>, jspreadsheet.WorksheetOptions>>();
+library.helpers.createFromTable(table);
+// @ts-expect-error -- a div needs the options with the worksheets
+library(document.createElement('div'));

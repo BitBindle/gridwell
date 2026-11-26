@@ -105,11 +105,8 @@ describe('Create a jspreadsheet instance from a table', () => {
         const second = parent.appendChild(createTable());
 
         try {
-            // TYPING: the options are optional for a table, whose worksheet the library creates from the table, but the typings require them
-            // @ts-expect-error -- the test creates the spreadsheet of a table without options
             const firstWorksheets = jspreadsheet(first);
-            // TYPING: the worksheets are optional for a table, but the typings require them
-            const secondWorksheets = jspreadsheet(second, {} as Jspreadsheet.SpreadsheetOptions);
+            const secondWorksheets = jspreadsheet(second, {});
             await new Promise((resolve) => setTimeout(resolve));
 
             expect(firstWorksheets[0].getData()).to.eql([['a', 'b']]);

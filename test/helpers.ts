@@ -65,7 +65,7 @@ describe('Read the options of a table', () => {
         console.log = (message: unknown) => messages.push(message);
 
         try {
-            // @ts-expect-error -- the test passes an element that is not a table, without options
+            // @ts-expect-error -- the test passes an element that is not a table
             expect(jspreadsheet.helpers.createFromTable(document.createElement('div'))).to.equal(undefined);
         } finally {
             console.log = log;
@@ -81,8 +81,6 @@ describe('Read the options of a table', () => {
                 '<tbody><tr><td>1</td><td>x</td><td>y</td></tr></tbody>'
         );
 
-        // TYPING: the options of createFromTable are optional, but the typings require them
-        // @ts-expect-error -- the test reads a table without options
         const options = jspreadsheet.helpers.createFromTable(table);
 
         expect(options.columns![0]).to.eql({ width: '50px', type: 'numeric', title: 'Amount', align: 'right', name: 'amount', id: 'a', mask: '0.00' });
@@ -95,8 +93,6 @@ describe('Read the options of a table', () => {
                 '<tfoot><tr><td>Total</td><td>2</td></tr></tfoot>'
         );
 
-        // TYPING: the options of createFromTable are optional, but the typings require them
-        // @ts-expect-error -- the test reads a table without options
         const options = jspreadsheet.helpers.createFromTable(table);
 
         expect(options.data).to.eql([['=A2*2', '=B2', 'b', 'c', 'd']]);

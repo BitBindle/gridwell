@@ -2618,9 +2618,9 @@ declare namespace jspreadsheet {
         /**
          * Extract the configuration to create a new spreadsheet from a static HTML element.
          * @param element - Table element.
-         * @param options - Worksheet options.
+         * @param options - Worksheet options, which the options of the table are added to.
          */
-        createFromTable: (element: HTMLTableElement, options: WorksheetOptions) => WorksheetOptions;
+        createFromTable: (element: HTMLTableElement, options?: WorksheetOptions) => WorksheetOptions;
 
         /**
          * Internal method. Get the position of the caret in an element.
@@ -2666,7 +2666,22 @@ declare namespace jspreadsheet {
         parseCSV: (str: string, delimiter?: string) => string[][];
     }
 
+    /**
+     * The options of a spreadsheet created from a table. The first worksheet is created from the table, so the worksheets
+     * can be missing.
+     */
+    type TableSpreadsheetOptions = Omit<SpreadsheetOptions, 'worksheets'> & { worksheets?: WorksheetOptions[] };
+
     interface JSpreadsheet {
+        /**
+         * Create a spreadsheet from a table, which is replaced by a div in its parent, so it must have a parent: without
+         * one, this throws. The first worksheet loads the data and the options of the table. It returns the worksheets,
+         * which are added when the spreadsheet is built, after it returns.
+         * @param element - The table whose data the spreadsheet loads.
+         * @param options - The options of the spreadsheet. The options of the first worksheet are added to the options of the table.
+         */
+        (element: HTMLTableElement, options?: TableSpreadsheetOptions): WorksheetInstance[];
+
         /**
          * Create a spreadsheet in an element. A table is replaced by a div in its parent, so it must have a parent: without
          * one, this throws. It returns the worksheets, which are added when the spreadsheet is built, after it returns.
