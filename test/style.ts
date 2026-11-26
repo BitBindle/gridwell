@@ -70,16 +70,16 @@ describe('Style', () => {
             worksheets: [{ minDimensions: [2, 2] }],
         });
 
-        // No space after the colons: jsdom drops a value that starts with a space, which browsers trim
         instance[0].setStyle({ A1: 'background-image:url(http://example.com/a.png);color:red' });
-        expect(instance[0].getStyle('A1', 'background-image')).to.equal('url(http://example.com/a.png)');
+        // The URL comes back quoted, as browsers serialize it
+        expect(instance[0].getStyle('A1', 'background-image')).to.equal('url("http://example.com/a.png")');
         expect(instance[0].getStyle('A1', 'color')).to.equal('red');
 
         // Undo and redo read the style from the history
         instance[0].undo();
         expect(instance[0].getStyle('A1', 'background-image')).to.equal('');
         instance[0].redo();
-        expect(instance[0].getStyle('A1', 'background-image')).to.equal('url(http://example.com/a.png)');
+        expect(instance[0].getStyle('A1', 'background-image')).to.equal('url("http://example.com/a.png")');
     });
 
     it('keeps a value that has a semicolon, also after undo and redo (issue #48)', () => {

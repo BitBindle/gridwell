@@ -100,7 +100,7 @@ Modules import each other with the `.js` extension, although the files are `.ts`
 
 ## Tests
 
--   `mocha.config.js` sets up jsdom and a global `root` element. It empties `root` after each test.
+-   `mocha.config.js` sets up jsdom, makes its window the global object, and adds a global `root` element. It empties `root` after each test.
 -   The tests are TypeScript, checked as strictly as `src/`. Import the library with `import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';`: it is the built bundle with the public typings, and it returns worksheets of the `Worksheet` class, so a test can read the state that only the library uses. `Jspreadsheet` is the namespace of the public types (`Jspreadsheet.SpreadsheetOptions`, …).
 -   The tests do not load the Node types: `test/support/globals.d.ts` declares `root`, `global` and `require`. tsx gets a tsconfig without the `paths` of `tsconfig.json` (`test/support/tsconfig.run.json`), because those would map `jsuites` to its typings when the bundle requires it.
 -   When a test passes an argument that the types forbid on purpose, mark the line with `// @ts-expect-error -- reason`. When a test needs a cast because a public typing is wrong, fix the typing instead, in its own commit with a case in `test/typings.ts`.

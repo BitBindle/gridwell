@@ -199,7 +199,7 @@ describe('The default context menu', () => {
         });
 
         it('pastes the text of the clipboard into the selection', async () => {
-            // The bundle reads the navigator of the global object, which jsdom-global defines with a getter
+            // The bundle reads the navigator of the global object, which Node defines with a getter
             const descriptor = Object.getOwnPropertyDescriptor(global, 'navigator');
             Object.defineProperty(global, 'navigator', { configurable: true, value: { clipboard: { readText: () => Promise.resolve('x\ty') } } });
 
