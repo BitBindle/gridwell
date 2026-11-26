@@ -279,6 +279,31 @@ describe('The pointer of a worksheet', () => {
         expect(worksheet.history.records.length).to.equal(1);
     });
 
+    it('stops the fill of a double click on the corner at a cell that holds 0 or false (issue #117)', async () => {
+        const worksheet = await load({
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b'],
+                        ['', ''],
+                        [0, false],
+                        ['', ''],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.updateSelectionFromCoords(0, 0, 1, 0);
+        mouse(worksheet.corner, 'dblclick');
+
+        expect(worksheet.getData()).to.deep.equal([
+            ['a', 'b'],
+            ['a', 'b'],
+            [0, false],
+            ['', ''],
+        ]);
+    });
+
     it('keeps the header and the row number that a press selected first', async () => {
         // jsdom gives the headers no size, so a press is at their edge, which resizes or drags unless that is off
         const worksheet = await load({ worksheets: [{ minDimensions: [3, 3], columnResize: false, columnDrag: false, rowResize: false, rowDrag: false }] });

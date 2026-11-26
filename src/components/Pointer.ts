@@ -130,8 +130,9 @@ export class Pointer {
                 ) {
                     // Stop if contains value
                     if (!worksheet.selection.fill.length) {
-                        // eslint-disable-next-line eqeqeq -- 0 and false count as empty here (issue #117)
-                        if (worksheet.options.data[j][i] != '') {
+                        // 0 and false are values, and an empty text, null and undefined are empty cells
+                        const value = worksheet.options.data[j][i];
+                        if (value !== '' && value != null) {
                             breakControl = true;
                             continue;
                         }
