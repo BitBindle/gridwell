@@ -75,6 +75,53 @@ describe('Calculations', () => {
         expect(test[0].getValue('D2', true)).to.equal('a=b!');
     });
 
+    it('keeps the backslashes of a string literal (issue #21)', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['="a\\tb"', '="path\\data"', '="temp\\"', '="say ""a\\"" now"']] }] })[0];
+
+        expect(['A1', 'B1', 'C1', 'D1'].map((name) => worksheet.getValue(name, true))).to.deep.equal(['a\\tb', 'path\\data', 'temp\\', 'say "a\\" now']);
+    });
+
+    it('does not read a cell name in a string literal as a reference (issue #17)', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['="A1"', '="B2"', '="A1 is "&A2'],
+                        ['1', '="B2"&A2', ''],
+                    ],
+                },
+            ],
+        })[0];
+
+        expect(['A1', 'B1', 'C1', 'B2'].map((name) => worksheet.getValue(name, true))).to.deep.equal(['A1', 'B2', 'A1 is 1', 'B21']);
+        // Only the references outside the string literals are in the formula chain
+        expect(worksheet.formulas.chain).to.deep.equal({ A2: ['C1', 'B2'] });
+    });
+
+    it('keeps a text with a colon after letters (issue #15)', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['C:\\temp', '=A1'],
+                        ['x', '="C:\\temp"'],
+                        ['Ratio A:B', '=A3'],
+                        ['x', '="Ratio A:B"&" "&A5'],
+                        ['Pages A:C', '="a\\:"'],
+                    ],
+                },
+            ],
+        })[0];
+
+        expect(['B1', 'B2', 'B3', 'B4', 'B5'].map((name) => worksheet.getValue(name, true))).to.deep.equal([
+            'C:\\temp',
+            'C:\\temp',
+            'Ratio A:B',
+            'Ratio A:B Pages A:C',
+            'a\\:',
+        ]);
+    });
+
     describe('Test updating formulas when adding new rows', () => {
         it('1', () => {
             let test = jspreadsheet(root, {
