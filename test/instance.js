@@ -222,6 +222,15 @@ describe('The options of the worksheet table', () => {
         expect(worksheet.pagination.style.display).to.equal('none');
     });
 
+    it('read the boolean options strictly, so 1 is not true and 0 is not false', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [2, 2], search: 1, editable: 0 }] })[0];
+
+        expect(root.querySelector('.jss_filter')).to.equal(null);
+
+        worksheet.openEditor(worksheet.getCell('A1'));
+        expect(worksheet.editor.isOpen()).to.equal(true);
+    });
+
     it('build a row of filters, with the hidden columns hidden', () => {
         const worksheet = jspreadsheet(root, {
             worksheets: [{ minDimensions: [3, 2], filters: true, columns: [{}, { type: 'hidden' }, {}] }],

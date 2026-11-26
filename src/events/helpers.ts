@@ -25,9 +25,9 @@ export function getElement(element: HTMLElement): [Worksheet['element'] | 0 | nu
             }
         }
 
-        if (element.tagName == 'THEAD') {
+        if (element.tagName === 'THEAD') {
             jssSection = 1;
-        } else if (element.tagName == 'TBODY') {
+        } else if (element.tagName === 'TBODY') {
             jssSection = 2;
         }
 

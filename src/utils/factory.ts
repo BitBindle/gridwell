@@ -8,7 +8,7 @@ import type { Worksheet } from '../types/internal';
  * spreadsheet property.
  */
 export async function createSpreadsheet(el: HTMLElement & { spreadsheet?: Spreadsheet }, options: jspreadsheet.SpreadsheetOptions, worksheets: Worksheet[]) {
-    if (el.tagName == 'TABLE') {
+    if (el.tagName === 'TABLE') {
         if (!options) {
             // The worksheets are added below
             options = {} as jspreadsheet.SpreadsheetOptions;

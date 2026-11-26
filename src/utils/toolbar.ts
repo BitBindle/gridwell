@@ -8,7 +8,7 @@ import type { Color } from 'jsuites';
 type BorderPicker = jspreadsheet.PickerInstance & { thickness?: number; color?: string; style?: string };
 
 function setItemStatus(toolbarItem: HTMLElement, worksheet: Worksheet) {
-    if (worksheet.options.editable != false) {
+    if (worksheet.options.editable !== false) {
         toolbarItem.classList.remove('jtoolbar-disabled');
     } else {
         toolbarItem.classList.add('jtoolbar-disabled');
@@ -447,7 +447,7 @@ export class Toolbar {
                 delete item.tooltip;
             }
 
-            if (item.type == 'select') {
+            if (item.type === 'select') {
                 if (item.options) {
                     item.data = item.options;
                     delete item.options;
@@ -471,7 +471,7 @@ export class Toolbar {
                         };
                     }
                 }
-            } else if (item.type == 'color') {
+            } else if (item.type === 'color') {
                 item.type = 'i';
 
                 item.onclick = (a: HTMLElement, b: object, c: HTMLElement & { color?: Color }) => {

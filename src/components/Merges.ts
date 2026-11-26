@@ -103,13 +103,13 @@ export class Merges {
 
         let visible = 0;
         for (let x = cell[0]; x < cell[0] + colspan; x++) {
-            if (worksheet.headers[x].style.display != 'none') {
+            if (worksheet.headers[x].style.display !== 'none') {
                 visible++;
             }
         }
 
         const element = worksheet.records[cell[1]][cell[0]].element;
-        if (visible == 0) {
+        if (visible === 0) {
             element.style.display = 'none';
         } else {
             element.style.display = '';
@@ -119,7 +119,7 @@ export class Merges {
         }
 
         // A first cell in a column with the type hidden shows the range with the options of another column
-        if (worksheet.options.columns && worksheet.options.columns[cell[0]] && worksheet.options.columns[cell[0]].type == 'hidden') {
+        if (worksheet.options.columns && worksheet.options.columns[cell[0]] && worksheet.options.columns[cell[0]].type === 'hidden') {
             worksheet.cells.render(cell[0], cell[1]);
         }
     }
@@ -257,7 +257,7 @@ export class Merges {
             // Adjust the nodes
             for (let y = cell[1]; y < cell[1] + rowspan!; y++) {
                 for (let x = cell[0]; x < cell[0] + colspan!; x++) {
-                    if (!(cell[0] == x && cell[1] == y)) {
+                    if (!(cell[0] === x && cell[1] === y)) {
                         data.push(worksheet.options.data[y][x]);
                         worksheet.cells.update(x, y, '', true);
                         (worksheet.options.mergeCells[cellName] as MergeInfo)[2]!.push(worksheet.records[y][x].element);
@@ -299,7 +299,7 @@ export class Merges {
             worksheet.records[cell[1]][cell[0]].element.removeAttribute('rowspan');
             worksheet.records[cell[1]][cell[0]].element.removeAttribute('data-merged');
             // Each cell is visible when its column is visible
-            worksheet.records[cell[1]][cell[0]].element.style.display = worksheet.headers[cell[0]].style.display == 'none' ? 'none' : '';
+            worksheet.records[cell[1]][cell[0]].element.style.display = worksheet.headers[cell[0]].style.display === 'none' ? 'none' : '';
             const info = worksheet.options.mergeCells[cellName] as MergeInfo;
 
             let index = 0;
@@ -311,7 +311,7 @@ export class Merges {
                     if (j > 0 || i > 0) {
                         worksheet.records[cell[1] + j][cell[0] + i].element = info[2]![index];
                         worksheet.records[cell[1] + j][cell[0] + i].element.style.display =
-                            worksheet.headers[cell[0] + i].style.display == 'none' ? 'none' : '';
+                            worksheet.headers[cell[0] + i].style.display === 'none' ? 'none' : '';
                         // Recover data
                         if (data && data[index]) {
                             worksheet.cells.update(cell[0] + i, cell[1] + j, data[index]);
@@ -329,7 +329,7 @@ export class Merges {
             }
 
             // A first cell in a column with the type hidden uses the options of its own column again
-            if (worksheet.options.columns && worksheet.options.columns[cell[0]] && worksheet.options.columns[cell[0]].type == 'hidden') {
+            if (worksheet.options.columns && worksheet.options.columns[cell[0]] && worksheet.options.columns[cell[0]].type === 'hidden') {
                 worksheet.cells.render(cell[0], cell[1]);
             }
 

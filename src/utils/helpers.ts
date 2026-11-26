@@ -122,26 +122,26 @@ export function parseCSV(str: string, delimiter?: string) {
         arr[row][col] = arr[row][col] || '';
 
         // If the current character is a quotation mark, and we're inside a quoted field, and the next character is also a quotation mark, add a quotation mark to the current column and skip the next character
-        if (cc == '"' && quote && nc == '"') {
+        if (cc === '"' && quote && nc === '"') {
             arr[row][col] += cc;
             ++c;
             continue;
         }
 
         // If it's just one quotation mark, begin/end quoted field
-        if (cc == '"') {
+        if (cc === '"') {
             quote = !quote;
             continue;
         }
 
         // If it's a comma and we're not in a quoted field, move on to the next column
-        if (cc == delimiter && !quote) {
+        if (cc === delimiter && !quote) {
             ++col;
             continue;
         }
 
         // If it's a newline (CRLF) and we're not in a quoted field, skip the next character and move on to the next row and move to column 0 of that new row
-        if (cc == '\r' && nc == '\n' && !quote) {
+        if (cc === '\r' && nc === '\n' && !quote) {
             ++row;
             maxCol = Math.max(maxCol, col);
             col = 0;
@@ -150,13 +150,13 @@ export function parseCSV(str: string, delimiter?: string) {
         }
 
         // If it's a newline (LF or CR) and we're not in a quoted field, move on to the next row and move to column 0 of that new row
-        if (cc == '\n' && !quote) {
+        if (cc === '\n' && !quote) {
             ++row;
             maxCol = Math.max(maxCol, col);
             col = 0;
             continue;
         }
-        if (cc == '\r' && !quote) {
+        if (cc === '\r' && !quote) {
             ++row;
             maxCol = Math.max(maxCol, col);
             col = 0;
@@ -178,7 +178,7 @@ export function parseCSV(str: string, delimiter?: string) {
 
 // The options are optional here: factory.ts passes the first worksheet of the options, which can be missing
 export function createFromTable(el: HTMLElement, options?: jspreadsheet.WorksheetOptions) {
-    if (el.tagName != 'TABLE') {
+    if (el.tagName !== 'TABLE') {
         console.log('Element is not a table');
     } else {
         // Configuration
@@ -280,7 +280,7 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
         let content = el.querySelectorAll<HTMLElement>(':scope > tr, :scope > tbody > tr');
         for (let j = 0; j < content.length; j++) {
             data[rowNumber] = [];
-            if (options.parseTableFirstRowAsHeader == true && !headers.length && j == 0) {
+            if (options.parseTableFirstRowAsHeader === true && !headers.length && j === 0) {
                 for (let i = 0; i < content[j].children.length; i++) {
                     parseHeader(content[j].children[i] as HTMLElement, i);
                 }
@@ -289,7 +289,7 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
                     // WickedGrid formula compatibility
                     let value = content[j].children[i].getAttribute('data-formula');
                     if (value) {
-                        if (value.substr(0, 1) != '=') {
+                        if (value.substr(0, 1) !== '=') {
                             value = `=${value}`;
                         }
                     } else {
@@ -314,7 +314,7 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
                     }
 
                     // Avoid problems with hidden cells
-                    if ((content[j].children[i] as HTMLElement).style && (content[j].children[i] as HTMLElement).style.display == 'none') {
+                    if ((content[j].children[i] as HTMLElement).style && (content[j].children[i] as HTMLElement).style.display === 'none') {
                         (content[j].children[i] as HTMLElement).style.display = '';
                     }
                     // Get style
@@ -380,7 +380,7 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
         // TODO: data-hiddencolumns="3,4"
 
         // I guess in terms the better column type
-        if (options.parseTableAutoCellType == true) {
+        if (options.parseTableAutoCellType === true) {
             // The number of times each value is in each column
             const pattern: Record<string, number>[] = [];
             for (let i = 0; i < columns.length; i++) {
@@ -397,8 +397,8 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
                     if (value.length > 25) {
                         test = false;
                     }
-                    if (value.length == 10) {
-                        if (!(value.substr(4, 1) == '-' && value.substr(7, 1) == '-')) {
+                    if (value.length === 10) {
+                        if (!(value.substr(4, 1) === '-' && value.substr(7, 1) === '-')) {
                             testCalendar = false;
                         }
                     } else {
@@ -409,7 +409,7 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
                 const keys = Object.keys(pattern[i]).length;
                 if (testCalendar) {
                     columns[i].type = 'calendar';
-                } else if (test == true && keys > 1 && keys <= parseInt(data.length * 0.1)) {
+                } else if (test === true && keys > 1 && keys <= parseInt(data.length * 0.1)) {
                     columns[i].type = 'dropdown';
                     (columns[i] as jspreadsheet.DropdownColumn).source = Object.keys(pattern[i]);
                 }

@@ -12,7 +12,7 @@ export function pasteControls(e?: TargetEvent<ClipboardEvent>) {
 
     if (current && current.selection.range) {
         if (!current.editor.isOpen()) {
-            if (current.options.editable != false) {
+            if (current.options.editable !== false) {
                 if (e && e.clipboardData) {
                     current.clipboard.paste(current.selection.range[0], current.selection.range[1], e.clipboardData.getData('text'));
                     e.preventDefault();
@@ -37,7 +37,7 @@ export function cutControls(e?: TargetEvent<ClipboardEvent>) {
         if (!current.editor.isOpen() && current.selection.range) {
             const copied = current.clipboard.copy(true, undefined, undefined, undefined, undefined, true);
             // oncopy can cancel the cut
-            if (copied !== false && current.options.editable != false) {
+            if (copied !== false && current.options.editable !== false) {
                 current.setValue(
                     current.selection.highlighted.map((record) => {
                         return record.element;

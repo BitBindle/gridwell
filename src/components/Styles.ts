@@ -89,13 +89,13 @@ export class Styles {
             if (
                 worksheet.records[cell[1]] &&
                 worksheet.records[cell[1]][cell[0]] &&
-                (worksheet.records[cell[1]][cell[0]].element.classList.contains('readonly') == false || force)
+                (worksheet.records[cell[1]][cell[0]].element.classList.contains('readonly') === false || force)
             ) {
                 // Current value
                 const currentValue = (worksheet.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key];
 
                 // Change layout
-                if (currentValue == value && !force) {
+                if (currentValue === value && !force) {
                     value = '';
                     (worksheet.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key] = '';
                 } else {
@@ -117,20 +117,20 @@ export class Styles {
 
         if (k && v) {
             // Get object from string
-            if (typeof o == 'string') {
+            if (typeof o === 'string') {
                 applyStyle(o, k, v);
             }
         } else {
             const keys = Object.keys(o);
             for (const cellName of keys) {
                 let style: string | string[] = (o as Record<string, string | string[]>)[cellName];
-                if (typeof style == 'string') {
+                if (typeof style === 'string') {
                     style = style.split(';');
                 }
                 for (const declaration of style) {
                     // Split into a new variable, so that the styles the application gave stay as they are
                     let property: string | string[] = declaration;
-                    if (typeof property == 'string') {
+                    if (typeof property === 'string') {
                         // Split at the first colon only, because a value can have colons, for example url(http://...)
                         property = property.split(/:(.*)/);
                     }

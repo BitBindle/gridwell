@@ -9,7 +9,7 @@ import type { MaskOptions } from '../types/jsuites';
  */
 export function isFormula(value: unknown) {
     const v = `${value}`[0];
-    return v == '=' || v == '#' ? true : false;
+    return v === '=' || v === '#' ? true : false;
 }
 
 /**

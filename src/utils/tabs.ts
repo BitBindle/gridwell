@@ -103,7 +103,7 @@ export class Tabs {
     }
 
     private updateControls(x: number) {
-        if (typeof this.headers.scrollTo == 'function') {
+        if (typeof this.headers.scrollTo === 'function') {
             this.headers.scrollTo({
                 left: x,
                 behavior: 'smooth',
@@ -139,7 +139,7 @@ export class Tabs {
     private updateHeaders() {
         const container = this.headers.parentNode as HTMLElement;
 
-        if (this.options.hideHeaders == true || (this.content.children.length < 2 && this.options.allowCreate != true)) {
+        if (this.options.hideHeaders === true || (this.content.children.length < 2 && this.options.allowCreate !== true)) {
             container.style.display = 'none';
         } else {
             container.style.display = '';
@@ -208,7 +208,7 @@ export class Tabs {
             }
         }
 
-        if (previous !== index && typeof this.options.onchange == 'function') {
+        if (previous !== index && typeof this.options.onchange === 'function') {
             this.options.onchange(this.el, this, index, this.getHeader(index), this.content.children[index]);
         }
 
@@ -254,7 +254,7 @@ export class Tabs {
     }
 
     create(title?: string): HTMLDivElement | false | undefined {
-        if (typeof this.options.onbeforecreate == 'function') {
+        if (typeof this.options.onbeforecreate === 'function') {
             const ret = this.options.onbeforecreate(this.el, title);
 
             if (ret === false) {
@@ -266,7 +266,7 @@ export class Tabs {
 
         const div = this.appendElement(title);
 
-        if (typeof this.options.oncreate == 'function') {
+        if (typeof this.options.oncreate === 'function') {
             // The constructor sets el.tabs before a tab can be created
             this.options.oncreate(this.el as HTMLElement & { tabs: Tabs }, div);
         }
@@ -325,7 +325,7 @@ export class Tabs {
             this.getHeader(this.getActive())!.focus();
         }
 
-        if (typeof this.options.ondelete == 'function') {
+        if (typeof this.options.ondelete === 'function') {
             this.options.ondelete(this.el, index);
         }
     }
@@ -375,7 +375,7 @@ export class Tabs {
                 this.updateHeaders();
             }
 
-            if (typeof cb == 'function') {
+            if (typeof cb === 'function') {
                 cb(div, h);
             }
 
@@ -438,7 +438,7 @@ export class Tabs {
             this.setBorder(this.getActive());
         }
 
-        if (!ignoreEvents && typeof this.options.onchangeposition == 'function') {
+        if (!ignoreEvents && typeof this.options.onchangeposition === 'function') {
             this.options.onchangeposition(this.headers, f, t);
         }
     }
@@ -480,7 +480,7 @@ export class Tabs {
         this.el.appendChild(this.content);
 
         // Button to create a new worksheet
-        if (this.options.allowCreate == true) {
+        if (this.options.allowCreate === true) {
             const add = document.createElement('button');
             add.type = 'button';
             add.className = 'jtabs-add';
@@ -532,7 +532,7 @@ export class Tabs {
             if (index >= 0) {
                 this.open(index);
 
-                if (typeof this.options.onclick == 'function') {
+                if (typeof this.options.onclick === 'function') {
                     this.options.onclick(this.el, this, index, this.getHeader(index), this.content.children[index]);
                 }
             }

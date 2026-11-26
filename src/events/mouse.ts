@@ -68,7 +68,7 @@ export function mouseDownControls(e: TargetEvent<MouseEvent>) {
     // A press on a worksheet makes it the active worksheet. A press outside the spreadsheets leaves no active worksheet.
     const previous = libraryBase.jspreadsheet.current;
     if (jssTable[0]) {
-        if (previous != jssTable[0].jssWorksheet) {
+        if (previous !== jssTable[0].jssWorksheet) {
             if (previous) {
                 if (previous.editor.isOpen()) {
                     previous.editor.close(previous.editor.cell, true);
@@ -92,23 +92,23 @@ export function mouseDownControls(e: TargetEvent<MouseEvent>) {
 
     const current = libraryBase.jspreadsheet.current;
 
-    if (current && mouseButton == 1) {
+    if (current && mouseButton === 1) {
         if (e.target.classList.contains('jss_selectall')) {
             current.selection.selectAll();
         } else if (e.target.classList.contains('jss_corner')) {
-            if (current.options.editable != false) {
+            if (current.options.editable !== false) {
                 current.pointer.corner = true;
             }
         } else {
             // Header found
-            if (jssTable[1] == 1) {
+            if (jssTable[1] === 1) {
                 current.pointer.pressHeader(e);
             } else {
                 current.selection.column = null;
             }
 
             // Body found
-            if (jssTable[1] == 2) {
+            if (jssTable[1] === 2) {
                 if (e.target.classList.contains('jss_row')) {
                     current.pointer.pressRowNumber(e);
                 } else {
@@ -145,7 +145,7 @@ export function mouseMoveControls(e: TargetEvent<MouseEvent>) {
     const current = libraryBase.jspreadsheet.current;
 
     if (current) {
-        if (libraryBase.jspreadsheet.isMouseAction == true) {
+        if (libraryBase.jspreadsheet.isMouseAction === true) {
             // Resizing is ongoing
             if (current.pointer.resizing) {
                 current.pointer.moveResize(e);
@@ -167,13 +167,13 @@ export function mouseOverControls(e: TargetEvent<MouseEvent>) {
 
     const current = libraryBase.jspreadsheet.current;
 
-    if (current && libraryBase.jspreadsheet.isMouseAction == true) {
+    if (current && libraryBase.jspreadsheet.isMouseAction === true) {
         // Get elements
         const jssTable = getElement(e.target);
 
         if (jssTable[0]) {
             // Avoid cross reference
-            if (current != jssTable[0].jssWorksheet) {
+            if (current !== jssTable[0].jssWorksheet) {
                 return false;
             }
 
@@ -206,7 +206,7 @@ export function doubleClickControls(e: TargetEvent<MouseEvent>) {
             const jssTable = getElement(e.target);
 
             // Double click over header
-            if (jssTable[1] == 1 && current.options.columnSorting != false) {
+            if (jssTable[1] === 1 && current.options.columnSorting !== false) {
                 // Check valid column header coords
                 const columnId = getIndex(e.target, 'data-x');
                 if (columnId != null) {
@@ -215,7 +215,7 @@ export function doubleClickControls(e: TargetEvent<MouseEvent>) {
             }
 
             // Double click over body
-            if (jssTable[1] == 2 && current.options.editable != false) {
+            if (jssTable[1] === 2 && current.options.editable !== false) {
                 if (!current.editor.isOpen()) {
                     const cell = getCell(e.target);
                     if (cell && cell.classList.contains('highlight')) {

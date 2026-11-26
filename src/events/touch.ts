@@ -8,7 +8,7 @@ export function touchStartControls(e: TargetEvent<TouchEvent>) {
     // A touch on a worksheet makes it the active worksheet. A touch outside the spreadsheets leaves no active worksheet.
     const previous = libraryBase.jspreadsheet.current;
     if (jssTable[0]) {
-        if (previous != jssTable[0].jssWorksheet) {
+        if (previous !== jssTable[0].jssWorksheet) {
             if (previous) {
                 previous.resetSelection();
             }
@@ -31,7 +31,7 @@ export function touchStartControls(e: TargetEvent<TouchEvent>) {
             if (columnId != null && rowId != null) {
                 current.selection.updateFromCoords(columnId, rowId, undefined, undefined, e);
 
-                if (current.options.editable == false) {
+                if (current.options.editable === false) {
                     return;
                 }
 
@@ -39,7 +39,7 @@ export function touchStartControls(e: TargetEvent<TouchEvent>) {
                 libraryBase.jspreadsheet.timeControl = setTimeout(() => {
                     // Keep temporary reference to the element
                     const column = libraryBase.jspreadsheet.current!.options.columns[libraryBase.jspreadsheet.current!.cells.getColumnIndex(columnId, rowId)];
-                    if (column.type == 'color') {
+                    if (column.type === 'color') {
                         libraryBase.jspreadsheet.tmpElement = null;
                     } else {
                         libraryBase.jspreadsheet.tmpElement = e.target;
@@ -57,7 +57,7 @@ export function touchEndControls(e: TargetEvent<TouchEvent>) {
         clearTimeout(libraryBase.jspreadsheet.timeControl);
         libraryBase.jspreadsheet.timeControl = null;
         // Element
-        if (libraryBase.jspreadsheet.tmpElement && libraryBase.jspreadsheet.tmpElement.children[0].tagName == 'INPUT') {
+        if (libraryBase.jspreadsheet.tmpElement && libraryBase.jspreadsheet.tmpElement.children[0].tagName === 'INPUT') {
             // The test of the tag name above
             (libraryBase.jspreadsheet.tmpElement.children[0] as HTMLInputElement).focus();
         }

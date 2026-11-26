@@ -216,3 +216,23 @@ cast where it relied on `any`:
 
 -   **dispatch.** It takes the name of an event of `SpreadsheetOptions` and the arguments of its handler. To dispatch an
     event of your own, cast the name, for example `worksheet.dispatch('oncustom' as jspreadsheet.EventName, worksheet)`.
+
+## The boolean options must be booleans
+
+The library compares the boolean options with `true` and `false` strictly (`===`). Version 5 compared them loosely, so `1`
+and `'1'` counted as `true`, and `0`, `''` and `'0'` as `false`. Give these options `true` or `false`, as the typings
+declare. This applies to the options of a spreadsheet, a worksheet and a column, such as `editable`, `search`,
+`filters`, `lazyLoading`, `tableOverflow`, `wordWrap`, `readOnly`, `fullscreen`, `allowInsertRow`, `allowInsertColumn`,
+`allowDeleteRow`, `allowDeleteColumn`, `selectionCopy`, `columnSorting`, `columnDrag`, `columnResize`, `rowDrag`,
+`rowResize`, `secureFormulas`, `parseFormulas`, `autoCasting`, `autoIncrement`, `allowExport`, `allowComments`,
+`csvHeaders`, `persistence` and `about`.
+
+```js
+// Version 5: 0 disabled editing
+jspreadsheet(element, { worksheets: [{ editable: 0 }] });
+// Version 6
+jspreadsheet(element, { worksheets: [{ editable: false }] });
+```
+
+The values of the cells are still compared loosely where the library reads them: `1`, `'1'`, `true` and `'true'` check a
+checkbox, and a text that is a number equals the number.

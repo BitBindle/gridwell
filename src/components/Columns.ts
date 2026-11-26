@@ -79,7 +79,7 @@ export class Columns {
         };
 
         // Hidden column
-        if (worksheet.options.columns && worksheet.options.columns[colNumber] && worksheet.options.columns[colNumber].type == 'hidden') {
+        if (worksheet.options.columns && worksheet.options.columns[colNumber] && worksheet.options.columns[colNumber].type === 'hidden') {
             worksheet.headers[colNumber].style.display = 'none';
             colElement.style.display = 'none';
         }
@@ -273,7 +273,7 @@ export class Columns {
         const worksheet = this.worksheet;
 
         // Configuration
-        if (worksheet.options.allowInsertColumn != false) {
+        if (worksheet.options.allowInsertColumn !== false) {
             // Data to be insert
             let data: jspreadsheet.CellValue[] = [];
 
@@ -303,7 +303,7 @@ export class Columns {
             const lastColumn = currentNumOfColumns - 1;
 
             // Confirm position
-            if (columnNumber == undefined || columnNumber >= parseInt(lastColumn) || columnNumber < 0) {
+            if (columnNumber == null || columnNumber >= parseInt(lastColumn) || columnNumber < 0) {
                 columnNumber = lastColumn;
             }
 
@@ -489,10 +489,10 @@ export class Columns {
         const worksheet = this.worksheet;
 
         // Global Configuration
-        if (worksheet.options.allowDeleteColumn != false) {
+        if (worksheet.options.allowDeleteColumn !== false) {
             if (worksheet.headers.length > 1) {
                 // Delete column definitions
-                if (columnNumber == undefined) {
+                if (columnNumber == null) {
                     const number = worksheet.getSelectedColumns(true);
 
                     if (!number.length) {
@@ -509,7 +509,7 @@ export class Columns {
                 // Lasat column
                 const lastColumn = worksheet.options.data[0].length - 1;
 
-                if (columnNumber == undefined || columnNumber > lastColumn || columnNumber < 0) {
+                if (columnNumber == null || columnNumber > lastColumn || columnNumber < 0) {
                     columnNumber = lastColumn;
                 }
 
@@ -951,7 +951,7 @@ export class Columns {
             const column = [];
             // Header classes for this cell
             for (let x = 0; x < numberOfColumns; x++) {
-                if (worksheet.options.columns[headerIndex] && worksheet.options.columns[headerIndex].type == 'hidden') {
+                if (worksheet.options.columns[headerIndex] && worksheet.options.columns[headerIndex].type === 'hidden') {
                     numberOfColumns++;
                 }
                 column.push(headerIndex);

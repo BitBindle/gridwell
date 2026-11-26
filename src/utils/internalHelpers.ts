@@ -53,7 +53,7 @@ export function getIdFromColumnName(id: string | number[], arr?: boolean) {
             number--;
         }
 
-        if (arr == true) {
+        if (arr === true) {
             id = [code, number];
         } else {
             id = `${code}-${number}`;
