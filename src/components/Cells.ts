@@ -207,7 +207,11 @@ export class Cells {
         if (before.align !== after.align) {
             element.style.textAlign = td.style.textAlign;
         }
-        if (before.wordWrap !== after.wordWrap) {
+        // create wraps the text with the wordWrap options, or when it is longer than 200 characters
+        function wraps(options: jspreadsheet.Column, cell: HTMLElement) {
+            return options.wordWrap !== false && (worksheet.options.wordWrap === true || options.wordWrap === true || cell.innerHTML.length > 200);
+        }
+        if (wraps(before, element) !== wraps(after, td)) {
             element.style.whiteSpace = td.style.whiteSpace;
         }
         if (before.type === 'color' || after.type === 'color') {
@@ -226,6 +230,9 @@ export class Cells {
         } else {
             cellColumns.set(element, c - x);
         }
+
+        // The cell has new content, which the handler can change as for a new cell
+        worksheet.dispatch('oncreatecell', worksheet, element, x, y, worksheet.options.data[y][x]);
     }
 
     /**

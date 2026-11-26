@@ -221,7 +221,8 @@ export class Formulas {
                                     formulaExpressions[reference] = Number(value);
                                 } else {
                                     // Trying any formatted number
-                                    const number = worksheet.formulas.parseNumber(value, position[0]);
+                                    // The decimal point of the column whose options the cell uses
+                                    const number = worksheet.formulas.parseNumber(value, worksheet.cells.getColumnIndex(position[0], position[1]));
                                     if (worksheet.parent.config.autoCasting !== false && number) {
                                         formulaExpressions[reference] = number;
                                     } else {
