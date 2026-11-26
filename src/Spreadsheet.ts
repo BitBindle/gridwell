@@ -212,6 +212,65 @@ export class Spreadsheet {
     }
 
     /**
+     * Build the worksheet at a position again from new options, in its tab. The worksheet object, its tab, the open tab,
+     * the active worksheet and the ignore flag of its history stay. The open editor closes without a save. Without a
+     * name, or with the name of another worksheet, the worksheet keeps its name. The focus in the old table goes to the
+     * tab stop of the new table.
+     * @returns The worksheet when it is built, or undefined for a position without a worksheet.
+     */
+    async loadWorksheet(position: number, options: jspreadsheet.WorksheetOptions) {
+        const worksheet = this.worksheets[position];
+        if (!worksheet) {
+            return undefined;
+        }
+
+        if (worksheet.editor.isOpen()) {
+            worksheet.editor.close(worksheet.editor.cell, false);
+        }
+        const name = options.worksheetName;
+        if (typeof name !== 'string' || !name.trim() || this.worksheets.some((other) => other !== worksheet && other.options.worksheetName === name)) {
+            options.worksheetName = worksheet.options.worksheetName;
+        } else if (name !== worksheet.options.worksheetName) {
+            this.element.tabs!.rename(position, name);
+        }
+
+        // The size observer of the frozen rows holds the old rows
+        worksheet.rowManager.stopFreeze();
+
+        const element = worksheet.element;
+        const focused = element.contains(document.activeElement);
+        const ignore = worksheet.history.ignore;
+        const current = libraryBase.jspreadsheet.current;
+        const index = this.config.worksheets.indexOf(worksheet.options);
+        if (index >= 0) {
+            this.config.worksheets[index] = options;
+        }
+
+        // The state of the old table goes, and the methods stay on the class
+        for (const key of Object.keys(worksheet) as (keyof Worksheet)[]) {
+            if (key !== 'parent' && key !== 'element') {
+                delete worksheet[key];
+            }
+        }
+        element.innerHTML = '';
+        worksheet.setup(options);
+        worksheet.history.ignore = ignore;
+
+        await worksheet.build();
+
+        // build makes the worksheet the active worksheet
+        libraryBase.jspreadsheet.current = current;
+        if (focused) {
+            (element.querySelector('td[tabindex="0"]') as HTMLElement | null)?.focus({ preventScroll: true });
+        }
+        if (this.worksheets[this.getWorksheetActive()] === worksheet) {
+            this.toolbarManager.update(worksheet);
+        }
+
+        return worksheet;
+    }
+
+    /**
      * Move a worksheet, its options and its tab to another position. The open tab stays open, and an element of the
      * moved worksheet that has the focus keeps it.
      */

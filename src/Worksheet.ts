@@ -44,12 +44,19 @@ export interface Worksheet extends WorksheetState {}
 export class Worksheet {
     constructor(spreadsheet: Spreadsheet, options: jspreadsheet.WorksheetOptions, element?: HTMLElement) {
         this.parent = spreadsheet;
-        // build fills in the options that the internal type says are always there
-        this.options = options as Worksheet['options'];
         if (element) {
             // build adds jssWorksheet
             this.element = element as Worksheet['element'];
         }
+        this.setup(options);
+    }
+
+    /**
+     * Give the worksheet its options and new components, as before its first build. loadWorksheet calls it again.
+     */
+    setup(options: jspreadsheet.WorksheetOptions) {
+        // build fills in the options that the internal type says are always there
+        this.options = options as Worksheet['options'];
         this.history = new History(this);
         this.clipboard = new Clipboard(this);
         this.editor = new Editor(this);
@@ -620,6 +627,13 @@ export class Worksheet {
 
             worksheet.dispatch('onrenameworksheet', worksheet, position, name, oldName);
         }
+    }
+
+    /**
+     * Build the worksheet at a position again from new options, in its tab. The worksheet object stays.
+     */
+    loadWorksheet(position: number, options: jspreadsheet.WorksheetOptions) {
+        return this.parent.loadWorksheet(position, options);
     }
 
     /**

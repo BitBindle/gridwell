@@ -2417,6 +2417,18 @@ declare namespace jspreadsheet {
         openFilter: (columnId: number) => void;
 
         /**
+         * Build the worksheet at a position again from new options, in its tab, for example to show other data. The
+         * worksheet object, its tab, the open tab, the active worksheet (`jspreadsheet.current`) and `history.ignore`
+         * stay. The open editor of the worksheet closes without a save. Without `worksheetName`, or with the name of
+         * another worksheet, the worksheet keeps its name. The new options replace the old options in
+         * `getConfig().worksheets`. The focus in the old table goes to the new table. No history entry.
+         * @param position - Worksheet index.
+         * @param options - The options of the new table.
+         * @returns The worksheet when its build ends, or undefined for a position without a worksheet.
+         */
+        loadWorksheet: (position: number, options: WorksheetOptions) => Promise<WorksheetInstance | undefined>;
+
+        /**
          * Open the worksheet by index.
          * @param position - Worksheet index.
          */
