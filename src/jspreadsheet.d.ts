@@ -1173,8 +1173,9 @@ declare namespace jspreadsheet {
 
         /**
          * Occurs when lazy loading removes the row of the open editor, for example after a scroll, a sort, or a move of the
-         * selection with `down` or `last`. On a scroll, an editor that floats over the grid closes and saves before the row
-         * leaves, so only the text editor gets the event then. The event also occurs while `ignoreEvents` is set, for
+         * selection with `down` or `last`. With `first` or a sort, the event can also occur for a row that the same load adds
+         * again. On a scroll, an editor that floats over the grid closes and saves before the row leaves, so only the text
+         * editor gets the event then. The event also occurs while `ignoreEvents` is set, for
          * example during an undo, also for `onevent`.
          * @param instance - Worksheet of the cell.
          * @param td - Element of the cell.

@@ -455,10 +455,8 @@ export class Editor {
         const x = parseInt(cell.getAttribute('data-x'));
         const y = parseInt(cell.getAttribute('data-y'));
         const taken = worksheet.dispatch('oneditordetach', worksheet, cell, x, y) === true;
-        // The handler can close the editor itself
-        if (this.isOpen() && this.cell === cell) {
-            this.close(cell, !taken);
-        }
+        // When the handler closed the editor itself, close does nothing
+        this.close(cell, !taken);
     }
 
     /**
