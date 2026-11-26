@@ -178,19 +178,149 @@ export class Cells {
     }
 
     /**
-     * Show the value of a text cell again, for example the new result of its formula. It writes no data and dispatches
-     * no event.
+     * Show the value of a cell again, for example the new result of its formula, as update shows it. It writes no data
+     * and dispatches no event.
      */
     showValue(x: number, y: number) {
         const worksheet = this.worksheet;
-        const element = worksheet.records[y][x].element;
-        const column = worksheet.options.columns?.[this.getColumnIndex(x, y)];
-        const value = worksheet.options.data[y][x];
-        if (column?.type === 'html' || worksheet.parent.config.parseHTML === true) {
-            element.innerHTML = stripScript(this.parseValue(x, y, value, element));
-        } else {
-            element.textContent = this.parseValue(x, y, value, element) as string;
+        let value = worksheet.options.data[y][x];
+        // The cell shows the secured formula, as create and update show it
+        if (isFormula(value) && worksheet.options.secureFormulas === true) {
+            value = secureFormula(value as string);
         }
+        this.display(x, y, value, false);
+    }
+
+    /**
+     * Show a value in a cell, as its column type shows it, and call the render of the column. With write, the data of
+     * the cell gets the value too. It returns the value that the cell shows, which an image column changes to text.
+     */
+    private display(x: number, y: number, value: jspreadsheet.CellValue | undefined, write: boolean) {
+        const worksheet = this.worksheet;
+        const c = this.getColumnIndex(x, y);
+        const column = worksheet.options.columns?.[c];
+
+        // A custom editor can have setValue, which is not in the public typings
+        const editor = (column && typeof column.type === 'object' ? column.type : null) as
+            (jspreadsheet.CustomEditor & { setValue?: (cell: HTMLTableCellElement, value: jspreadsheet.CellValue | undefined) => void }) | null;
+        if (editor) {
+            // Update data and cell
+            if (write) {
+                worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
+            }
+            if (typeof editor.setValue === 'function') {
+                editor.setValue(worksheet.records[y][x].element, value);
+            }
+        } else {
+            // Native functions
+            if (column && (column.type === 'checkbox' || column.type === 'radio')) {
+                // Unchecked all options
+                if (column.type === 'radio' && write) {
+                    for (const dataRow of worksheet.options.data) {
+                        dataRow[c] = false;
+                    }
+                }
+
+                // Update data and cell
+                (worksheet.records[y][x].element.children[0] as HTMLInputElement).checked =
+                    // eslint-disable-next-line eqeqeq -- a checkbox is checked by 1, true and the texts "1", "true" and "TRUE"
+                    value == 1 || value == true || value == 'true' || value == 'TRUE' ? true : false;
+                if (write) {
+                    worksheet.options.data[y][x] = (worksheet.records[y][x].element.children[0] as HTMLInputElement).checked;
+                }
+            } else if (column?.type === 'dropdown') {
+                // Update data and cell
+                if (write) {
+                    worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
+                }
+                worksheet.records[y][x].element.textContent = this.getDropDownValue(c, value);
+            } else if (column?.type === 'calendar') {
+                // Update data and cell
+                if (write) {
+                    worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
+                }
+                worksheet.records[y][x].element.textContent = this.formatCalendarValue(value, column.options?.format);
+            } else if (column?.type === 'color') {
+                // Update color
+                if (write) {
+                    worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
+                }
+                // Render
+                if (column.render === 'square') {
+                    const color = document.createElement('div');
+                    color.className = 'color';
+                    color.style.backgroundColor = value as string;
+                    worksheet.records[y][x].element.textContent = '';
+                    worksheet.records[y][x].element.appendChild(color);
+                } else {
+                    worksheet.records[y][x].element.style.color = value as string;
+                    worksheet.records[y][x].element.textContent = value as string;
+                }
+            } else if (column?.type === 'image') {
+                value = `${value}`;
+                if (write) {
+                    worksheet.options.data[y][x] = value;
+                }
+                worksheet.records[y][x].element.innerHTML = '';
+                if (value?.substr(0, 10) === 'data:image') {
+                    const img = document.createElement('img');
+                    img.src = value;
+                    worksheet.records[y][x].element.appendChild(img);
+                }
+            } else {
+                // Update data and cell
+                if (write) {
+                    worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
+                }
+                // Label
+                if (column?.type === 'html') {
+                    worksheet.records[y][x].element.innerHTML = stripScript(this.parseValue(x, y, value, worksheet.records[y][x].element));
+                } else {
+                    if (worksheet.parent.config.parseHTML === true) {
+                        worksheet.records[y][x].element.innerHTML = stripScript(this.parseValue(x, y, value, worksheet.records[y][x].element));
+                    } else {
+                        worksheet.records[y][x].element.textContent = this.parseValue(x, y, value, worksheet.records[y][x].element) as string;
+                    }
+                }
+                // Handle big text inside a cell
+                if (
+                    column?.wordWrap !== false &&
+                    (worksheet.options.wordWrap === true || column?.wordWrap === true || worksheet.records[y][x].element.innerHTML.length > 200)
+                ) {
+                    worksheet.records[y][x].element.style.whiteSpace = 'pre-wrap';
+                } else {
+                    worksheet.records[y][x].element.style.whiteSpace = '';
+                }
+            }
+        }
+
+        // Overflow
+        if (x > 0) {
+            if (value) {
+                worksheet.records[y][x - 1].element.style.overflow = 'hidden';
+            } else {
+                worksheet.records[y][x - 1].element.style.overflow = '';
+            }
+        }
+
+        if (column && typeof column.render === 'function') {
+            // updateCell has read worksheet.records[y][x] already, so the cell is there
+            column.render(
+                (worksheet.records[y]?.[x] ? worksheet.records[y][x].element : null) as HTMLTableCellElement,
+                value,
+                parseInt(x),
+                parseInt(y),
+                worksheet,
+                column
+            );
+        }
+
+        // Accessible name of the active cell
+        if (worksheet.selection.activeCell && worksheet.records[y]?.[x]?.element === worksheet.selection.activeCell) {
+            worksheet.accessibility.setCellLabel(worksheet.selection.activeCell);
+        }
+
+        return value;
     }
 
     /**
@@ -489,111 +619,7 @@ export class Cells {
                 oldValue,
             };
 
-            // A custom editor can have setValue, which is not in the public typings
-            const editor = (column && typeof column.type === 'object' ? column.type : null) as
-                (jspreadsheet.CustomEditor & { setValue?: (cell: HTMLTableCellElement, value: jspreadsheet.CellValue | undefined) => void }) | null;
-            if (editor) {
-                // Update data and cell
-                worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
-                if (typeof editor.setValue === 'function') {
-                    editor.setValue(worksheet.records[y][x].element, value);
-                }
-            } else {
-                // Native functions
-                if (column && (column.type === 'checkbox' || column.type === 'radio')) {
-                    // Unchecked all options
-                    if (column.type === 'radio') {
-                        for (const dataRow of worksheet.options.data) {
-                            dataRow[c] = false;
-                        }
-                    }
-
-                    // Update data and cell
-                    (worksheet.records[y][x].element.children[0] as HTMLInputElement).checked =
-                        // eslint-disable-next-line eqeqeq -- a checkbox is checked by 1, true and the texts "1", "true" and "TRUE"
-                        value == 1 || value == true || value == 'true' || value == 'TRUE' ? true : false;
-                    worksheet.options.data[y][x] = (worksheet.records[y][x].element.children[0] as HTMLInputElement).checked;
-                } else if (column?.type === 'dropdown') {
-                    // Update data and cell
-                    worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
-                    worksheet.records[y][x].element.textContent = this.getDropDownValue(c, value);
-                } else if (column?.type === 'calendar') {
-                    // Update data and cell
-                    worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
-                    worksheet.records[y][x].element.textContent = this.formatCalendarValue(value, column.options?.format);
-                } else if (column?.type === 'color') {
-                    // Update color
-                    worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
-                    // Render
-                    if (column.render === 'square') {
-                        const color = document.createElement('div');
-                        color.className = 'color';
-                        color.style.backgroundColor = value as string;
-                        worksheet.records[y][x].element.textContent = '';
-                        worksheet.records[y][x].element.appendChild(color);
-                    } else {
-                        worksheet.records[y][x].element.style.color = value as string;
-                        worksheet.records[y][x].element.textContent = value as string;
-                    }
-                } else if (column?.type === 'image') {
-                    value = `${value}`;
-                    worksheet.options.data[y][x] = value;
-                    worksheet.records[y][x].element.innerHTML = '';
-                    if (value?.substr(0, 10) === 'data:image') {
-                        const img = document.createElement('img');
-                        img.src = value;
-                        worksheet.records[y][x].element.appendChild(img);
-                    }
-                } else {
-                    // Update data and cell
-                    worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
-                    // Label
-                    if (column?.type === 'html') {
-                        worksheet.records[y][x].element.innerHTML = stripScript(this.parseValue(x, y, value, worksheet.records[y][x].element));
-                    } else {
-                        if (worksheet.parent.config.parseHTML === true) {
-                            worksheet.records[y][x].element.innerHTML = stripScript(this.parseValue(x, y, value, worksheet.records[y][x].element));
-                        } else {
-                            worksheet.records[y][x].element.textContent = this.parseValue(x, y, value, worksheet.records[y][x].element) as string;
-                        }
-                    }
-                    // Handle big text inside a cell
-                    if (
-                        column?.wordWrap !== false &&
-                        (worksheet.options.wordWrap === true || column?.wordWrap === true || worksheet.records[y][x].element.innerHTML.length > 200)
-                    ) {
-                        worksheet.records[y][x].element.style.whiteSpace = 'pre-wrap';
-                    } else {
-                        worksheet.records[y][x].element.style.whiteSpace = '';
-                    }
-                }
-            }
-
-            // Overflow
-            if (x > 0) {
-                if (value) {
-                    worksheet.records[y][x - 1].element.style.overflow = 'hidden';
-                } else {
-                    worksheet.records[y][x - 1].element.style.overflow = '';
-                }
-            }
-
-            if (column && typeof column.render === 'function') {
-                // updateCell has read worksheet.records[y][x] already, so the cell is there
-                column.render(
-                    (worksheet.records[y]?.[x] ? worksheet.records[y][x].element : null) as HTMLTableCellElement,
-                    value,
-                    parseInt(x),
-                    parseInt(y),
-                    worksheet,
-                    column
-                );
-            }
-
-            // Accessible name of the active cell
-            if (worksheet.selection.activeCell && worksheet.records[y]?.[x]?.element === worksheet.selection.activeCell) {
-                worksheet.accessibility.setCellLabel(worksheet.selection.activeCell);
-            }
+            value = this.display(x, y, value, true);
 
             // On change. updateCell has read worksheet.records[y][x] already, so the cell is there.
             worksheet.dispatch(

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Worksheet } from './support/jspreadsheet';
+import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
 
 function grid() {
     const data: (string | number)[][] = [];
@@ -158,5 +158,41 @@ describe('The updateReferences option', () => {
         expect(events).to.eql(['insertrow']);
         expect(worksheet.getValue('B3')).to.equal('=A2*2');
         expect(worksheet.getValue('B3', true)).to.equal('2');
+    });
+
+    it('shows a new result as a change of the cell shows it: secured formulas, the render of the column, a custom type', () => {
+        const custom = {
+            createCell: (cell: HTMLTableCellElement, value: unknown) => {
+                cell.innerHTML = `<i>${value}</i>`;
+                return cell;
+            },
+            setValue: (cell: HTMLTableCellElement, value: unknown) => {
+                cell.innerHTML = `<i>${value}</i>`;
+            },
+            openEditor: () => undefined,
+            closeEditor: () => undefined,
+        };
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '=a2*2', '=A2', '=C1', '=A2*3'],
+                        ['2', '', '', '', ''],
+                        ['3', '', '', '', ''],
+                    ],
+                    secureFormulas: true,
+                    columns: [{}, {}, { type: custom as unknown as Jspreadsheet.CustomEditor }, {}, { render: (td: HTMLTableCellElement) => td.prepend('R') }],
+                },
+            ],
+            updateReferences: false,
+        });
+        const shown = () => [worksheet.getCell('B1').textContent, worksheet.getCell('C1').innerHTML, worksheet.getCell('E1').textContent];
+        expect(shown()).to.eql(['4', '<i>=A2</i>', 'R6']);
+
+        worksheet.insertRow(1, 0, true);
+
+        // The old row 1 is row 2 now, so A2 is 1
+        expect(worksheet.getValueFromCoords(1, 1)).to.equal('=a2*2');
+        expect([worksheet.getCell('B2').textContent, worksheet.getCell('C2').innerHTML, worksheet.getCell('E2').textContent]).to.eql(['2', '<i>=A2</i>', 'R3']);
     });
 });

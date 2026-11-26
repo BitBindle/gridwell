@@ -291,7 +291,7 @@ export class Formulas {
 
     /**
      * Show again the result of each formula that names a cell at or after a start, and of the formulas that name these
-     * formulas. Each formula calculates once, with no data write and no event. A formula cell that a delete removed
+     * formulas. Each formula cell shows its result once, with no data write and no event. A formula cell that a delete removed
      * leaves the chain.
      */
     private showResults(firstColumn: number, firstRow: number) {
