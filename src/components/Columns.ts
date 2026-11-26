@@ -2,7 +2,7 @@ import jSuites from 'jsuites';
 import dispatch from '../utils/dispatch.js';
 import { getColumnName } from '../utils/helpers.js';
 import { getColumnNameFromId, injectArray } from '../utils/internalHelpers.js';
-import { setHeaderRole } from '../utils/accessibility.js';
+import { setHeaderRole } from './Accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
 

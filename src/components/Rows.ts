@@ -1,7 +1,6 @@
 import jSuites from 'jsuites';
 import dispatch from '../utils/dispatch.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
-import { setRowRole } from '../utils/accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
 
@@ -96,7 +95,7 @@ export class Rows {
         }
 
         // Role and position for assistive technology
-        setRowRole.call(obj, row.element, j);
+        obj.accessibility.setRowRole(row.element, j);
 
         // Add row to the table body
         return row;

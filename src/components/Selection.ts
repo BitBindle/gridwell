@@ -1,7 +1,6 @@
 import dispatch from '../utils/dispatch.js';
 import { getCellNameFromCoords } from '../utils/helpers.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
-import { setCellLabel } from '../utils/accessibility.js';
 import libraryBase from '../utils/libraryBase.js';
 import type { WorksheetState, Worksheet, SelectedWorksheet } from '../types/internal';
 
@@ -686,7 +685,7 @@ export class Selection {
             if (!obj.editor.isOpen() || obj.editor.cell !== td) {
                 td.tabIndex = 0;
             }
-            setCellLabel.call(obj, td);
+            obj.accessibility.setCellLabel(td);
             if (td.getAttribute('aria-selected') !== 'true') {
                 td.setAttribute('aria-selected', 'false');
             }
@@ -791,7 +790,7 @@ export class Selection {
         }
 
         cell.tabIndex = 0;
-        setCellLabel.call(obj, cell);
+        obj.accessibility.setCellLabel(cell);
 
         setTimeout(function () {
             if (isFocusLost() && libraryBase.jspreadsheet.current === obj && obj.selection.activeCell === cell && !obj.editor.isOpen()) {

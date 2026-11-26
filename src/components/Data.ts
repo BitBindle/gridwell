@@ -1,7 +1,6 @@
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import dispatch from '../utils/dispatch.js';
 import { getCoordsFromRange } from '../utils/helpers.js';
-import { updateGridSize } from '../utils/accessibility.js';
 import type { Worksheet } from '../types/internal';
 import type { CellChange, CellValue } from '../jspreadsheet';
 
@@ -136,7 +135,7 @@ export class Data {
         }
 
         // Update the size of the grid
-        updateGridSize.call(obj);
+        obj.accessibility.updateGridSize();
 
         // The rows are new, so the tab stop of the grid is new
         obj.selection.updateTabStop();

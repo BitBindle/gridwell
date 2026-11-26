@@ -2,7 +2,6 @@ import { getCoordsFromCellName } from '../utils/helpers.js';
 import { getIdFromColumnName, getColumnNameFromId } from '../utils/internalHelpers.js';
 import jSuites from 'jsuites';
 import dispatch from '../utils/dispatch.js';
-import { setCellLabel } from '../utils/accessibility.js';
 import { getMask, isFormula } from '../utils/values.js';
 import type { Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
@@ -590,7 +589,7 @@ export class Cells {
 
             // Accessible name of the active cell
             if (obj.selection.activeCell && obj.records[y] && obj.records[y][x] && obj.records[y][x].element === obj.selection.activeCell) {
-                setCellLabel.call(obj, obj.selection.activeCell);
+                obj.accessibility.setCellLabel(obj.selection.activeCell);
             }
 
             // On change. updateCell has read obj.records[y][x] already, so the cell is there.

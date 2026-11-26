@@ -1,4 +1,5 @@
 import type jspreadsheet from './jspreadsheet';
+import { Accessibility } from './components/Accessibility.js';
 import { Cells } from './components/Cells.js';
 import { Clipboard } from './components/Clipboard.js';
 import { Columns } from './components/Columns.js';
@@ -54,6 +55,7 @@ export class Worksheet {
         this.columns = new Columns(this);
         this.rowManager = new Rows(this);
         this.data = new Data(this);
+        this.accessibility = new Accessibility(this);
         this.lastScrollLeft = 0;
     }
 }
