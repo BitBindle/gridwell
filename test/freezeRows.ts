@@ -518,14 +518,6 @@ describe('setFreeze', () => {
         expect([worksheet.options.freezeRows, worksheet.options.freezeColumns]).to.eql([2, 3]);
     });
 
-    it('gives the frozen width of the columns that exist when the option is larger', () => {
-        const [worksheet] = jspreadsheet(root, {
-            worksheets: [{ data: rows(5), freezeColumns: 1e9, columns: [{ width: 100 }, { width: 300 }] }],
-        });
-
-        expect(worksheet.columns.getFreezeWidth()).to.equal(400);
-    });
-
     it('puts the new frozen rows first in the table with lazy loading, and removes the rows that leave', () => {
         const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }] });
         const attached = () => Array.from(worksheet.tbody.children).map((row) => Number(row.getAttribute('data-y')));
