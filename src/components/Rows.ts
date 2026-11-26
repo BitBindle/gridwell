@@ -2,6 +2,7 @@ import { translate } from '../utils/dictionary.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
+import { askConfirm } from '../utils/dialogs.js';
 
 /**
  * The rows of a worksheet: it creates, inserts, moves, deletes, hides and shows them, gets and sets their heights and
@@ -209,7 +210,7 @@ export class Rows {
             // Merged cells
             if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
                 if (worksheet.merges.isRowMerged(rowNumber, insertBefore).length) {
-                    if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                    if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                         return false;
                     } else {
                         worksheet.destroyMerge();
@@ -220,7 +221,7 @@ export class Rows {
             // Clear any search
             if (worksheet.options.search === true) {
                 if (worksheet.view.results && worksheet.view.results.length !== worksheet.rows.length) {
-                    if (confirm(translate('This action will clear your search results. Are you sure?'))) {
+                    if (askConfirm(worksheet.parent.config, translate('This action will clear your search results. Are you sure?'))) {
                         worksheet.resetSearch();
                     } else {
                         return false;
@@ -299,7 +300,7 @@ export class Rows {
             }
 
             if (worksheet.merges.isRowMerged(o).length || worksheet.merges.isRowMerged(d, insertBefore).length) {
-                if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                     return false;
                 } else {
                     worksheet.destroyMerge();
@@ -309,7 +310,7 @@ export class Rows {
 
         if (worksheet.options.search === true) {
             if (worksheet.view.results && worksheet.view.results.length !== worksheet.rows.length) {
-                if (confirm(translate('This action will clear your search results. Are you sure?'))) {
+                if (askConfirm(worksheet.parent.config, translate('This action will clear your search results. Are you sure?'))) {
                     worksheet.resetSearch();
                 } else {
                     return false;
@@ -429,7 +430,7 @@ export class Rows {
                         }
                     }
                     if (mergeExists) {
-                        if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                        if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                             return false;
                         } else {
                             worksheet.destroyMerge();
@@ -439,7 +440,7 @@ export class Rows {
                     // Clear any search
                     if (worksheet.options.search === true) {
                         if (worksheet.view.results && worksheet.view.results.length !== worksheet.rows.length) {
-                            if (confirm(translate('This action will clear your search results. Are you sure?'))) {
+                            if (askConfirm(worksheet.parent.config, translate('This action will clear your search results. Are you sure?'))) {
                                 worksheet.resetSearch();
                             } else {
                                 return false;

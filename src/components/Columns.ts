@@ -4,6 +4,7 @@ import { getColumnNameFromId, injectArray } from '../utils/internalHelpers.js';
 import { setHeaderRole } from './Accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
+import { askConfirm } from '../utils/dialogs.js';
 
 /**
  * The columns of a worksheet: it counts them, creates their headers, inserts, moves, deletes, hides and shows them, gets
@@ -314,7 +315,7 @@ export class Columns {
             // Merged cells
             if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
                 if (worksheet.merges.isColMerged(columnNumber, insertBefore).length) {
-                    if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                    if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                         return false;
                     } else {
                         worksheet.destroyMerge();
@@ -397,7 +398,7 @@ export class Columns {
             }
 
             if (worksheet.merges.isColMerged(o).length || worksheet.merges.isColMerged(d, insertBefore).length) {
-                if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                     return false;
                 } else {
                     worksheet.destroyMerge();
@@ -535,7 +536,7 @@ export class Columns {
                         }
                     }
                     if (mergeExists) {
-                        if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                        if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                             return false;
                         } else {
                             worksheet.destroyMerge();
