@@ -44,8 +44,6 @@ Jspreadsheet CE is an extensible framework for building sophisticated data-orien
 ```html
 <script src="https://cdn.jsdelivr.net/npm/jspreadsheet-ce/dist/index.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspreadsheet-ce/dist/jspreadsheet.min.css" type="text/css" />
-<script src="https://cdn.jsdelivr.net/npm/jsuites/dist/jsuites.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsuites/dist/jsuites.min.css" type="text/css" />
 ```
 
 ### Formulas
@@ -74,13 +72,11 @@ A basic example to integrate the Jspreadsheet in your website to create your fir
 
 #### Usage
 
-Add jexcel/jspreadsheet and Jsuites to your html file
+Add jexcel/jspreadsheet to your html file
 
 ```html
 <script src="https://bossanova.uk/jspreadsheet/v5/jspreadsheet.js"></script>
-<script src="https://jsuites.net/v5/jsuites.js"></script>
 <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v5/jspreadsheet.css" type="text/css" />
-<link rel="stylesheet" href="https://jsuites.net/v5/jsuites.css" type="text/css" />
 ```
 
 You should initialize your data grid on a div container, such as:

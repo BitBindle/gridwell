@@ -8,10 +8,7 @@
         "lib": ["dom", "dom.iterable", "es2022"],
         "types": [],
         "isolatedModules": true,
-        "skipLibCheck": true,
-        "paths": {
-            "jsuites": ["./src/types/jsuites-module.d.ts"]
-        }
+        "skipLibCheck": true
     },
     "include": ["src/**/*.ts"]
 }

@@ -2,7 +2,6 @@ import formula from '@jspreadsheet/formula';
 import jspreadsheet from './index.js';
 
 import './jspreadsheet.css';
-import 'jsuites/dist/jsuites.css';
 
 window.jss = jspreadsheet;
 

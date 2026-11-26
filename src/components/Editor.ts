@@ -440,7 +440,6 @@ export class Editor {
         // Column options
         const column = worksheet.options.columns?.[worksheet.cells.getColumnIndex(x, y)];
 
-        // The editor element has the jsuites control as a property
         let value;
 
         // Get cell properties

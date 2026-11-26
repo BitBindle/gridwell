@@ -352,8 +352,7 @@ spreadsheet without formulas no longer needs the 140 KB of the engine.
 
 Jspreadsheet keeps its own dictionary and no longer reads the dictionary of jSuites. An application that called
 `jSuites.setDictionary`, or set `document.dictionary`, to translate the texts of the spreadsheet calls
-`jspreadsheet.setDictionary` instead. It takes the same object. It still passes it to jSuites, although no part of
-Jspreadsheet uses jSuites any more. An empty translation shows the English text again.
+`jspreadsheet.setDictionary` instead. It takes the same object. An empty translation shows the English text again.
 
 ## The requests are sent with fetch
 
@@ -536,3 +535,16 @@ The columns keep their types and their values, and the cells show them as before
   has no close icon and no `upload` options: the options of the column, such as `maxWidth`, `maxHeight` and
   `maxJpegSizeBytes`, are not read. The element of the dialog keeps it as `upload`, with `getValue()` and `setValue(value)`.
 - The new texts are translated with `jspreadsheet.setDictionary`: `Choose an image`, `Remove` and `Done`.
+
+## Jspreadsheet does not need jSuites
+
+Jspreadsheet no longer depends on jSuites. The package is not installed with it, and the bundle no longer reads the
+global `jSuites` or calls `require('jsuites')`. A page needs only the script and the stylesheet of Jspreadsheet:
+
+- Remove the script and the stylesheet of jSuites, unless the application uses jSuites itself. The stylesheet of
+  Jspreadsheet has the styles of the tabs, the context menu, the toolbar, the pickers, the color picker, the dropdown, the
+  calendar and the image editor. The stylesheet of jSuites still works next to it, but it is not needed.
+- `jspreadsheet.setDictionary` no longer passes the translations to `jSuites.setDictionary`. An application that shows
+  jSuites controls of its own translates them with `jSuites.setDictionary`.
+- A press near the top right corner of an element with the class `jclose`, the close icon of the jSuites image editor, no
+  longer closes the editor of the cell.
