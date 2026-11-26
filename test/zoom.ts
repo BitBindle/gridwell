@@ -14,12 +14,20 @@ function rect(element: HTMLElement, left: number, top: number, width: number, he
     element.getBoundingClientRect = () => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top }) as DOMRect;
 }
 
-function mouse(element: Element, type: string, init: MouseEventInit & { offsetX?: number; pageX?: number } = {}) {
-    const { offsetX = 0, ...rest } = init;
+function mouse(element: Element, type: string, init: MouseEventInit & { offsetX?: number; offsetY?: number; pageX?: number; pageY?: number } = {}) {
+    const { offsetX = 0, offsetY = 0, ...rest } = init;
     const event = new window.MouseEvent(type, { bubbles: true, cancelable: true, buttons: 1, ...rest });
     Object.defineProperty(event, 'offsetX', { value: offsetX });
+    Object.defineProperty(event, 'offsetY', { value: offsetY });
     Object.defineProperty(event, 'pageX', { value: rest.pageX || 0 });
+    Object.defineProperty(event, 'pageY', { value: rest.pageY || 0 });
     element.dispatchEvent(event);
+}
+
+// The size of an element in the grid, which clientWidth and clientHeight give
+function client(element: HTMLElement, width: number, height: number) {
+    Object.defineProperty(element, 'clientWidth', { configurable: true, value: width });
+    Object.defineProperty(element, 'clientHeight', { configurable: true, value: height });
 }
 
 describe('Zoom', () => {
@@ -97,5 +105,73 @@ describe('Zoom', () => {
         expect(worksheet.headers[0].classList.contains('jss_freezed')).to.equal(true);
         // 300 / 2 - 50 - 1
         expect(worksheet.records[1][0].element.style.left).to.equal('99px');
+    });
+
+    it('gives a row the height of the move of the mouse in the grid, and keeps its old height in the grid for the undo', async () => {
+        const [worksheet] = await load({ zoom: 2, worksheets: [{ minDimensions: [2, 2] }] });
+        const rowNumber = worksheet.rows[0].element.children[0] as HTMLElement;
+        rect(rowNumber, 0, 0, 100, 50);
+
+        mouse(rowNumber, 'mousedown', { offsetY: 48, pageY: 48 });
+        mouse(rowNumber, 'mousemove', { pageY: 88 });
+        mouse(rowNumber, 'mouseup');
+
+        expect(worksheet.rows[0].element.getAttribute('height')).to.equal('45');
+
+        // Without a height attribute, the old height comes from the screen
+        worksheet.rows[1].element.removeAttribute('height');
+        rect(worksheet.rows[1].element, 0, 0, 100, 50);
+        worksheet.setHeight(1, 40);
+        worksheet.undo();
+        expect(worksheet.getHeight(1)).to.equal('25px');
+    });
+
+    it('puts a dragged column before the header when the mouse is over its left half in the grid', async () => {
+        const [worksheet] = await load({ zoom: 2, worksheets: [{ minDimensions: [4, 1], columnResize: false }] });
+        for (const header of worksheet.headers) {
+            rect(header, 0, 0, 200, 40);
+            client(header, 100, 20);
+        }
+
+        mouse(worksheet.headers[0], 'mousedown', { offsetY: 38 });
+        // 80 screen pixels are 40 grid pixels, in the left half of a column of 100 grid pixels
+        mouse(worksheet.headers[2], 'mousemove', { offsetX: 80 });
+
+        expect(worksheet.pointer.dragging!.destination).to.equal(1);
+        expect(worksheet.headers[2].classList.contains('dragging-left')).to.equal(true);
+        mouse(worksheet.headers[2], 'mouseup');
+    });
+
+    it('scrolls a cell that the keys select into the view on the screen, to the right of the frozen column', () => {
+        const [worksheet] = jspreadsheet(root, {
+            zoom: 2,
+            worksheets: [{ minDimensions: [10, 2], freezeColumns: 1, tableOverflow: true, columns: [{ width: 100 }] }],
+        });
+        rect(worksheet.content, 0, 0, 600, 300);
+        Object.defineProperty(worksheet.content, 'scrollLeft', { value: 400, writable: true });
+        // Column C starts 150 screen pixels right of the content: under the frozen column of 200 screen pixels
+        rect(worksheet.records[0][2].element, 150, 40, 200, 50);
+        worksheet.updateSelectionFromCoords(3, 0, 3, 0);
+
+        worksheet.left();
+
+        // 150 + 400 - 200 - 1: the cell starts right of the frozen column
+        expect(worksheet.content.scrollLeft).to.equal(349);
+    });
+
+    it('keeps the same cells in view after setZoom, and saves and closes a pop-up editor', async () => {
+        const [worksheet] = await load({
+            zoom: 2,
+            worksheets: [{ data: [['a', 'x']], tableOverflow: true, columns: [{ type: 'dropdown', source: ['a', 'b'] }, {}] }],
+        });
+        Object.defineProperty(worksheet.content, 'scrollLeft', { value: 300, writable: true });
+        Object.defineProperty(worksheet.content, 'scrollTop', { value: 100, writable: true });
+        worksheet.openEditor(worksheet.getCell('A1'));
+        expect(worksheet.editor.isOpen()).to.equal(true);
+
+        worksheet.setZoom(1);
+
+        expect(worksheet.editor.isOpen()).to.equal(false);
+        expect([worksheet.content.scrollLeft, worksheet.content.scrollTop]).to.eql([150, 50]);
     });
 });

@@ -2027,6 +2027,12 @@ declare namespace jspreadsheet {
         content: HTMLDivElement;
 
         /**
+         * The wrapper in `content` that holds the table, the selection corner and the clipboard helper. It has the CSS
+         * property `zoom` of the spreadsheet option `zoom`.
+         */
+        zoomed: HTMLDivElement;
+
+        /**
          * Copies or cuts the contents of selected cells in the worksheet. Does nothing when no cell is selected.
          * @param cut - If true, the operation is cut, if not, it is copy.
          */

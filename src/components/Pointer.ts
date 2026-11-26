@@ -598,7 +598,8 @@ export class Pointer {
                     if (dragging.column === columnId) {
                         dragging.destination = columnId;
                     } else {
-                        if (e.target.clientWidth / 2 > e.offsetX) {
+                        // The offset of the mouse is in screen pixels, and clientWidth in grid pixels
+                        if (e.target.clientWidth / 2 > toGrid(worksheet, e.offsetX)) {
                             if (dragging.column < columnId) {
                                 dragging.destination = columnId - 1;
                             } else {
@@ -622,7 +623,7 @@ export class Pointer {
                 if (worksheet.merges.isRowMerged(rowId).length) {
                     console.error('Jspreadsheet: This row is part of a merged cell.');
                 } else {
-                    const target = e.target.clientHeight / 2 > e.offsetY ? e.target.parentNode!.nextSibling : e.target.parentNode;
+                    const target = e.target.clientHeight / 2 > toGrid(worksheet, e.offsetY) ? e.target.parentNode!.nextSibling : e.target.parentNode;
                     if (dragging.element !== target) {
                         e.target.parentNode!.parentNode!.insertBefore(dragging.element, target);
                         dragging.destination = Array.from(dragging.element.parentNode!.children).indexOf(dragging.element);
