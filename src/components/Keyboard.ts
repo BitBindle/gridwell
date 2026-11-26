@@ -6,14 +6,17 @@ import { askConfirm } from '../utils/dialogs.js';
 
 /**
  * Type text at the caret of a focused field with the insertText command, as the user does. False when the browser does
- * not do the command, for example in a test without a layout.
+ * not do the command.
  */
 function insertText(field: HTMLTextAreaElement, text: string) {
     if (document.activeElement !== field || typeof document.execCommand !== 'function') {
         return false;
     }
+    const value = field.value;
+    const start = field.selectionStart;
     try {
-        return document.execCommand('insertText', false, text);
+        // jsdom gives true and changes nothing
+        return document.execCommand('insertText', false, text) && (field.value !== value || field.selectionStart !== start);
     } catch {
         return false;
     }
