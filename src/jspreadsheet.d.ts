@@ -1748,7 +1748,8 @@ declare namespace jspreadsheet {
         hideToolbar: () => void;
 
         /**
-         * If true, the spreadsheet does not emit events.
+         * If true, the spreadsheet does not emit events, except onbeforesave and onsave: the persistence still saves the
+         * changes, for example of an undo or a redo.
          */
         ignoreEvents?: boolean;
 

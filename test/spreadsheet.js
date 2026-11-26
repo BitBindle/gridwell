@@ -121,6 +121,36 @@ describe('Events of the spreadsheet', () => {
             expect(requests.length).to.equal(1);
         });
 
+        it('triggers onbeforesave and onsave for an undo and a redo, so that onbeforesave can cancel the post (issue #57)', () => {
+            const calls = [];
+            let result;
+            const worksheet = jspreadsheet(root, {
+                worksheets: [{ data: [['a', 'b']], persistence: '/save' }],
+                onbeforesave: (spreadsheet, instance, data) => {
+                    calls.push(['onbeforesave', data]);
+                    return result;
+                },
+                onsave: (spreadsheet, instance, data) => calls.push(['onsave', data]),
+            })[0];
+
+            worksheet.setValue('B1', 'x');
+            worksheet.undo();
+
+            expect(requests.length).to.equal(2);
+            expect(calls).to.eql([
+                ['onbeforesave', [{ row: 0, data: { 1: 'x' } }]],
+                ['onsave', [{ row: 0, data: { 1: 'x' } }]],
+                ['onbeforesave', [{ row: 0, data: { 1: 'b' } }]],
+                ['onsave', [{ row: 0, data: { 1: 'b' } }]],
+            ]);
+
+            result = false;
+            worksheet.redo();
+
+            expect(requests.length).to.equal(2);
+            expect(worksheet.parent.ignoreEvents).to.equal(false);
+        });
+
         it('gives the changes to the persistence of a plugin', () => {
             const changes = [];
             const worksheet = jspreadsheet(root, {

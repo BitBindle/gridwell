@@ -271,3 +271,9 @@ the cell as numbers. Version 5 gave them as text after a typed edit, a click on 
 `setValue` with a cell element, and as numbers after the other changes (#52). An application that compared them with
 text, such as `x === '2'`, compares them with numbers. In the typings, `CellChange.x` and `CellChange.y` are numbers,
 and `CellChange.value` can be `undefined`, as the new value of `onchange` can.
+
+## The persistence events occur for an undo and a redo
+
+With `persistence`, an undo or a redo posts the cells it changed. Version 5 posted them without `onbeforesave` and
+`onsave`, because undo and redo set `ignoreEvents` (#57). `onbeforesave` and `onsave` now occur while `ignoreEvents` is
+set, so `onbeforesave` can change or cancel every post.
