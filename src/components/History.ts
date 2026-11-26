@@ -229,6 +229,9 @@ export class History {
             }
         }
 
+        // The frozen columns can be other columns now
+        worksheet.columns.updateFrozenColumns();
+
         worksheet.formulas.updateTableReferences();
     }
 

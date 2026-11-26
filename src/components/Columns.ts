@@ -372,6 +372,9 @@ export class Columns {
             // Remove table references
             worksheet.formulas.updateTableReferences();
 
+            // The frozen columns can be other columns now
+            this.updateFrozenColumns();
+
             // Events
             worksheet.dispatch('oninsertcolumn', worksheet, columns);
         }
@@ -459,6 +462,9 @@ export class Columns {
 
         // Update table references
         worksheet.formulas.updateTableReferences();
+
+        // The frozen columns can be other columns now
+        this.updateFrozenColumns();
 
         // Events
         worksheet.dispatch('onmovecolumn', worksheet, o, d, 1);
@@ -611,6 +617,9 @@ export class Columns {
 
                     // Update table references
                     worksheet.formulas.updateTableReferences();
+
+                    // The frozen columns can be other columns now
+                    this.updateFrozenColumns();
 
                     // Delete
                     worksheet.dispatch('ondeletecolumn', worksheet, removedColumns);
@@ -1023,18 +1032,45 @@ export class Columns {
             }
         } else {
             for (let i = 0; i < freezeColumns; i++) {
-                worksheet.headers[i].classList.remove('jss_freezed', 'jss_freezed_last');
-                worksheet.headers[i].style.left = '';
-                for (let j = 0; j < worksheet.rows.length; j++) {
-                    if (worksheet.records[j][i]) {
-                        worksheet.records[j][i].element.classList.remove('jss_freezed', 'jss_freezed_last');
-                        worksheet.records[j][i].element.style.left = '';
-                    }
-                }
+                this.unfreeze(i);
+            }
+        }
+
+        // A column that an insert, a move or a delete took out of the frozen columns is not frozen any more. Its header
+        // and its cells moved together, so the header tells.
+        for (let i = freezeColumns; i < worksheet.headers.length; i++) {
+            if (worksheet.headers[i].classList.contains('jss_freezed')) {
+                this.unfreeze(i);
             }
         }
 
         // Place the corner in the correct place
         worksheet.selection.updateCorner();
+    }
+
+    /**
+     * Place a column back in the table, where the frozen columns are not.
+     * @param i - The column.
+     */
+    private unfreeze(i: number) {
+        const worksheet = this.worksheet;
+
+        worksheet.headers[i].classList.remove('jss_freezed', 'jss_freezed_last');
+        worksheet.headers[i].style.left = '';
+        for (let j = 0; j < worksheet.rows.length; j++) {
+            if (worksheet.records[j][i]) {
+                worksheet.records[j][i].element.classList.remove('jss_freezed', 'jss_freezed_last');
+                worksheet.records[j][i].element.style.left = '';
+            }
+        }
+    }
+
+    /**
+     * Place the frozen columns again after the columns changed, when the worksheet has frozen columns.
+     */
+    updateFrozenColumns() {
+        if (this.worksheet.options.freezeColumns! > 0) {
+            this.updateFreezePosition();
+        }
     }
 }

@@ -200,3 +200,63 @@ describe('Freeze columns with a hidden index column', () => {
         expect(() => worksheet.showIndex()).to.not.throw();
     });
 });
+
+describe('Freeze columns after the columns change (issue #24)', () => {
+    const scroll = (worksheet, scrollLeft) => {
+        worksheet.content.scrollLeft = scrollLeft;
+        worksheet.content.dispatchEvent(new window.Event('scroll'));
+    };
+
+    const frozen = (worksheet) =>
+        worksheet.headers.map((header, x) => [header.classList.contains('jss_freezed'), worksheet.records[1][x].element.classList.contains('jss_freezed')]);
+
+    const create = () => {
+        const worksheet = scrolledWorksheet(0);
+        scroll(worksheet, 400);
+        return worksheet;
+    };
+
+    it('freezes the first columns after insertColumn before a frozen column', () => {
+        const worksheet = create();
+
+        worksheet.insertColumn(1, 0, true);
+
+        expect(frozen(worksheet).slice(0, 4)).to.eql([
+            [true, true],
+            [true, true],
+            [false, false],
+            [false, false],
+        ]);
+
+        scroll(worksheet, 0);
+
+        expect(frozen(worksheet).flat()).to.not.include(true);
+    });
+
+    it('freezes the first columns after deleteColumn and moveColumn', () => {
+        const worksheet = create();
+
+        worksheet.deleteColumn(0);
+        expect(frozen(worksheet).slice(0, 3)).to.eql([
+            [true, true],
+            [true, true],
+            [false, false],
+        ]);
+
+        worksheet.moveColumn(0, 5);
+        expect(frozen(worksheet).map(([header]) => header)).to.eql(frozen(worksheet).map((value, x) => x < 2));
+    });
+
+    it('freezes the first columns after an undo of insertColumn', () => {
+        const worksheet = create();
+
+        worksheet.insertColumn(1, 0, true);
+        worksheet.undo();
+
+        expect(frozen(worksheet).slice(0, 3)).to.eql([
+            [true, true],
+            [true, true],
+            [false, false],
+        ]);
+    });
+});
