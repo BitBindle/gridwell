@@ -6,7 +6,7 @@ Guidance for coding agents working in this repository.
 
 This is BitBindle's fork of [Jspreadsheet CE](https://github.com/jspreadsheet/ce) v5, a vanilla JavaScript data grid with spreadsheet controls. It runs in the browser and uses two packages at runtime:
 
-- `jsuites`: UI components (calendar, dropdown, context menu, tabs, masks), a dependency. It is being replaced one part at a time: the texts are translated with `src/utils/dictionary.ts`, which `jspreadsheet.setDictionary` fills (it passes the translations to jsuites too, for its controls), the requests are sent with `fetch` in `src/utils/request.ts`, and `src/utils/ids.ts` gives the ids of the elements.
+- `jsuites`: UI components (calendar, dropdown, context menu, toolbar, color picker, masks), a dependency. It is being replaced one part at a time: the texts are translated with `src/utils/dictionary.ts`, which `jspreadsheet.setDictionary` fills (it passes the translations to jsuites too, for its controls), the requests are sent with `fetch` in `src/utils/request.ts`, `src/utils/ids.ts` gives the ids of the elements, and the tabs (`src/utils/tabs.ts`) have their styles in `src/jspreadsheet.css`.
 - `@jspreadsheet/formula`: the formula engine, an optional peer dependency. The library does not import it: the application registers it with `jspreadsheet.setFormulaEngine(formula)`, and without an engine a formula shows `#ENGINE`. `src/components/Formulas.ts` calls it, and `test/support/jspreadsheet.ts` registers it for the tests.
 
 The fork has its own fixes (pull requests #5 and later), many of them for accessibility. Changes from upstream are not merged any more.
