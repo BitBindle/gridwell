@@ -405,7 +405,7 @@ export class Data {
         return dataset;
     }
 
-    getFromRange(range: string, processed: true): CellValue[][] {
+    getFromRange(range: string, processed?: boolean): CellValue[][] {
         const worksheet = this.worksheet;
 
         const coords = getCoordsFromRange(range);

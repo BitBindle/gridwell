@@ -1939,7 +1939,7 @@ declare namespace jspreadsheet {
          * @param range - Range of cells whose values are to be returned.
          * @param processed - If true, the method returns the values of the HTML elements of the cells. Otherwise, the method returns the values of the cells in the options.data array.
          */
-        getDataFromRange: (range: string, processed: true) => CellValue[][];
+        getDataFromRange: (range: string, processed?: boolean) => CellValue[][];
 
         /**
          * Get the column title.

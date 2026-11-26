@@ -489,7 +489,7 @@ export class Worksheet {
         return this.formulas.execute(expression, x, y);
     }
 
-    getDataFromRange(range: string, processed: true) {
+    getDataFromRange(range: string, processed?: boolean) {
         return this.data.getFromRange(range, processed);
     }
 

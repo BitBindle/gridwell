@@ -258,3 +258,9 @@ pickerInstance.close();
 void library.custom;
 // An event of the application's own needs a cast of its name, as UPGRADING.md says
 worksheet.dispatch('oncustom' as jspreadsheet.EventName, worksheet);
+
+// getDataFromRange gives the data without processed, and the shown values with it (issue #99)
+const rangeData = worksheet.getDataFromRange('A1:C1');
+assertType<Equals<typeof rangeData, jspreadsheet.CellValue[][]>>();
+worksheet.getDataFromRange('A1:C1', false);
+worksheet.getDataFromRange('A1:C1', true);
