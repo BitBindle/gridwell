@@ -4,7 +4,7 @@ Guidance for coding agents working in this repository.
 
 ## Project
 
-This is BitBindle's fork of [Jspreadsheet CE](https://github.com/jspreadsheet/ce) v5, a vanilla JavaScript data grid with spreadsheet controls. It runs in the browser and has no dependencies.
+This is Gridwell (`@bitbindle/gridwell` on npm), BitBindle's fork of [Jspreadsheet CE](https://github.com/jspreadsheet/ce) v5: a vanilla JavaScript data grid with spreadsheet controls. It runs in the browser and has no dependencies. The code still calls the library `jspreadsheet` (the function, the `jss_` classes, the files), and the bundle sets both the globals `gridwell` and `jspreadsheet`.
 
 - **No jSuites.** The library used to show its controls with [jSuites](https://jsuites.net). They were replaced one part at a time, and the package is no longer a dependency: the texts are translated with `src/utils/dictionary.ts`, which `jspreadsheet.setDictionary` fills, the requests are sent with `fetch` in `src/utils/request.ts`, `src/utils/ids.ts` gives the ids of the elements, the tabs (`src/utils/tabs.ts`) have their styles in `src/jspreadsheet.css`, and `src/utils/mask.ts` and `src/utils/dates.ts` show the numbers and the dates with the masks of the columns. The context menu is the class `ContextMenu` in `src/utils/contextMenu.ts`, with the roles and the keys of an ARIA menu, and the toolbar is `ToolbarControl` (`src/utils/toolbarControl.ts`), with the pickers of `src/utils/picker.ts`, the color picker of `src/utils/color.ts`, which the editor of a color column uses too, and the dialog of the borders, `BordersDialog` (`src/utils/borders.ts`). The editor of a dropdown column and the column filters use the `Dropdown` of `src/utils/dropdown.ts`, an ARIA combobox, and the editor of a calendar column uses the `Calendar` of `src/utils/calendar.ts`, a combobox with a grid of the days. The editor of an html column is a contenteditable (`src/utils/richText.ts`, which also cleans the HTML that it saves and pastes), and the editor of an image column is the dialog `ImageUpload` of `src/utils/imageUpload.ts`. These controls keep the class names of jSuites (`jcontextmenu`, `jdropdown`, `jcalendar`, …), and `src/jspreadsheet.css` has their styles.
 - **`@jspreadsheet/formula`**: the formula engine, an optional peer dependency. The library does not import it: the application registers it with `jspreadsheet.setFormulaEngine(formula)`, and without an engine a formula shows `#ENGINE`. `src/components/Formulas.ts` calls it, and `test/support/jspreadsheet.ts` registers it for the tests.
@@ -47,13 +47,11 @@ The tests import the built bundle (through `test/support/jspreadsheet.ts`), not 
 - `src/jspreadsheet.d.ts`: the public typings, copied unchanged to `dist/index.d.ts`.
 - `src/types/`: types for the type check only, not published (see [Type checking](#type-checking)).
 - `src/jspreadsheet.css`, `src/jspreadsheet.themes.css`: the styles, also copied to `dist/`.
-- `src/test.js`: the entry of the dev server. `src/webcomponent.js`: a `<jspreadsheet>` custom element. Both are JavaScript and not part of the bundle.
+- `src/test.js`: the entry of the dev server, in JavaScript and not part of the bundle.
 - `resources/lang/*.json`: translations for `jspreadsheet.setDictionary`, by English text. `en_GB.json` lists every text that the library translates, and each file has the same texts (`test/languages.ts` checks both). A new text given to `translate` goes in each file. A text that is the same in English as another, with another meaning, gets a context: `translate('May', 'short')` reads the key `May (short)`.
 - `test/*.ts`: mocha + chai tests in jsdom, one file per feature. `.mocharc.json` runs them with tsx.
 - `test/support/`: the typed library for the tests (`jspreadsheet.ts`) and the globals of the tests (`globals.d.ts`).
 - `test/typings.ts`: checks the public typings against what the library returns. `npm run typecheck` checks it; mocha does not run it.
-- `packages/vue`: a small Vue wrapper, published separately.
-- `docs/`: old v4 documentation. Prettier skips it.
 
 ## How the code is organised
 
@@ -91,6 +89,7 @@ Modules import each other with the `.js` extension, although the files are `.ts`
 
 - A webpack plugin wraps the bundle in a UMD header. The bundle imports no package: do not import `@jspreadsheet/formula` in `src/`, except in the dev page `src/test.js`: the application registers it.
 - The build produces one minified UMD file, `dist/index.js`. There is no ES module build.
+- The npm package has only `dist/` and `resources/lang/` (`files` in `package.json`), with the README and the license.
 
 ## Things to keep
 

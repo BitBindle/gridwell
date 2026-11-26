@@ -1,6 +1,5 @@
 .idea
 /package-lock.json
 node_modules
-/vue/package-lock.json
 /dist
 coverage/
