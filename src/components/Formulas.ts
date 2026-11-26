@@ -1,10 +1,13 @@
-import formula from '@jspreadsheet/formula';
+import libraryBase from '../utils/libraryBase.js';
 import { getColumnName } from '../utils/helpers.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import type { HistoryCellChange, MergeInfo, Worksheet } from '../types/internal';
 
 // The cells in progress of updateChain, by cell name
 let chainLoopProtection: Record<string, boolean> = {};
+
+// Whether the console already said that no formula engine is registered
+let noEngineWarned = false;
 
 /**
  * Escapes the characters of a text that have a meaning in a regular expression.
@@ -252,8 +255,18 @@ export class Formulas {
                 try {
                     if (formulaEngine) {
                         res = formulaEngine(worksheet, source, x === undefined ? x : Number(x), y === undefined ? y : Number(y));
+                    } else if (libraryBase.formulaEngine) {
+                        res = libraryBase.formulaEngine(parsedExpression, formulaExpressions, x, y, worksheet);
                     } else {
-                        res = formula(parsedExpression, formulaExpressions, x, y, worksheet);
+                        // Excel has no such error, so the cell tells that the application did not register an engine
+                        if (!noEngineWarned) {
+                            noEngineWarned = true;
+                            console.warn(
+                                'Jspreadsheet: no formula engine is registered, so the formulas show #ENGINE. Register one with jspreadsheet.setFormulaEngine(formula), where formula is the default export of @jspreadsheet/formula.'
+                            );
+                        }
+
+                        res = '#ENGINE';
                     }
 
                     if (typeof res === 'function') {

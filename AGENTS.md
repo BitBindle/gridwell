@@ -4,10 +4,10 @@ Guidance for coding agents working in this repository.
 
 ## Project
 
-This is BitBindle's fork of [Jspreadsheet CE](https://github.com/jspreadsheet/ce) v5, a vanilla JavaScript data grid with spreadsheet controls. It runs in the browser and depends on two packages at runtime:
+This is BitBindle's fork of [Jspreadsheet CE](https://github.com/jspreadsheet/ce) v5, a vanilla JavaScript data grid with spreadsheet controls. It runs in the browser and uses two packages at runtime:
 
-- `jsuites`: UI components (calendar, dropdown, context menu, tabs, `ajax`, `translate`)
-- `@jspreadsheet/formula`: the formula engine
+- `jsuites`: UI components (calendar, dropdown, context menu, tabs, `ajax`, `translate`), a dependency.
+- `@jspreadsheet/formula`: the formula engine, an optional peer dependency. The library does not import it: the application registers it with `jspreadsheet.setFormulaEngine(formula)`, and without an engine a formula shows `#ENGINE`. `src/components/Formulas.ts` calls it, and `test/support/jspreadsheet.ts` registers it for the tests.
 
 The fork has its own fixes (pull requests #5 and later), many of them for accessibility. Changes from upstream are not merged any more.
 
@@ -82,14 +82,14 @@ Modules import each other with the `.js` extension, although the files are `.ts`
 - **Null and undefined.** Give a value that can be missing its real type (`HTMLElement | null`, `string | undefined`). Where the code reads a value without a check because it is always there at that point, mark it with `!` (`worksheet.filter!.children`, `parentNode!.removeChild`). A comparison with an optional number, such as `worksheet.options.pagination! > 0`, keeps its meaning: `undefined > 0` is false. When a `!` hides a real bug, open an issue and name it in a comment next to the `!`. Do not use `!` to avoid a check that the code needs.
 - **The selection.** `selection.range` is `null` until a cell is selected. The private methods of `Selection` that move the selection and the keys on the grid (`src/components/Keyboard.ts`) use `SelectedWorksheet`, a worksheet that has a selection. The keys of an open editor use `EditingWorksheet`, a worksheet whose editor has a cell.
 - **Internal types.** `src/types/internal.d.ts` has `WorksheetState` and `SpreadsheetState`: the fields of the classes, which are the public instance types and the state only the library uses. Add new internal fields there, with a comment, and give them their first value in the constructor when they have one before the build. A field goes in `WorksheetInstance` only when applications use it; the DOM and the state that only the library uses (such as `cols`, `corner` and `headerContainer`) stay internal. The file also exports the classes as types: import them with `import type { Worksheet } from '../types/internal';`, and call their methods through the instance. `src/Spreadsheet.ts` and `src/Worksheet.ts` import the modules that build them, so only the builders (`utils/factory.ts` imports `Spreadsheet`, and `Spreadsheet.ts` imports `Worksheet`) import them at run time; other modules use `import type`. The history records have the union `WorksheetHistoryRecord`, by action: a new action needs a member there. DOM event handlers take `TargetEvent<MouseEvent>` and similar, an event whose target the code reads as an element.
-- **Other declarations.** `src/types/modules.d.ts` declares `@jspreadsheet/formula`, which has no typings. `tsconfig.json` maps `jsuites` to `src/types/jsuites-module.d.ts`, which corrects the jsuites typings where they do not match jsuites and adds the methods they miss (some declared in `src/types/jsuites.d.ts`). Correct a jsuites typing there instead of casting at the call. `src/types/globals.d.ts` lets `parseInt` take numbers, null and undefined, and `setAttribute` take numbers, as the code does in many places.
+- **Other declarations.** `src/types/modules.d.ts` declares `@jspreadsheet/formula`, which has no typings, for the tests and the dev page. `tsconfig.json` maps `jsuites` to `src/types/jsuites-module.d.ts`, which corrects the jsuites typings where they do not match jsuites and adds the methods they miss (some declared in `src/types/jsuites.d.ts`). Correct a jsuites typing there instead of casting at the call. `src/types/globals.d.ts` lets `parseInt` take numbers, null and undefined, and `setAttribute` take numbers, as the code does in many places.
 - **The public methods.** A method of `Worksheet` or `Spreadsheet` must have the type of its declaration in `src/jspreadsheet.d.ts`: the class merges with the public interface, so the type check compares them. Use rest parameters, not `arguments`.
 - **Casts.** Where the type check cannot follow the code, cast with `as X` (or `as any`) and say why in a comment when it is not obvious. Wrap the expression in parentheses rather than add a local variable.
 - **No behaviour changes.** A commit that adds or changes types changes no behaviour. Fix a bug that the type check finds in a separate commit, with a test. To show that a typing commit changes no code, build without minifying before and after, format both bundles the same way (for example with esbuild and terser `--format beautify=true,comments=false`) and compare them.
 
 ## Build quirks
 
-- `build.cjs` uses regular expressions to remove `import jSuites from 'jsuites'` and `import formula from '@jspreadsheet/formula'` from every module. A webpack plugin then wraps the bundle in a UMD header that gets both libraries from globals or `require`. Keep these two import lines exactly as they are, or the bundle includes a second copy of each library.
+- `build.cjs` uses a regular expression to remove `import jSuites from 'jsuites'` from every module. A webpack plugin then wraps the bundle in a UMD header that gets jsuites from the global `jSuites` or `require`. Keep this import line exactly as it is, or the bundle includes a second copy of jsuites. Do not import `@jspreadsheet/formula` in `src/`, except in the dev page `src/test.js`: the application registers it.
 - The build produces one minified UMD file, `dist/index.js`. There is no ES module build.
 
 ## Things to keep

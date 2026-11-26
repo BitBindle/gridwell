@@ -330,3 +330,20 @@ A formula reads the text of a referenced cell as a number when the text is a num
 `$ 1,234.50`, `1 234,5 €` (with `decimal: ','` on the column) or `50%` (#129). Version 5 kept every digit of any text,
 so `Room 12b` was `12` and the date `01/02/2024` was `1022024`. Such texts are now texts, as in Excel. A formatted zero,
 such as `$ 0`, is now the number `0` instead of its text. Set `autoCasting: false` to read every text as text.
+
+## The application registers the formula engine
+
+`@jspreadsheet/formula` is no longer a dependency of `jspreadsheet-ce`, and the bundle no longer looks for it in the
+global `formula` or with `require`. It is an optional peer dependency. An application that uses formulas installs it and
+registers it once, before it creates the spreadsheets:
+
+```javascript
+import formula from '@jspreadsheet/formula';
+
+jspreadsheet.setFormulaEngine(formula);
+```
+
+With the scripts of a CDN, call `jspreadsheet.setFormulaEngine(formula)` after the script of the engine. Without an
+engine, a formula shows `#ENGINE`, which Excel never shows, and the console says once why. `executeFormula` also returns
+`'#ENGINE'`. The `formulaEngine` option of a spreadsheet still replaces the engine, and needs none to be registered. A
+spreadsheet without formulas no longer needs the 140 KB of the engine.

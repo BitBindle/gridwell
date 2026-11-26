@@ -322,3 +322,8 @@ library(document.createElement('div'), {
     worksheets: [{}],
     onbeforepaste: (instance, copiedText) => copiedText.map((row) => row.map((cell) => cell.value.trim())),
 });
+
+// setFormulaEngine takes the engine of @jspreadsheet/formula, or null to remove it
+library.setFormulaEngine(null);
+type Engine = Parameters<jspreadsheet.JSpreadsheet['setFormulaEngine']>[0];
+assertType<Equals<Engine, jspreadsheet.FormulaEngine | null>>();

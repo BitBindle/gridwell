@@ -57,6 +57,14 @@ libraryBase.jspreadsheet.getWorksheetInstanceByName = (worksheetName: string | n
     });
 };
 
+libraryBase.jspreadsheet.setFormulaEngine = (engine: jspreadsheet.FormulaEngine | null) => {
+    if (engine !== null && typeof engine !== 'function') {
+        throw new TypeError('Jspreadsheet: the formula engine must be a function, such as the default export of @jspreadsheet/formula');
+    }
+
+    libraryBase.formulaEngine = engine;
+};
+
 // Define dictionary
 libraryBase.jspreadsheet.setDictionary = (o: Record<string, string>) => {
     jSuites.setDictionary(o);
