@@ -196,6 +196,8 @@ that changes it.
     footers (`setFooter`). `parseValue` stays in `values.ts` and calls `obj.formulas.execute`.
 22. **The view.** Search, the filters, pagination, the order and the lazy loading (`search.ts`, `filter.ts`,
     `pagination.ts`, `orderBy.ts`, `lazyLoading.ts`) move into `View`.
+    Done. The functions of the five modules are methods of `worksheet.view`, with the same names, except
+    `quantiyOfPages`, which is `countPages` in the class. The public methods keep their names.
 23. **The editor.** `editor.ts` moves into `Editor`.
 24. **The clipboard.** `copyPaste.ts` moves into `Clipboard`.
 25. **The selection.** `selection.ts`, the moves of `keys.ts` and the accessibility code that follows the selection move

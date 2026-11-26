@@ -1,7 +1,6 @@
 import { closeEditor } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
 import { updateCornerPosition } from '../utils/selection.js';
-import { loadDown, loadUp } from '../utils/lazyLoading.js';
 import { updateFreezePosition } from '../utils/freezePosition.js';
 import type { Worksheet } from '../types/internal';
 
@@ -12,14 +11,14 @@ export const wheelControls = function (this: Worksheet, e?: WheelEvent) {
         if (libraryBase.jspreadsheet.timeControlLoading == null) {
             libraryBase.jspreadsheet.timeControlLoading = setTimeout(function () {
                 if (obj.content.scrollTop + obj.content.clientHeight >= obj.content.scrollHeight - 10) {
-                    if (loadDown.call(obj)) {
+                    if (obj.view.loadDown()) {
                         if (obj.content.scrollTop + obj.content.clientHeight > obj.content.scrollHeight - 10) {
                             obj.content.scrollTop = obj.content.scrollTop - obj.content.clientHeight;
                         }
                         updateCornerPosition.call(obj);
                     }
                 } else if (obj.content.scrollTop <= obj.content.clientHeight) {
-                    if (loadUp.call(obj)) {
+                    if (obj.view.loadUp()) {
                         if (obj.content.scrollTop < 10) {
                             obj.content.scrollTop = obj.content.scrollTop + obj.content.clientHeight;
                         }

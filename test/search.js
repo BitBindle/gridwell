@@ -111,4 +111,31 @@ describe('The view of a worksheet', () => {
         expect(worksheets[0].view).to.not.equal(worksheets[1].view);
         expect(worksheets[1].view.results).to.equal(null);
     });
+    it('sorts the rows that a filter found and keeps the filter', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ filters: true, data }] })[0];
+
+        worksheet.openFilter(0);
+        const dropdown = worksheet.filter.children[1].querySelector('.jdropdown').dropdown;
+        dropdown.setValue(['Honda']);
+        dropdown.close();
+
+        worksheet.orderBy(1, 1);
+
+        expect(worksheet.getColumnData(1)).to.eql([4, 3, 2, 1]);
+        expect(worksheet.view.filters[0]).to.eql(['Honda']);
+        expect(worksheet.view.results).to.eql([1, 3]);
+        const shown = Array.from(root.querySelector('tbody').children).map((tr) => tr.getAttribute('data-y'));
+        expect(shown).to.eql(['1', '3']);
+    });
+
+    it('tells the page of a row, among the rows that a search found', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ pagination: 1, search: true, data }] })[0];
+
+        expect(worksheet.whichPage(2)).to.equal(2);
+
+        worksheet.search('Honda');
+
+        expect(worksheet.whichPage(2)).to.equal(1);
+        expect(worksheet.quantiyOfPages()).to.equal(2);
+    });
 });

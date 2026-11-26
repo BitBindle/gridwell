@@ -1,4 +1,3 @@
-import { loadDown, loadPage, loadUp, loadValidation } from './lazyLoading.js';
 import { getFreezeWidth, getIndexWidth } from './freeze.js';
 import type { SelectedWorksheet, Worksheet, WorksheetMethod } from '../types/internal';
 
@@ -109,15 +108,15 @@ export const up: WorksheetMethod<'up'> = function (shiftKey, ctrlKey) {
     // Change page
     if (obj.options.lazyLoading == true) {
         if (obj.selection.range[1] == 0 || obj.selection.range[3] == 0) {
-            loadPage.call(obj, 0);
+            obj.view.loadPage(0);
             obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
         } else {
-            if (loadValidation.call(obj)) {
+            if (obj.view.loadValidation()) {
                 obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
             } else {
                 const item = parseInt((obj.tbody.firstChild as HTMLElement).getAttribute('data-y'));
                 if (obj.selection.range[1] - item < 30) {
-                    loadUp.call(obj);
+                    obj.view.loadUp();
                     obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
                 }
             }
@@ -290,15 +289,15 @@ export const down: WorksheetMethod<'down'> = function (shiftKey, ctrlKey) {
     // Change page
     if (obj.options.lazyLoading == true) {
         if (obj.selection.range[1] == obj.records.length - 1 || obj.selection.range[3] == obj.records.length - 1) {
-            loadPage.call(obj, -1);
+            obj.view.loadPage(-1);
             obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
         } else {
-            if (loadValidation.call(obj)) {
+            if (obj.view.loadValidation()) {
                 obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
             } else {
                 const item = parseInt((obj.tbody.lastChild as HTMLElement).getAttribute('data-y'));
                 if (item - obj.selection.range[3] < 30) {
-                    loadDown.call(obj);
+                    obj.view.loadDown();
                     obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
                 }
             }
@@ -418,7 +417,7 @@ export const first: WorksheetMethod<'first'> = function (shiftKey, ctrlKey) {
 
     // Change page
     if (obj.options.lazyLoading == true && (obj.selection.range[1] == 0 || obj.selection.range[3] == 0)) {
-        loadPage.call(obj, 0);
+        obj.view.loadPage(0);
     } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selection.range[3]);
         if (pageNumber != obj.view.pageNumber) {
@@ -457,7 +456,7 @@ export const last: WorksheetMethod<'last'> = function (shiftKey, ctrlKey) {
 
     // Change page
     if (obj.options.lazyLoading == true && (obj.selection.range[1] == obj.records.length - 1 || obj.selection.range[3] == obj.records.length - 1)) {
-        loadPage.call(obj, -1);
+        obj.view.loadPage(-1);
     } else if (obj.options.pagination! > 0) {
         const pageNumber = obj.whichPage(obj.selection.range[3]);
         if (pageNumber != obj.view.pageNumber) {

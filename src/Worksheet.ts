@@ -41,7 +41,7 @@ export class Worksheet {
         this.editor = new Editor();
         this.selection = new Selection();
         this.formulas = new Formulas(this);
-        this.view = new View();
+        this.view = new View(this);
         this.pointer = new Pointer();
         this.cells = new Cells(this);
         this.styles = new Styles(this);
