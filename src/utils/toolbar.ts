@@ -11,11 +11,11 @@ type BorderPicker = jspreadsheet.PickerInstance & { thickness?: number; color?: 
 type PickerElement = HTMLElement & { picker?: jspreadsheet.PickerInstance };
 
 function setItemStatus(toolbarItem: HTMLElement, worksheet: Worksheet) {
-    if (worksheet.options.editable !== false) {
-        toolbarItem.classList.remove('jtoolbar-disabled');
-    } else {
-        toolbarItem.classList.add('jtoolbar-disabled');
-    }
+    const disabled = worksheet.options.editable === false;
+
+    toolbarItem.classList.toggle('jtoolbar-disabled', disabled);
+    // A disabled item keeps the focus, as the WAI-ARIA toolbar pattern allows, and says that it is disabled
+    toolbarItem.setAttribute('aria-disabled', disabled ? 'true' : 'false');
 }
 
 /**
@@ -65,6 +65,7 @@ function getHistoryItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
     return [
         {
             content: 'undo',
+            tooltip: jSuites.translate('Undo'),
             onclick() {
                 const worksheet = spreadsheet.getWorksheetInstance();
 
@@ -73,6 +74,7 @@ function getHistoryItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
         },
         {
             content: 'redo',
+            tooltip: jSuites.translate('Redo'),
             onclick() {
                 const worksheet = spreadsheet.getWorksheetInstance();
 
@@ -81,6 +83,7 @@ function getHistoryItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
         },
         {
             content: 'save',
+            tooltip: jSuites.translate('Save'),
             onclick() {
                 const worksheet = spreadsheet.getWorksheetInstance();
 
@@ -100,6 +103,7 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
         {
             type: 'select',
             width: '120px',
+            tooltip: jSuites.translate('Font'),
             options: ['Default', 'Verdana', 'Arial', 'Courier New'],
             render(e: string) {
                 return `<span style="font-family:${e}">${e}</span>`;
@@ -116,6 +120,7 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
             type: 'select',
             width: '48px',
             content: 'format_size',
+            tooltip: jSuites.translate('Font size'),
             options: ['x-small', 'small', 'medium', 'large', 'x-large'],
             render(e: string) {
                 return `<span style="font-size:${e}">${e}</span>`;
@@ -127,6 +132,7 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
         },
         {
             type: 'select',
+            tooltip: jSuites.translate('Text alignment'),
             options: ['left', 'center', 'right', 'justify'],
             render(e: string) {
                 return `<i class="material-icons">format_align_${e}</i>`;
@@ -138,6 +144,7 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
         },
         {
             content: 'format_bold',
+            tooltip: jSuites.translate('Bold'),
             onclick() {
                 setSelectedStyle(spreadsheet.getWorksheetInstance(), 'font-weight', 'bold', true);
             },
@@ -146,12 +153,14 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
         {
             type: 'color',
             content: 'format_color_text',
+            tooltip: jSuites.translate('Text color'),
             k: 'color',
             updateState: getUpdateState(spreadsheet),
         },
         {
             type: 'color',
             content: 'format_color_fill',
+            tooltip: jSuites.translate('Background color'),
             k: 'background-color',
             updateState: getUpdateState(spreadsheet),
         },
@@ -166,6 +175,7 @@ function getVerticalAlignItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarIte
 
     return {
         type: 'select',
+        tooltip: jSuites.translate('Vertical alignment'),
         options: ['vertical_align_top', 'vertical_align_center', 'vertical_align_bottom'],
         render(e: string) {
             return `<i class="material-icons">${e}</i>`;
@@ -359,6 +369,7 @@ function addBorderControls(a: HTMLElement, b: BorderPicker) {
 function getBordersItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
     return {
         type: 'select',
+        tooltip: jSuites.translate('Borders'),
         options: [
             'border_all',
             'border_outer',
@@ -390,7 +401,7 @@ function getBordersItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
 function getFullscreenItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
     return {
         content: 'fullscreen',
-        tooltip: 'Toggle Fullscreen',
+        tooltip: jSuites.translate('Toggle Fullscreen'),
         onclick(a: HTMLElement, b: object, c: HTMLElement) {
             if (c.children[0].textContent === 'fullscreen') {
                 spreadsheet.fullscreen(true);
@@ -449,12 +460,7 @@ export class Toolbar {
         const items = toolbar.items as jspreadsheet.ToolbarItemBase[];
 
         for (const item of items) {
-            // Tooltip
-            if (item.tooltip) {
-                item.title = item.tooltip;
-
-                delete item.tooltip;
-            }
+            // jSuites.toolbar gives an item with a tooltip its title and its accessible name
 
             if (item.type === 'select') {
                 if (item.options) {
@@ -519,8 +525,92 @@ export class Toolbar {
         jSuites.toolbar(toolbarElement, toolbar);
 
         this.addPickerKeys(toolbarElement);
+        this.addToolbarKeys(toolbarElement);
 
         return toolbarElement;
+    }
+
+    /**
+     * The items of the toolbar that take the focus: the buttons and the pickers.
+     * @param toolbarElement - The element of the toolbar.
+     */
+    private getFocusableItems(toolbarElement: HTMLElement) {
+        return Array.from(toolbarElement.querySelectorAll<HTMLElement>('.jtoolbar-item[role="button"], .jtoolbar-item.jpicker'));
+    }
+
+    /**
+     * Make the toolbar work with the keyboard, with the WAI-ARIA toolbar pattern. The toolbar is one tab stop: Tab goes to the
+     * item that had the focus last, the arrows, Home and End move between the items, and Enter and Space press a button.
+     * @param toolbarElement - The element of the toolbar.
+     */
+    private addToolbarKeys(toolbarElement: HTMLElement) {
+        toolbarElement.setAttribute('role', 'toolbar');
+        toolbarElement.setAttribute('aria-label', jSuites.translate('Toolbar'));
+
+        const items = this.getFocusableItems(toolbarElement);
+        for (const [i, item] of items.entries()) {
+            item.setAttribute('tabindex', i === 0 ? '0' : '-1');
+        }
+
+        // The item that gets the focus, also from a press, is the tab stop
+        toolbarElement.addEventListener('focusin', (e) => {
+            const target = e.target as HTMLElement;
+            const items = this.getFocusableItems(toolbarElement);
+
+            if (items.includes(target)) {
+                for (const item of items) {
+                    item.setAttribute('tabindex', item === target ? '0' : '-1');
+                }
+            }
+        });
+
+        toolbarElement.addEventListener('keydown', (e) => this.toolbarKeys(toolbarElement, e));
+    }
+
+    /**
+     * Handle a key on an item of the toolbar.
+     * @param toolbarElement - The element of the toolbar.
+     * @param e - The keydown.
+     */
+    private toolbarKeys(toolbarElement: HTMLElement, e: KeyboardEvent) {
+        const target = e.target as HTMLElement;
+        const items = this.getFocusableItems(toolbarElement);
+        let index = items.indexOf(target);
+
+        // An open picker uses the keys for its options
+        if (index === -1 || target.classList.contains('jpicker-focus')) {
+            return;
+        }
+
+        switch (e.key) {
+            case 'ArrowRight':
+                index = (index + 1) % items.length;
+                break;
+            case 'ArrowLeft':
+                index = (index - 1 + items.length) % items.length;
+                break;
+            case 'Home':
+                index = 0;
+                break;
+            case 'End':
+                index = items.length - 1;
+                break;
+            case 'Enter':
+            case ' ':
+                // A picker opens with these keys itself
+                if (target.getAttribute('role') === 'button') {
+                    e.preventDefault();
+                    if (!target.classList.contains('jtoolbar-disabled')) {
+                        target.click();
+                    }
+                }
+                return;
+            default:
+                return;
+        }
+
+        e.preventDefault();
+        items[index].focus();
     }
 
     /**
