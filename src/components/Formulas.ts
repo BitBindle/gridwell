@@ -424,21 +424,20 @@ export class Formulas {
         let firstColumn = Number.isInteger(from.column) ? Math.max(0, from.column!) : 0;
 
         // A merged range that starts before the start and ends on or after it is read from its first cell, because the
-        // record of a covered cell is the element of the first cell. A lower start can fall into another range, so the
-        // check runs again until the start does not change.
-        let lowered = true;
-        while (lowered) {
-            lowered = false;
-            for (const [cellName, [colspan, rowspan]] of Object.entries(worksheet.options.mergeCells || {})) {
-                const [x, y] = getIdFromColumnName(cellName);
-                if (y < firstRow && y + rowspan > firstRow) {
-                    firstRow = y;
-                    lowered = true;
-                }
-                if (x < firstColumn && x + colspan > firstColumn) {
-                    firstColumn = x;
-                    lowered = true;
-                }
+        // record of a covered cell is the element of the first cell. A lower start can fall into another range that starts
+        // before it, so the ranges are read from the last first row (or column) to the first one, in one pass.
+        const ranges = Object.entries(worksheet.options.mergeCells || {}).map(([cellName, [colspan, rowspan]]) => {
+            const [x, y] = getIdFromColumnName(cellName);
+            return { x, y, colspan, rowspan };
+        });
+        for (const range of [...ranges].sort((a, b) => b.y - a.y)) {
+            if (range.y < firstRow && range.y + range.rowspan > firstRow) {
+                firstRow = range.y;
+            }
+        }
+        for (const range of [...ranges].sort((a, b) => b.x - a.x)) {
+            if (range.x < firstColumn && range.x + range.colspan > firstColumn) {
+                firstColumn = range.x;
             }
         }
 
@@ -531,7 +530,7 @@ export class Formulas {
         if (keys.length) {
             for (const key of keys) {
                 const update = mergeCellUpdates[key];
-                // A cell that keeps data-merged after the split of crossing ranges of the options has no range
+                // A cell with data-merged that has no range in the options is skipped. Before, the update threw a TypeError.
                 if (update && worksheet.options.mergeCells?.[key]) {
                     const info = getIdFromColumnName(key);
                     let x = info[0];
