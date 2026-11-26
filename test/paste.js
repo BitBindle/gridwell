@@ -489,6 +489,16 @@ describe('Paste', () => {
             expect(sheet.getValue('B1')).to.equal('');
         });
 
+        it('pastes the values of the { value } objects that it returns (issue #54)', () => {
+            const sheet = pasteWith((instance, cells) => cells.map((row) => row.map((cell) => ({ value: cell.value.toUpperCase() }))));
+
+            expect(sheet.getData()).to.eql([
+                ['A', 'B', ''],
+                ['', '', ''],
+                ['', '', ''],
+            ]);
+        });
+
         it('cancels the paste when it returns false', () => {
             const sheet = pasteWith(() => false);
 

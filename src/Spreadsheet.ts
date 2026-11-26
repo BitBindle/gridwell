@@ -222,23 +222,32 @@ export class Spreadsheet {
     /**
      * Call the handlers of an event: the onevent option of the spreadsheet, then the handler of the event in the options,
      * then the onevent of each plugin. They get source, the worksheet or the spreadsheet that triggers the event, as
-     * `this`. It returns the result of the last handler.
+     * `this`. It returns false when a handler returns false, so that any handler can cancel an action. Otherwise it
+     * returns the last result that is not undefined, or null.
      */
     callHandlers(source: Worksheet | Spreadsheet, event: EventName, args: unknown[]) {
         let ret: unknown = null;
 
-        // Dispatch events
-        if (!this.ignoreEvents) {
+        // A false stays, and a handler that returns nothing keeps the result of the handlers before it
+        function keep(result: unknown) {
+            if (ret !== false && result !== undefined) {
+                ret = result;
+            }
+        }
+
+        // Dispatch events. The persistence still saves while the events are ignored, for example the changes of an undo,
+        // so its events occur too.
+        if (!this.ignoreEvents || event === 'onbeforesave' || event === 'onsave') {
             // Call global event
             if (typeof this.config.onevent === 'function') {
                 // The arguments match the handler of the event, as the type of dispatch says
-                ret = (this.config.onevent as (...args: unknown[]) => unknown).call(source, event, ...args);
+                keep((this.config.onevent as (...args: unknown[]) => unknown).call(source, event, ...args));
             }
             // Call specific events
             const config = this.config;
             if (typeof config[event] === 'function') {
                 // The arguments match the handler of the event, as the type of dispatch says
-                ret = (config[event] as (...args: unknown[]) => unknown).apply(source, args);
+                keep((config[event] as (...args: unknown[]) => unknown).apply(source, args));
             }
 
             if (typeof this.plugins === 'object') {
@@ -247,7 +256,7 @@ export class Spreadsheet {
 
                     if (typeof plugin.onevent === 'function') {
                         // The arguments match the handler of the event, as the type of dispatch says
-                        ret = (plugin.onevent as (...args: unknown[]) => unknown).call(source, event, ...args);
+                        keep((plugin.onevent as (...args: unknown[]) => unknown).call(source, event, ...args));
                     }
                 }
             }

@@ -368,11 +368,15 @@ declare namespace jspreadsheet {
         align?: string;
     }
 
+    /** A cell that changed, in onafterchanges. */
     interface CellChange {
-        value: CellValue;
+        /** The new value. It is undefined when setValue was called without a value. */
+        value: CellValue | undefined;
         oldValue: CellValue;
-        x: string;
-        y: string;
+        /** Column index of the cell. */
+        x: number;
+        /** Row index of the cell. */
+        y: number;
     }
 
     /** A change that undo reverts. The other properties depend on the action. */
@@ -697,8 +701,8 @@ declare namespace jspreadsheet {
          * A formula that refers to its own cell shows "#ERROR", and the engine does not get it.
          * @param instance - Worksheet of the formula.
          * @param expression - Formula text as typed, with the "=", or the text that `onbeforeformula` returned.
-         * @param x - Column index of the cell. Undefined when `executeFormula` gets no coordinates.
-         * @param y - Row index of the cell. Undefined when `executeFormula` gets no coordinates.
+         * @param x - Column index of the cell. Undefined for a footer, and when `executeFormula` gets no coordinates.
+         * @param y - Row index of the cell. Undefined for a footer, and when `executeFormula` gets no coordinates.
          * @returns Value that the cell shows. If the function throws, the cell shows "#ERROR".
          */
         formulaEngine?: (instance: WorksheetInstance, expression: string, x?: number, y?: number) => CellValue;
@@ -751,7 +755,8 @@ declare namespace jspreadsheet {
         onafterchanges?: (instance: WorksheetInstance, changes: CellChange[]) => void;
 
         /**
-         * Occurs before a column value is changed. If any value is returned, it will be the cell's new value.
+         * Occurs before the value of a cell changes. Return false to cancel the change, or another value to write it
+         * instead of the new value. To write the value false, return nothing: newValue is written.
          * @param instance - Instance of the worksheet where the changes will occur.
          * @param cell - HTML element that represents the cell being changed.
          * @param colIndex - Cell column index being changed.
@@ -761,8 +766,8 @@ declare namespace jspreadsheet {
         onbeforechange?: (
             instance: WorksheetInstance,
             cell: HTMLTableCellElement,
-            colIndex: string | number,
-            rowIndex: string | number,
+            colIndex: number,
+            rowIndex: number,
             newValue: CellValue | undefined
         ) => undefined | CellValue;
 
@@ -784,8 +789,10 @@ declare namespace jspreadsheet {
          * Intercept and parse a formula just before the execution.
          * @param instance - Instance of the worksheet.
          * @param expression - Formula that triggered the event.
-         * @param x - Column index of the cell whose formula triggered the event.
-         * @param y - Row index of the cell whose formula triggered the event
+         * @param x - Column index of the cell whose formula triggered the event. Undefined for a footer, and when
+         * `executeFormula` gets no coordinates.
+         * @param y - Row index of the cell whose formula triggered the event. Undefined for a footer, and when
+         * `executeFormula` gets no coordinates.
          */
         onbeforeformula?: (instance: WorksheetInstance, expression: string, x?: number, y?: number) => false | string | undefined;
 
@@ -821,9 +828,10 @@ declare namespace jspreadsheet {
          *
          * If it returns false, the jss cancels the paste.
          * If it returns a string, it will be the content pasted into the worksheet.
+         * If it returns rows, of `{ value }` objects as it got them or of values, they are pasted instead.
          *
          * @param instance - Instance of the worksheet where data will be pasted.
-         * @param copiedText - Text being pasted to the spreadsheet.
+         * @param copiedText - The rows of the pasted cells.
          * @param colIndex - Column index where it will start the paste.
          * @param rowIndex - Row index where it will start the paste.
          */
@@ -832,7 +840,7 @@ declare namespace jspreadsheet {
             copiedText: { value: CellValue }[][],
             colIndex: number | string,
             rowIndex: number | string
-        ) => undefined | boolean | string;
+        ) => undefined | boolean | string | ({ value: CellValue } | CellValue)[][];
 
         /**
          * Occurs before persisting any changes to the server.
@@ -887,8 +895,8 @@ declare namespace jspreadsheet {
         onchange?: (
             instance: WorksheetInstance,
             cell: HTMLTableCellElement,
-            colIndex: string | number,
-            rowIndex: string | number,
+            colIndex: number,
+            rowIndex: number,
             newValue: CellValue | undefined,
             oldValue: CellValue
         ) => void;
@@ -1029,7 +1037,9 @@ declare namespace jspreadsheet {
         /**
          * Event fired when any other event fires. It runs before the event that was called.
          *
-         * If the called event has not been defined, the jss considers the value returned by onevent as the value returned by the called event.
+         * Its result counts as a result of the called event. When onevent, the handler of the event or the onevent of a
+         * plugin returns false, the result of the event is false, so any of them can cancel an `onbefore…` action. Otherwise
+         * the result is the last one that is not undefined.
          * @param args - The name of the event that was called, then the arguments of the event. A test of the name in
          * `args[0]` narrows the other arguments.
          */
@@ -1646,10 +1656,13 @@ declare namespace jspreadsheet {
         init?: (instance: WorksheetInstance) => void;
 
         /**
-         * Event fired when any other event fires.
+         * Event fired when any other event fires, after the handlers of the spreadsheet options.
+         *
+         * Returning false cancels an `onbefore…` action, as the handler in the options does. Returning nothing keeps the
+         * result of the handlers before it, and returning another value replaces it.
          * @param args - The name of the event that was called, then the arguments of the event.
          */
-        onevent?: (...args: EventArguments) => void;
+        onevent?: (...args: EventArguments) => unknown;
 
         /**
          * This method is called before the spreadsheet sends data to the server.
@@ -1737,7 +1750,8 @@ declare namespace jspreadsheet {
         hideToolbar: () => void;
 
         /**
-         * If true, the spreadsheet does not emit events.
+         * If true, the spreadsheet does not emit events, except onbeforesave and onsave: the persistence still saves the
+         * changes, for example of an undo or a redo.
          */
         ignoreEvents?: boolean;
 

@@ -212,18 +212,18 @@ describe('Dispatch events', () => {
             worksheets: [{ data: [['a', 'b']] }],
             onevent: function (event, instance, cell, x, y, value) {
                 if (event === 'onchange') {
-                    calls.push(['onevent', instance === worksheet, String(x), String(y), value]);
+                    calls.push(['onevent', instance === worksheet, x, y, value]);
                 }
             },
             onchange: function (instance, cell, x, y, value) {
-                calls.push(['onchange', instance === worksheet, String(x), String(y), value]);
+                calls.push(['onchange', instance === worksheet, x, y, value]);
             },
             plugins: {
                 test: function () {
                     return {
                         onevent: function (event, instance, cell, x, y, value) {
                             if (event === 'onchange') {
-                                calls.push(['plugin', instance === worksheet, String(x), String(y), value]);
+                                calls.push(['plugin', instance === worksheet, x, y, value]);
                             }
                         },
                     };
@@ -234,9 +234,9 @@ describe('Dispatch events', () => {
         worksheet.setValueFromCoords(1, 0, 'c');
 
         expect(calls).to.eql([
-            ['onevent', true, '1', '0', 'c'],
-            ['onchange', true, '1', '0', 'c'],
-            ['plugin', true, '1', '0', 'c'],
+            ['onevent', true, 1, 0, 'c'],
+            ['onchange', true, 1, 0, 'c'],
+            ['plugin', true, 1, 0, 'c'],
         ]);
     });
 
@@ -273,6 +273,36 @@ describe('Dispatch events', () => {
         expect(worksheet.getData()).to.eql([['a']]);
     });
 
+    it('keeps a false of the handler when a plugin with onevent returns nothing or another value (issue #37)', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a']] }],
+            onbeforeinsertrow: () => false,
+            plugins: {
+                logger: () => ({ onevent: () => {} }),
+                other: () => ({ onevent: (event) => (event === 'onbeforeinsertrow' ? true : undefined) }),
+            },
+        })[0];
+
+        worksheet.insertRow();
+
+        expect(worksheet.getData()).to.eql([['a']]);
+    });
+
+    it('lets a plugin cancel an action, and keeps the result of the handler when onevent returns nothing (issue #37)', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a']] }],
+            onevent: () => {},
+            onbeforechange: (instance, cell, x, y, value) => `${value}!`,
+            plugins: { guard: () => ({ onevent: (event) => (event === 'onbeforedeleterow' ? false : undefined) }) },
+        })[0];
+
+        worksheet.setValue('A1', 'b');
+        worksheet.insertRow();
+        worksheet.deleteRow(0);
+
+        expect(worksheet.getData()).to.eql([['b!'], ['']]);
+    });
+
     it('gives oncreateworksheet the options of the new worksheet', async () => {
         let createdOptions = null;
         const worksheet = await load({
@@ -306,6 +336,100 @@ describe('Dispatch events', () => {
         worksheet.setHeight(0, 50);
 
         expect(calls).to.eql([[0, 50, 40]]);
+    });
+
+    it('gives the change events the column and row as numbers, however the cell changed (issue #52)', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [3, 3] }],
+            onbeforechange: (instance, cell, x, y) => calls.push(['before', x, y]),
+            onchange: (instance, cell, x, y) => calls.push(['change', x, y]),
+            onafterchanges: (instance, records) => calls.push(['after', records[0].x, records[0].y]),
+        })[0];
+        const expected = [
+            ['before', 2, 1],
+            ['change', 2, 1],
+            ['after', 2, 1],
+        ];
+
+        // A typed edit
+        const td = worksheet.records[1][2].element;
+        worksheet.openEditor(td);
+        td.children[0].value = 'v';
+        worksheet.closeEditor(td, true);
+        expect(calls).to.eql(expected);
+        expect(worksheet.history.records[0].records[0]).to.include({ x: 2, y: 1 });
+
+        // A cell element and a list of cell elements
+        calls.length = 0;
+        worksheet.setValue(td, 'w');
+        expect(calls).to.eql(expected);
+
+        calls.length = 0;
+        worksheet.setValue([td], 'x');
+        expect(calls).to.eql(expected);
+
+        // A cell name
+        calls.length = 0;
+        worksheet.setValue('C2', 'y');
+        expect(calls).to.eql(expected);
+    });
+
+    it('cancels the change when onbeforechange returns false (issue #38)', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b']] }],
+            onbeforechange: (instance, cell, x, y, value) => (value === 'no' ? false : undefined),
+            onchange: () => calls.push('onchange'),
+            onafterchanges: () => calls.push('onafterchanges'),
+        })[0];
+
+        worksheet.setValueFromCoords(0, 0, 'no');
+
+        expect(worksheet.getValueFromCoords(0, 0)).to.equal('a');
+        expect(worksheet.getCell('A1').textContent).to.equal('a');
+        expect(calls).to.eql([]);
+        expect(worksheet.history.records.length).to.equal(0);
+
+        // A typed edit that is cancelled leaves the text of the cell
+        const td = worksheet.getCell('B1');
+        worksheet.openEditor(td);
+        td.children[0].value = 'no';
+        worksheet.closeEditor(td, true);
+
+        expect(worksheet.getValueFromCoords(1, 0)).to.equal('b');
+        expect(td.textContent).to.equal('b');
+        expect(td.children.length).to.equal(0);
+        expect(calls).to.eql([]);
+
+        // Another value is written
+        worksheet.setValueFromCoords(0, 0, 'yes');
+
+        expect(worksheet.getValueFromCoords(0, 0)).to.equal('yes');
+    });
+
+    it('gives no change, history entry or onafterchanges for a read-only cell (issue #58)', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b']], columns: [{ readOnly: true }, {}] }],
+            onchange: () => calls.push('onchange'),
+            onafterchanges: (instance, changes) => calls.push(changes),
+        })[0];
+
+        worksheet.setValue('A1', 'x');
+        worksheet.setValueFromCoords(0, 0, 'y');
+
+        expect(calls).to.eql([]);
+        expect(worksheet.history.records.length).to.equal(0);
+        expect(worksheet.getData()).to.eql([['a', 'b']]);
+
+        // Only the cell that changed is in the records
+        worksheet.setValue(['A1', 'B1'], 'z');
+
+        expect(calls.length).to.equal(2);
+        expect(calls[1]).to.eql([{ x: 1, y: 0, value: 'z', oldValue: 'b' }]);
+        expect(worksheet.history.records.length).to.equal(1);
+        expect(worksheet.history.records[0].records.length).to.equal(1);
     });
 });
 

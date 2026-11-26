@@ -3,7 +3,6 @@ import { getMask, isFormula } from '../utils/values.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type { Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
-import type { CellChange } from '../jspreadsheet';
 import type { MaskOptions } from '../types/jsuites';
 import type { CalendarOptions, ColorOptions, DropdownOptions } from '../types/jsuites-module';
 
@@ -548,6 +547,10 @@ export class Editor {
             if (worksheet.options.data[y][x] == value) {
                 cell.innerHTML = worksheet.editor.html;
             } else {
+                // A built-in editor goes first, so that a change that onbeforechange cancels leaves the cell as it was
+                if (!(column && typeof column.type === 'object')) {
+                    cell.innerHTML = worksheet.editor.html;
+                }
                 worksheet.setValue(cell, value);
             }
         } else {
@@ -599,7 +602,10 @@ export class Editor {
             const column = worksheet.options.columns[worksheet.cells.getColumnIndex(x, y)];
             if (column.type === 'checkbox' || column.type === 'radio') {
                 // Update cell
-                records.push(worksheet.cells.update(x, y, !worksheet.options.data[y][x]));
+                const record = worksheet.cells.update(x, y, !worksheet.options.data[y][x]);
+                if (record) {
+                    records.push(record);
+                }
             }
         }
 
@@ -621,8 +627,7 @@ export class Editor {
                 };
             });
 
-            // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-            worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as CellChange[]);
+            worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords);
         }
     }
 }

@@ -26,9 +26,6 @@ import type { EventHandlers, EventName, Spreadsheet, WorksheetState } from './ty
 /** The rows that persistence posts to the server, the data of onbeforesave */
 type SaveData = Parameters<NonNullable<jspreadsheet.SpreadsheetOptions['onbeforesave']>>[2];
 
-/** A record of onafterchanges. The coordinates can be text (issue #52), and a read-only cell has no value (issue #58). */
-type ChangeRecord = { x: number; y: number; value?: jspreadsheet.CellValue };
-
 /**
  * The fields of a worksheet and its public methods. The fields are in WorksheetState (src/types/internal.d.ts). The
  * public methods are methods of the class. Most of them call the method of a component.
@@ -96,7 +93,7 @@ export class Worksheet {
 
             if (this.options.persistence) {
                 const url = this.options.persistence === true ? this.options.url : this.options.persistence;
-                const data = this.prepareJson(args[1] as ChangeRecord[]);
+                const data = this.prepareJson(args[1] as jspreadsheet.CellChange[]);
                 this.save(url, data);
             }
         }
@@ -109,7 +106,7 @@ export class Worksheet {
      * Prepare JSON in the correct format
      * @param data - The changed cells.
      */
-    private prepareJson(data: ChangeRecord[]) {
+    private prepareJson(data: jspreadsheet.CellChange[]) {
         const rows: SaveData = [];
         for (const change of data) {
             const x = change.x;
@@ -123,8 +120,8 @@ export class Worksheet {
                     data: {},
                 };
             }
-            // A read-only cell has no value (issue #58)
-            rows[y].data[k] = change.value!;
+            // The value is undefined after setValue without a value, and the JSON leaves it out
+            rows[y].data[k] = change.value as jspreadsheet.CellValue;
         }
 
         // Filter rows
@@ -843,7 +840,7 @@ export class Worksheet {
         });
 
         if (this.options.comments) {
-            this.setComments(this.options.comments);
+            this.comments.load(this.options.comments);
         }
 
         // Classes

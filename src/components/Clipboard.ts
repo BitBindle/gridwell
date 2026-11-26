@@ -398,12 +398,13 @@ export class Clipboard {
                     value = jSuites.calendar.extractDateFromString(value, worksheet.options.columns[i].options?.format || 'YYYY-MM-DD');
                 }
 
-                // Update and keep history
+                // Update and keep history. A cell that did not change, such as a read-only cell, has no record.
                 const record = worksheet.cells.update(colIndex, rowIndex, value);
-                // Keep history
-                records.push(record);
-                // Update all formulas in the chain
-                worksheet.formulas.updateChain(colIndex, rowIndex, records);
+                if (record) {
+                    records.push(record);
+                    // Update all formulas in the chain
+                    worksheet.formulas.updateChain(colIndex, rowIndex, records);
+                }
                 // Style
                 if (style?.[styleIndex]) {
                     const columnName = getColumnNameFromId([colIndex, rowIndex]);
@@ -495,9 +496,13 @@ export class Clipboard {
         } else if (typeof ret === 'string') {
             // The text to paste instead
             rows = parseCSV(ret, '\t');
-        } else if (ret && ret !== true) {
-            // Rows of values to paste instead, which the typings do not declare
-            rows = ret;
+        } else if (Array.isArray(ret)) {
+            // The rows to paste instead, of { value } objects as the event got them, or of values
+            rows = ret.map((row) => {
+                return row.map((item) => {
+                    return item !== null && typeof item === 'object' ? item.value : item;
+                });
+            });
         }
 
         if (x != null && y != null && rows) {
@@ -540,18 +545,19 @@ export class Clipboard {
 
             worksheet.dispatch('onpaste', worksheet, eventRecords);
 
-            // On after changes
-            const onafterchangesRecords = records.map((record) => {
-                return {
-                    x: record.x,
-                    y: record.y,
-                    value: record.value,
-                    oldValue: record.oldValue,
-                };
-            });
+            // On after changes, when a cell changed
+            if (records.length) {
+                const onafterchangesRecords = records.map((record) => {
+                    return {
+                        x: record.x,
+                        y: record.y,
+                        value: record.value,
+                        oldValue: record.oldValue,
+                    };
+                });
 
-            // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-            worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as jspreadsheet.CellChange[]);
+                worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords);
+            }
         }
 
         worksheet.clipboard.clearBorder();

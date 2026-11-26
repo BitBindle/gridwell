@@ -60,6 +60,34 @@ export class Comments {
             commentsObj = cellId;
         }
 
+        const oldValue = this.apply(commentsObj);
+
+        // Save history
+        worksheet.history.add({
+            action: 'setComments',
+            newValue: commentsObj,
+            oldValue,
+        });
+
+        // Set comments
+        worksheet.dispatch('oncomments', worksheet, commentsObj, oldValue);
+    }
+
+    /**
+     * Load the comments of the comments option, without history or events.
+     * @param comments - The comments by cell name.
+     */
+    load(comments: Record<string, string | null | undefined>) {
+        this.apply(comments);
+    }
+
+    /**
+     * Set the comments of the cells, and return the comments they had.
+     * @param commentsObj - The comments by cell name. A falsy value removes the comment.
+     */
+    private apply(commentsObj: Record<string, string | null | undefined>) {
+        const worksheet = this.worksheet;
+
         const oldValue: Record<string, string | null> = {};
 
         for (const [cellName, comment] of Object.entries(commentsObj)) {
@@ -89,14 +117,6 @@ export class Comments {
             }
         }
 
-        // Save history
-        worksheet.history.add({
-            action: 'setComments',
-            newValue: commentsObj,
-            oldValue,
-        });
-
-        // Set comments
-        worksheet.dispatch('oncomments', worksheet, commentsObj, oldValue);
+        return oldValue;
     }
 }

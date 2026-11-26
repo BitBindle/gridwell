@@ -1,7 +1,7 @@
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import libraryBase from '../utils/libraryBase.js';
 import { getIndex } from '../events/helpers.js';
-import type { DragColumnInfo, DragRowInfo, ResizeColumnInfo, ResizeRowInfo, CellChange, CellValue } from '../jspreadsheet';
+import type { DragColumnInfo, DragRowInfo, ResizeColumnInfo, ResizeRowInfo, CellValue } from '../jspreadsheet';
 import type { Worksheet, TargetEvent } from '../types/internal';
 
 function doubleDigitFormat(v: number | string) {
@@ -193,10 +193,14 @@ export class Pointer {
                         }
                     }
 
-                    records.push(worksheet.cells.update(i, j, value));
+                    const record = worksheet.cells.update(i, j, value);
+                    // A cell that did not change has no record
+                    if (record) {
+                        records.push(record);
 
-                    // Update all formulas in the chain
-                    worksheet.formulas.updateChain(i, j, records);
+                        // Update all formulas in the chain
+                        worksheet.formulas.updateChain(i, j, records);
+                    }
                 }
                 posx++;
                 if (h[0] !== x1) {
@@ -205,6 +209,11 @@ export class Pointer {
             }
             posy++;
             rowNumber++;
+        }
+
+        // Nothing changed, for example in a read-only cell
+        if (!records.length) {
+            return;
         }
 
         // Update history
@@ -227,8 +236,7 @@ export class Pointer {
             };
         });
 
-        // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-        worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as CellChange[]);
+        worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords);
     }
 
     /**

@@ -109,16 +109,19 @@ export class Formulas {
             // The formula text as typed, for the formula engine
             const text = expression;
 
-            // Parent column identification. executeFormula without x and y runs a formula that is in no cell.
-            const parentId = getColumnNameFromId([x!, y!]);
+            // A formula without x and y, of a footer or of executeFormula, is in no cell: it has no name, no loop and no
+            // place in the chain
+            const parentId = x != null && y != null ? getColumnNameFromId([x, y]) : null;
 
             // Code protection
-            if (formulaLoopProtection[parentId]) {
-                console.error('Reference loop detected');
-                return '#ERROR';
-            }
+            if (parentId) {
+                if (formulaLoopProtection[parentId]) {
+                    console.error('Reference loop detected');
+                    return '#ERROR';
+                }
 
-            formulaLoopProtection[parentId] = true;
+                formulaLoopProtection[parentId] = true;
+            }
 
             // Convert range tokens
             function tokensUpdate(tokens: string[]) {
@@ -172,7 +175,7 @@ export class Formulas {
             tokens = expression.match(/([A-Z]+[0-9]+)/g);
 
             // Direct self-reference protection
-            if (tokens?.includes(parentId)) {
+            if (parentId && tokens?.includes(parentId)) {
                 console.error('Self Reference detected');
                 return '#ERROR';
             } else {
@@ -182,7 +185,9 @@ export class Formulas {
                 if (tokens) {
                     for (const reference of tokens) {
                         // Keep chain
-                        worksheet.formulas.add(reference, parentId);
+                        if (parentId) {
+                            worksheet.formulas.add(reference, parentId);
+                        }
 
                         // Do not calculate again. The formula engine reads the values of the references itself.
                         if (!formulaEngine && typeof (globalThis as unknown as Record<string, unknown>)[reference] === 'undefined') {
@@ -297,7 +302,10 @@ export class Formulas {
                     // Update cell
                     const value = `${worksheet.options.data[cell[1]][cell[0]]}`;
                     if (value.substr(0, 1) === '=') {
-                        records.push(worksheet.cells.update(cell[0], cell[1], value, true));
+                        const record = worksheet.cells.update(cell[0], cell[1], value, true);
+                        if (record) {
+                            records.push(record);
+                        }
                     } else {
                         // No longer a formula: remove it from the chain, and read the next cell at the same index
                         worksheet.formulas.chain[cellId].splice(i, 1);
@@ -561,8 +569,11 @@ export class Formulas {
                         const colAlign = worksheet.options.columns[i].align || worksheet.options.defaultColAlign || 'center';
                         td.style.textAlign = colAlign;
                     }
-                    // The DOM converts a number or a boolean to text
-                    td.textContent = worksheet.cells.parseValue(+worksheet.records.length + i, j, worksheet.options.footers[j][i]) as string;
+                    // A footer is in no cell, so its formula runs without coordinates. The DOM converts the result to text.
+                    const value = worksheet.options.footers[j][i];
+                    td.textContent = (
+                        `${value}`.substr(0, 1) === '=' && worksheet.parent.config.parseFormulas !== false ? worksheet.formulas.execute(value) : value
+                    ) as string;
 
                     // Hide/Show with hideColumn()/showColumn()
                     td.style.display = worksheet.cols[i].colElement.style.display;

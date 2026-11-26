@@ -111,12 +111,26 @@ type Handler<E extends keyof jspreadsheet.SpreadsheetOptions> = Parameters<Extra
 // onpaste gets one item for each pasted cell
 assertType<Equals<Handler<'onpaste'>[1], { x: number; y: number; value: jspreadsheet.CellValue }[]>>();
 
+// onbeforepaste can return the rows to paste, of { value } objects as it got them or of values
+assertType<
+    Equals<
+        ReturnType<Extract<jspreadsheet.SpreadsheetOptions['onbeforepaste'], (...args: never[]) => unknown>>,
+        undefined | boolean | string | ({ value: jspreadsheet.CellValue } | jspreadsheet.CellValue)[][]
+    >
+>();
+
 // oneditionend gets undefined as the value when the edit was not saved
 assertType<Equals<Handler<'oneditionend'>[4], jspreadsheet.CellValue | undefined>>();
 
 // setValue without a value gives onbeforechange and onchange undefined as the new value
 assertType<Equals<Handler<'onbeforechange'>[4], jspreadsheet.CellValue | undefined>>();
 assertType<Equals<Handler<'onchange'>[4], jspreadsheet.CellValue | undefined>>();
+
+// The change events get the column and row as numbers
+assertType<Equals<Handler<'onbeforechange'>[2], number>>();
+assertType<Equals<Handler<'onchange'>[3], number>>();
+assertType<Equals<jspreadsheet.CellChange['x'], number>>();
+assertType<Equals<jspreadsheet.CellChange['y'], number>>();
 
 // oncomments gets the comments as setComments got them, where undefined removes a comment
 assertType<Equals<Handler<'oncomments'>[1], Record<string, string | null | undefined>>>();

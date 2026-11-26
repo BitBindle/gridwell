@@ -242,3 +242,51 @@ checkbox, and a text that is a number equals the number.
 `getValue` and `getValueFromCoords` return `null` for a cell outside the data, also when the row exists and the column
 does not. Version 5 returned `undefined` for a column that the row did not have, and `null` for a cell that held the
 text `undefined` (#36, #49). An application that checked the result with `=== undefined` checks it with `== null`.
+
+## Any handler can cancel an action
+
+An event calls the `onevent` option, then the handler of the event in the options, then the `onevent` of each plugin.
+Version 5 returned the result of the last one, so a plugin whose `onevent` returned nothing made an `onbefore…` handler
+that returned `false` cancel nothing (#37). The result of an event is now `false` when any of them returns `false`, and
+otherwise the last result that is not `undefined`. A plugin's `onevent` that returns `false` cancels the action too.
+
+## A read-only cell gives no change
+
+`setValue`, `setValueFromCoords`, a paste and a fill leave a read-only cell as it is. Version 5 still put a record for
+the cell in the history and in `onafterchanges`, with the coordinates and without a value (#58). Now a cell that did
+not change has no record: `onafterchanges` has only the cells that changed, and when no cell changed it does not occur
+and the history gets no entry.
+
+## onbeforechange can cancel a change
+
+Returning `false` from `onbeforechange` cancels the change of the cell, as `false` cancels the other `onbefore…` events.
+Version 5 wrote `false` into the cell instead (#38). Another value that the handler returns is still written instead of
+the new value. A handler that wants the cell to hold `false` returns nothing when the new value is `false`; it cannot
+replace another value with `false`.
+
+## The change events get the column and row as numbers
+
+`onbeforechange`, `onchange`, the records of `onafterchanges` and the records of the history get the column and row of
+the cell as numbers. Version 5 gave them as text after a typed edit, a click on a checkbox, the Delete key, Ctrl+X and
+`setValue` with a cell element, and as numbers after the other changes (#52). An application that compared them with
+text, such as `x === '2'`, compares them with numbers. In the typings, `CellChange.x` and `CellChange.y` are numbers,
+and `CellChange.value` can be `undefined`, as the new value of `onchange` can.
+
+## The persistence events occur for an undo and a redo
+
+With `persistence`, an undo or a redo posts the cells it changed. Version 5 posted them without `onbeforesave` and
+`onsave`, because undo and redo set `ignoreEvents` (#57). `onbeforesave` and `onsave` now occur while `ignoreEvents` is
+set, so `onbeforesave` can change or cancel every post.
+
+## Loading the comments option is not a change
+
+The `comments` option of a worksheet is loaded without an entry in the undo history and without `oncomments`, as the
+`style` option is. Version 5 added a `setComments` entry while it built the worksheet, so an undo right after loading
+removed the comments, and it called `oncomments` for them (#87).
+
+## A footer formula runs without coordinates
+
+A formula in a footer runs as `executeFormula` without coordinates: `onbeforeformula` and `formulaEngine` get `undefined`
+as `x` and `y`. Version 5 gave them the position of a data cell, the number of rows plus the column, so a footer formula
+that referred to that cell showed `#ERROR`, and the footer was in the formula chain under the name of that cell (#18).
+A footer shows the result of its formula, or its text, without the mask of a column.

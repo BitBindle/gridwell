@@ -561,6 +561,17 @@ describe('The formula chain of a worksheet', () => {
 });
 
 describe('The formula chain', () => {
+    it('keeps no formula of executeFormula without coordinates in the chain, so that setValue still works', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['1', '=A1']] }] })[0];
+
+        expect(worksheet.executeFormula('=A1+1')).to.equal(2);
+        expect(worksheet.formulas.chain).to.eql({ A1: ['B1'] });
+
+        worksheet.setValue('A1', '7');
+
+        expect(worksheet.getValue('B1', true)).to.equal('7');
+    });
+
     it('removes a cell that is no longer a formula from the chain of the cell it referred to (issue #43)', () => {
         const worksheet = jspreadsheet(root, { worksheets: [{ data: [['1', '=A1*2', '=A1*3']] }] })[0];
 

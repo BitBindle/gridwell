@@ -1,7 +1,7 @@
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import { getCoordsFromRange } from '../utils/helpers.js';
 import type { Worksheet } from '../types/internal';
-import type { CellChange, CellValue } from '../jspreadsheet';
+import type { CellValue, WorksheetInstance } from '../jspreadsheet';
 
 /**
  * The data of a worksheet: it gets and sets all the data, the data of a range, and the value of a cell by its name or
@@ -203,72 +203,43 @@ export class Data {
      * @param value - The new value.
      * @param force - Also change read-only cells.
      */
-    // any: a cell element gives the text of data-x and data-y to updateCell (issue #52)
-    setValue(cell: any, value?: CellValue, force?: boolean): void {
+    setValue(cell: Parameters<WorksheetInstance['setValue']>[0], value?: CellValue, force?: boolean): void {
         const worksheet = this.worksheet;
 
         const records = [];
 
-        if (typeof cell === 'string') {
-            const columnId = getIdFromColumnName(cell, true);
-            const x = columnId[0];
-            const y = columnId[1];
-
-            // Update cell
-            records.push(worksheet.cells.update(x, y, value, force));
-
-            // Update all formulas in the chain
-            worksheet.formulas.updateChain(x, y, records);
-        } else {
-            let x = null;
-            let y = null;
-            if (cell?.getAttribute) {
-                x = cell.getAttribute('data-x');
-                y = cell.getAttribute('data-y');
+        // The cells to change, with their coordinates as numbers, as for a cell name. A list can also be a NodeList.
+        const cells: [number, number, CellValue | undefined][] = [];
+        for (const item of typeof cell === 'string' || 'getAttribute' in cell ? [cell] : Object.values(cell)) {
+            if (typeof item === 'string') {
+                const columnId = getIdFromColumnName(item, true);
+                cells.push([columnId[0], columnId[1], value]);
+            } else if ('getAttribute' in item) {
+                const x = item.getAttribute('data-x');
+                const y = item.getAttribute('data-y');
+                if (x != null && y != null) {
+                    cells.push([parseInt(x), parseInt(y), value]);
+                }
+            } else if (item.x != null && item.y != null) {
+                // An item without its own value gets the value argument
+                cells.push([item.x, item.y, item.value != null ? item.value : value]);
             }
+        }
 
-            // Update cell
-            if (x != null && y != null) {
-                records.push(worksheet.cells.update(x, y, value, force));
+        for (const [x, y, cellValue] of cells) {
+            const record = worksheet.cells.update(x, y, cellValue, force);
+            // A cell that did not change has no record
+            if (record) {
+                records.push(record);
 
                 // Update all formulas in the chain
                 worksheet.formulas.updateChain(x, y, records);
-            } else {
-                const keys = Object.keys(cell);
-                if (keys.length > 0) {
-                    for (let i = 0; i < keys.length; i++) {
-                        let x, y;
-                        // An item without its own value gets the value argument
-                        let cellValue = value;
-
-                        if (typeof cell[i] === 'string') {
-                            const columnId = getIdFromColumnName(cell[i], true);
-                            x = columnId[0];
-                            y = columnId[1];
-                        } else {
-                            if (cell[i].x != null && cell[i].y != null) {
-                                x = cell[i].x;
-                                y = cell[i].y;
-                                // Flexible setup
-                                if (cell[i].value != null) {
-                                    cellValue = cell[i].value;
-                                }
-                            } else {
-                                x = cell[i].getAttribute('data-x');
-                                y = cell[i].getAttribute('data-y');
-                            }
-                        }
-
-                        // Update cell
-                        if (x != null && y != null) {
-                            records.push(worksheet.cells.update(x, y, cellValue, force));
-
-                            // Update all formulas in the chain
-                            worksheet.formulas.updateChain(x, y, records);
-                        }
-                    }
-                }
             }
+        }
+
+        // Nothing changed, for example in a read-only cell
+        if (!records.length) {
+            return;
         }
 
         // Update history
@@ -291,8 +262,7 @@ export class Data {
             };
         });
 
-        // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-        worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as CellChange[]);
+        worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords);
     }
 
     /**
@@ -306,10 +276,19 @@ export class Data {
         const worksheet = this.worksheet;
 
         const records = [];
-        records.push(worksheet.cells.update(x, y, value, force));
+        const record = worksheet.cells.update(x, y, value, force);
+        // A cell that did not change has no record
+        if (record) {
+            records.push(record);
 
-        // Update all formulas in the chain
-        worksheet.formulas.updateChain(x, y, records);
+            // Update all formulas in the chain
+            worksheet.formulas.updateChain(x, y, records);
+        }
+
+        // Nothing changed, for example in a read-only cell
+        if (!records.length) {
+            return;
+        }
 
         // Update history
         worksheet.history.add({
@@ -331,8 +310,7 @@ export class Data {
             };
         });
 
-        // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-        worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as CellChange[]);
+        worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords);
     }
 
     /**
