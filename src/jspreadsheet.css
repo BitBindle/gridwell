@@ -490,11 +490,57 @@
     width: 300px;
     min-height: 225px;
     margin-top: 2px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    cursor: default;
+}
+
+.jss_worksheet .editor .jupload-image {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+}
+
+.jss_worksheet .editor .jupload-image:empty:before {
+    content: '\e2c3';
+    font-family: 'Material Icons';
+    font-size: 90px;
+    color: #ccc;
 }
 
 .jss_worksheet .editor .jupload img {
     width: 100%;
     height: auto;
+    max-height: 300px;
+    object-fit: contain;
+}
+
+.jss_worksheet .editor .jupload-controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.jss_worksheet .editor .jupload-controls button {
+    font: inherit;
+    color: var(--jactive-color, #007aff);
+    text-transform: uppercase;
+    font-weight: bold;
+    background: none;
+    border: 0;
+    padding: 4px 0;
+    cursor: pointer;
+}
+
+.jss_worksheet .editor .jupload-controls button:disabled {
+    color: #aaa;
+    cursor: default;
 }
 
 .jss_worksheet .editor .jss_richtext {
@@ -519,21 +565,15 @@
     margin-top: 2px;
     text-align: left;
     white-space: initial;
-}
-
-.jss_worksheet .editor .jclose:after {
-    position: absolute;
-    top: 0;
-    right: 0;
-    margin: 10px;
-    content: 'close';
-    font-family: 'Material icons';
-    font-size: 24px;
-    width: 24px;
-    height: 24px;
-    line-height: 24px;
-    cursor: pointer;
-    text-shadow: 0px 0px 5px #fff;
+    min-height: 100px;
+    max-height: 300px;
+    overflow-y: auto;
+    box-sizing: border-box;
+    outline: none;
+    word-break: break-word;
+    cursor: text;
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 .jss_worksheet,

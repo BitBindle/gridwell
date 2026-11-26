@@ -1,10 +1,11 @@
-import jSuites from 'jsuites';
 import { getMask, isFormula } from '../utils/values.js';
 import { extract, toEditor } from '../utils/mask.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import { ColorPicker, type ColorPickerOptions } from '../utils/color.js';
 import { Dropdown } from '../utils/dropdown.js';
 import { Calendar, type CalendarOptions } from '../utils/calendar.js';
+import { createRichText, getRichText } from '../utils/richText.js';
+import { ImageUpload, type ImageUploadElement } from '../utils/imageUpload.js';
 import type { Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
 
@@ -248,7 +249,7 @@ export class Editor {
     }
 
     /**
-     * The editor of an html column: a jSuites rich text editor over the cell, kept inside the window.
+     * The editor of an html column: a rich text editor over the cell, kept inside the window.
      */
     private openHtml(cell: HTMLTableCellElement, x: number, y: number, column: ColumnOptions, label: string) {
         const worksheet = this.worksheet;
@@ -263,17 +264,8 @@ export class Editor {
         const div = document.createElement('div');
         div.classList.add('jss_richtext');
         editor.appendChild(div);
-        // The jsuites typings miss the editor property
-        const richText = jSuites.editor(div, {
-            focus: true,
-            value: value as string,
-        }) as ReturnType<typeof jSuites.editor> & { editor?: HTMLElement };
-        // Accessible role and name of the rich text editor
-        if (richText?.editor) {
-            richText.editor.setAttribute('role', 'textbox');
-            richText.editor.setAttribute('aria-multiline', 'true');
-            richText.editor.setAttribute('aria-label', label);
-        }
+        createRichText(div, value == null ? '' : `${value}`, label);
+
         const rect = cell.getBoundingClientRect();
         const rectContent = div.getBoundingClientRect();
         if (window.innerHeight < rect.bottom + rectContent.height) {
@@ -290,13 +282,13 @@ export class Editor {
     }
 
     /**
-     * The editor of an image column: a jSuites image upload over the cell, with the image of the cell.
+     * The editor of an image column: an image upload over the cell, with the image of the cell.
      */
     private openImage(cell: HTMLTableCellElement, x: number, y: number, column: ColumnOptions, label: string) {
         const worksheet = this.worksheet;
 
         // Value
-        const img = cell.children[0] as HTMLImageElement;
+        const img = cell.children[0] as HTMLImageElement | undefined;
         // Create editor
         const editor = createEditor(cell, 'div', label);
 
@@ -304,12 +296,15 @@ export class Editor {
 
         editor.style.position = 'relative';
         const div = document.createElement('div');
-        div.classList.add('jclose');
-        if (img?.src) {
-            div.appendChild(img);
-        }
         editor.appendChild(div);
-        jSuites.image(div, column);
+        const upload = new ImageUpload(div, {
+            value: img?.tagName === 'IMG' ? img.src : '',
+            label,
+            ondone: () => {
+                worksheet.editor.close(cell, true);
+            },
+        });
+
         const rect = cell.getBoundingClientRect();
         const rectContent = div.getBoundingClientRect();
         if (window.innerHeight < rect.bottom + rectContent.height) {
@@ -319,6 +314,7 @@ export class Editor {
         }
 
         div.style.left = `${rect.left}px`;
+        upload.focus();
     }
 
     /**
@@ -472,11 +468,9 @@ export class Editor {
                 } else if (column?.type === 'color') {
                     value = (cell.children[0] as EditorElement).color.close(true);
                 } else if (column?.type === 'html') {
-                    // The rich text editor keeps its jsuites control on its element
-                    value = (cell.children[0].children[0] as HTMLElement & { editor: { getData(): string } }).editor.getData();
+                    value = getRichText(cell.children[0].children[0] as HTMLElement);
                 } else if (column?.type === 'image') {
-                    const img = cell.children[0].children[0].children[0] as HTMLImageElement | undefined;
-                    value = img?.tagName === 'IMG' ? img.src : '';
+                    value = (cell.children[0].children[0] as ImageUploadElement).upload!.getValue();
                 } else {
                     value = (cell.children[0] as EditorElement).value;
                     (cell.children[0] as EditorElement).onblur = null;

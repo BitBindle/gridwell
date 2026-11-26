@@ -352,8 +352,8 @@ spreadsheet without formulas no longer needs the 140 KB of the engine.
 
 Jspreadsheet keeps its own dictionary and no longer reads the dictionary of jSuites. An application that called
 `jSuites.setDictionary`, or set `document.dictionary`, to translate the texts of the spreadsheet calls
-`jspreadsheet.setDictionary` instead. It takes the same object, and still passes it to jSuites for the controls that
-jSuites shows, the rich text and the image editors. An empty translation shows the English text again.
+`jspreadsheet.setDictionary` instead. It takes the same object. It still passes it to jSuites, although no part of
+Jspreadsheet uses jSuites any more. An empty translation shows the English text again.
 
 ## The requests are sent with fetch
 
@@ -516,3 +516,23 @@ and the input still keeps the calendar as `calendar`, with `open()`, `close(igno
   an input with a date out of the `validRange`. The years view shows 25 years. The swipe between the months is gone.
 - The texts are translated with `jspreadsheet.setDictionary` (`Reset`, `Done`, `Update`, and the new `Previous`, `Next`,
   `Hour` and `Minute`). The names of the months and the weekdays are translated with it too, as in the cells.
+
+## The rich text and image editors work without jSuites
+
+The editors of the `html` and `image` columns are shown by Jspreadsheet, not by `jSuites.editor` and `jSuites.image`.
+The columns keep their types and their values, and the cells show them as before. These change:
+
+- The rich text editor is an element with `contenteditable`, the class `jss_richtext`, and the role `textbox`. It has no
+  `editor` property and no `getData()`. The formatting keys of the browser work in it, such as Ctrl+B. Enter adds a
+  line, Tab saves the value and selects the next cell, and Escape closes it without saving.
+- The rich text editor saves its HTML without scripts, event handlers, forms, images and frames. It keeps the tags of
+  formatting (`b`, `i`, `u`, `p`, `div`, `span`, the headings, the lists, `a`, …), the `href` of a link to a web
+  address, an email address or a phone number, and these properties of the style: `color`, `background-color`,
+  `font-weight`, `font-style`, `font-size`, `text-decoration` and `text-align`. It pastes HTML the same way, and a text
+  as lines. jSuites kept more tags and attributes, such as images, tables and `width`.
+- The image editor is a dialog with the image and the buttons "Choose an image", "Remove" and "Done". Tab moves between
+  the buttons, Enter and Space press them, Done saves the image and keeps the cell selected, and Escape closes the
+  dialog without saving. An image file can be dropped on it. It no longer opens the file dialog on a press on the image,
+  has no close icon and no `upload` options: the options of the column, such as `maxWidth`, `maxHeight` and
+  `maxJpegSizeBytes`, are not read. The element of the dialog keeps it as `upload`, with `getValue()` and `setValue(value)`.
+- The new texts are translated with `jspreadsheet.setDictionary`: `Choose an image`, `Remove` and `Done`.

@@ -69,7 +69,7 @@ libraryBase.jspreadsheet.setFormulaEngine = (engine: jspreadsheet.FormulaEngine 
 // Define dictionary
 libraryBase.jspreadsheet.setDictionary = (o: Record<string, string>) => {
     setDictionary(o);
-    // The jsuites controls, the rich text and the image editors, translate their own texts
+    // Jspreadsheet no longer shows jsuites controls, but it still passes the translations on until it drops jsuites
     jSuites.setDictionary(o);
 };
 
