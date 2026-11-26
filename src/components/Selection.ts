@@ -373,9 +373,13 @@ export class Selection {
         if (!borderRight) {
             borderRight = 0;
         }
+        // When every selected row is hidden, the top and bottom are the selected rows
+        if (borderTop == null || borderBottom == null) {
+            borderTop = py;
+            borderBottom = uy;
+        }
 
-        // The top and bottom are null when every selected row is hidden (issue #59)
-        const ret = worksheet.dispatch('onbeforeselection', worksheet, borderLeft, borderTop!, borderRight, borderBottom!, origin);
+        const ret = worksheet.dispatch('onbeforeselection', worksheet, borderLeft, borderTop, borderRight, borderBottom, origin);
         if (ret === false) {
             return false;
         }
@@ -408,20 +412,20 @@ export class Selection {
                 worksheet.cols[i].colElement.style &&
                 worksheet.cols[i].colElement.style.display !== 'none'
             ) {
-                // Top border. The borders are null when each row of the range is hidden.
-                if (worksheet.records[borderTop!]?.[i]) {
-                    worksheet.records[borderTop!][i].element.classList.add('highlight-top');
+                // Top border
+                if (worksheet.records[borderTop]?.[i]) {
+                    worksheet.records[borderTop][i].element.classList.add('highlight-top');
                 }
                 // Bottom border
-                if (worksheet.records[borderBottom!]?.[i]) {
-                    worksheet.records[borderBottom!][i].element.classList.add('highlight-bottom');
+                if (worksheet.records[borderBottom]?.[i]) {
+                    worksheet.records[borderBottom][i].element.classList.add('highlight-bottom');
                 }
                 // Add selected from headers
                 worksheet.headers[i].classList.add('selected');
             }
         }
 
-        for (let j = borderTop!; j <= borderBottom!; j++) {
+        for (let j = borderTop; j <= borderBottom; j++) {
             if (worksheet.rows[j] && worksheet.rows[j].element.style.display !== 'none') {
                 // Left border
                 worksheet.records[j][borderLeft].element.classList.add('highlight-left');
@@ -432,7 +436,7 @@ export class Selection {
             }
         }
 
-        worksheet.selection.bounds = [borderLeft, borderTop!, borderRight, borderBottom!];
+        worksheet.selection.bounds = [borderLeft, borderTop, borderRight, borderBottom];
 
         // The selected cell is the tab stop of the grid
         this.updateActiveCell(x1, y1, origin);
@@ -444,8 +448,7 @@ export class Selection {
             worksheet.clipboard.clearBorder();
         }
 
-        // The top and bottom are null when every selected row is hidden (issue #59)
-        worksheet.dispatch('onselection', worksheet, borderLeft, borderTop!, borderRight, borderBottom!, origin);
+        worksheet.dispatch('onselection', worksheet, borderLeft, borderTop, borderRight, borderBottom, origin);
 
         // Find corner cell
         this.updateCorner();

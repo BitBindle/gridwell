@@ -322,3 +322,23 @@ describe('The pointer of a worksheet', () => {
         expect(worksheet.selection.range).to.eql([0, 2, 2, 2]);
     });
 });
+
+describe('A selection of hidden rows', () => {
+    it('gives onbeforeselection and onselection the selected rows as the top and bottom (issue #59)', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [3, 3] }],
+            onbeforeselection: (instance, left, top, right, bottom) => calls.push(['before', left, top, right, bottom]),
+            onselection: (instance, left, top, right, bottom) => calls.push(['selection', left, top, right, bottom]),
+        })[0];
+
+        worksheet.hideRow(1);
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+
+        expect(calls).to.eql([
+            ['before', 1, 1, 1, 1],
+            ['selection', 1, 1, 1, 1],
+        ]);
+        expect(worksheet.selection.highlighted).to.eql([]);
+    });
+});
