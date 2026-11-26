@@ -98,6 +98,25 @@ describe('Create a jspreadsheet instance from a table', () => {
         expect(() => jspreadsheet(createTable(), { worksheets: [] })).to.throw('the table must be in a parent element');
     });
 
+    it('creates the worksheet of a table without options or without worksheets', async () => {
+        const first = root.appendChild(createTable());
+        // The second table is replaced by a div in its own parent
+        const parent = document.body.appendChild(document.createElement('div'));
+        const second = parent.appendChild(createTable());
+
+        try {
+            const firstWorksheets = jspreadsheet(first);
+            const secondWorksheets = jspreadsheet(second, {});
+            await new Promise((resolve) => setTimeout(resolve));
+
+            expect(firstWorksheets[0].getData()).to.eql([['a', 'b']]);
+            expect(secondWorksheets[0].getData()).to.eql([['a', 'b']]);
+        } finally {
+            jspreadsheet.destroy(parent.firstChild);
+            parent.remove();
+        }
+    });
+
     it('replaces a table in a parent with the spreadsheet', async () => {
         const table = root.appendChild(createTable());
 
