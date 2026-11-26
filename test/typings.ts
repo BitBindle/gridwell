@@ -79,6 +79,9 @@ library(document.createElement('div'), {
     worksheets: [{ style: { A1: 0, B1: 'font-weight: bold;' } }],
 });
 
+// A plugin needs none of its methods
+library(document.createElement('div'), { plugins: { empty: () => ({}) }, worksheets: [{}] });
+
 // The about option can be the text that the "About" item shows
 library(document.createElement('div'), { about: 'My application', worksheets: [{}] });
 

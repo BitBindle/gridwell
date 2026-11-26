@@ -1665,9 +1665,9 @@ declare namespace jspreadsheet {
         beforeinit?: (instance: WorksheetInstance) => void;
 
         /**
-         * Get spreadsheet config information.
+         * Get spreadsheet config information. The library does not call it.
          */
-        getConfig: () => SpreadsheetOptions;
+        getConfig?: () => SpreadsheetOptions;
 
         /**
          * This method is called when a worksheet is created.
