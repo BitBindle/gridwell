@@ -314,4 +314,28 @@ describe('Toolbar', () => {
             expect(changes).to.eql([{ A1: 'text-align:right', B1: 'text-align:right' }]);
         });
     });
+
+    describe('Keys', () => {
+        const key = (element, keyName, keyCode) => {
+            const event = new KeyboardEvent('keydown', { key: keyName, keyCode, which: keyCode, bubbles: true, cancelable: true });
+            element.dispatchEvent(event);
+            return event;
+        };
+
+        it('keeps the keys on a focused picker away from the grid (issue #79)', async () => {
+            const instance = await createWithToolbar();
+            const worksheet = instance[0];
+            worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+
+            const picker = root.querySelector('.jss_toolbar .jpicker');
+            picker.focus();
+
+            key(picker, 'a', 65);
+            expect(worksheet.editor.isOpen()).to.equal(false);
+
+            key(picker, 'Delete', 46);
+            key(picker, 'ArrowRight', 39);
+            expect(worksheet.selection.range).to.eql([0, 0, 0, 0]);
+        });
+    });
 });
