@@ -648,3 +648,17 @@ The column `align` applies before the content of a cell, so that the `formatValu
 column type that sets `textAlign` in `createCell` now keeps it. Version 5 set the column alignment after `createCell`,
 so the alignment of the column replaced it. To keep the column alignment, do not set `textAlign` in `createCell`, or set
 it from `column.align`.
+
+## deleteWorksheet removes the options of the worksheet
+
+`deleteWorksheet` removes the options of the worksheet from `getConfig().worksheets`. Version 5 left them there, so the
+list named a worksheet that did not exist. `getConfig()` gives the options object that the application passed, so the
+worksheet also leaves the `worksheets` array of the application. An `ondeleteworksheet` handler sees the list without the
+deleted worksheet, and gets its options as `worksheet.options`. An application that removed the options itself must stop,
+or it removes the options of another worksheet.
+
+## oncreateworksheet gives the index of the new worksheet
+
+`oncreateworksheet` occurs when the new worksheet is built, and gives its index in the worksheets at that time. Version 5
+gave the number of worksheets minus one. When the application called `createWorksheet` again before the first worksheet
+was built, both events got the index of the last worksheet.

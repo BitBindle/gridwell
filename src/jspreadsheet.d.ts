@@ -1239,6 +1239,14 @@ declare namespace jspreadsheet {
         onmoverow?: (instance: WorksheetInstance, oldPosition: number, newPosition: number, quantity: number) => void;
 
         /**
+         * Occurs when moveWorksheet moves a worksheet.
+         * @param worksheet - Instance of the moved worksheet.
+         * @param from - Old index of the worksheet.
+         * @param to - New index of the worksheet.
+         */
+        onmoveworksheet?: (worksheet: WorksheetInstance, from: number, to: number) => void;
+
+        /**
          * Occurs after a paste action is performed in the javascript table.
          * @param instance - Instance of the worksheet where the change occurred.
          * @param pastedInfo - The pasted cells, one item for each cell.
@@ -1258,6 +1266,15 @@ declare namespace jspreadsheet {
          * @param historyRecord - History item that was redone. If there are no more actions to redo, it takes the value undefined.
          */
         onredo?: (instance: WorksheetInstance, historyRecord: HistoryRecord | undefined) => void;
+
+        /**
+         * Occurs when renameWorksheet renames a worksheet.
+         * @param worksheet - Instance of the renamed worksheet.
+         * @param index - Index of the worksheet.
+         * @param newName - New name of the worksheet.
+         * @param oldName - Old name of the worksheet.
+         */
+        onrenameworksheet?: (worksheet: WorksheetInstance, index: number, newName: string, oldName: string) => void;
 
         /**
          * Occurs after a change in column width.
@@ -1953,8 +1970,9 @@ declare namespace jspreadsheet {
         /**
          * Create a new worksheet.
          * @param options - Worksheet options.
+         * @param position - Index of the new worksheet. Without it, or outside the worksheets, the new worksheet is the last one.
          */
-        createWorksheet: (options: WorksheetOptions) => void;
+        createWorksheet: (options: WorksheetOptions, position?: number) => void;
 
         /**
          * Remove columns.
@@ -2371,6 +2389,25 @@ declare namespace jspreadsheet {
         openWorksheet: (position: number) => void;
 
         /**
+         * Move a worksheet and its tab to another position. The open worksheet stays open, and the focus stays where it is.
+         * The method writes no history entry.
+         * @param from - Index of the worksheet.
+         * @param to - New index of the worksheet.
+         * @returns False when an index is outside the worksheets.
+         */
+        moveWorksheet: (from: number, to: number) => false | undefined;
+
+        /**
+         * Rename a worksheet, its tab and the accessible name of its table. Formulas that refer to the old name keep it.
+         * The method writes no history entry.
+         * @param position - Index of the worksheet.
+         * @param name - New name. It must have a character that is not a space, and must not be the name of another
+         * worksheet of the spreadsheet. The names are compared with their letter case, as `getWorksheetInstanceByName` does.
+         * @returns False when the position is outside the worksheets or the name is not valid.
+         */
+        renameWorksheet: (position: number, name: string) => false | undefined;
+
+        /**
          * Spreadsheet settings.
          */
         options: WorksheetOptions;
@@ -2438,6 +2475,22 @@ declare namespace jspreadsheet {
          * @param data - Data to be placed in cells released from the merge.
          */
         removeMerge: (cellName: string, data?: CellValue[]) => void;
+
+        /**
+         * Make the merged ranges of the worksheet equal to a map from the first cell of each range to its colspan and rowspan.
+         * The method checks the form of each entry before it changes a range. The ranges that do not change stay. An existing
+         * range whose new spans do not fit is removed. The other cells of a new range lose their values, as with
+         * `setMerge`, and the cells of a removed range show again, empty. A range that does not change stays. When two new entries
+         * cross, the first one in the order of the keys stays. The method shows no dialog and writes no history entry. A new range that hides the selected cell
+         * selects its first cell, as `setMerge` does, and an editor in such a cell closes without a save. The undo of an
+         * earlier `setMerge` on a range that this method changed can put the saved values in other cells. `onunmerge` occurs
+         * for each removed range, with its colspan and rowspan, `onmerge` once with the new ranges, `onchange` for each cell
+         * that a new range clears, and `oneditionend` for a closed editor.
+         * @param merges - The ranges, for example `{ A1: [2, 1], C3: [1, 3] }`.
+         * @returns The first cells of the ranges that it cannot merge: a name that is not a cell name, spans that are not
+         * two positive whole numbers, a range of one cell, a range outside the worksheet, or a range that crosses another.
+         */
+        replaceMerges: (merges: Record<string, [number, number]>) => string[];
 
         /**
          * Reset all filters.

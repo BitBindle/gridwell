@@ -323,6 +323,10 @@ export class Worksheet {
         return this.merges.destroy();
     }
 
+    replaceMerges(merges: Record<string, [number, number]>) {
+        return this.merges.replace(merges);
+    }
+
     removeMerge(cellName: string, data?: jspreadsheet.CellValue[]) {
         return this.merges.remove(cellName, data);
     }
@@ -556,9 +560,9 @@ export class Worksheet {
     }
 
     /**
-     * Add a worksheet to the spreadsheet, in a new tab.
+     * Add a worksheet to the spreadsheet, in a new tab. The tabs add it at the end, and position moves it.
      */
-    createWorksheet(options: jspreadsheet.WorksheetOptions) {
+    createWorksheet(options: jspreadsheet.WorksheetOptions, position?: number) {
         const spreadsheet = this.parent;
 
         spreadsheet.creationThroughJss = true;
@@ -566,6 +570,56 @@ export class Worksheet {
         spreadsheet.createWorksheetObj(options);
 
         spreadsheet.element.tabs!.create(options.worksheetName);
+
+        const last = spreadsheet.worksheets.length - 1;
+        if (Number.isInteger(position) && position! >= 0 && position! < last) {
+            spreadsheet.placeWorksheet(last, position!);
+        }
+    }
+
+    /**
+     * Move a worksheet and its tab to another position.
+     */
+    moveWorksheet(from: number, to: number) {
+        const spreadsheet = this.parent;
+        const count = spreadsheet.worksheets.length;
+
+        if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to < 0 || from >= count || to >= count) {
+            return false;
+        }
+        if (from === to) {
+            return;
+        }
+
+        const worksheet = spreadsheet.worksheets[from];
+        spreadsheet.placeWorksheet(from, to);
+
+        worksheet.dispatch('onmoveworksheet', worksheet, from, to);
+    }
+
+    /**
+     * Rename a worksheet, its tab and the accessible name of its table.
+     */
+    renameWorksheet(position: number, name: string) {
+        const spreadsheet = this.parent;
+        const worksheet = spreadsheet.worksheets[position];
+
+        // A name of spaces would give the tab and the table no accessible name
+        if (!worksheet || typeof name !== 'string' || !name.trim()) {
+            return false;
+        }
+        if (spreadsheet.worksheets.some((other) => other !== worksheet && other.options.worksheetName === name)) {
+            return false;
+        }
+
+        const oldName = worksheet.options.worksheetName!;
+        if (oldName !== name) {
+            worksheet.options.worksheetName = name;
+            spreadsheet.element.tabs!.rename(position, name);
+            worksheet.accessibility.setGridLabels();
+
+            worksheet.dispatch('onrenameworksheet', worksheet, position, name, oldName);
+        }
     }
 
     /**
@@ -587,6 +641,12 @@ export class Worksheet {
 
         // The size observer of the frozen rows holds the worksheet
         removedWorksheet?.rowManager.stopFreeze();
+
+        // getConfig gives the options of the worksheets that the spreadsheet has. A position without a worksheet removes none.
+        const index = removedWorksheet ? this.parent.config.worksheets.indexOf(removedWorksheet.options) : -1;
+        if (index >= 0) {
+            this.parent.config.worksheets.splice(index, 1);
+        }
 
         this.parent.dispatch('ondeleteworksheet', removedWorksheet, position);
     }
