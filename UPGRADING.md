@@ -672,6 +672,8 @@ the input, because an input cannot keep the value as it is. Without word wrap, t
 
 - Code, CSS or tests that find the open editor with `input`, for example `td > input`, must look for `td > textarea`.
   The calendar and color editors are still inputs.
-- Alt+Enter adds a line break at the caret in each text cell. In version 5, it did this only with `wordWrap` or a value
-  of more than 200 characters, and in other cells it saved the value and moved the selection down.
+- Alt+Enter adds a line break at the caret in each text cell, and in a custom editor whose first element is a
+  textarea. In version 5, it did this only with `wordWrap` or a value of more than 200 characters, and in other cells
+  it saved the value and moved the selection down. Alt+Enter is the key for a line break, so no option keeps the old
+  behavior. An application can stop the key with a `keydown` listener in the capture phase.
 - Text with line breaks that the user pastes into an open editor keeps them. The input changed them to spaces.

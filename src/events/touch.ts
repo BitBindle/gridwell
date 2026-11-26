@@ -59,7 +59,7 @@ export function touchEndControls(e: TargetEvent<TouchEvent>) {
         // Element
         const editor = libraryBase.jspreadsheet.tmpElement?.children[0];
         if (editor?.tagName === 'INPUT' || editor?.tagName === 'TEXTAREA') {
-            (editor as HTMLInputElement).focus();
+            (editor as HTMLElement).focus();
         }
         libraryBase.jspreadsheet.tmpElement = null;
     }
