@@ -122,8 +122,8 @@ export class Selection {
             const y = y2 - y1 + worksheet.content.scrollTop + h2 - 4;
 
             // Place the corner in the correct place
-            worksheet.corner.style.top = y + 'px';
-            worksheet.corner.style.left = x + 'px';
+            worksheet.corner.style.top = `${y}px`;
+            worksheet.corner.style.left = `${x}px`;
 
             if (worksheet.options.freezeColumns) {
                 const width = worksheet.columns.getFreezeWidth();
@@ -609,10 +609,10 @@ export class Selection {
         const end = getCellNameFromCoords(selectedRange[2], selectedRange[3]);
 
         if (start === end) {
-            return worksheet.options.worksheetName + '!' + start;
+            return `${worksheet.options.worksheetName}!${start}`;
         }
 
-        return worksheet.options.worksheetName + '!' + start + ':' + end;
+        return `${worksheet.options.worksheetName}!${start}:${end}`;
     }
 
     isSelected(x: number, y: number) {

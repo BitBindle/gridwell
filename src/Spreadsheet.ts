@@ -137,7 +137,7 @@ export class Spreadsheet {
 
             for (const worksheetOptions of o) {
                 if (!worksheetOptions.worksheetName) {
-                    worksheetOptions.worksheetName = 'Sheet' + sheetNumber++;
+                    worksheetOptions.worksheetName = `Sheet${sheetNumber++}`;
                 }
 
                 tabsOptions.data.push({
@@ -189,7 +189,7 @@ export class Spreadsheet {
             }
         });
 
-        return 'Sheet' + (largestWorksheetNumber + 1);
+        return `Sheet${largestWorksheetNumber + 1}`;
     }
 
     /**

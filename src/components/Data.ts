@@ -386,13 +386,11 @@ export class Data {
         }
 
         if (delimiter) {
-            return (
-                dataset
-                    .map((row) => {
-                        return row.join(delimiter);
-                    })
-                    .join('\r\n') + '\r\n'
-            );
+            return `${dataset
+                .map((row) => {
+                    return row.join(delimiter);
+                })
+                .join('\r\n')}\r\n`;
         }
 
         if (asJson) {

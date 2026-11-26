@@ -607,7 +607,7 @@ export class Worksheet {
         const searchContainer = document.createElement('div');
 
         const searchLabel = document.createElement('label');
-        searchLabel.innerHTML = jSuites.translate('Search') + ': ';
+        searchLabel.innerHTML = `${jSuites.translate('Search')}: `;
         searchContainer.appendChild(searchLabel);
 
         this.searchInput = document.createElement('input');
@@ -790,11 +790,11 @@ export class Worksheet {
             if (this.options.tableHeight) {
                 (this.content.style as unknown as Record<string, string>)['overflow-y'] = 'auto';
                 (this.content.style as unknown as Record<string, string>)['box-shadow'] = 'rgb(221 221 221) 2px 2px 5px 0.1px';
-                this.content.style.maxHeight = typeof this.options.tableHeight === 'string' ? this.options.tableHeight : this.options.tableHeight + 'px';
+                this.content.style.maxHeight = typeof this.options.tableHeight === 'string' ? this.options.tableHeight : `${this.options.tableHeight}px`;
             }
             if (this.options.tableWidth) {
                 (this.content.style as unknown as Record<string, string>)['overflow-x'] = 'auto';
-                this.content.style.width = typeof this.options.tableWidth === 'string' ? this.options.tableWidth : this.options.tableWidth + 'px';
+                this.content.style.width = typeof this.options.tableWidth === 'string' ? this.options.tableWidth : `${this.options.tableWidth}px`;
             }
         }
 

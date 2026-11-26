@@ -1033,11 +1033,11 @@ export class Columns {
                 const wasLast = worksheet.headers[i].classList.contains('jss_freezed_last');
                 worksheet.headers[i].classList.add('jss_freezed');
                 worksheet.headers[i].classList.toggle('jss_freezed_last', isLast);
-                worksheet.headers[i].style.left = width + 'px';
+                worksheet.headers[i].style.left = `${width}px`;
                 for (let j = 0; j < worksheet.rows.length; j++) {
                     if (worksheet.rows[j] && worksheet.records[j][i]) {
                         // The cells are relative, so all the frozen cells move by the same distance as the scroll
-                        const shifted = scrollLeft - indexWidth - 1 + 'px';
+                        const shifted = `${scrollLeft - indexWidth - 1}px`;
                         worksheet.records[j][i].element.classList.add('jss_freezed');
                         if (isLast || wasLast) {
                             worksheet.records[j][i].element.classList.toggle('jss_freezed_last', isLast);

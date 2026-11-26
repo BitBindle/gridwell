@@ -362,6 +362,10 @@ behaviour, and turns on the ESLint rule that keeps the new style, so that new co
     inserted row made the paste of a large range slow. `prefer-includes` needs the types, so ESLint reads `src/` with
     the TypeScript project. `destroyAll` skips every other spreadsheet (#114), as before.
 40. **Strings.** Strings joined with `+` become template literals. Rule: `prefer-template`.
+    Done. ESLint's fix of `prefer-template` changed the 92 concatenations with a string. A template literal converts
+    a value as `String` does, and `'' + value` with the hint `default`; the two differ only for an object whose
+    `valueOf` gives another value than its `toString`. The type checker found 9 concatenations with an operand that is
+    not a primitive (`unknown`, a cell value): their values are primitives, arrays and dates, which convert the same.
 41. **Equality.** `==` and `!=` become `===` and `!==` where the type check shows both sides have the same primitive
     type, so that the result is the same; `x == null` stays, as the one loose comparison that is clearer. The other
     loose comparisons, where the two sides can have different types, are listed in the pull request and changed one by

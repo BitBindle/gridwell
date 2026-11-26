@@ -169,8 +169,8 @@ export class Tabs {
                 const header = this.getHeader(index);
 
                 if (header) {
-                    this.border.style.width = header.getBoundingClientRect().width + 'px';
-                    this.border.style.left = header.offsetLeft + 'px';
+                    this.border.style.width = `${header.getBoundingClientRect().width}px`;
+                    this.border.style.left = `${header.offsetLeft}px`;
                     this.border.style.bottom = '0px';
                 }
             }, 50);

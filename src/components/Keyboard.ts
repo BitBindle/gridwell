@@ -52,7 +52,7 @@ export class Keyboard {
                     const editorTextarea = worksheet.editor.cell.children[0] as HTMLTextAreaElement;
                     let editorValue = (worksheet.editor.cell.children[0] as HTMLTextAreaElement).value;
                     const editorIndexOf = editorTextarea.selectionStart;
-                    editorValue = editorValue.slice(0, editorIndexOf) + '\n' + editorValue.slice(editorIndexOf);
+                    editorValue = `${editorValue.slice(0, editorIndexOf)}\n${editorValue.slice(editorIndexOf)}`;
                     editorTextarea.value = editorValue;
                     editorTextarea.focus();
                     editorTextarea.selectionStart = editorIndexOf + 1;

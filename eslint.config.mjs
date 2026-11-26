@@ -42,6 +42,8 @@ export default tseslint.config(
             'object-shorthand': ['error', 'always'],
             // A loop reads the items of an array with for...of, and a list is searched with includes
             '@typescript-eslint/prefer-for-of': 'error',
+            // Strings are built with template literals
+            'prefer-template': 'error',
         },
     },
     {

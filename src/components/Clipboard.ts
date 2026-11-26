@@ -13,7 +13,7 @@ function quote<T>(value: T, div: RegExp): T | string {
     // Only text has match
     const text = value as unknown as string;
     if (text.match && (text.match(div) || text.match(/,/g) || text.match(/\n/) || text.match(/"/))) {
-        return '"' + text.replace(new RegExp('"', 'g'), '""') + '"';
+        return `"${text.replace(new RegExp('"', 'g'), '""')}"`;
     }
     return value;
 }
@@ -168,7 +168,7 @@ export class Clipboard {
                         nested.push('');
                     }
                 }
-                nestedHeaders += nested.join(delimiter) + '\r\n';
+                nestedHeaders += `${nested.join(delimiter)}\r\n`;
             }
         }
 
@@ -581,18 +581,18 @@ export class Clipboard {
             data += worksheet.clipboard.copy(false, worksheet.options.csvDelimiter, true, includeHeaders, true, undefined, processed);
 
             // Download element
-            const blob = new Blob(['\uFEFF' + data], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob([`\uFEFF${data}`], { type: 'text/csv;charset=utf-8;' });
 
             // IE Compatibility
             if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-                window.navigator.msSaveOrOpenBlob(blob, (worksheet.options.csvFileName || worksheet.options.worksheetName) + '.csv');
+                window.navigator.msSaveOrOpenBlob(blob, `${worksheet.options.csvFileName || worksheet.options.worksheetName}.csv`);
             } else {
                 // Download element
                 const pom = document.createElement('a');
                 pom.setAttribute('target', '_top');
                 const url = URL.createObjectURL(blob);
                 pom.href = url;
-                pom.setAttribute('download', (worksheet.options.csvFileName || worksheet.options.worksheetName) + '.csv');
+                pom.setAttribute('download', `${worksheet.options.csvFileName || worksheet.options.worksheetName}.csv`);
                 document.body.appendChild(pom);
                 pom.click();
                 pom.parentNode!.removeChild(pom);

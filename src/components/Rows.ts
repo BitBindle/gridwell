@@ -44,7 +44,7 @@ export class Rows {
 
         // Set default row height
         if (worksheet.options.defaultRowHeight) {
-            row.element.style.height = worksheet.options.defaultRowHeight + 'px';
+            row.element.style.height = `${worksheet.options.defaultRowHeight}px`;
         }
 
         // Definitions
@@ -572,7 +572,7 @@ export class Rows {
             height = parseInt(height);
 
             // Set width
-            worksheet.rows[row].element.style.height = height + 'px';
+            worksheet.rows[row].element.style.height = `${height}px`;
 
             if (!worksheet.options.rows) {
                 worksheet.options.rows = [];

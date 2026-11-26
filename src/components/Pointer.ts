@@ -5,9 +5,9 @@ import type { DragColumnInfo, DragRowInfo, ResizeColumnInfo, ResizeRowInfo, Cell
 import type { Worksheet, TargetEvent } from '../types/internal';
 
 function doubleDigitFormat(v: number | string) {
-    v = '' + v;
+    v = `${v}`;
     if (v.length == 1) {
-        v = '0' + v;
+        v = `0${v}`;
     }
     return v;
 }
@@ -154,7 +154,7 @@ export class Pointer {
                                 worksheet.options.columns[i].type == 'text' ||
                                 (worksheet.options.columns[i].type as string) == 'number')
                         ) {
-                            if (('' + value).substr(0, 1) == '=') {
+                            if (`${value}`.substr(0, 1) == '=') {
                                 const tokens = (value as string).match(/([A-Z]+[0-9]+)/g);
 
                                 if (tokens) {
@@ -187,14 +187,7 @@ export class Pointer {
                             // A calendar cell has a date as text
                             const date = new Date(value as string);
                             date.setDate(date.getDate() + rowNumber);
-                            value =
-                                date.getFullYear() +
-                                '-' +
-                                doubleDigitFormat(parseInt(date.getMonth() + 1)) +
-                                '-' +
-                                doubleDigitFormat(date.getDate()) +
-                                ' ' +
-                                '00:00:00';
+                            value = `${date.getFullYear()}-${doubleDigitFormat(parseInt(date.getMonth() + 1))}-${doubleDigitFormat(date.getDate())} 00:00:00`;
                         }
                     }
 

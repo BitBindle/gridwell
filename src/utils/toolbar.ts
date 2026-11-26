@@ -93,13 +93,13 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
             width: '120px',
             options: ['Default', 'Verdana', 'Arial', 'Courier New'],
             render(e: string) {
-                return '<span style="font-family:' + e + '">' + e + '</span>';
+                return `<span style="font-family:${e}">${e}</span>`;
             },
             onchange(a: HTMLElement, b: object, c: string, d: string, e: string) {
                 // e is the key of the option as text, and the first option is Default
                 const value = e === '0' ? '' : d;
 
-                setSelectedStyle(spreadsheet.getWorksheetInstance(), 'font-family: ' + value);
+                setSelectedStyle(spreadsheet.getWorksheetInstance(), `font-family: ${value}`);
             },
             updateState: getUpdateState(spreadsheet),
         },
@@ -109,10 +109,10 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
             content: 'format_size',
             options: ['x-small', 'small', 'medium', 'large', 'x-large'],
             render(e: string) {
-                return '<span style="font-size:' + e + '">' + e + '</span>';
+                return `<span style="font-size:${e}">${e}</span>`;
             },
             onchange(a: HTMLElement, b: object, c: string, value: string) {
-                setSelectedStyle(spreadsheet.getWorksheetInstance(), 'font-size: ' + value);
+                setSelectedStyle(spreadsheet.getWorksheetInstance(), `font-size: ${value}`);
             },
             updateState: getUpdateState(spreadsheet),
         },
@@ -120,10 +120,10 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
             type: 'select',
             options: ['left', 'center', 'right', 'justify'],
             render(e: string) {
-                return '<i class="material-icons">format_align_' + e + '</i>';
+                return `<i class="material-icons">format_align_${e}</i>`;
             },
             onchange(a: HTMLElement, b: object, c: string, value: string) {
-                setSelectedStyle(spreadsheet.getWorksheetInstance(), 'text-align: ' + value);
+                setSelectedStyle(spreadsheet.getWorksheetInstance(), `text-align: ${value}`);
             },
             updateState: getUpdateState(spreadsheet),
         },
@@ -159,12 +159,12 @@ function getVerticalAlignItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarIte
         type: 'select',
         options: ['vertical_align_top', 'vertical_align_center', 'vertical_align_bottom'],
         render(e: string) {
-            return '<i class="material-icons">' + e + '</i>';
+            return `<i class="material-icons">${e}</i>`;
         },
         value: 1,
         onchange(a: HTMLElement, b: object, c: string, d: string, value: string) {
             // The key is the index of the option as text
-            setSelectedStyle(spreadsheet.getWorksheetInstance(), 'vertical-align: ' + (verticalAlign as unknown as Record<string, string>)[value]);
+            setSelectedStyle(spreadsheet.getWorksheetInstance(), `vertical-align: ${(verticalAlign as unknown as Record<string, string>)[value]}`);
         },
         updateState: getUpdateState(spreadsheet),
     };
@@ -234,19 +234,19 @@ function setBorders(worksheet: Worksheet, picker: BorderPicker, type: string) {
                 ((type === 'border_inner' || type === 'border_horizontal') && j > py) ||
                 type === 'border_all'
             ) {
-                border[0] = 'border-top: ' + thickness + 'px ' + borderStyle + ' ' + color;
+                border[0] = `border-top: ${thickness}px ${borderStyle} ${color}`;
             } else {
                 border[0] = 'border-top: ';
             }
 
             if ((type === 'border_all' || type === 'border_right' || type === 'border_outer') && i === ux) {
-                border[1] = 'border-right: ' + thickness + 'px ' + borderStyle + ' ' + color;
+                border[1] = `border-right: ${thickness}px ${borderStyle} ${color}`;
             } else {
                 border[1] = 'border-right: ';
             }
 
             if ((type === 'border_all' || type === 'border_bottom' || type === 'border_outer') && j === uy) {
-                border[2] = 'border-bottom: ' + thickness + 'px ' + borderStyle + ' ' + color;
+                border[2] = `border-bottom: ${thickness}px ${borderStyle} ${color}`;
             } else {
                 border[2] = 'border-bottom: ';
             }
@@ -256,7 +256,7 @@ function setBorders(worksheet: Worksheet, picker: BorderPicker, type: string) {
                 ((type === 'border_inner' || type === 'border_vertical') && i > px) ||
                 type === 'border_all'
             ) {
-                border[3] = 'border-left: ' + thickness + 'px ' + borderStyle + ' ' + color;
+                border[3] = `border-left: ${thickness}px ${borderStyle} ${color}`;
             } else {
                 border[3] = 'border-left: ';
             }
@@ -314,7 +314,7 @@ function addBorderControls(a: HTMLElement, b: BorderPicker) {
     jSuites.picker(div, {
         data: [1, 2, 3, 4, 5],
         render(e: number) {
-            return '<div style="height: ' + e + 'px; width: 30px; background-color: black;"></div>';
+            return `<div style="height: ${e}px; width: 30px; background-color: black;"></div>`;
         },
         onchange(a: HTMLElement, k: object, c: number, d: number) {
             b.thickness = d;
@@ -328,9 +328,9 @@ function addBorderControls(a: HTMLElement, b: BorderPicker) {
         data: ['solid', 'dotted', 'dashed', 'double'],
         render(e: string) {
             if (e === 'double') {
-                return '<div style="width: 30px; border-top: 3px ' + e + ' black;"></div>';
+                return `<div style="width: 30px; border-top: 3px ${e} black;"></div>`;
             }
-            return '<div style="width: 30px; border-top: 2px ' + e + ' black;"></div>';
+            return `<div style="width: 30px; border-top: 2px ${e} black;"></div>`;
         },
         onchange(a: HTMLElement, k: object, c: string, d: string) {
             b.style = d;
@@ -364,7 +364,7 @@ function getBordersItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
         ],
         columns: 5,
         render(e: string) {
-            return '<i class="material-icons">' + e + '</i>';
+            return `<i class="material-icons">${e}</i>`;
         },
         right: true,
         onchange(a: HTMLElement, b: BorderPicker, c: string, d: string) {
@@ -464,7 +464,7 @@ export class Toolbar {
                             worksheet.setStyle(
                                 Object.fromEntries(
                                     cells.map((cellName: string) => {
-                                        return [cellName, item.k + ': ' + value];
+                                        return [cellName, `${item.k}: ${value}`];
                                     })
                                 )
                             );
@@ -485,7 +485,7 @@ export class Toolbar {
                                 worksheet.setStyle(
                                     Object.fromEntries(
                                         cells.map((cellName: string) => {
-                                            return [cellName, item.k + ': ' + v];
+                                            return [cellName, `${item.k}: ${v}`];
                                         })
                                     )
                                 );

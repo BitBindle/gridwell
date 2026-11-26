@@ -110,8 +110,8 @@ export class Styles {
                     newValue[cellId] = [];
                 }
 
-                oldValue[cellId].push([key + ':' + currentValue]);
-                newValue[cellId].push([key + ':' + value]);
+                oldValue[cellId].push([`${key}:${currentValue}`]);
+                newValue[cellId].push([`${key}:${value}`]);
             }
         }
 

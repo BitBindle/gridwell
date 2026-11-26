@@ -226,7 +226,7 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
             } else {
                 columns[i].type = 'text';
             }
-            columns[i].width = width + 'px';
+            columns[i].width = `${width}px`;
             columns[i].title = header.innerHTML;
             if (header.style.textAlign) {
                 columns[i].align = header.style.textAlign as jspreadsheet.HorizontalAlign;
@@ -290,7 +290,7 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
                     let value = content[j].children[i].getAttribute('data-formula');
                     if (value) {
                         if (value.substr(0, 1) != '=') {
-                            value = '=' + value;
+                            value = `=${value}`;
                         }
                     } else {
                         value = content[j].children[i].innerHTML;
