@@ -283,3 +283,10 @@ set, so `onbeforesave` can change or cancel every post.
 The `comments` option of a worksheet is loaded without an entry in the undo history and without `oncomments`, as the
 `style` option is. Version 5 added a `setComments` entry while it built the worksheet, so an undo right after loading
 removed the comments, and it called `oncomments` for them (#87).
+
+## A footer formula runs without coordinates
+
+A formula in a footer runs as `executeFormula` without coordinates: `onbeforeformula` and `formulaEngine` get `undefined`
+as `x` and `y`. Version 5 gave them the position of a data cell, the number of rows plus the column, so a footer formula
+that referred to that cell showed `#ERROR`, and the footer was in the formula chain under the name of that cell (#18).
+A footer shows the result of its formula, or its text, without the mask of a column.

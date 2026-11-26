@@ -109,8 +109,8 @@ export class Formulas {
             // The formula text as typed, for the formula engine
             const text = expression;
 
-            // A formula without x and y, of executeFormula, is in no cell: it has no name, no loop and no place in the
-            // chain
+            // A formula without x and y, of a footer or of executeFormula, is in no cell: it has no name, no loop and no
+            // place in the chain
             const parentId = x != null && y != null ? getColumnNameFromId([x, y]) : null;
 
             // Code protection
@@ -569,8 +569,11 @@ export class Formulas {
                         const colAlign = worksheet.options.columns[i].align || worksheet.options.defaultColAlign || 'center';
                         td.style.textAlign = colAlign;
                     }
-                    // The DOM converts a number or a boolean to text
-                    td.textContent = worksheet.cells.parseValue(+worksheet.records.length + i, j, worksheet.options.footers[j][i]) as string;
+                    // A footer is in no cell, so its formula runs without coordinates. The DOM converts the result to text.
+                    const value = worksheet.options.footers[j][i];
+                    td.textContent = (
+                        `${value}`.substr(0, 1) === '=' && worksheet.parent.config.parseFormulas !== false ? worksheet.formulas.execute(value) : value
+                    ) as string;
 
                     // Hide/Show with hideColumn()/showColumn()
                     td.style.display = worksheet.cols[i].colElement.style.display;

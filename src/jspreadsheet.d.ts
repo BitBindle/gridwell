@@ -701,8 +701,8 @@ declare namespace jspreadsheet {
          * A formula that refers to its own cell shows "#ERROR", and the engine does not get it.
          * @param instance - Worksheet of the formula.
          * @param expression - Formula text as typed, with the "=", or the text that `onbeforeformula` returned.
-         * @param x - Column index of the cell. Undefined when `executeFormula` gets no coordinates.
-         * @param y - Row index of the cell. Undefined when `executeFormula` gets no coordinates.
+         * @param x - Column index of the cell. Undefined for a footer, and when `executeFormula` gets no coordinates.
+         * @param y - Row index of the cell. Undefined for a footer, and when `executeFormula` gets no coordinates.
          * @returns Value that the cell shows. If the function throws, the cell shows "#ERROR".
          */
         formulaEngine?: (instance: WorksheetInstance, expression: string, x?: number, y?: number) => CellValue;
@@ -789,8 +789,10 @@ declare namespace jspreadsheet {
          * Intercept and parse a formula just before the execution.
          * @param instance - Instance of the worksheet.
          * @param expression - Formula that triggered the event.
-         * @param x - Column index of the cell whose formula triggered the event.
-         * @param y - Row index of the cell whose formula triggered the event
+         * @param x - Column index of the cell whose formula triggered the event. Undefined for a footer, and when
+         * `executeFormula` gets no coordinates.
+         * @param y - Row index of the cell whose formula triggered the event. Undefined for a footer, and when
+         * `executeFormula` gets no coordinates.
          */
         onbeforeformula?: (instance: WorksheetInstance, expression: string, x?: number, y?: number) => false | string | undefined;
 

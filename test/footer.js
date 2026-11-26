@@ -62,4 +62,36 @@ describe('Use footers', () => {
 
         expect(worksheet.options.footers[0]).to.eql(['a', 'b', '', '', 'c']);
     });
+
+    it('runs a footer formula without coordinates, also when it refers to the data cell at its position (issue #18)', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '2', '=A1'],
+                        ['3', '4', '5'],
+                    ],
+                    footers: [['=C1+C2', '=B1+B2', '=A1+A2']],
+                },
+            ],
+            onbeforeformula: (instance, expression, x, y) => {
+                calls.push([expression, x, y]);
+            },
+        })[0];
+
+        expect(calls.filter((call) => call[1] === undefined)).to.eql([
+            ['=C1+C2', undefined, undefined],
+            ['=B1+B2', undefined, undefined],
+            ['=A1+A2', undefined, undefined],
+        ]);
+        expect([...worksheet.tfoot.children[0].children].slice(1).map((td) => td.textContent)).to.eql(['6', '6', '4']);
+        // Only the cell C1 depends on A1
+        expect(worksheet.formulas.chain).to.eql({ A1: ['C1'] });
+
+        // The footers are calculated again after a change
+        worksheet.setValue('A2', '5');
+
+        expect(worksheet.tfoot.children[0].children[3].textContent).to.equal('6');
+    });
 });
