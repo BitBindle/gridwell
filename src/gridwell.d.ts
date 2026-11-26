@@ -1427,8 +1427,7 @@ declare namespace gridwell {
         csvDelimiter?: string;
 
         /**
-         * Default filename for a download method.
-         * @default "gridwell"
+         * The name of the file that download saves, without ".csv". Without it, the file has the name of the worksheet.
          */
         csvFileName?: string;
 
