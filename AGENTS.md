@@ -48,7 +48,7 @@ The tests import the built bundle (through `test/support/jspreadsheet.ts`), not 
 - `src/types/`: types for the type check only, not published (see [Type checking](#type-checking)).
 - `src/jspreadsheet.css`, `src/jspreadsheet.themes.css`: the styles, also copied to `dist/`.
 - `src/test.js`: the entry of the dev server. `src/webcomponent.js`: a `<jspreadsheet>` custom element. Both are JavaScript and not part of the bundle.
-- `resources/lang/*.json`: translations for `jspreadsheet.setDictionary`.
+- `resources/lang/*.json`: translations for `jspreadsheet.setDictionary`, by English text. `en_GB.json` lists every text that the library translates, and each file has the same texts (`test/languages.ts` checks both). A new text given to `translate` goes in each file.
 - `test/*.ts`: mocha + chai tests in jsdom, one file per feature. `.mocharc.json` runs them with tsx.
 - `test/support/`: the typed library for the tests (`jspreadsheet.ts`) and the globals of the tests (`globals.d.ts`).
 - `test/typings.ts`: checks the public typings against what the library returns. `npm run typecheck` checks it; mocha does not run it.
