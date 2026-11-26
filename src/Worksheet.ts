@@ -150,14 +150,13 @@ export class Worksheet {
         // Post the data as JSON in the data field of a form
         const body = new FormData();
         body.append('data', JSON.stringify(data));
-        // fetch, as jSuites.ajax did, posts to the address "undefined" when there is no url (issue to be opened)
-        request(String(url), 'json', body).then(
-            () => {
+        // fetch, as jSuites.ajax did, posts to the address "undefined" when there is no url (issue #140)
+        request(this, String(url), 'json', body).then((response) => {
+            if (response) {
                 // Event
                 this.dispatch('onsave', this.parent, this, data);
-            },
-            (error) => console.error(error)
-        );
+            }
+        });
     }
 
     /**
@@ -958,18 +957,17 @@ export class Worksheet {
                 if (this.options.columns[i].url) {
                     const column = this.options.columns[i];
                     requests.push(
-                        request(column.url!, 'json').then(
-                            (data) => {
+                        request(this, column.url!, 'json').then((response) => {
+                            if (response) {
                                 if (!column.source) {
                                     column.source = [];
                                 }
 
-                                for (const option of data as NonNullable<typeof column.source>) {
+                                for (const option of response.result as NonNullable<typeof column.source>) {
                                     column.source.push(option);
                                 }
-                            },
-                            (error) => console.error(error)
-                        )
+                            }
+                        })
                     );
                 }
             }
@@ -1004,12 +1002,11 @@ export class Worksheet {
 
         // Load the table data based on an CSV file
         if (this.options.csv) {
-            const promise = new Promise<void>((resolve) => {
-                // Load CSV file
-                request(this.options.csv!, 'text').then(
-                    (result) => {
+            promises.push(
+                request(this, this.options.csv, 'text').then((response) => {
+                    if (response) {
                         // Convert data
-                        const newData = parseCSV(result as string, this.options.csvDelimiter);
+                        const newData = parseCSV(response.result as string, this.options.csvDelimiter);
 
                         // Headers
                         if (this.options.csvHeaders === true && newData.length > 0) {
@@ -1033,43 +1030,22 @@ export class Worksheet {
                         }
                         // Data
                         this.options.data = newData;
-                        // Prepare table
-                        this.prepareTable();
-
-                        resolve();
-                    },
-                    // Build the worksheet with its other options
-                    (error) => {
-                        console.error(error);
-                        this.prepareTable();
-                        resolve();
                     }
-                );
-            });
-
-            promises.push(promise);
+                    // Without the file, the worksheet is built with its other options
+                    this.prepareTable();
+                })
+            );
         } else if (this.options.url) {
-            const promise = new Promise<void>((resolve) => {
-                request(this.options.url!, 'json').then(
-                    // The data, or an object with the data in its data property. setData changes rows of objects to arrays.
-                    (result) => {
-                        // Data
-                        this.options.data = (result as { data?: jspreadsheet.CellValue[][] }).data || (result as jspreadsheet.CellValue[][]);
-                        // Prepare table
-                        this.prepareTable();
-
-                        resolve();
-                    },
-                    // Build the worksheet with its other options
-                    (error) => {
-                        console.error(error);
-                        this.prepareTable();
-                        resolve();
+            promises.push(
+                request(this, this.options.url, 'json').then((response) => {
+                    if (response) {
+                        // The data, or an object with the data in its data property. setData changes rows of objects to arrays.
+                        this.options.data = (response.result as { data?: jspreadsheet.CellValue[][] }).data || (response.result as jspreadsheet.CellValue[][]);
                     }
-                );
-            });
-
-            promises.push(promise);
+                    // Without the data, the worksheet is built with its other options
+                    this.prepareTable();
+                })
+            );
         } else {
             // Prepare table
             this.prepareTable();

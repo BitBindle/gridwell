@@ -188,6 +188,32 @@ describe('Events of the spreadsheet', () => {
             expect(String(errors[0])).to.contain('the POST request to /save failed with the status 500');
         });
 
+        it('triggers onbeforerequest for the post of an undo, and posts nothing when it returns false', async () => {
+            const urls: string[] = [];
+            let result: false | undefined = undefined;
+            const worksheet = jspreadsheet(root, {
+                worksheets: [{ data: [['a']], persistence: '/save' }],
+                onbeforerequest(instance, url) {
+                    urls.push(url);
+                    return result;
+                },
+            })[0];
+
+            worksheet.setValue('A1', 'x');
+            worksheet.undo();
+            await server.settle();
+
+            expect(urls).to.eql(['/save', '/save']);
+            expect(server.requests.length).to.equal(2);
+
+            result = false;
+            worksheet.redo();
+            await server.settle();
+
+            expect(urls.length).to.equal(3);
+            expect(server.requests.length).to.equal(2);
+        });
+
         it('gives the changes to the persistence of a plugin', () => {
             const changes: unknown[][] = [];
             const worksheet = jspreadsheet(root, {

@@ -89,6 +89,40 @@ describe('Build of a worksheet', () => {
         }
     });
 
+    it('lets onbeforerequest change the options of a request, replace them or cancel it', async () => {
+        server.responses['/rows'] = { body: [['a']] };
+        server.responses['/options'] = { body: ['x'] };
+        const calls: [string, string][] = [];
+
+        const [first, second, third] = await create({
+            worksheets: [{ url: '/rows' }, { csv: '/data.csv', minDimensions: [1, 1] }, { data: [['x']], columns: [{ type: 'dropdown', url: '/options' }] }],
+            onbeforerequest(instance, url, options) {
+                calls.push([instance.options.worksheetName!, url]);
+                if (url === '/rows') {
+                    (options.headers as Record<string, string>).Authorization = 'Bearer token';
+                } else if (url === '/options') {
+                    return { method: 'GET', headers: { Accept: 'application/json' } };
+                } else {
+                    return false;
+                }
+            },
+        });
+
+        expect(calls.map(([, url]) => url)).to.have.members(['/rows', '/data.csv', '/options']);
+        expect(calls.find(([, url]) => url === '/rows')![0]).to.equal(first.options.worksheetName);
+        // The cancelled request is not sent, and the worksheet is built without its data
+        expect(server.requests.map((request) => request.url)).to.have.members(['/rows', '/options']);
+        expect(server.requests.find((request) => request.url === '/rows')!.init.headers).to.eql({
+            'X-Requested-With': 'XMLHttpRequest',
+            Authorization: 'Bearer token',
+        });
+        expect(server.requests.find((request) => request.url === '/options')!.init).to.eql({ method: 'GET', headers: { Accept: 'application/json' } });
+        expect(first.getData()).to.eql([['a']]);
+        expect(second.getData()).to.eql([['']]);
+        await server.settle();
+        expect(third.options.columns[0].source).to.eql(['x']);
+    });
+
     it('loads the source of a dropdown column from its url before it creates the table', async () => {
         const options = [
             { id: 1, name: 'One' },
