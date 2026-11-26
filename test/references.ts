@@ -106,7 +106,6 @@ describe('The updateReferences option', () => {
             const [fresh] = jspreadsheet(element, { worksheets: [{ data: worksheet.getData() }] });
             const shown = worksheet.getData(false, true);
             expect(shown, name).to.eql(fresh.getData(false, true));
-            fresh.parent.destroy?.();
         }
     });
 
