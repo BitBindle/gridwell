@@ -80,6 +80,18 @@ libraryBase.jspreadsheet.destroy = (
 
         const root = element.spreadsheet.config.root || document;
 
+        // The active worksheet would keep the destroyed spreadsheet in memory. A worksheet that deleteWorksheet removed
+        // is not in the list of worksheets, but its parent is still the spreadsheet.
+        if (libraryBase.jspreadsheet.current?.parent === element.spreadsheet) {
+            libraryBase.jspreadsheet.current = null;
+
+            // A timer of a search, a column rename or a touch hold would read the active worksheet
+            if (libraryBase.jspreadsheet.timeControl) {
+                clearTimeout(libraryBase.jspreadsheet.timeControl);
+                libraryBase.jspreadsheet.timeControl = null;
+            }
+        }
+
         element.spreadsheet = null;
         element.innerHTML = '';
 
