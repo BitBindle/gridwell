@@ -1,7 +1,8 @@
 # Architecture
 
 This file describes how the code is organised for version 6, and the steps that get it there from the structure of
-version 5. AGENTS.md describes the code as it is today; this file says where it is going. Update both as the steps land.
+version 5. AGENTS.md has the principles and rules for working in the code; this file says where the structure is going.
+Update this file as the steps land, and AGENTS.md when a step changes a principle or rule.
 
 ## Why
 
@@ -395,6 +396,6 @@ behaviour, and turns on the ESLint rule that keeps the new style, so that new co
 ## Rules for each step
 
 - A step moves code; it does not rewrite it. Fix a bug that the move finds in its own commit, with a test.
-- Keep the accessibility behaviour (`test/accessibility.js`) and the safe cell rendering described in AGENTS.md.
+- Keep the accessibility behaviour (`test/accessibility.ts`) and the safe cell rendering described in AGENTS.md.
 - A breaking change is fine in version 6, but it must be on purpose: list it in UPGRADING.md with what an application
   does instead.
