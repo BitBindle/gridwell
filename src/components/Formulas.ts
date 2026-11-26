@@ -370,9 +370,6 @@ export class Formulas {
     }
 
     /**
-     * Update formulas
-     */
-    /**
      * Whether a cell of the worksheet holds a formula.
      */
     private hasFormulas() {
@@ -386,6 +383,9 @@ export class Formulas {
         return false;
     }
 
+    /**
+     * Update formulas
+     */
     private updateFormulas(referencesToUpdate: Record<string, string>) {
         const worksheet = this.worksheet;
 
@@ -420,11 +420,23 @@ export class Formulas {
             return;
         }
 
-        const firstRow = Number.isInteger(from.row) ? Math.max(0, from.row!) : 0;
-        const firstColumn = Number.isInteger(from.column) ? Math.max(0, from.column!) : 0;
+        let firstRow = Number.isInteger(from.row) ? Math.max(0, from.row!) : 0;
+        let firstColumn = Number.isInteger(from.column) ? Math.max(0, from.column!) : 0;
 
-        // The new names of the moved cells are only for the formulas and the meta information
-        const references = this.hasFormulas() || Object.keys(worksheet.options.meta || {}).length > 0;
+        // A merged range that starts before the start and ends on or after it is read from its first cell, because the
+        // record of a covered cell is the element of the first cell
+        for (const [cellName, [colspan, rowspan]] of Object.entries(worksheet.options.mergeCells || {})) {
+            const [x, y] = getIdFromColumnName(cellName);
+            if (y < firstRow && y + rowspan > firstRow) {
+                firstRow = y;
+            }
+            if (x < firstColumn && x + colspan > firstColumn) {
+                firstColumn = x;
+            }
+        }
+
+        // The new names of the moved cells are only for the formulas, the formula chain and the meta information
+        const references = Object.keys(this.chain).length > 0 || Object.keys(worksheet.options.meta || {}).length > 0 || this.hasFormulas();
 
         // Update headers
         for (let i = firstColumn; i < worksheet.headers.length; i++) {

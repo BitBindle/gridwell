@@ -85,4 +85,49 @@ describe('Positions after an insert, a move or a delete', () => {
         expect(worksheet.getMerge()).to.eql({ B7: [2, 2] });
         expect(worksheet.records[6][1].element.getAttribute('rowspan')).to.equal('2');
     });
+
+    it('keeps a merged range that ends on the row or column of an insert after it', () => {
+        const cases: [Record<string, [number, number]>, (w: Worksheet) => void, Record<string, [number, number]>][] = [
+            [{ A2: [1, 2] }, (w) => w.insertRow(1, 2), { A2: [1, 2] }],
+            [{ B3: [2, 3] }, (w) => w.insertRow(2, 4), { B3: [2, 3] }],
+            [{ A2: [2, 1] }, (w) => w.insertColumn(1, 1), { A2: [2, 1] }],
+            [{ B2: [2, 2] }, (w) => w.insertColumn(1, 2), { B2: [2, 2] }],
+        ];
+        for (const [mergeCells, change, expected] of cases) {
+            const data = grid(10, 6);
+            data[0][5] = '=A2';
+            const [worksheet] = jspreadsheet(root, { worksheets: [{ data, mergeCells }] });
+
+            change(worksheet);
+
+            const name = Object.keys(expected)[0];
+            expect(worksheet.getMerge(), JSON.stringify(mergeCells)).to.eql(expected);
+            // An inserted column moves the formula, but its reference stays
+            expect(worksheet.getRowData(0), JSON.stringify(mergeCells)).to.include('=A2');
+
+            // The range splits as one range
+            worksheet.removeMerge(name);
+            expect(worksheet.getMerge()).to.eql({});
+        }
+    });
+
+    it('moves the formula chain also when no cell holds a formula any more', () => {
+        const changes: string[] = [];
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: grid(10, 6) }],
+            onchange: (instance, cell, x, y, value) => {
+                changes.push(`${x},${y}=${value}`);
+            },
+        });
+        worksheet.setValue('C3', '=A1+1');
+        worksheet.setValue('C3', 5);
+
+        worksheet.insertRow(1, 0, true);
+        worksheet.setValue('C3', '=B1');
+        changes.length = 0;
+        worksheet.setValue('A1', 2);
+
+        // The chain moved with the old cells, so C3 does not depend on A1 and is not calculated again
+        expect(changes).to.eql(['0,0=2']);
+    });
 });
