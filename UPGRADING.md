@@ -377,3 +377,35 @@ A request that fails, or that the server answers with a status that is not 2xx, 
 worksheet whose `csv` or `url` request fails is now built with its other options, such as `data` and `minDimensions`;
 before, it was never built. A dropdown column whose `url` fails is now created without its source, where a network error
 left the worksheet without its table before.
+
+## The masks show numbers and dates without jSuites
+
+The masks of the columns (`mask`, `format`, and `locale` with `options`) and the formats of the calendar columns are read
+by Jspreadsheet, not by `jSuites.mask` and `jSuites.calendar`. The number formats follow Excel, and some cells show
+other texts than before:
+
+- A column with a `locale` shows what `Intl.NumberFormat` gives with its `options`: `$3.00` for 3 in US dollars, where
+  jSuites showed `$3` (issue #136). Its `decimal` option no longer replaces the `options` of the locale.
+- The second section of a mask, for the negative numbers, shows the number without its minus, as in Excel: `0;[Red]0`
+  shows 5 in red for -5, and `0;[Red](0)` shows `(5)`. The parentheses are those of the section; Jspreadsheet no longer
+  adds them when the section has one. A color, such as `[Red]`, now applies to the section it is in, also the first.
+- Without a section for the negative numbers, the minus goes before the symbols: `-$ 5.00` for -5 with `$ #,##0.00`.
+- A text that is not a number shows as it is, where jSuites showed an empty text or only its digits (`12` for `a1b2`).
+- A number in scientific notation shows as in Excel, such as `1.23E+03` for `0.00E+00`, where jSuites showed `1.23e+3`.
+
+The editor of a cell with a mask shows the number without the symbols of the mask, such as `1234.5` for `$ 1,234.50`,
+with the decimal separator of the mask, and a percentage with its percent sign, such as `12.5%`. The editor no longer
+masks the text as it is typed, and the column option `disabledMaskOnEdition` has no effect. A number that is typed with
+or without the symbols of the mask is saved as a number, and a text that is not a number is saved as it is typed, where
+jSuites saved an empty value or the digits of the text.
+
+The dates of the calendar columns, and of the date masks, are written and read with the same tokens. These change:
+
+- `HH12` shows midnight as `12:00 AM`, where jSuites showed `00:00 AM`.
+- `YY` reads 00 to 29 as 2000 to 2029 and 30 to 99 as 1930 to 1999, as Excel does, where jSuites read all of them in
+  this century.
+- A text that is not a date in the format of the column shows as it is, and a pasted text that is not a date in the
+  format empties the cell, as before. A pasted date in the ISO format, such as `2024-03-05`, is now kept, where jSuites
+  read a wrong date from it in a column with another format.
+- `jSuites.calendar.extractDateFromString` and `jSuites.calendar.getDateString` are no longer called, so a change to them
+  does not change the cells.

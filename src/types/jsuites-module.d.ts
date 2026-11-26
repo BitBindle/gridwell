@@ -5,7 +5,6 @@
  * a global or require (see build.cjs).
  */
 import type { JSuites as Base } from 'jsuites/dist/types';
-import type { CalendarFunctions, MaskFunctions } from './jsuites';
 
 /** The options of a jsuites component, the second parameter of the function that creates it */
 type ComponentOptions<F> = F extends (el: HTMLElement, options: infer O) => unknown ? O : never;
@@ -65,12 +64,11 @@ export type ToolbarOptions = Omit<ComponentOptions<Base['toolbar']>, 'items'> & 
     items: object[];
 };
 
-export interface JSuites extends Omit<Base, 'calendar' | 'color' | 'contextmenu' | 'dropdown' | 'mask' | 'picker' | 'toolbar'> {
-    calendar: ((el: HTMLElement, options: CalendarOptions) => ReturnType<Base['calendar']>) & CalendarFunctions;
+export interface JSuites extends Omit<Base, 'calendar' | 'color' | 'contextmenu' | 'dropdown' | 'picker' | 'toolbar'> {
+    calendar(el: HTMLElement, options: CalendarOptions): ReturnType<Base['calendar']>;
     color(el: HTMLElement, options: ColorOptions): Color;
     contextmenu(el: HTMLElement, options: ContextmenuOptions): ReturnType<Base['contextmenu']>;
     dropdown(el: HTMLElement, options: DropdownOptions): Dropdown;
-    mask: Base['mask'] & MaskFunctions;
     picker<T>(el: HTMLElement, options: PickerOptions<T>): ReturnType<Base['picker']>;
     toolbar(el: HTMLElement, options: ToolbarOptions): ReturnType<Base['toolbar']>;
 

@@ -161,6 +161,6 @@ describe('Show a value with the mask of its column', () => {
             });
         });
 
-        expect(worksheet.records[0].map((record) => record.element.textContent)).to.eql(['1.50', '1.5', '$3', '1.234,50']);
+        expect(worksheet.records[0].map((record) => record.element.textContent)).to.eql(['1.50', '1.5', '$3.00', '1.234,50']);
     });
 });
