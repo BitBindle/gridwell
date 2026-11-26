@@ -392,9 +392,11 @@ export class Clipboard {
             while (row[i] != null) {
                 let value = row[i];
 
-                if (worksheet.options.columns?.[i]?.type === 'calendar') {
+                // The options of the column that gets the value
+                const column = worksheet.options.columns?.[colIndex];
+                if (column?.type === 'calendar') {
                     // The jsuites typings miss extractDateFromString
-                    value = jSuites.calendar.extractDateFromString(value, worksheet.options.columns[i].options?.format || 'YYYY-MM-DD');
+                    value = jSuites.calendar.extractDateFromString(value, column.options?.format || 'YYYY-MM-DD');
                 }
 
                 // Update and keep history. A cell that did not change, such as a read-only cell, has no record.

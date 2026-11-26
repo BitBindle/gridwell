@@ -795,3 +795,25 @@ describe('Download', () => {
         expect(await getDownload(worksheet, false, true)).to.equal('1\t2');
     });
 });
+
+describe('Paste in a calendar column', () => {
+    it('reads a date with the format of the column that gets the value, not of the column at its position in the text', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [['', '', '']],
+                    columns: [
+                        { type: 'calendar', options: { format: 'DD/MM/YYYY' } },
+                        { type: 'text' },
+                        { type: 'calendar', options: { format: 'DD/MM/YYYY' } },
+                    ],
+                },
+            ],
+        })[0];
+
+        worksheet.paste(1, 0, '25/12/2024\t25/12/2024');
+
+        expect(worksheet.getValueFromCoords(1, 0)).to.equal('25/12/2024');
+        expect(worksheet.getValueFromCoords(2, 0)).to.match(/^2024-12-25/);
+    });
+});
