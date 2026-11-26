@@ -111,6 +111,20 @@ import formula from '@jspreadsheet/formula';
 gridwell.setFormulaEngine(formula);
 ```
 
+## Number formats of the application
+
+The options `formatValue` and `editValue` let the application show a value in its own format. `formatValue` gives the
+text of a cell, and `editValue` gives the text of the editor. The cell keeps its value. A hook that returns `undefined`
+leaves the value to the mask of the column.
+
+```javascript
+gridwell(element, {
+    worksheets: [{ data: [[45658]] }],
+    formatValue: (worksheet, x, y, value) => (typeof value === 'number' ? toDateText(value) : undefined),
+    editValue: (worksheet, x, y, value) => (typeof value === 'number' ? toDateText(value) : undefined),
+});
+```
+
 ## Translations
 
 `gridwell.setDictionary` translates the texts of the grid: the context menu, the toolbar, the editors, the search, the
