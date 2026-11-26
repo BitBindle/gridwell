@@ -127,6 +127,9 @@ declare namespace jspreadsheet {
 
         decimal?: string;
 
+        /** The mask of the cells when the column has no {@link mask}. */
+        format?: string;
+
         /** Cell mask. */
         mask?: string;
 
@@ -173,6 +176,16 @@ declare namespace jspreadsheet {
         autocomplete?: boolean;
 
         /**
+         * Gives the items that the dropdown of a cell shows, instead of {@link source}.
+         * @param element - The element of the spreadsheet.
+         * @param cell - The td of the cell being edited.
+         * @param x - The column of the cell, as text.
+         * @param y - The row of the cell, as text.
+         * @param source - The source of the column.
+         */
+        filter?: (element: HTMLElement, cell: HTMLTableCellElement, x: string, y: string, source: DropdownSourceItem[] | undefined) => DropdownSourceItem[];
+
+        /**
          * Allow selection of more than one item.
          * @default false
          */
@@ -190,12 +203,26 @@ declare namespace jspreadsheet {
         options?: CalendarOptions;
     }
 
+    interface NumericColumn extends BaseColumn {
+        /**
+         * Save an empty text when the editor of a cell is emptied, instead of 0.
+         * @default false
+         */
+        allowEmpty?: boolean;
+
+        /** The locale of the numbers, when the column has no {@link BaseColumn.mask} or {@link BaseColumn.format}. */
+        locale?: string;
+
+        /** The options of the numbers with a {@link locale}, as Intl.NumberFormat takes them. */
+        options?: Intl.NumberFormatOptions;
+    }
+
     interface ColorColumn extends Omit<BaseColumn, 'render'> {
         /** If undefined, the cell shows the hex code of the color, if "square", it shows a square filled with the color. */
         render?: 'square';
     }
 
-    type Column = DropdownColumn | CalendarColumn | ColorColumn | BaseColumn;
+    type Column = DropdownColumn | CalendarColumn | NumericColumn | ColorColumn | BaseColumn;
 
     interface Row {
         /** Row height. */
@@ -627,10 +654,10 @@ declare namespace jspreadsheet {
 
     interface SpreadsheetOptions {
         /**
-         * Show or not the "about" item in the context menu.
+         * Show or not the "about" item in the context menu. A text is shown instead of the version when the item is clicked.
          * @default true
          */
-        about?: boolean;
+        about?: boolean | string;
 
         /**
          * Spreadsheet plugins. Each function is called with the spreadsheet, an empty object and the spreadsheet options, and returns the plugin.
@@ -849,13 +876,13 @@ declare namespace jspreadsheet {
          * If it returns rows, of `{ value }` objects as it got them or of values, they are pasted instead.
          *
          * @param instance - Instance of the worksheet where data will be pasted.
-         * @param copiedText - The rows of the pasted cells.
+         * @param copiedText - The rows of the pasted cells, with the text of each cell.
          * @param colIndex - Column index where it will start the paste.
          * @param rowIndex - Row index where it will start the paste.
          */
         onbeforepaste?: (
             instance: WorksheetInstance,
-            copiedText: { value: CellValue }[][],
+            copiedText: { value: string }[][],
             colIndex: number | string,
             rowIndex: number | string
         ) => undefined | boolean | string | ({ value: CellValue } | CellValue)[][];
@@ -1414,9 +1441,9 @@ declare namespace jspreadsheet {
         filters?: boolean;
 
         /**
-         * Set the initial footer of the spreadsheet
+         * Set the initial footer of the spreadsheet: the rows of the footer, with a text, a number or a formula for each column.
          */
-        footers?: string[][];
+        footers?: (string | number)[][];
 
         /**
          * Number of columns frozen at the top of the spreadsheet.
@@ -1665,9 +1692,9 @@ declare namespace jspreadsheet {
         beforeinit?: (instance: WorksheetInstance) => void;
 
         /**
-         * Get spreadsheet config information.
+         * Get spreadsheet config information. The library does not call it.
          */
-        getConfig: () => SpreadsheetOptions;
+        getConfig?: () => SpreadsheetOptions;
 
         /**
          * This method is called when a worksheet is created.
@@ -1782,9 +1809,9 @@ declare namespace jspreadsheet {
 
         /**
          * Change the spreadsheet settings.
-         * @param config - New settings.
+         * @param config - The settings to change.
          */
-        setConfig: (config: SpreadsheetOptions) => void;
+        setConfig: (config: Partial<SpreadsheetOptions>) => void;
 
         /**
          * Add new plugins to the spreadsheet.
@@ -2391,11 +2418,18 @@ declare namespace jspreadsheet {
         setComments(cellId: Record<string, string | null | undefined>): void;
 
         /**
-         * Change the worksheet or spreadsheet settings.
-         * @param config - New settings.
-         * @param spreadsheetLevel - If true, the settings are applied to the spreadsheet. If not, they are applied to the worksheet.
+         * Change the worksheet settings.
+         * @param config - The settings of the worksheet to change.
+         * @param spreadsheetLevel - False or missing: the settings are applied to the worksheet.
          */
-        setConfig: (config: SpreadsheetOptions, spreadsheetLevel?: boolean) => void;
+        setConfig(config: Partial<WorksheetOptions>, spreadsheetLevel?: false): void;
+
+        /**
+         * Change the spreadsheet settings.
+         * @param config - The settings of the spreadsheet to change.
+         * @param spreadsheetLevel - True: the settings are applied to the spreadsheet.
+         */
+        setConfig(config: Partial<SpreadsheetOptions>, spreadsheetLevel: true): void;
 
         /**
          * Set data.
@@ -2584,9 +2618,9 @@ declare namespace jspreadsheet {
         /**
          * Extract the configuration to create a new spreadsheet from a static HTML element.
          * @param element - Table element.
-         * @param options - Worksheet options.
+         * @param options - Worksheet options, which the options of the table are added to.
          */
-        createFromTable: (element: HTMLTableElement, options: WorksheetOptions) => WorksheetOptions;
+        createFromTable: (element: HTMLTableElement, options?: WorksheetOptions) => WorksheetOptions;
 
         /**
          * Internal method. Get the position of the caret in an element.
@@ -2632,7 +2666,22 @@ declare namespace jspreadsheet {
         parseCSV: (str: string, delimiter?: string) => string[][];
     }
 
+    /**
+     * The options of a spreadsheet created from a table. The first worksheet is created from the table, so the worksheets
+     * can be missing.
+     */
+    type TableSpreadsheetOptions = Omit<SpreadsheetOptions, 'worksheets'> & { worksheets?: WorksheetOptions[] };
+
     interface JSpreadsheet {
+        /**
+         * Create a spreadsheet from a table, which is replaced by a div in its parent, so it must have a parent: without
+         * one, this throws. The first worksheet loads the data and the options of the table. It returns the worksheets,
+         * which are added when the spreadsheet is built, after it returns.
+         * @param element - The table whose data the spreadsheet loads.
+         * @param options - The options of the spreadsheet. The options of the first worksheet are added to the options of the table.
+         */
+        (element: HTMLTableElement, options?: TableSpreadsheetOptions): WorksheetInstance[];
+
         /**
          * Create a spreadsheet in an element. A table is replaced by a div in its parent, so it must have a parent: without
          * one, this throws. It returns the worksheets, which are added when the spreadsheet is built, after it returns.

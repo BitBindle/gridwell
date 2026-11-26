@@ -521,7 +521,7 @@ export class Formulas {
      * Set the footers, or show the footers of the options again.
      * @param data - The new footers.
      */
-    setFooter(data?: string[][]) {
+    setFooter(data?: (string | number)[][]) {
         const worksheet = this.worksheet;
 
         if (data) {
@@ -565,7 +565,7 @@ export class Formulas {
                     // A footer is in no cell, so its formula runs without coordinates. The DOM converts the result to text.
                     const value = worksheet.options.footers[j][i];
                     td.textContent = (
-                        `${value}`.substr(0, 1) === '=' && worksheet.parent.config.parseFormulas !== false ? worksheet.formulas.execute(value) : value
+                        `${value}`.substr(0, 1) === '=' && worksheet.parent.config.parseFormulas !== false ? worksheet.formulas.execute(value as string) : value
                     ) as string;
 
                     // Hide/Show with hideColumn()/showColumn()

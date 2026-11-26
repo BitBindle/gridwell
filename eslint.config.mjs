@@ -50,7 +50,7 @@ export default tseslint.config(
     },
     {
         // The rules that need the types
-        files: ['src/**/*.ts'],
+        files: ['src/**/*.ts', 'test/**/*.ts'],
         languageOptions: {
             parserOptions: {
                 projectService: true,
@@ -63,18 +63,26 @@ export default tseslint.config(
         },
     },
     {
-        files: ['test/**/*.js', 'mocha.config.js'],
+        files: ['test/**/*.ts'],
+        languageOptions: {
+            globals: {
+                ...globals.mocha,
+            },
+        },
+        rules: {
+            // A test keeps its helpers in arrow functions next to the tests that use them
+            'func-style': ['error', 'declaration', { allowArrowFunctions: true }],
+            // The bundle is a UMD module, which a test requires
+            '@typescript-eslint/no-require-imports': 'off',
+            // Some chai assertions are properties, such as expect(x).to.be.ok
+            '@typescript-eslint/no-unused-expressions': 'off',
+        },
+    },
+    {
+        files: ['mocha.config.js'],
         languageOptions: {
             globals: {
                 ...globals.node,
-                ...globals.mocha,
-                describe: 'readonly',
-                it: 'readonly',
-                before: 'readonly',
-                after: 'readonly',
-                beforeEach: 'readonly',
-                afterEach: 'readonly',
-                root: 'readonly',
             },
         },
     },

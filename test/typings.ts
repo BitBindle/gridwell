@@ -79,6 +79,12 @@ library(document.createElement('div'), {
     worksheets: [{ style: { A1: 0, B1: 'font-weight: bold;' } }],
 });
 
+// A plugin needs none of its methods
+library(document.createElement('div'), { plugins: { empty: () => ({}) }, worksheets: [{}] });
+
+// The about option can be the text that the "About" item shows
+library(document.createElement('div'), { about: 'My application', worksheets: [{}] });
+
 // A context menu line has no title
 const contextMenuItems: jspreadsheet.ContextMenuItem[] = [{ title: 'Copy', onclick: () => {} }, { type: 'line' }];
 
@@ -284,3 +290,35 @@ const emptyDelimiterData = worksheet.getData(false, false, '');
 assertType<Equals<typeof emptyDelimiterData, jspreadsheet.CellValue[][]>>();
 const emptyDelimiterJson = worksheet.getData(false, false, '', true);
 assertType<Equals<typeof emptyDelimiterJson, Record<number, jspreadsheet.CellValue>[]>>();
+
+// A column can have a format, a locale with the options of Intl.NumberFormat, allowEmpty and the filter of a dropdown
+const columns: jspreadsheet.Column[] = [
+    { type: 'numeric', format: '0.0' },
+    { type: 'numeric', locale: 'en-US', options: { style: 'currency', currency: 'USD' }, allowEmpty: true },
+    { type: 'dropdown', source: ['a'], filter: (element, cell, x, y, source) => source ?? [] },
+];
+
+// setConfig takes the options to change: of the worksheet, or of the spreadsheet with spreadsheetLevel
+worksheet.setConfig({ columnSorting: false });
+worksheet.setConfig({ tabs: true }, true);
+// @ts-expect-error -- tabs is an option of the spreadsheet
+worksheet.setConfig({ tabs: true });
+worksheet.parent.setConfig({ toolbar: true });
+
+// A footer can show numbers
+library(document.createElement('div'), { worksheets: [{ footers: [['Total', 3, '=SUM(A1:A2)']] }] });
+
+// A table needs no options and no worksheets, because the first worksheet is created from the table
+declare const table: HTMLTableElement;
+library(table);
+library(table, { tabs: true });
+assertType<Equals<ReturnType<typeof library.helpers.createFromTable>, jspreadsheet.WorksheetOptions>>();
+library.helpers.createFromTable(table);
+// @ts-expect-error -- a div needs the options with the worksheets
+library(document.createElement('div'));
+
+// The cells that onbeforepaste gets have the pasted text
+library(document.createElement('div'), {
+    worksheets: [{}],
+    onbeforepaste: (instance, copiedText) => copiedText.map((row) => row.map((cell) => cell.value.trim())),
+});

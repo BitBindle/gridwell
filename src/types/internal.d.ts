@@ -247,7 +247,7 @@ export type WorksheetHistoryRecord =
           headers: Worksheet['headers'];
           cols: Worksheet['cols'];
           records: Worksheet['records'];
-          footers: string[][];
+          footers: (string | number)[][];
           data: jspreadsheet.CellValue[][];
       }
     | {
