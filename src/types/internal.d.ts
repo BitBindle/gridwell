@@ -9,6 +9,7 @@ import type { Tabs } from '../utils/tabs';
 import type { Toolbar } from '../utils/toolbar';
 import type { Spreadsheet } from '../Spreadsheet';
 import type { Worksheet } from '../Worksheet';
+import type { Accessibility } from '../components/Accessibility';
 import type { Cells } from '../components/Cells';
 import type { Clipboard } from '../components/Clipboard';
 import type { Comments } from '../components/Comments';
@@ -94,6 +95,9 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
 
     /** Gets and sets the data, the data of a range and the values of the cells. The data is in options.data. */
     data: Data;
+
+    /** The roles, the accessible names and the size of the grid. */
+    accessibility: Accessibility;
 
     /** The div that holds the link to the Jspreadsheet site, below the table. */
     ads: HTMLDivElement;

@@ -10,7 +10,6 @@ import { getWorksheetActive } from './activeWorksheet.js';
 import { getWorksheetConfig, setConfig } from './config.js';
 import dispatch from './dispatch.js';
 import { getIdFromColumnName } from './internalHelpers.js';
-import { setGridLabels, setGridRoles } from './accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import { Worksheet } from '../Worksheet.js';
 import type { Spreadsheet, WorksheetMethod } from '../types/internal';
@@ -162,7 +161,7 @@ const createGrid = function (this: Worksheet) {
     obj.table.appendChild(obj.colgroupContainer);
     obj.table.appendChild(obj.thead);
     obj.table.appendChild(obj.tbody);
-    setGridRoles.call(obj);
+    obj.accessibility.setGridRoles();
     obj.selection.setFocusEvents();
 
     if (!obj.options.textOverflow) {
@@ -331,7 +330,7 @@ const createTable = function (this: Worksheet) {
     obj.content.appendChild(obj.table);
     obj.content.appendChild(obj.corner);
     obj.content.appendChild(obj.clipboard.textarea);
-    setGridLabels.call(obj);
+    obj.accessibility.setGridLabels();
 
     obj.element.appendChild(obj.content);
     obj.element.appendChild(obj.pagination);

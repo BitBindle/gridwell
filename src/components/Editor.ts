@@ -2,7 +2,6 @@ import jSuites from 'jsuites';
 import dispatch from '../utils/dispatch.js';
 import { getMask, isFormula } from '../utils/values.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
-import { getLabelText } from '../utils/accessibility.js';
 import type { Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
 import type { CellChange } from '../jspreadsheet';
@@ -422,7 +421,7 @@ export class Editor {
         dispatch.call(obj, 'oneditionstart', obj, cell, x, y);
 
         // Accessible name of the editor
-        const label = getLabelText.call(obj.parent, 'editCell', getColumnNameFromId([x, y]));
+        const label = obj.accessibility.getLabelText('editCell', getColumnNameFromId([x, y]));
 
         // Overflow
         if (x > 0) {

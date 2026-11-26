@@ -2,7 +2,6 @@ import formula from '@jspreadsheet/formula';
 import dispatch from '../utils/dispatch.js';
 import { getColumnName } from '../utils/helpers.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
-import { updateGridSize, updateRowIndex } from '../utils/accessibility.js';
 import type { HistoryCellChange, MergeInfo, Worksheet } from '../types/internal';
 
 // The cells in progress of updateChain, by cell name
@@ -414,7 +413,7 @@ export class Formulas {
                     // Update coords
                     obj.rows[j].element.setAttribute('data-y', j);
                     obj.rows[j].element.children[0].setAttribute('data-y', j);
-                    updateRowIndex.call(obj, obj.rows[j].element, j);
+                    obj.accessibility.updateRowIndex(obj.rows[j].element, j);
                     // Row number
                     obj.rows[j].element.children[0].innerHTML = String(j + 1);
                 }
@@ -505,7 +504,7 @@ export class Formulas {
         obj.meta.update(affectedTokens);
 
         // Update the size of the grid
-        updateGridSize.call(obj);
+        obj.accessibility.updateGridSize();
 
         // The tab stop of the grid can be in a deleted row or column
         obj.selection.updateTabStop();
@@ -571,7 +570,7 @@ export class Formulas {
             }
 
             // Update the size of the grid
-            updateGridSize.call(obj);
+            obj.accessibility.updateGridSize();
         }
     }
 }

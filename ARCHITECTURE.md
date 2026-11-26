@@ -268,6 +268,10 @@ on the prototypes. The next steps move each of them into a class, so that no fun
     adds the spare rows and columns. `values.ts` keeps `isFormula` and `getMask`, which get what they need as arguments.
 32. **Accessibility.** The roles, the labels and the size of the grid (`accessibility.ts`) become the component
     `Accessibility`.
+    Done. `worksheet.accessibility` sets the roles of the grid and its rows (`setGridRoles`, `setRowRole`), the accessible
+    names (`setGridLabels`, `setCellLabel`, `getLabelText`), the position of a row (`updateRowIndex`) and the size of the
+    grid (`updateGridSize`). `getLabelText` reads the labels of its spreadsheet, which the code passed as `this` before.
+    `setHeaderRole` gets what it needs as arguments and stays a function, exported by `components/Accessibility.ts`.
 33. **The event handlers of a worksheet.** The mouse gestures (`events/mouse.ts`) move into `Pointer`, the keys of the grid
     and of the editor (`events/keyboard.ts`) into a new component `Keyboard`, and the scrolling (`events/scroll.ts`) into
     `View`.
