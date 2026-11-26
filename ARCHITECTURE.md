@@ -33,16 +33,16 @@ src/
   utils/              functions without state (cell names, CSV, HTML helpers)
 ```
 
--   **A worksheet owns its components.** `worksheet.history` is a `History`, `worksheet.selection` a `Selection`, and so on.
-    A component gets the worksheet in its constructor and keeps its own state in its own fields. Another component asks it
-    through its methods, not through its fields.
--   **The public methods stay on the worksheet.** `worksheet.undo()` calls `this.history.undo()`. Applications keep one
-    object to talk to.
--   **Methods are on the prototype.** They are not bound to each instance any more.
--   **Imports form a tree.** A component imports the types of the others with `import type` and calls them through the
-    worksheet at run time. CI fails on an import cycle.
--   **The document events go to the active worksheet.** A press or the focus makes a worksheet the active one, and the
-    handlers act on it. A key on an element outside the spreadsheet does not reach the grid.
+- **A worksheet owns its components.** `worksheet.history` is a `History`, `worksheet.selection` a `Selection`, and so on.
+  A component gets the worksheet in its constructor and keeps its own state in its own fields. Another component asks it
+  through its methods, not through its fields.
+- **The public methods stay on the worksheet.** `worksheet.undo()` calls `this.history.undo()`. Applications keep one
+  object to talk to.
+- **Methods are on the prototype.** They are not bound to each instance any more.
+- **Imports form a tree.** A component imports the types of the others with `import type` and calls them through the
+  worksheet at run time. CI fails on an import cycle.
+- **The document events go to the active worksheet.** A press or the focus makes a worksheet the active one, and the
+  handlers act on it. A key on an element outside the spreadsheet does not reach the grid.
 
 ## Steps
 
@@ -160,21 +160,21 @@ functions that get the worksheet as `this` through `fn.call(worksheet, ...)`, an
 next steps move the behaviour of each feature into a component, so that a feature is one class: its state and the code
 that changes it.
 
--   **A component gets its worksheet.** The worksheet constructor creates each component with `new Merges(this)`, and the
-    component keeps it as `this.worksheet`. A moved function becomes a method that starts with
-    `const obj = this.worksheet;`, so its code stays the same.
--   **Components call each other through the worksheet**, as `obj.merges.destroy()`, and import only the modules that
-    stay functions. Only the builders (`utils/worksheets.ts` and `utils/factory.ts`) import `Worksheet.ts` at run
-    time; the other modules tell a spreadsheet from a worksheet with `instanceof Spreadsheet`. So `Worksheet.ts` can
-    import the components, and the components the modules they need, without a cycle.
--   **The public methods stay on the worksheet.** Each entry of `worksheetPublicMethods` calls the method of its
-    component, for example `getMerge` calls `this.merges.get(cellName)`. The public API does not change.
--   **The components are internal.** The new components are not in `WorksheetInstance`, and the methods that move into
-    the existing components are not in their public interfaces. Applications keep calling the worksheet methods.
--   **What stays functions.** Code without state of its own stays in `src/utils/`: the helpers for cell names and CSV
-    (`helpers.ts`, `internalHelpers.ts`), `dispatch`, the rendering of a cell (`render.ts`), `updateTable`, the value
-    that a cell shows (`values.ts`, without the formulas), the builders, `config`, `download`, `fullscreen`, the roles
-    and labels of the grid (`accessibility.ts`, without the selection) and the worksheet that a spreadsheet shows.
+- **A component gets its worksheet.** The worksheet constructor creates each component with `new Merges(this)`, and the
+  component keeps it as `this.worksheet`. A moved function becomes a method that starts with
+  `const obj = this.worksheet;`, so its code stays the same.
+- **Components call each other through the worksheet**, as `obj.merges.destroy()`, and import only the modules that
+  stay functions. Only the builders (`utils/worksheets.ts` and `utils/factory.ts`) import `Worksheet.ts` at run
+  time; the other modules tell a spreadsheet from a worksheet with `instanceof Spreadsheet`. So `Worksheet.ts` can
+  import the components, and the components the modules they need, without a cycle.
+- **The public methods stay on the worksheet.** Each entry of `worksheetPublicMethods` calls the method of its
+  component, for example `getMerge` calls `this.merges.get(cellName)`. The public API does not change.
+- **The components are internal.** The new components are not in `WorksheetInstance`, and the methods that move into
+  the existing components are not in their public interfaces. Applications keep calling the worksheet methods.
+- **What stays functions.** Code without state of its own stays in `src/utils/`: the helpers for cell names and CSV
+  (`helpers.ts`, `internalHelpers.ts`), `dispatch`, the rendering of a cell (`render.ts`), `updateTable`, the value
+  that a cell shows (`values.ts`, without the formulas), the builders, `config`, `download`, `fullscreen`, the roles
+  and labels of the grid (`accessibility.ts`, without the selection) and the worksheet that a spreadsheet shows.
 
 18. **The plan and the groundwork.** This section, and the modules that told a worksheet from a spreadsheet with
     `instanceof Worksheet` (`dispatch`, `config`, `activeWorksheet`) use `instanceof Spreadsheet`.
@@ -246,19 +246,19 @@ cell, the roles and labels of the grid, the event handlers for each worksheet, `
 of a spreadsheet, and the public methods themselves, which `worksheetPublicMethods` and `spreadsheetPublicMethods` put
 on the prototypes. The next steps move each of them into a class, so that no function outside a class reads `this`.
 
--   **A function that reads `this` belongs to a class.** It becomes a method of the component of its feature, or of
-    `Worksheet` or `Spreadsheet` when it is about the whole worksheet or spreadsheet. A function that gets what it needs
-    as arguments, such as the helpers for cell names, stays a function.
--   **The public methods are methods of the classes.** `Worksheet` and `Spreadsheet` declare their public methods in the
-    class body, and each one calls its component or the code of the class. The two lists go. The public typings stay the
-    source of truth: a method whose type does not match `jspreadsheet.d.ts` fails the type check, because the class
-    merges with the public interface.
--   **The classes may import modules.** `Spreadsheet.ts` imports nothing at run time so that `dispatch`, `config` and
-    `activeWorksheet` can tell a spreadsheet from a worksheet with `instanceof`. Once those are methods of the classes,
-    they need no `instanceof`, and the restriction goes.
--   **What stays.** The document event handlers (`mousedown`, `keydown`, …) get the event, not a worksheet, and stay
-    functions. `jspreadsheet.helpers.getCaretIndex` is a public helper that reads `this` only when an application calls it
-    with a spreadsheet; it stays as it is.
+- **A function that reads `this` belongs to a class.** It becomes a method of the component of its feature, or of
+  `Worksheet` or `Spreadsheet` when it is about the whole worksheet or spreadsheet. A function that gets what it needs
+  as arguments, such as the helpers for cell names, stays a function.
+- **The public methods are methods of the classes.** `Worksheet` and `Spreadsheet` declare their public methods in the
+  class body, and each one calls its component or the code of the class. The two lists go. The public typings stay the
+  source of truth: a method whose type does not match `jspreadsheet.d.ts` fails the type check, because the class
+  merges with the public interface.
+- **The classes may import modules.** `Spreadsheet.ts` imports nothing at run time so that `dispatch`, `config` and
+  `activeWorksheet` can tell a spreadsheet from a worksheet with `instanceof`. Once those are methods of the classes,
+  they need no `instanceof`, and the restriction goes.
+- **What stays.** The document event handlers (`mousedown`, `keydown`, …) get the event, not a worksheet, and stay
+  functions. `jspreadsheet.helpers.getCaretIndex` is a public helper that reads `this` only when an application calls it
+  with a spreadsheet; it stays as it is.
 
 31. **The cells.** Creating, rendering and updating a cell (`render.ts`) and the value that a cell shows (`values.ts`)
     move into `Cells`; `updateTable` (`table.ts`), which runs after the data changes, into `Data`.
@@ -321,13 +321,13 @@ that close over `const obj = this`, loops count indexes, strings are joined with
 (`==`). The next steps write the code in the style of current TypeScript. Each step changes the syntax, not the
 behaviour, and turns on the ESLint rule that keeps the new style, so that new code follows it.
 
--   **One kind of change per step**, so that a reviewer can check it as a pattern. Where ESLint has a safe autofix, the
-    step runs it; the commit says which rule made which change.
--   **The bundle shows the change.** As for the moves, the non-minified bundle before and after is compared. A step
-    that only changes syntax shows only that syntax in the comparison.
--   **What changes behaviour waits.** A rewrite that is not the same in every case, such as `==` between values of
-    different types, is not made blindly: the step makes the comparisons that are provably the same, and lists the
-    others for review.
+- **One kind of change per step**, so that a reviewer can check it as a pattern. Where ESLint has a safe autofix, the
+  step runs it; the commit says which rule made which change.
+- **The bundle shows the change.** As for the moves, the non-minified bundle before and after is compared. A step
+  that only changes syntax shows only that syntax in the comparison.
+- **What changes behaviour waits.** A rewrite that is not the same in every case, such as `==` between values of
+  different types, is not made blindly: the step makes the comparisons that are provably the same, and lists the
+  others for review.
 
 37. **Functions.** Module functions become function declarations (`export function getCellName(...) { ... }`), and
     `factory` a function. A callback that does not use its own `this` becomes an arrow function, and a function in an
@@ -393,7 +393,7 @@ behaviour, and turns on the ESLint rule that keeps the new style, so that new co
 
 ## Rules for each step
 
--   A step moves code; it does not rewrite it. Fix a bug that the move finds in its own commit, with a test.
--   Keep the accessibility behaviour (`test/accessibility.js`) and the safe cell rendering described in AGENTS.md.
--   A breaking change is fine in version 6, but it must be on purpose: list it in UPGRADING.md with what an application
-    does instead.
+- A step moves code; it does not rewrite it. Fix a bug that the move finds in its own commit, with a test.
+- Keep the accessibility behaviour (`test/accessibility.js`) and the safe cell rendering described in AGENTS.md.
+- A breaking change is fine in version 6, but it must be on purpose: list it in UPGRADING.md with what an application
+  does instead.

@@ -9,8 +9,8 @@ lists the changes that can break an application, and what to do instead. Each st
 are now instances of the `Worksheet` and `Spreadsheet` classes, and their methods are on the prototype instead of on
 each instance.
 
--   **A method needs its worksheet as `this`.** The methods used to be bound to their worksheet, so a method taken off
-    the worksheet still worked. Now it does not:
+- **A method needs its worksheet as `this`.** The methods used to be bound to their worksheet, so a method taken off
+  the worksheet still worked. Now it does not:
 
     ```js
     // Version 5
@@ -27,12 +27,12 @@ each instance.
 
     The same holds for the methods of a spreadsheet, such as `getConfig` and `setConfig`.
 
--   **The methods are not own properties.** `Object.keys(worksheet)`, `{ ...worksheet }` and `Object.assign({}, worksheet)`
-    no longer include the methods. `worksheet.getData` still finds them, and assigning a method to one worksheet still
-    replaces it for that worksheet only.
+- **The methods are not own properties.** `Object.keys(worksheet)`, `{ ...worksheet }` and `Object.assign({}, worksheet)`
+  no longer include the methods. `worksheet.getData` still finds them, and assigning a method to one worksheet still
+  replaces it for that worksheet only.
 
--   **A worksheet has its methods from the start.** Version 5 added them while it built the worksheet. Calling a method
-    before the `onload` event is still not supported: the worksheet has no table yet.
+- **A worksheet has its methods from the start.** Version 5 added them while it built the worksheet. Calling a method
+  before the `onload` event is still not supported: the worksheet has no table yet.
 
 ## The undo history is an object
 
@@ -200,8 +200,8 @@ cast where it relied on `any`:
 | The other properties of a toolbar item          | `any`                             | `unknown`                                               |
 | Other properties of `jspreadsheet`              | `any`                             | not declared                                            |
 
--   **onevent.** `EventArguments` is the name of an event, then the arguments of its handler. A test of `args[0]`
-    narrows the other arguments:
+- **onevent.** `EventArguments` is the name of an event, then the arguments of its handler. A test of `args[0]`
+  narrows the other arguments:
 
     ```ts
     onevent: function (...args) {
@@ -214,8 +214,8 @@ cast where it relied on `any`:
     A handler declared as `(event: string, ...rest: unknown[])` still fits. A handler that declares a worksheet as its
     second parameter no longer fits, because some events, such as `onbeforesave`, give the spreadsheet there.
 
--   **dispatch.** It takes the name of an event of `SpreadsheetOptions` and the arguments of its handler. To dispatch an
-    event of your own, cast the name, for example `worksheet.dispatch('oncustom' as jspreadsheet.EventName, worksheet)`.
+- **dispatch.** It takes the name of an event of `SpreadsheetOptions` and the arguments of its handler. To dispatch an
+  event of your own, cast the name, for example `worksheet.dispatch('oncustom' as jspreadsheet.EventName, worksheet)`.
 
 ## setConfig takes the options to change
 

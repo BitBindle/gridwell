@@ -4,7 +4,7 @@ import jspreadsheet, { type Worksheet } from './support/jspreadsheet';
 
 function rect(left: number, top: number, width: number, height: number) {
     // The rectangle has no toJSON, which the code does not call
-    return () => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top } as DOMRect);
+    return () => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top }) as DOMRect;
 }
 
 function scrolledWorksheet(scrollLeft: number) {

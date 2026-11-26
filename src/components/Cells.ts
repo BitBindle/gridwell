@@ -29,7 +29,7 @@ function stripScript(a: jspreadsheet.CellValue | undefined | HTMLCollectionOf<HT
     b.innerHTML = a as string;
     let c;
     // A script in b has a parent
-    for (a = b.getElementsByTagName('script'); (c = a[0]); ) c.parentNode!.removeChild(c);
+    for (a = b.getElementsByTagName('script'); (c = a[0]);) c.parentNode!.removeChild(c);
     return b.innerHTML;
 }
 
@@ -484,8 +484,7 @@ export class Cells {
 
             // A custom editor can have setValue, which is not in the public typings
             const editor = (column && typeof column.type === 'object' ? column.type : null) as
-                | (jspreadsheet.CustomEditor & { setValue?: (cell: HTMLTableCellElement, value: jspreadsheet.CellValue | undefined) => void })
-                | null;
+                (jspreadsheet.CustomEditor & { setValue?: (cell: HTMLTableCellElement, value: jspreadsheet.CellValue | undefined) => void }) | null;
             if (editor) {
                 // Update data and cell
                 worksheet.options.data[y][x] = value as jspreadsheet.CellValue;

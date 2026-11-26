@@ -326,7 +326,7 @@ describe('Undo and redo the changes to columns, rows and the order', () => {
 
         // The old height is the height that the browser measures. jsdom has no layout.
         // The test needs only the height
-        worksheet.rows[1].element.getBoundingClientRect = () => ({ height: 25 } as DOMRect);
+        worksheet.rows[1].element.getBoundingClientRect = () => ({ height: 25 }) as DOMRect;
 
         worksheet.setHeight(1, 50);
         expect(worksheet.getHeight(1)).to.equal('50px');
