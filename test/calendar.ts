@@ -91,7 +91,7 @@ describe('The calendar', () => {
         expect(calendar.querySelector('.jcalendar-year')!.textContent).to.equal('2024');
 
         const weekdays = Array.from(grid.querySelectorAll('[role="columnheader"]'));
-        expect(weekdays.map((th) => th.textContent).join('')).to.equal('SMTWTFS');
+        expect(weekdays.map((th) => th.textContent)).to.eql(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
         expect(weekdays[1].getAttribute('aria-label')).to.equal('Monday');
 
         // The 1st of March 2024 is a Friday
@@ -144,6 +144,24 @@ describe('The calendar', () => {
         expect(active()!.getAttribute('aria-label')).to.equal('Wednesday 10 January 2024');
     });
 
+    it('shows the short names of the days and the months as the dictionary translates them (issue #155)', async () => {
+        const days = { Sun: '周日', Mon: '周一', Tue: '周二', Wed: '周三', Thu: '周四', Fri: '周五', Sat: '周六', Sunday: '星期日', Monday: '星期一' };
+        jspreadsheet.setDictionary({ ...days, Mar: '3月', March: '三月' });
+        try {
+            const { grid, button } = await open({}, '2024-03-05');
+
+            const headers = Array.from(grid.querySelectorAll('[role="columnheader"]'));
+            expect(headers.map((th) => th.textContent)).to.eql(['周日', '周一', '周二', '周三', '周四', '周五', '周六']);
+            expect(headers[0].getAttribute('aria-label')).to.equal('星期日');
+
+            expect(button('jcalendar-month').textContent).to.equal('3月');
+            button('jcalendar-month').click();
+            expect(grid.querySelectorAll('.jcalendar-set-month')[2].textContent).to.equal('3月');
+        } finally {
+            jspreadsheet.setDictionary(Object.fromEntries(['Mar', 'March', ...Object.keys(days)].map((text) => [text, ''])));
+        }
+    });
+
     it('starts the week on the startingDay of the column', async () => {
         const { input, grid, active } = await open({ startingDay: 1 }, '2024-03-05');
 
@@ -155,6 +173,16 @@ describe('The calendar', () => {
             'Friday',
             'Saturday',
             'Sunday',
+        ]);
+        // The short names of the days
+        expect(Array.from(grid.querySelectorAll('[role="columnheader"]')).map((th) => th.textContent)).to.eql([
+            'Mon',
+            'Tue',
+            'Wed',
+            'Thu',
+            'Fri',
+            'Sat',
+            'Sun',
         ]);
         expect(
             Array.from(grid.querySelectorAll('.jcalendar-set-day'))

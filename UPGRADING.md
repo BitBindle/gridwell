@@ -576,3 +576,17 @@ style, and Escape closes the dialog. The types are buttons with names, such as "
 - The element of the item has no `picker` property. The dialog is the element after it, with the class `jss_borders`,
   and it is added the first time the dialog opens.
 - Choosing a type of borders still closes the dialog, and the button shows the icon of the type chosen last.
+
+## The short names of the months and the days have their own translations
+
+The short names of the months and the days, which the tokens `MMM`, `MON`, `DDD` and `DY` show and the calendar shows,
+are texts of their own: `Jan` to `Dec` and `Sun` to `Sat`. Jspreadsheet cut the first three letters of the full names,
+so a language whose short names are not those letters showed wrong names, such as `Thá` for `Thg 6` in Vietnamese,
+and could not read its own short names in a pasted date (issue #155). A dictionary that translated only the full names
+shows the English short names now: add the translations of the short names. The short name of May is the same text as
+its full name in English, so the dictionary has it as `May (short)`. A date is read with the full and the short names,
+in English and as the dictionary translates them.
+
+The header of the days in the calendar shows their short names, such as `Mon`, where it showed their first letters. The
+full names are still their accessible names. The language files in `resources/lang` translate the names of the months
+and the days, full and short.

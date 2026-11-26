@@ -17,17 +17,23 @@ const read = (name: string) => JSON.parse(fs.readFileSync(`${folder}/${name}`, '
 const files = fs.readdirSync(folder).filter((name) => name.endsWith('.json'));
 const english = read('en_GB.json');
 
-/** The texts of the modules under src that the library translates with translate('...'). */
+/**
+ * The texts of the modules under src that the library translates with translate('...') or translate('...', '...'), each
+ * with its English text. A text with a context is in the dictionary as "text (context)".
+ */
 const translatedTexts = () => {
-    const texts = new Set<string>();
+    const texts = new Map<string, string>();
+    const unescape = (text: string) => text.replace(/\\(.)/g, '$1');
     const visit = (path: string) => {
         for (const name of fs.readdirSync(path)) {
             const file = `${path}/${name}`;
             if (fs.statSync(file).isDirectory()) {
                 visit(file);
             } else if (name.endsWith('.ts')) {
-                for (const match of fs.readFileSync(file, 'utf8').matchAll(/\btranslate\('((?:[^'\\]|\\.)*)'\)/g)) {
-                    texts.add(match[1].replace(/\\(.)/g, '$1'));
+                const source = fs.readFileSync(file, 'utf8');
+                for (const match of source.matchAll(/\btranslate\('((?:[^'\\]|\\.)*)'(?:, '((?:[^'\\]|\\.)*)')?\)/g)) {
+                    const text = unescape(match[1]);
+                    texts.set(match[2] === undefined ? text : `${text} (${unescape(match[2])})`, text);
                 }
             }
         }
@@ -36,13 +42,30 @@ const translatedTexts = () => {
     return texts;
 };
 
+/** The names of the months and the days, full and short, which the dates translate from lists. */
+const dateNames = () => {
+    const names = new Map<string, string>();
+    for (const name of ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']) {
+        names.set(name, name);
+    }
+    for (const name of ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']) {
+        // The short name of May is its full name in English
+        names.set(name === 'May' ? 'May (short)' : name, name);
+    }
+    for (const name of ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']) {
+        names.set(name, name);
+    }
+    return names;
+};
+
 describe('The translations in resources/lang (issue #153)', () => {
     it('en_GB.json has each text that the library translates, as itself', () => {
-        for (const text of translatedTexts()) {
-            expect(english, text).to.have.property(text);
+        const texts = new Map([...translatedTexts(), ...dateNames()]);
+        for (const [key, text] of texts) {
+            expect(english, key).to.have.property(key, text);
         }
-        for (const [text, translation] of Object.entries(english)) {
-            expect(translation).to.equal(text);
+        for (const [key, translation] of Object.entries(english)) {
+            expect(translation, key).to.equal(texts.get(key) ?? key);
         }
     });
 
