@@ -434,9 +434,6 @@ export class Formulas {
             }
         }
 
-        // The frozen rows are the first rows
-        worksheet.rowManager.updateFreeze();
-
         // Regular cells affected by this change: the new cell name by the old one
         const affectedTokens: Record<string, string> = {};
         // The merged cells affected by this change: false, or the new cell name and the column and row offsets
@@ -524,6 +521,10 @@ export class Formulas {
         worksheet.accessibility.updateGridSize();
 
         // The tab stop of the grid can be in a deleted row or column
+        // The frozen rows are the first rows. This comes after the cells know their new rows, because a row that leaves
+        // the table saves and closes its editor.
+        worksheet.rowManager.updateFreeze();
+
         worksheet.selection.updateTabStop();
 
         // Refresh selection

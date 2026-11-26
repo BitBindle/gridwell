@@ -700,9 +700,10 @@ export class View {
 
     /**
      * Put the frozen rows first in the table body, and the other attached rows after them in their order. Lazy loading
-     * needs this after a move or a delete of a frozen row.
+     * needs this after an insert, a move or a delete in the frozen rows.
+     * @param left - The rows that were frozen before the change and are not frozen now.
      */
-    attachFrozen() {
+    attachFrozen(left: HTMLTableRowElement[] = []) {
         const worksheet = this.worksheet;
         const frozen = this.frozenRows();
         if (worksheet.options.lazyLoading !== true || !frozen) {
@@ -717,23 +718,36 @@ export class View {
             .filter((row) => y(row) >= frozen)
             .sort((a, b) => y(a) - y(b));
 
-        // A row that left the frozen rows, for example after an insert at the top, is not next to the rows that scroll.
-        // The longest run of consecutive rows stays, and the other rows leave the table.
-        let start = 0;
-        let best = [0, 0];
-        for (let k = 1; k <= others.length; k++) {
-            if (k === others.length || y(others[k]) !== y(others[k - 1]) + 1) {
-                if (k - start > best[1] - best[0]) {
-                    best = [start, k];
-                }
-                start = k;
+        // The runs of consecutive rows after the frozen rows
+        const runs: Element[][] = [];
+        for (const row of others) {
+            const run = runs[runs.length - 1];
+            if (run && y(row) === y(run[run.length - 1]) + 1) {
+                run.push(row);
+            } else {
+                runs.push([row]);
             }
         }
-        for (const row of [...others.slice(0, best[0]), ...others.slice(best[1])]) {
-            this.removeRow(row);
+
+        // A run that holds a row that left the frozen rows, with the rows inserted before it, is not next to the rows that
+        // scroll, so it leaves the table. Without such a run, the longest run stays.
+        let keep = runs;
+        if (runs.length > 1) {
+            const scrolled = runs.filter((run) => !run.some((row) => left.includes(row as HTMLTableRowElement)));
+            keep = scrolled.length ? scrolled : runs;
+            if (keep.length > 1) {
+                keep = [keep.reduce((longest, run) => (run.length > longest.length ? run : longest))];
+            }
+        }
+        for (const run of runs) {
+            if (!keep.includes(run)) {
+                for (const row of run) {
+                    this.removeRow(row);
+                }
+            }
         }
 
-        const wanted = [...worksheet.rows.slice(0, frozen).map((row) => row.element), ...others.slice(best[0], best[1])];
+        const wanted = [...worksheet.rows.slice(0, frozen).map((row) => row.element), ...keep.flat()];
         for (let k = 0; k < wanted.length; k++) {
             if (tbody.children[k] !== wanted[k]) {
                 tbody.insertBefore(wanted[k], tbody.children[k] || null);

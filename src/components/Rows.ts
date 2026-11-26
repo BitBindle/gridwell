@@ -82,28 +82,23 @@ export class Rows {
         const changed = frozen.length !== this.frozen.length || frozen.some((row, j) => row !== this.frozen[j]);
 
         // A row that is not in the first rows any more is not frozen
-        for (const row of this.frozen) {
-            if (!frozen.includes(row)) {
-                row.classList.remove('jss_frozen_row', 'jss_frozen_last');
-                row.style.removeProperty('--jss-frozen-top');
-            }
+        const left = this.frozen.filter((row) => !frozen.includes(row));
+        for (const row of left) {
+            row.classList.remove('jss_frozen_row', 'jss_frozen_last');
+            row.style.removeProperty('--jss-frozen-top');
         }
         for (const row of frozen) {
             row.classList.add('jss_frozen_row');
         }
         this.frozen = frozen;
 
-        // A move or a delete can take a frozen row out of the rows that lazy loading attached
-        worksheet.view.attachFrozen();
+        // A change can take a frozen row out of the rows that lazy loading attached, or put a row that left the frozen
+        // rows ahead of the rows that scroll
+        worksheet.view.attachFrozen(left);
 
         if (changed) {
             this.schedulePlace();
             this.observeFrozen();
-
-            // A cell of a frozen row and a frozen column sticks on both axes
-            if (worksheet.options.freezeColumns) {
-                worksheet.columns.updateFreezePosition();
-            }
         }
     }
 
@@ -149,6 +144,11 @@ export class Rows {
         queueMicrotask(() => {
             this.placing = false;
             this.placeFrozen();
+
+            // A cell of a frozen row and a frozen column sticks on both axes. The placement reads the scroll position.
+            if (this.worksheet.options.freezeColumns) {
+                this.worksheet.columns.updateFreezePosition();
+            }
         });
     }
 

@@ -254,6 +254,39 @@ describe('Frozen rows with lazy loading', () => {
         }
     });
 
+    it('saves an open editor in its own cell when a change in the frozen rows removes its row', () => {
+        for (const change of [(w: Worksheet) => w.insertRow(1, 0, true), (w: Worksheet) => w.moveRow(250, 0)]) {
+            const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(300), freezeRows: 2, lazyLoading: true, tableOverflow: true }] });
+            worksheet.updateSelectionFromCoords(0, 298, 0, 298);
+            worksheet.down();
+            const cell = worksheet.records[1][1].element;
+            worksheet.openEditor(cell);
+            (cell.children[0] as HTMLInputElement).value = 'EDITED';
+
+            change(worksheet);
+
+            // The edited row is row 2 now
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 2)).to.equal('EDITED');
+            expect([0, 1, 3].map((y) => worksheet.getValueFromCoords(1, y))).to.not.include('EDITED');
+        }
+    });
+
+    it('keeps the rows that scroll after an insert of many rows at the top', () => {
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(300), freezeRows: 2, lazyLoading: true, tableOverflow: true }] });
+        worksheet.updateSelectionFromCoords(0, 298, 0, 298);
+        worksheet.down();
+
+        worksheet.insertRow(100, 0, true);
+
+        // The rows that scrolled before the insert, now 300 to 399, stay in the table. The inserted rows and the rows that
+        // left the frozen rows leave it.
+        const attached = Array.from(worksheet.tbody.children).map((row) => Number(row.getAttribute('data-y')));
+        expect(worksheet.rows[399].element.parentNode).to.equal(worksheet.tbody);
+        expect(attached.slice(0, 2)).to.eql([0, 1]);
+        expect(attached.slice(2).every((y) => y >= 300)).to.equal(true);
+    });
+
     it('keeps the selected row in the table while the keyboard moves through 400 rows with 40 frozen rows', () => {
         const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(400), freezeRows: 40, lazyLoading: true, tableOverflow: true }] });
         const missing: number[] = [];
@@ -351,7 +384,7 @@ describe('The scroll to the active cell below the frozen rows', () => {
 });
 
 describe('Frozen rows and frozen columns', () => {
-    it('gives a cell of a frozen row and a frozen column the sticky distance of its header', () => {
+    it('gives a cell of a frozen row and a frozen column the sticky distance of its header', async () => {
         const [worksheet] = jspreadsheet(root, {
             worksheets: [
                 {
@@ -375,6 +408,7 @@ describe('Frozen rows and frozen columns', () => {
 
         // After a move, the new first row is the frozen row
         worksheet.moveRow(0, 2);
+        await placed();
         expect(worksheet.records[0][0].element.style.left).to.equal(worksheet.headers[0].style.left);
         expect(worksheet.records[2][0].element.style.left).to.equal(shifted);
     });
