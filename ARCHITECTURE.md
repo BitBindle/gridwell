@@ -186,6 +186,9 @@ that changes it.
     `cells.getFromCoords`), and the public methods call them. The references rename the cells of the meta information
     with `obj.meta.update`.
 20. **Merges.** `Merges` (`merges.ts`).
+    Done. `worksheet.merges` gets, sets and removes the merged ranges (`get`, `set`, `remove`, `destroy`), tells which
+    ranges a row or a column is in (`isRowMerged`, `isColMerged`), and updates the first cell of a range when its
+    columns are hidden or shown (`updateColumns`).
 21. **Formulas.** The references (`references.ts`), the footers (`footer.ts`) and the calculation of a formula
     (`executeFormula` and what only it uses in `values.ts`) move into `Formulas`.
 22. **The view.** Search, the filters, pagination, the order and the lazy loading (`search.ts`, `filter.ts`,

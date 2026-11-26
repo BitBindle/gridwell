@@ -1,7 +1,6 @@
 import { resetFilters } from './filter.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import { updateResult } from './pagination.js';
-import { isRowMerged } from './merges.js';
 import type { Worksheet } from '../types/internal';
 import type { CellValue } from '../jspreadsheet';
 
@@ -60,7 +59,7 @@ export const search = function (this: Worksheet, query: string) {
         obj.options.data.forEach(function (v, k) {
             if (search(v, parsedQuery, k)) {
                 // Merged rows found
-                const rows = isRowMerged.call(obj, k);
+                const rows = obj.merges.isRowMerged(k);
                 if (rows.length) {
                     for (let i = 0; i < rows.length; i++) {
                         const row = getIdFromColumnName(rows[i], true);

@@ -32,7 +32,6 @@ import {
     updateSelectionFromCoords,
 } from './selection.js';
 import { deleteRow, getHeight, getRowData, hideRow, insertRow, moveRow, setHeight, setRowData, showRow } from './rows.js';
-import { destroyMerge, getMerge, removeMerge, setMerge } from './merges.js';
 import { resetSearch, search } from './search.js';
 import { getHeader, getHeaders, setHeader } from './headers.js';
 import { page, quantiyOfPages, whichPage } from './pagination.js';
@@ -686,23 +685,28 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return setHeight.call(this, row, height);
         },
     ],
-    ['getMerge', getMerge],
+    [
+        'getMerge',
+        function (this: Worksheet, cellName?: string) {
+            return this.merges.get(cellName);
+        },
+    ],
     [
         'setMerge',
         function (this: Worksheet, cellName: string, colspan: number, rowspan: number) {
-            return setMerge.call(this, cellName, colspan, rowspan);
+            return this.merges.set(cellName, colspan, rowspan);
         },
     ],
     [
         'destroyMerge',
         function (this: Worksheet) {
-            return destroyMerge.call(this);
+            return this.merges.destroy();
         },
     ],
     [
         'removeMerge',
         function (this: Worksheet, cellName: string, data?: jspreadsheet.CellValue[]) {
-            return removeMerge.call(this, cellName, data);
+            return this.merges.remove(cellName, data);
         },
     ],
     ['search', search],

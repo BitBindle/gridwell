@@ -14,6 +14,7 @@ import type { Comments } from '../components/Comments';
 import type { Editor } from '../components/Editor';
 import type { Formulas } from '../components/Formulas';
 import type { History } from '../components/History';
+import type { Merges } from '../components/Merges';
 import type { Meta } from '../components/Meta';
 import type { Pointer } from '../components/Pointer';
 import type { Selection } from '../components/Selection';
@@ -74,6 +75,9 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
 
     /** The meta information of the cells. */
     meta: Meta;
+
+    /** The merged cells. */
+    merges: Merges;
 
     /** The div that holds the link to the Jspreadsheet site, below the table. */
     ads: HTMLDivElement;

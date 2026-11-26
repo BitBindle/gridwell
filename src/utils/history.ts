@@ -1,7 +1,6 @@
 import dispatch from './dispatch.js';
 import { injectArray } from './internalHelpers.js';
 import { updateTableReferences } from './references.js';
-import { setMerge } from './merges.js';
 import { updateOrder, updateOrderArrow } from './orderBy.js';
 import { conditionalSelectionUpdate } from './selection.js';
 import type { Worksheet, WorksheetHistoryRecord, WorksheetMethod } from '../types/internal';
@@ -285,7 +284,7 @@ export const redo: WorksheetMethod<'redo'> = function () {
         } else if (historyRecord.action == 'moveColumn') {
             obj.moveColumn(historyRecord.oldValue, historyRecord.newValue);
         } else if (historyRecord.action == 'setMerge') {
-            setMerge.call(obj, historyRecord.column, historyRecord.colspan, historyRecord.rowspan, 1);
+            obj.merges.set(historyRecord.column, historyRecord.colspan, historyRecord.rowspan, 1);
         } else if (historyRecord.action == 'setStyle') {
             obj.setStyle(historyRecord.newValue, null, null, true); // true means force
         } else if (historyRecord.action == 'setWidth') {

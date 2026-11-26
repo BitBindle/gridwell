@@ -3,7 +3,6 @@ import { getNumberOfColumns } from './columns.js';
 import { createCell } from './render.js';
 import { updateTableReferences } from './references.js';
 import dispatch from './dispatch.js';
-import { isRowMerged } from './merges.js';
 import { conditionalSelectionUpdate, getSelectedRows, updateCornerPosition } from './selection.js';
 import { getColumnNameFromId } from './internalHelpers.js';
 import { setRowRole, updateTabStop } from './accessibility.js';
@@ -212,7 +211,7 @@ export const insertRow: WorksheetMethod<'insertRow'> = function (mixed, rowNumbe
 
         // Merged cells
         if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
-            if (isRowMerged.call(obj, rowNumber, insertBefore).length) {
+            if (obj.merges.isRowMerged(rowNumber, insertBefore).length) {
                 if (!confirm(jSuites.translate('This action will destroy any existing merged cells. Are you sure?'))) {
                     return false;
                 } else {
@@ -301,7 +300,7 @@ export const moveRow = function (this: Worksheet, o: number, d: number, ignoreDo
             insertBefore = 0;
         }
 
-        if (isRowMerged.call(obj, o).length || isRowMerged.call(obj, d, insertBefore).length) {
+        if (obj.merges.isRowMerged(o).length || obj.merges.isRowMerged(d, insertBefore).length) {
             if (!confirm(jSuites.translate('This action will destroy any existing merged cells. Are you sure?'))) {
                 return false;
             } else {
@@ -428,7 +427,7 @@ export const deleteRow: WorksheetMethod<'deleteRow'> = function (rowNumber, numO
                 let mergeExists = false;
                 if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
                     for (let row = rowNumber; row < rowNumber + numOfRows; row++) {
-                        if (isRowMerged.call(obj, row, false).length) {
+                        if (obj.merges.isRowMerged(row, false).length) {
                             mergeExists = true;
                         }
                     }

@@ -1,7 +1,6 @@
 import jSuites from 'jsuites';
 import dispatch from './dispatch.js';
 import { getColumnName } from './helpers.js';
-import { isColMerged, updateMergedColumns } from './merges.js';
 import { createCell } from './render.js';
 import { updateTableReferences } from './references.js';
 import { conditionalSelectionUpdate, updateCornerPosition } from './selection.js';
@@ -303,7 +302,7 @@ export const insertColumn: WorksheetMethod<'insertColumn'> = function (mixed, co
 
         // Merged cells
         if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
-            if (isColMerged.call(obj, columnNumber, insertBefore).length) {
+            if (obj.merges.isColMerged(columnNumber, insertBefore).length) {
                 if (!confirm(jSuites.translate('This action will destroy any existing merged cells. Are you sure?'))) {
                     return false;
                 } else {
@@ -383,7 +382,7 @@ export const moveColumn: WorksheetMethod<'moveColumn'> = function (o, d) {
             insertBefore = 0;
         }
 
-        if (isColMerged.call(obj, o).length || isColMerged.call(obj, d, insertBefore).length) {
+        if (obj.merges.isColMerged(o).length || obj.merges.isColMerged(d, insertBefore).length) {
             if (!confirm(jSuites.translate('This action will destroy any existing merged cells. Are you sure?'))) {
                 return false;
             } else {
@@ -515,7 +514,7 @@ export const deleteColumn: WorksheetMethod<'deleteColumn'> = function (columnNum
                 let mergeExists = false;
                 if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
                     for (let col = columnNumber; col < columnNumber + numOfColumns; col++) {
-                        if (isColMerged.call(obj, col, null).length) {
+                        if (obj.merges.isColMerged(col, null).length) {
                             mergeExists = true;
                         }
                     }
@@ -730,7 +729,7 @@ export const showColumn: WorksheetMethod<'showColumn'> = function (colNumber) {
         }
     }
 
-    updateMergedColumns.call(obj, colNumber);
+    obj.merges.updateColumns(colNumber);
 
     // Update footers
     if (obj.options.footers) {
@@ -768,7 +767,7 @@ export const hideColumn: WorksheetMethod<'hideColumn'> = function (colNumber) {
         }
     }
 
-    updateMergedColumns.call(obj, colNumber);
+    obj.merges.updateColumns(colNumber);
 
     // Update footers
     if (obj.options.footers) {

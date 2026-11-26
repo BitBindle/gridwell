@@ -5,7 +5,6 @@ import { updateTable } from './table.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import dispatch from './dispatch.js';
 import { updatePagination } from './pagination.js';
-import { setMerge } from './merges.js';
 import { getCoordsFromRange } from './helpers.js';
 import { updateGridSize, updateTabStop } from './accessibility.js';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
@@ -124,7 +123,7 @@ export const setData: WorksheetMethod<'setData'> = function (data) {
         const keys = Object.keys(obj.options.mergeCells);
         for (let i = 0; i < keys.length; i++) {
             const num = obj.options.mergeCells[keys[i]];
-            setMerge.call(obj, keys[i], num[0], num[1], 1);
+            obj.merges.set(keys[i], num[0], num[1], 1);
         }
     }
 
