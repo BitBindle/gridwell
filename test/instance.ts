@@ -269,7 +269,7 @@ describe('The options of the worksheet table', () => {
         const dropdown = filter.querySelector<HTMLSelectElement>('.jss_pagination_dropdown')!;
         expect(Array.from(dropdown.options).map((option) => option.value)).to.eql(['2', '5']);
         expect(dropdown.value).to.equal('2');
-        expect(filter.children[0].textContent).to.equal('Show 25entries');
+        expect(filter.children[0].textContent).to.equal('Show 25 entries');
 
         dropdown.value = '5';
         // The library sets a handler that takes no event

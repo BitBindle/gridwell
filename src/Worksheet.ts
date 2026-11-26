@@ -641,7 +641,7 @@ export class Worksheet {
 
             paginationUpdateContainer.appendChild(document.createTextNode(translate('Show ')));
             paginationUpdateContainer.appendChild(this.paginationDropdown);
-            paginationUpdateContainer.appendChild(document.createTextNode(translate('entries')));
+            paginationUpdateContainer.appendChild(document.createTextNode(` ${translate('entries')}`));
         }
 
         // Filter and pagination container

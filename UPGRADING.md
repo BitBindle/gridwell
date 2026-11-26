@@ -548,3 +548,8 @@ global `jSuites` or calls `require('jsuites')`. A page needs only the script and
   jSuites controls of its own translates them with `jSuites.setDictionary`.
 - A press near the top right corner of an element with the class `jclose`, the close icon of the jSuites image editor, no
   longer closes the editor of the cell.
+
+## The pagination puts a space before "entries"
+
+The text after the number of rows on a page starts with a space: "Show 10 entries", where it showed "Show 10entries".
+A translation of `entries` with `jspreadsheet.setDictionary` needs no space at its start any more.
