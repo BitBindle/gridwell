@@ -57,9 +57,9 @@ export function touchEndControls(e: TargetEvent<TouchEvent>) {
         clearTimeout(libraryBase.jspreadsheet.timeControl);
         libraryBase.jspreadsheet.timeControl = null;
         // Element
-        if (libraryBase.jspreadsheet.tmpElement?.children[0].tagName === 'INPUT') {
-            // The test of the tag name above
-            (libraryBase.jspreadsheet.tmpElement.children[0] as HTMLInputElement).focus();
+        const editor = libraryBase.jspreadsheet.tmpElement?.children[0];
+        if (editor?.tagName === 'INPUT' || editor?.tagName === 'TEXTAREA') {
+            (editor as HTMLInputElement).focus();
         }
         libraryBase.jspreadsheet.tmpElement = null;
     }

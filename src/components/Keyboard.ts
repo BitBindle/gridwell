@@ -41,25 +41,15 @@ export class Keyboard {
             } else if (column?.type === 'dropdown') {
                 // Do nothing
             } else {
-                // Alt enter -> do not close editor
-                if (
-                    (worksheet.options.wordWrap === true ||
-                        column?.wordWrap === true ||
-                        (worksheet.options.data[worksheet.editor.y][worksheet.editor.x] &&
-                            (worksheet.options.data[worksheet.editor.y][worksheet.editor.x] as string).length > 200)) &&
-                    e.altKey
-                ) {
-                    // Add new line to the editor
-                    const editorTextarea = worksheet.editor.cell.children[0] as HTMLTextAreaElement;
-                    let editorValue = (worksheet.editor.cell.children[0] as HTMLTextAreaElement).value;
-                    const editorIndexOf = editorTextarea.selectionStart;
-                    editorValue = `${editorValue.slice(0, editorIndexOf)}\n${editorValue.slice(editorIndexOf)}`;
-                    editorTextarea.value = editorValue;
-                    editorTextarea.focus();
-                    editorTextarea.selectionStart = editorIndexOf + 1;
-                    editorTextarea.selectionEnd = editorIndexOf + 1;
+                // Alt+Enter adds a line break at the caret of a textarea, and the editor stays open. setRangeText and the
+                // input event let the undo of the browser and the listeners of the editor see the change.
+                const editor = worksheet.editor.cell.children[0] as HTMLTextAreaElement;
+                if (e.altKey && editor.tagName === 'TEXTAREA') {
+                    editor.setRangeText('\n', editor.selectionStart, editor.selectionEnd, 'end');
+                    editor.dispatchEvent(new Event('input', { bubbles: true }));
+                    e.preventDefault();
                 } else {
-                    (worksheet.editor.cell.children[0] as HTMLElement).blur();
+                    editor.blur();
                 }
             }
         } else if (e.which === 9) {

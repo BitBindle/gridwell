@@ -662,3 +662,12 @@ or it removes the options of another worksheet.
 `oncreateworksheet` occurs when the new worksheet is built, and gives its index in the worksheets at that time. Version 5
 gave the number of worksheets minus one. When the application called `createWorksheet` again before the first worksheet
 was built, both events got the index of the last worksheet.
+
+## The text editor of a cell is a textarea
+
+The editor of a text or numeric cell is a `textarea` in each cell, so it keeps the line breaks of the value. Version 5
+used an `input`, except with `wordWrap`, and the input removed the line breaks when it saved the value. Without word
+wrap, the textarea has `rows="1"` and `wrap="off"`, the font of the cell and the line height of the cell, and it shows
+one line as the input did. Alt+Enter adds a line break at the caret in each cell, not only with `wordWrap` or a value of
+more than 200 characters. CSS or an `oncreateeditor` handler that looks for `td > input` must look for `td > textarea`.
+The calendar and color editors are still inputs.
