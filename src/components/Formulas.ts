@@ -1,5 +1,4 @@
 import formula from '@jspreadsheet/formula';
-import dispatch from '../utils/dispatch.js';
 import { getColumnName } from '../utils/helpers.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import type { HistoryCellChange, MergeInfo, Worksheet } from '../types/internal';
@@ -231,7 +230,7 @@ export class Formulas {
 
                 let source = text;
 
-                const ret = dispatch.call(obj, 'onbeforeformula', obj, expression, x, y);
+                const ret = obj.dispatch('onbeforeformula', obj, expression, x, y);
                 if (ret === false) {
                     return expression;
                 } else if (ret) {

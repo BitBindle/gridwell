@@ -1,4 +1,3 @@
-import dispatch from '../utils/dispatch.js';
 import { getCoordsFromCellName } from '../utils/helpers.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import type { Worksheet } from '../types/internal';
@@ -98,6 +97,6 @@ export class Comments {
         });
 
         // Set comments
-        dispatch.call(obj, 'oncomments', obj, commentsObj, oldValue);
+        obj.dispatch('oncomments', obj, commentsObj, oldValue);
     }
 }

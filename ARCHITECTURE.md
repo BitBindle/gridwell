@@ -285,10 +285,20 @@ on the prototypes. The next steps move each of them into a class, so that no fun
     `Selection` do, because the handler checks it before the call.
 34. **The spreadsheet.** `dispatch`, the active worksheet (`activeWorksheet.ts`), `fullscreen`, the configuration of a
     spreadsheet (`config.ts`), `setPlugins` and the build of a spreadsheet (`factory.ts`) become methods of `Spreadsheet`.
+    Done. `Spreadsheet.build` adds the plugins, builds the worksheets in their tabs (the private `createWorksheets`), the
+    context menu and the toolbar, and adds the document event handlers; the factory only replaces a table with a div.
+    `spreadsheet.dispatch` triggers an event with the spreadsheet as `this`, and `worksheet.dispatch` with the worksheet
+    as `this`; both call `spreadsheet.callHandlers`, and `worksheet.dispatch` also saves the changes of the persistence
+    option after `onafterchanges` (the private `prepareJson` and `save`). `getWorksheetActive`, `getWorksheetInstance`,
+    `fullscreen`, `showToolbar`, `hideToolbar`, `getConfig`, `setConfig` and `setPlugins` are methods of `Spreadsheet`,
+    and `spreadsheetPublicMethods` goes. `worksheet.getConfig` and `worksheet.setConfig` are methods of `Worksheet`;
+    `worksheet.setConfig(config, true)` calls `spreadsheet.setConfig(config)`. `dispatch.ts`, `activeWorksheet.ts`,
+    `config.ts` and `fullscreen.ts` go. `Spreadsheet.ts` now imports the modules that build a spreadsheet, and the
+    constructor of `Spreadsheet` creates the `Toolbar`.
 35. **The worksheet.** The build of a worksheet (`worksheets.ts`), its configuration, and creating, opening and deleting
     worksheets become methods of `Worksheet`; `download` moves into `Clipboard`.
-36. **The public methods.** `Worksheet` and `Spreadsheet` declare their public methods, and `worksheetPublicMethods` and
-    `spreadsheetPublicMethods` go.
+36. **The public methods.** `Worksheet` declares its public methods, and `worksheetPublicMethods` goes (step 34 already
+    removed `spreadsheetPublicMethods`).
 
 ## Rules for each step
 

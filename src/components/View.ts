@@ -1,5 +1,4 @@
 import jSuites from 'jsuites';
-import dispatch from '../utils/dispatch.js';
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import libraryBase from '../utils/libraryBase.js';
 import type jspreadsheet from '../jspreadsheet';
@@ -408,7 +407,7 @@ export class View {
         obj.selection.updateCorner();
 
         // Events. setData sets the page number of a worksheet with pagination.
-        dispatch.call(obj, 'onchangepage', obj, pageNumber, oldPage, obj.options.pagination!);
+        obj.dispatch('onchangepage', obj, pageNumber, oldPage, obj.options.pagination!);
     }
 
     countPages() {
@@ -471,7 +470,7 @@ export class View {
 
         obj.selection.updateCorner();
 
-        dispatch.call(obj, 'onupdateresult', obj, obj.view.results);
+        obj.dispatch('onupdateresult', obj, obj.view.results);
 
         return total;
     }
@@ -647,8 +646,7 @@ export class View {
             this.updateOrder(newValue);
 
             // On sort event
-            dispatch.call(
-                obj,
+            obj.dispatch(
                 'onsort',
                 obj,
                 column,

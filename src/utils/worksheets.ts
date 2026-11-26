@@ -5,9 +5,6 @@ import libraryBase from './libraryBase.js';
 import { parseCSV } from './helpers.js';
 import { cutControls } from '../events/clipboard.js';
 import { download } from './download.js';
-import { getWorksheetActive } from './activeWorksheet.js';
-import { getWorksheetConfig, setConfig } from './config.js';
-import dispatch from './dispatch.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import { Worksheet } from '../Worksheet.js';
@@ -590,7 +587,7 @@ export const deleteWorksheet: WorksheetMethod<'deleteWorksheet'> = function (pos
 
     const removedWorksheet = obj.parent.worksheets.splice(position, 1)[0];
 
-    dispatch.call(obj.parent, 'ondeleteworksheet', removedWorksheet, position);
+    obj.parent.dispatch('ondeleteworksheet', removedWorksheet, position);
 };
 
 // never[]: each method has its own parameters
@@ -915,8 +912,6 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.cells.getLabel(x, y);
         },
     ],
-    ['getConfig', getWorksheetConfig],
-    ['setConfig', setConfig],
     [
         'getMeta',
         function (this: Worksheet, cell: string) {
@@ -953,7 +948,6 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.rowManager.hideIndex();
         },
     ],
-    ['getWorksheetActive', getWorksheetActive],
     [
         'openEditor',
         function (this: Worksheet, cell: HTMLTableCellElement, empty?: boolean, e?: KeyboardEvent | MouseEvent | TouchEvent) {
@@ -1033,8 +1027,6 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.selection.getHighlighted();
         },
     ],
-    // The public dispatch takes any event name, and dispatch is typed for the events of the library
-    ['dispatch', dispatch as (this: Worksheet, ...args: never[]) => unknown],
     [
         'down',
         function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {

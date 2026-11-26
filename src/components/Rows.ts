@@ -1,5 +1,4 @@
 import jSuites from 'jsuites';
-import dispatch from '../utils/dispatch.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
@@ -205,7 +204,7 @@ export class Rows {
             const onbeforeinsertrowRecords = this.getInserted(numOfRows, rowNumber, insertBefore, data);
 
             // Onbeforeinsertrow
-            if (dispatch.call(obj, 'onbeforeinsertrow', obj, onbeforeinsertrowRecords) === false) {
+            if (obj.dispatch('onbeforeinsertrow', obj, onbeforeinsertrowRecords) === false) {
                 return false;
             }
 
@@ -279,7 +278,7 @@ export class Rows {
             obj.formulas.updateTableReferences();
 
             // Events
-            dispatch.call(obj, 'oninsertrow', obj, onbeforeinsertrowRecords);
+            obj.dispatch('oninsertrow', obj, onbeforeinsertrowRecords);
         }
     }
 
@@ -367,7 +366,7 @@ export class Rows {
         obj.formulas.updateTableReferences();
 
         // Events
-        dispatch.call(obj, 'onmoverow', obj, parseInt(o), parseInt(d), 1);
+        obj.dispatch('onmoverow', obj, parseInt(o), parseInt(d), 1);
     }
 
     /**
@@ -418,7 +417,7 @@ export class Rows {
                     onbeforedeleterowRecords.push(i + rowNumber);
                 }
 
-                if (dispatch.call(obj, 'onbeforedeleterow', obj, onbeforedeleterowRecords) === false) {
+                if (obj.dispatch('onbeforedeleterow', obj, onbeforedeleterowRecords) === false) {
                     return false;
                 }
 
@@ -505,7 +504,7 @@ export class Rows {
                     obj.formulas.updateTableReferences();
 
                     // Events
-                    dispatch.call(obj, 'ondeleterow', obj, onbeforedeleterowRecords);
+                    obj.dispatch('ondeleterow', obj, onbeforedeleterowRecords);
                 }
             } else {
                 console.error('Jspreadsheet: It is not possible to delete the last row');
@@ -594,7 +593,7 @@ export class Rows {
             });
 
             // On resize column
-            dispatch.call(obj, 'onresizerow', obj, row, height, oldHeight);
+            obj.dispatch('onresizerow', obj, row, height, oldHeight);
 
             // Update corner position
             obj.selection.updateCorner();

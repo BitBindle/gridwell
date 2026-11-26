@@ -1,4 +1,3 @@
-import dispatch from '../utils/dispatch.js';
 import { injectArray } from '../utils/internalHelpers.js';
 import type { WorksheetHistoryRecord, Worksheet } from '../types/internal';
 
@@ -316,7 +315,7 @@ export class History {
         obj.history.ignore = ignoreHistory;
 
         // Events
-        dispatch.call(obj, 'onundo', obj, historyRecord);
+        obj.dispatch('onundo', obj, historyRecord);
     }
 
     /**
@@ -386,6 +385,6 @@ export class History {
         obj.history.ignore = ignoreHistory;
 
         // Events
-        dispatch.call(obj, 'onredo', obj, historyRecord);
+        obj.dispatch('onredo', obj, historyRecord);
     }
 }
