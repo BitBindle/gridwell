@@ -1,4 +1,3 @@
-import { createRow } from './rows.js';
 import { updateCell } from './render.js';
 import { updateTable } from './table.js';
 import { getIdFromColumnName } from './internalHelpers.js';
@@ -103,7 +102,7 @@ export const setData: WorksheetMethod<'setData'> = function (data) {
     // Append nodes to the HTML
     for (j = 0; j < obj.options.data.length; j++) {
         // Create row
-        const row = createRow.call(obj, j, obj.options.data[j]);
+        const row = obj.rowManager.create(j, obj.options.data[j]);
         // Append line to the table
         if (j >= startNumber && j < finalNumber) {
             obj.tbody.appendChild(row.element);

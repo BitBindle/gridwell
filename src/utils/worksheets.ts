@@ -6,9 +6,7 @@ import { parseCSV } from './helpers.js';
 import { getData, getDataFromRange, getValue, getValueFromCoords, setData, setValue, setValueFromCoords } from './data.js';
 import { cutControls } from '../events/clipboard.js';
 import { scrollControls, wheelControls } from '../events/scroll.js';
-import { deleteRow, getHeight, getRowData, hideRow, insertRow, moveRow, setHeight, setRowData, showRow } from './rows.js';
 import { download } from './download.js';
-import { hideIndex, showIndex } from './rows.js';
 import { getWorksheetActive } from './activeWorksheet.js';
 import { getWorksheetConfig, setConfig } from './config.js';
 import dispatch from './dispatch.js';
@@ -661,23 +659,58 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.columns.setWidth(column, width);
         },
     ],
-    ['insertRow', insertRow],
+    [
+        'insertRow',
+        function (this: Worksheet, mixed?: number | jspreadsheet.CellValue[], rowNumber?: number, insertBefore?: boolean | number) {
+            return this.rowManager.insert(mixed, rowNumber, insertBefore);
+        },
+    ],
     [
         'moveRow',
         function (this: Worksheet, rowNumber: number, newPositionNumber: number) {
-            return moveRow.call(this, rowNumber, newPositionNumber);
+            return this.rowManager.move(rowNumber, newPositionNumber);
         },
     ],
-    ['deleteRow', deleteRow],
-    ['hideRow', hideRow],
-    ['showRow', showRow],
-    ['getRowData', getRowData],
-    ['setRowData', setRowData],
-    ['getHeight', getHeight],
+    [
+        'deleteRow',
+        function (this: Worksheet, rowNumber?: number, numOfRows?: number) {
+            return this.rowManager.delete(rowNumber, numOfRows);
+        },
+    ],
+    [
+        'hideRow',
+        function (this: Worksheet, rowNumber: number | number[]) {
+            return this.rowManager.hide(rowNumber);
+        },
+    ],
+    [
+        'showRow',
+        function (this: Worksheet, rowNumber: number | number[]) {
+            return this.rowManager.show(rowNumber);
+        },
+    ],
+    [
+        'getRowData',
+        function (this: Worksheet, rowNumber: number, processed?: boolean) {
+            return this.rowManager.getData(rowNumber, processed);
+        },
+    ],
+    [
+        'setRowData',
+        function (this: Worksheet, rowNumber: number, data: (jspreadsheet.CellValue | null)[], force?: boolean) {
+            return this.rowManager.setData(rowNumber, data, force);
+        },
+    ],
+    [
+        'getHeight',
+        function (this: Worksheet, row?: number) {
+            return this.rowManager.getHeight(row);
+        },
+    ],
     [
         'setHeight',
         function (this: Worksheet, row: number, height: number) {
-            return setHeight.call(this, row, height);
+            return this.rowManager.setHeight(row, height);
         },
     ],
     [
@@ -872,8 +905,18 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.columns.hide(colNumber);
         },
     ],
-    ['showIndex', showIndex],
-    ['hideIndex', hideIndex],
+    [
+        'showIndex',
+        function (this: Worksheet) {
+            return this.rowManager.showIndex();
+        },
+    ],
+    [
+        'hideIndex',
+        function (this: Worksheet) {
+            return this.rowManager.hideIndex();
+        },
+    ],
     ['getWorksheetActive', getWorksheetActive],
     [
         'openEditor',

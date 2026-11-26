@@ -16,6 +16,7 @@ import type { Formulas } from '../components/Formulas';
 import type { History } from '../components/History';
 import type { Merges } from '../components/Merges';
 import type { Columns } from '../components/Columns';
+import type { Rows } from '../components/Rows';
 import type { Meta } from '../components/Meta';
 import type { Pointer } from '../components/Pointer';
 import type { Selection } from '../components/Selection';
@@ -82,6 +83,12 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
 
     /** Inserts, moves, deletes, hides and shows the columns, and gets and sets their widths, titles and data. */
     columns: Columns;
+
+    /**
+     * Creates, inserts, moves, deletes, hides and shows the rows, and gets and sets their heights and data. It is not
+     * called rows, because rows is the list of row records.
+     */
+    rowManager: Rows;
 
     /** The div that holds the link to the Jspreadsheet site, below the table. */
     ads: HTMLDivElement;

@@ -9,6 +9,7 @@ import { History } from './components/History.js';
 import { Merges } from './components/Merges.js';
 import { Meta } from './components/Meta.js';
 import { Pointer } from './components/Pointer.js';
+import { Rows } from './components/Rows.js';
 import { Selection } from './components/Selection.js';
 import { Styles } from './components/Styles.js';
 import { View } from './components/View.js';
@@ -50,6 +51,7 @@ export class Worksheet {
         this.meta = new Meta(this);
         this.merges = new Merges(this);
         this.columns = new Columns(this);
+        this.rowManager = new Rows(this);
         this.lastScrollLeft = 0;
     }
 }
