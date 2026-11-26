@@ -1,10 +1,9 @@
 {
-    "name": "@jspreadsheet-ce/vue",
-    "title": "Jspreadsheet CE Vue Wrapper",
-    "description": "Jspreadsheet CE is a lightweight, vanilla JavaScript plugin for creating powerful, web-based interactive tables and spreadsheets that are compatible with other spreadsheet software.",
+    "name": "@bitbindle/gridwell-vue",
+    "title": "Gridwell Vue wrapper",
+    "description": "Vue components for Gridwell, an accessible JavaScript data grid with spreadsheet controls.",
     "author": {
-        "name": "Contact <contact@jspreadsheet.com>",
-        "url": "https://bossanova.uk/jspreadsheet/"
+        "name": "BitBindle"
     },
     "license": "MIT",
     "keywords": [
@@ -21,7 +20,7 @@
         "vue"
     ],
     "dependencies": {
-        "jspreadsheet-ce": "^5.0.1"
+        "@bitbindle/gridwell": "^5.0.1"
     },
     "peerDependencies": {
         "vue": "^3.0.0"

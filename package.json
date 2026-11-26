@@ -1,51 +1,28 @@
 {
-    "name": "jspreadsheet-ce",
-    "title": "The Javascript Spreadsheet",
-    "description": "Jspreadsheet is a lightweight, vanilla javascript plugin to create amazing web-based interactive data grids with spreadsheet like controls compatible with Excel, Google Spreadsheets and any other spreadsheet software.",
+    "name": "@bitbindle/gridwell",
+    "title": "Gridwell",
+    "description": "An accessible JavaScript data grid with spreadsheet controls, with no dependencies. A fork of Jspreadsheet CE.",
     "repository": {
         "type": "git",
-        "url": "https://github.com/jspreadsheet/ce.git"
+        "url": "https://github.com/BitBindle/jspreadsheet-ce.git"
     },
     "author": {
-        "name": "Contact <contact@jspreadsheet.com>"
+        "name": "BitBindle"
     },
     "license": "MIT",
     "keywords": [
         "spreadsheet",
-        "spreadsheets",
-        "tables",
+        "data grid",
+        "datagrid",
+        "data-grid",
+        "grid",
         "table",
         "excel",
-        "grid",
-        "data grid",
-        "data tables",
-        "javascript data grid",
-        "javascript spreadsheet",
-        "data spreadsheet",
-        "react",
-        "grid",
-        "datagrid",
-        "reactjs",
-        "react-component",
-        "angular",
-        "data-grid",
-        "vue",
         "csv",
-        "datatable",
-        "vuejs",
-        "angular-component",
-        "javascript",
-        "data-table",
-        "web-components",
-        "xlsx",
-        "react-table",
-        "sheets",
-        "sheet",
-        "export",
-        "markdown",
-        "parser",
-        "xls",
-        "datasheet"
+        "accessibility",
+        "aria",
+        "typescript",
+        "javascript spreadsheet"
     ],
     "peerDependencies": {
         "@jspreadsheet/formula": "^2.0.2"
@@ -80,10 +57,13 @@
     },
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "files": [
+        "dist",
+        "resources/lang"
+    ],
     "version": "5.0.4",
-    "bugs": "https://github.com/jspreadsheet/ce/issues",
-    "homepage": "https://github.com/jspreadsheet/ce",
-    "download": "https://github.com/jspreadsheet/ce/archive/master.zip",
+    "bugs": "https://github.com/BitBindle/jspreadsheet-ce/issues",
+    "homepage": "https://github.com/BitBindle/jspreadsheet-ce#readme",
     "scripts": {
         "format": "npm run prettier:fix && npm run lint:fix",
         "lint": "eslint . && node check-cycles.cjs",

@@ -1,5 +1,5 @@
 import { DefineComponent } from 'vue';
-import type JSpreadsheetCore from 'jspreadsheet-ce';
+import type JSpreadsheetCore from '@bitbindle/gridwell';
 
 // Get all the static types from the core library
 type JSpreadsheetBase = typeof JSpreadsheetCore;
