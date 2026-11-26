@@ -772,7 +772,7 @@ export class View {
         const worksheet = this.worksheet;
 
         if (worksheet.editor.isOpen() && row.contains(worksheet.editor.cell)) {
-            worksheet.editor.close(worksheet.editor.cell, true);
+            worksheet.editor.detach();
         }
 
         worksheet.tbody.removeChild(row);

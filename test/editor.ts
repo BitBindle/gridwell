@@ -94,6 +94,73 @@ describe('Editor', () => {
         expect(worksheet.editor.cell).to.equal(null);
         expect(worksheet.getValueFromCoords(1, 0)).to.equal('typed');
     });
+    describe('oneditordetach', () => {
+        // The wheel loads rows 100 ms after the event, and the load removes the first rows, also the row of the editor
+        async function detachByScroll(options: Partial<Jspreadsheet.SpreadsheetOptions>, ignoreEvents = false) {
+            // The grid loads one page at a time. Let the loads of the tests before end.
+            await new Promise((resolve) => setTimeout(resolve, 150));
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }], ...options })[0];
+            worksheet.openEditor(worksheet.records[0][1].element);
+            worksheet.records[0][1].element.querySelector<HTMLInputElement | HTMLTextAreaElement>('input, textarea')!.value = 'typed';
+            worksheet.parent.ignoreEvents = ignoreEvents;
+            try {
+                worksheet.content.dispatchEvent(new window.WheelEvent('wheel', { deltaY: 100 }));
+                await new Promise((resolve) => setTimeout(resolve, 150));
+            } finally {
+                worksheet.parent.ignoreEvents = false;
+            }
+            return worksheet;
+        }
+
+        it('closes the editor without a save when the handler takes the edit', async () => {
+            const calls: [number, number, string][] = [];
+            const worksheet = await detachByScroll({
+                oneditordetach: (instance, td, x, y) => {
+                    calls.push([x, y, (td.children[0] as HTMLInputElement).value]);
+                    return true;
+                },
+            });
+
+            expect(calls).to.eql([[1, 0, 'typed']]);
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 0)).to.not.equal('typed');
+        });
+
+        it('saves the editor when the handler does not take the edit', async () => {
+            const worksheet = await detachByScroll({ oneditordetach: () => undefined });
+
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 0)).to.equal('typed');
+        });
+
+        it('does nothing more when the handler closed the editor itself', async () => {
+            const worksheet = await detachByScroll({
+                oneditordetach: (instance, td) => {
+                    instance.closeEditor(td, true);
+                },
+            });
+
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 0)).to.equal('typed');
+        });
+
+        it('occurs while ignoreEvents is set', async () => {
+            let calls = 0;
+            const worksheet = await detachByScroll(
+                {
+                    oneditordetach: () => {
+                        calls++;
+                        return true;
+                    },
+                },
+                true
+            );
+
+            expect(calls).to.equal(1);
+            expect(worksheet.getValueFromCoords(1, 0)).to.not.equal('typed');
+        });
+    });
+
     describe('closeEditor without an open editor', () => {
         it('does nothing for a cell that is not edited', () => {
             const events: string[] = [];

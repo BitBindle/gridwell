@@ -1163,6 +1163,18 @@ declare namespace jspreadsheet {
         ) => void;
 
         /**
+         * Occurs when the cell of the open editor leaves the table, for example when lazy loading removes its row. The
+         * event also occurs while `ignoreEvents` is set, for example during an undo.
+         * @param instance - Worksheet of the cell.
+         * @param td - Element of the cell.
+         * @param colIndex - Column index of the cell.
+         * @param rowIndex - Row index of the cell.
+         * @returns True to take the edit: the editor closes without a save, and the application keeps the edit, for example
+         * to open it again on the cell. Else the editor saves its value and closes.
+         */
+        oneditordetach?: (instance: WorksheetInstance, td: HTMLTableCellElement, colIndex: number, rowIndex: number) => boolean | void;
+
+        /**
          * Occurs when a openEditor is called.
          * @param instance - Instance of the worksheet where the change occurred.
          * @param td - Td tag of the cell whose editor was opened.
