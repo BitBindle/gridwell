@@ -323,6 +323,10 @@ export class Worksheet {
         return this.merges.destroy();
     }
 
+    replaceMerges(merges: Record<string, [number, number]>) {
+        return this.merges.replace(merges);
+    }
+
     removeMerge(cellName: string, data?: jspreadsheet.CellValue[]) {
         return this.merges.remove(cellName, data);
     }
