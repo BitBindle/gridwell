@@ -62,13 +62,14 @@ export class Formulas {
 
     /**
      * Rename the cells in the chain after rows or columns moved. `references` gives the new name by the old name; the
-     * cells that are not in it keep their names.
+     * cells that are not in it keep their names. Without keys, only the formula cells get new names, because the formula
+     * texts keep the names of the cells that they refer to.
      */
-    rename(references: Record<string, string>) {
+    rename(references: Record<string, string>, keys = true) {
         const chain: Record<string, string[]> = {};
 
         for (const name of Object.keys(this.chain)) {
-            chain[references[name] || name] = this.chain[name].map((dependent) => references[dependent] || dependent);
+            chain[(keys && references[name]) || name] = this.chain[name].map((dependent) => references[dependent] || dependent);
         }
 
         this.chain = chain;
@@ -555,8 +556,13 @@ export class Formulas {
         }
 
         if (references) {
-            // Update formulas
-            this.updateFormulas(affectedTokens);
+            if (worksheet.parent.config.updateReferences === false) {
+                // The formula texts stay, so the chain keeps the names that they refer to. The formula cells moved.
+                this.rename(affectedTokens, false);
+            } else {
+                // Update formulas
+                this.updateFormulas(affectedTokens);
+            }
 
             // Update meta data
             worksheet.meta.update(affectedTokens);
