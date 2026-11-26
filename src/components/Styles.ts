@@ -22,7 +22,7 @@ export class Styles {
      * @param key - A CSS property, for example "color". Without it, the whole style.
      */
     get(cell?: string | number[], key?: string): Record<string, string> | string {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Cell
         if (!cell) {
@@ -30,14 +30,16 @@ export class Styles {
             const data: Record<string, string> = {};
 
             // Column and row length
-            const x = obj.options.data[0].length;
-            const y = obj.options.data.length;
+            const x = worksheet.options.data[0].length;
+            const y = worksheet.options.data.length;
 
             // Go through the columns to get the data
             for (let j = 0; j < y; j++) {
                 for (let i = 0; i < x; i++) {
                     // Value
-                    const v = key ? (obj.records[j][i].element.style as unknown as StyleProperties)[key] : obj.records[j][i].element.getAttribute('style');
+                    const v = key
+                        ? (worksheet.records[j][i].element.style as unknown as StyleProperties)[key]
+                        : worksheet.records[j][i].element.getAttribute('style');
 
                     // Any meta data for this column?
                     if (v) {
@@ -55,8 +57,8 @@ export class Styles {
 
             // Each cell gets a style attribute when it is created (the text alignment)
             return key
-                ? (obj.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key]
-                : obj.records[cell[1]][cell[0]].element.getAttribute('style')!;
+                ? (worksheet.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key]
+                : worksheet.records[cell[1]][cell[0]].element.getAttribute('style')!;
         }
     }
 
@@ -69,7 +71,7 @@ export class Styles {
      * @param ignoreHistoryAndEvents - Add no history. The onchangestyle event still occurs.
      */
     set(o: string | Record<string, string | string[]>, k?: string | null, v?: string | null, force?: boolean, ignoreHistoryAndEvents?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Lists of 'property:value' entries by cell name, joined into one string per cell below
         const newValue: Record<string, string[][]> = {};
@@ -85,19 +87,19 @@ export class Styles {
             const cell = getIdFromColumnName(cellId, true);
 
             if (
-                obj.records[cell[1]] &&
-                obj.records[cell[1]][cell[0]] &&
-                (obj.records[cell[1]][cell[0]].element.classList.contains('readonly') == false || force)
+                worksheet.records[cell[1]] &&
+                worksheet.records[cell[1]][cell[0]] &&
+                (worksheet.records[cell[1]][cell[0]].element.classList.contains('readonly') == false || force)
             ) {
                 // Current value
-                const currentValue = (obj.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key];
+                const currentValue = (worksheet.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key];
 
                 // Change layout
                 if (currentValue == value && !force) {
                     value = '';
-                    (obj.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key] = '';
+                    (worksheet.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key] = '';
                 } else {
-                    (obj.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key] = value;
+                    (worksheet.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key] = value;
                 }
 
                 // History
@@ -152,14 +154,14 @@ export class Styles {
 
         if (!ignoreHistoryAndEvents) {
             // Keeping history of changes
-            obj.history.add({
+            worksheet.history.add({
                 action: 'setStyle',
                 oldValue: oldValue as unknown as Record<string, string>,
                 newValue: newValue as unknown as Record<string, string>,
             });
         }
 
-        obj.dispatch('onchangestyle', obj, newValue as unknown as Record<string, string>);
+        worksheet.dispatch('onchangestyle', worksheet, newValue as unknown as Record<string, string>);
     }
 
     /**
@@ -168,16 +170,16 @@ export class Styles {
      * @param ignoreHistoryAndEvents - Add no history. The onchangestyle event still occurs.
      */
     reset(o: Record<string, string | string[]>, ignoreHistoryAndEvents?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const keys = Object.keys(o);
         for (let i = 0; i < keys.length; i++) {
             // Position
             const cell = getIdFromColumnName(keys[i], true);
-            if (obj.records[cell[1]] && obj.records[cell[1]][cell[0]]) {
-                obj.records[cell[1]][cell[0]].element.setAttribute('style', '');
+            if (worksheet.records[cell[1]] && worksheet.records[cell[1]][cell[0]]) {
+                worksheet.records[cell[1]][cell[0]].element.setAttribute('style', '');
             }
         }
-        obj.setStyle(o, null, null, false, ignoreHistoryAndEvents);
+        worksheet.setStyle(o, null, null, false, ignoreHistoryAndEvents);
     }
 }

@@ -109,7 +109,7 @@ export class Editor {
         column: ColumnOptions & { type: jspreadsheet.CustomEditor },
         e: Parameters<jspreadsheet.WorksheetInstance['openEditor']>[2]
     ) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         if (typeof column.type.openEditor === 'function') {
             // The editor is the focus target, and it has its own name
@@ -117,13 +117,13 @@ export class Editor {
             cell.removeAttribute('aria-label');
 
             // Custom editors
-            column.type.openEditor(cell, obj.options.data[y][x], x, y, obj, column, e);
+            column.type.openEditor(cell, worksheet.options.data[y][x], x, y, worksheet, column, e);
 
             // On edition start
-            obj.dispatch('oncreateeditor', obj, cell, x, y, null, column);
+            worksheet.dispatch('oncreateeditor', worksheet, cell, x, y, null, column);
         } else {
             // A custom type without openEditor has no editor: do not keep edition open
-            obj.editor.end();
+            worksheet.editor.end();
         }
     }
 
@@ -131,14 +131,14 @@ export class Editor {
      * A checkbox or a radio has no editor: opening it toggles the value.
      */
     private toggleCheckbox(cell: HTMLTableCellElement) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Get value
         const value = (cell.children[0] as HTMLInputElement).checked ? false : true;
         // Toogle value
-        obj.setValue(cell, value);
+        worksheet.setValue(cell, value);
         // Do not keep edition open
-        obj.editor.end();
+        worksheet.editor.end();
     }
 
     /**
@@ -146,10 +146,10 @@ export class Editor {
      * xText and yText are data-x and data-y of the cell, which the filter gets as text.
      */
     private openDropdown(cell: HTMLTableCellElement, x: number, y: number, xText: string, yText: string, column: ColumnOptions, label: string) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Get current value: the id of an item, or the ids of the items with multiple
-        let value = obj.options.data[y][x] as string | number | string[];
+        let value = worksheet.options.data[y][x] as string | number | string[];
         if (column.multiple && !Array.isArray(value)) {
             // A number has no split
             value = ('' + value).split(column.delimiter || ';');
@@ -159,7 +159,7 @@ export class Editor {
         let source;
 
         if (typeof column.filter == 'function') {
-            source = column.filter(obj.element, cell, xText, yText, column.source);
+            source = column.filter(worksheet.element, cell, xText, yText, column.source);
         } else {
             source = column.source;
         }
@@ -176,7 +176,7 @@ export class Editor {
         const editor = createEditor(cell, 'div', label);
 
         // On edition start
-        obj.dispatch('oncreateeditor', obj, cell, x, y, null, column);
+        worksheet.dispatch('oncreateeditor', worksheet, cell, x, y, null, column);
 
         const options: DropdownOptions = {
             data,
@@ -185,9 +185,9 @@ export class Editor {
             opened: true,
             value,
             width: '100%',
-            position: obj.options.tableOverflow == true || obj.parent.config.fullscreen == true ? true : false,
+            position: worksheet.options.tableOverflow == true || worksheet.parent.config.fullscreen == true ? true : false,
             onclose() {
-                obj.editor.close(cell, true);
+                worksheet.editor.close(cell, true);
             },
         };
         if (column.options && column.options.type) {
@@ -207,14 +207,14 @@ export class Editor {
      * The editor of a calendar or a color column: an input with an open jSuites calendar or color picker.
      */
     private openPicker(cell: HTMLTableCellElement, x: number, y: number, column: ColumnOptions, label: string) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Value
-        const value = obj.options.data[y][x];
+        const value = worksheet.options.data[y][x];
         // Create editor
         const editor = createEditor(cell, 'input', label);
 
-        obj.dispatch('oncreateeditor', obj, cell, x, y, null, column);
+        worksheet.dispatch('oncreateeditor', worksheet, cell, x, y, null, column);
 
         // The input converts the value to text
         editor.value = value as string;
@@ -222,15 +222,15 @@ export class Editor {
         // The options of the calendar or the color picker
         const options: CalendarOptions & ColorOptions = column.options ? { ...column.options } : {};
 
-        if (obj.options.tableOverflow == true || obj.parent.config.fullscreen == true) {
+        if (worksheet.options.tableOverflow == true || worksheet.parent.config.fullscreen == true) {
             options.position = true;
         }
         // The value of a calendar or a color cell is text
-        options.value = obj.options.data[y][x] as string;
+        options.value = worksheet.options.data[y][x] as string;
         options.opened = true;
         // The color picker gives its instance as the second argument, and the calendar nothing
         options.onclose = (el: HTMLElement, value?: unknown) => {
-            obj.editor.close(cell, true);
+            worksheet.editor.close(cell, true);
         };
         // Current value
         if (column.type == 'color') {
@@ -258,13 +258,13 @@ export class Editor {
      * The editor of an html column: a jSuites rich text editor over the cell, kept inside the window.
      */
     private openHtml(cell: HTMLTableCellElement, x: number, y: number, column: ColumnOptions, label: string) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        const value = obj.options.data[y][x];
+        const value = worksheet.options.data[y][x];
         // Create editor
         const editor = createEditor(cell, 'div', label);
 
-        obj.dispatch('oncreateeditor', obj, cell, x, y, null, column);
+        worksheet.dispatch('oncreateeditor', worksheet, cell, x, y, null, column);
 
         editor.style.position = 'relative';
         const div = document.createElement('div');
@@ -300,14 +300,14 @@ export class Editor {
      * The editor of an image column: a jSuites image upload over the cell, with the image of the cell.
      */
     private openImage(cell: HTMLTableCellElement, x: number, y: number, column: ColumnOptions, label: string) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Value
         const img = cell.children[0] as HTMLImageElement;
         // Create editor
         const editor = createEditor(cell, 'div', label);
 
-        obj.dispatch('oncreateeditor', obj, cell, x, y, null, column);
+        worksheet.dispatch('oncreateeditor', worksheet, cell, x, y, null, column);
 
         editor.style.position = 'relative';
         const div = document.createElement('div');
@@ -341,21 +341,21 @@ export class Editor {
         label: string,
         empty: boolean | undefined
     ) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Value
-        const value = empty == true ? '' : obj.options.data[y][x];
+        const value = empty == true ? '' : worksheet.options.data[y][x];
 
         // Basic editor
         let editor;
 
-        if ((!column || column.wordWrap != false) && (obj.options.wordWrap == true || (column && column.wordWrap == true))) {
+        if ((!column || column.wordWrap != false) && (worksheet.options.wordWrap == true || (column && column.wordWrap == true))) {
             editor = createEditor(cell, 'textarea', label);
         } else {
             editor = createEditor(cell, 'input', label);
         }
 
-        obj.dispatch('oncreateeditor', obj, cell, x, y, null, column);
+        worksheet.dispatch('oncreateeditor', worksheet, cell, x, y, null, column);
 
         editor.focus();
         // The input converts the value to text
@@ -392,7 +392,7 @@ export class Editor {
         }
 
         editor.onblur = () => {
-            obj.editor.close(cell, true);
+            worksheet.editor.close(cell, true);
         };
         editor.scrollLeft = editor.scrollWidth;
     }
@@ -405,7 +405,7 @@ export class Editor {
      * @return void
      */
     open(cell: HTMLTableCellElement, empty?: boolean, e?: KeyboardEvent | MouseEvent | TouchEvent) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Get cell position. The filter of a dropdown gets the text of data-x and data-y.
         const yText = cell.getAttribute('data-y')!;
@@ -414,17 +414,17 @@ export class Editor {
         const x = parseInt(xText);
 
         // Column options
-        const column = obj.options.columns && obj.options.columns[obj.cells.getColumnIndex(x, y)];
+        const column = worksheet.options.columns && worksheet.options.columns[worksheet.cells.getColumnIndex(x, y)];
 
         // On edition start
-        obj.dispatch('oneditionstart', obj, cell, x, y);
+        worksheet.dispatch('oneditionstart', worksheet, cell, x, y);
 
         // Accessible name of the editor
-        const label = obj.accessibility.getLabelText('editCell', getColumnNameFromId([x, y]));
+        const label = worksheet.accessibility.getLabelText('editCell', getColumnNameFromId([x, y]));
 
         // Overflow
         if (x > 0) {
-            obj.records[y][x - 1].element.style.overflow = 'hidden';
+            worksheet.records[y][x - 1].element.style.overflow = 'hidden';
         }
 
         // Readonly
@@ -432,7 +432,7 @@ export class Editor {
             // Do nothing
         } else {
             // Holder
-            obj.editor.start(obj.records[y][x].element, x, y);
+            worksheet.editor.start(worksheet.records[y][x].element, x, y);
 
             // If there is a custom editor for it
             if (column && typeof column.type === 'object') {
@@ -442,7 +442,7 @@ export class Editor {
                 // Native functions
                 if (column && column.type == 'hidden') {
                     // A hidden column has no editor: do not keep edition open
-                    obj.editor.end();
+                    worksheet.editor.end();
                 } else if (column && (column.type == 'checkbox' || column.type == 'radio')) {
                     this.toggleCheckbox(cell);
                 } else if (column && column.type == 'dropdown') {
@@ -468,10 +468,10 @@ export class Editor {
      * @return void
      */
     close(cell: HTMLTableCellElement, save: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Only the cell that is being edited has an editor to close
-        if (!obj.editor.isOpen() || obj.editor.cell !== cell) {
+        if (!worksheet.editor.isOpen() || worksheet.editor.cell !== cell) {
             return;
         }
 
@@ -479,7 +479,7 @@ export class Editor {
         const y = parseInt(cell.getAttribute('data-y'));
 
         // Column options
-        const column = obj.options.columns && obj.options.columns[obj.cells.getColumnIndex(x, y)];
+        const column = worksheet.options.columns && worksheet.options.columns[worksheet.cells.getColumnIndex(x, y)];
 
         // The editor element has the jsuites control as a property
         let value;
@@ -490,10 +490,10 @@ export class Editor {
             if (column && typeof column.type === 'object') {
                 if (typeof column.type.closeEditor === 'function') {
                     // Custom editor
-                    value = column.type.closeEditor(cell, save, parseInt(x), parseInt(y), obj, column);
+                    value = column.type.closeEditor(cell, save, parseInt(x), parseInt(y), worksheet, column);
                 } else {
                     // A custom type without closeEditor gives no new value: the cell keeps its value
-                    value = obj.options.data[y][x];
+                    value = worksheet.options.data[y][x];
                 }
             } else {
                 // Native functions
@@ -546,16 +546,16 @@ export class Editor {
             }
 
             // Ignore changes if the value is the same
-            if (obj.options.data[y][x] == value) {
-                cell.innerHTML = obj.editor.html;
+            if (worksheet.options.data[y][x] == value) {
+                cell.innerHTML = worksheet.editor.html;
             } else {
-                obj.setValue(cell, value);
+                worksheet.setValue(cell, value);
             }
         } else {
             if (column && typeof column.type === 'object') {
                 // Custom editor
                 if (typeof column.type.closeEditor === 'function') {
-                    column.type.closeEditor(cell, save, parseInt(x), parseInt(y), obj, column);
+                    column.type.closeEditor(cell, save, parseInt(x), parseInt(y), worksheet, column);
                 }
             } else {
                 if (column && column.type == 'dropdown') {
@@ -570,47 +570,47 @@ export class Editor {
             }
 
             // Restore value
-            cell.innerHTML = obj.editor.html;
+            cell.innerHTML = worksheet.editor.html;
         }
 
         // On edition end
-        obj.dispatch('oneditionend', obj, cell, x, y, value, save);
+        worksheet.dispatch('oneditionend', worksheet, cell, x, y, value, save);
 
         // Remove editor class
         cell.classList.remove('editor');
 
         // Finish edition
-        obj.editor.end();
+        worksheet.editor.end();
 
         // The cell is a focus target again
-        obj.selection.restoreActiveCell(cell);
+        worksheet.selection.restoreActiveCell(cell);
     }
 
     /**
      * Toogle
      */
     setCheckRadioValue() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const records = [];
-        const keys = Object.keys(obj.selection.highlighted);
+        const keys = Object.keys(worksheet.selection.highlighted);
         for (let i = 0; i < keys.length; i++) {
-            const x = parseInt(obj.selection.highlighted[i].element.getAttribute('data-x'));
-            const y = parseInt(obj.selection.highlighted[i].element.getAttribute('data-y'));
+            const x = parseInt(worksheet.selection.highlighted[i].element.getAttribute('data-x'));
+            const y = parseInt(worksheet.selection.highlighted[i].element.getAttribute('data-y'));
 
-            const column = obj.options.columns[obj.cells.getColumnIndex(x, y)];
+            const column = worksheet.options.columns[worksheet.cells.getColumnIndex(x, y)];
             if (column.type == 'checkbox' || column.type == 'radio') {
                 // Update cell
-                records.push(obj.cells.update(x, y, !obj.options.data[y][x]));
+                records.push(worksheet.cells.update(x, y, !worksheet.options.data[y][x]));
             }
         }
 
         if (records.length) {
             // Update history
-            obj.history.add({
+            worksheet.history.add({
                 action: 'setValue',
                 records,
-                selection: obj.selection.range && [...obj.selection.range],
+                selection: worksheet.selection.range && [...worksheet.selection.range],
             });
 
             // On after changes
@@ -624,7 +624,7 @@ export class Editor {
             });
 
             // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-            obj.dispatch('onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
+            worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as CellChange[]);
         }
     }
 }

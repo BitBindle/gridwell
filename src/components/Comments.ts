@@ -19,7 +19,7 @@ export class Comments {
      * @param cell - The cell name, for example "B3".
      */
     get(cell?: string | number[]): Record<string, string> | string {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         if (cell) {
             if (typeof cell !== 'string') {
@@ -28,12 +28,12 @@ export class Comments {
 
             cell = getIdFromColumnName(cell, true);
 
-            return obj.records[cell[1]][cell[0]].element.getAttribute('title') || '';
+            return worksheet.records[cell[1]][cell[0]].element.getAttribute('title') || '';
         } else {
             const data: Record<string, string> = {};
-            for (let j = 0; j < obj.options.data.length; j++) {
-                for (let i = 0; i < obj.options.columns.length; i++) {
-                    const comments = obj.records[j][i].element.getAttribute('title');
+            for (let j = 0; j < worksheet.options.data.length; j++) {
+                for (let i = 0; i < worksheet.options.columns.length; i++) {
+                    const comments = worksheet.records[j][i].element.getAttribute('title');
                     if (comments) {
                         const cell = getColumnNameFromId([i, j]);
                         data[cell] = comments;
@@ -50,7 +50,7 @@ export class Comments {
      * @param comments - The comment, with a cell name.
      */
     set(cellId: string | Record<string, string | null | undefined>, comments?: string | null) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         let commentsObj;
 
@@ -66,37 +66,37 @@ export class Comments {
             const cellCoords = getCoordsFromCellName(cellName);
 
             // Keep old value
-            oldValue[cellName] = obj.records[cellCoords![1]!][cellCoords![0]].element.getAttribute('title');
+            oldValue[cellName] = worksheet.records[cellCoords![1]!][cellCoords![0]].element.getAttribute('title');
 
             // Set new values
-            obj.records[cellCoords![1]!][cellCoords![0]].element.setAttribute('title', comment ? comment : '');
+            worksheet.records[cellCoords![1]!][cellCoords![0]].element.setAttribute('title', comment ? comment : '');
 
             // Remove class if there is no comment
             if (comment) {
-                obj.records[cellCoords![1]!][cellCoords![0]].element.classList.add('jss_comments');
+                worksheet.records[cellCoords![1]!][cellCoords![0]].element.classList.add('jss_comments');
 
-                if (!obj.options.comments) {
-                    obj.options.comments = {};
+                if (!worksheet.options.comments) {
+                    worksheet.options.comments = {};
                 }
 
-                obj.options.comments[cellName] = comment;
+                worksheet.options.comments[cellName] = comment;
             } else {
-                obj.records[cellCoords![1]!][cellCoords![0]].element.classList.remove('jss_comments');
+                worksheet.records[cellCoords![1]!][cellCoords![0]].element.classList.remove('jss_comments');
 
-                if (obj.options.comments && obj.options.comments[cellName]) {
-                    delete obj.options.comments[cellName];
+                if (worksheet.options.comments && worksheet.options.comments[cellName]) {
+                    delete worksheet.options.comments[cellName];
                 }
             }
         });
 
         // Save history
-        obj.history.add({
+        worksheet.history.add({
             action: 'setComments',
             newValue: commentsObj,
             oldValue,
         });
 
         // Set comments
-        obj.dispatch('oncomments', obj, commentsObj, oldValue);
+        worksheet.dispatch('oncomments', worksheet, commentsObj, oldValue);
     }
 }

@@ -20,15 +20,15 @@ export class Meta {
      * @param key - The key of the information.
      */
     get(cell?: string, key?: string) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         if (!cell) {
-            return obj.options.meta;
+            return worksheet.options.meta;
         } else {
             if (key) {
-                return obj.options.meta && obj.options.meta[cell] && obj.options.meta[cell][key] ? obj.options.meta[cell][key] : null;
+                return worksheet.options.meta && worksheet.options.meta[cell] && worksheet.options.meta[cell][key] ? worksheet.options.meta[cell][key] : null;
             } else {
-                return obj.options.meta && obj.options.meta[cell] ? obj.options.meta[cell] : null;
+                return worksheet.options.meta && worksheet.options.meta[cell] ? worksheet.options.meta[cell] : null;
             }
         }
     }
@@ -38,20 +38,20 @@ export class Meta {
      * @param affectedCells - The new cell names, by old cell name.
      */
     update(affectedCells: Record<string, string>) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (obj.options.meta) {
+        if (worksheet.options.meta) {
             const newMeta: Record<string, jspreadsheet.MetaInformation> = {};
-            const keys = Object.keys(obj.options.meta);
+            const keys = Object.keys(worksheet.options.meta);
             for (let i = 0; i < keys.length; i++) {
                 if (affectedCells[keys[i]]) {
-                    newMeta[affectedCells[keys[i]]] = obj.options.meta[keys[i]];
+                    newMeta[affectedCells[keys[i]]] = worksheet.options.meta[keys[i]];
                 } else {
-                    newMeta[keys[i]] = obj.options.meta[keys[i]];
+                    newMeta[keys[i]] = worksheet.options.meta[keys[i]];
                 }
             }
             // Update meta information
-            obj.options.meta = newMeta;
+            worksheet.options.meta = newMeta;
         }
     }
 
@@ -62,36 +62,36 @@ export class Meta {
      * @param v - The value, with a cell name.
      */
     set(o: string | Record<string, jspreadsheet.MetaInformation>, k?: string, v?: string) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (!obj.options.meta) {
-            obj.options.meta = {};
+        if (!worksheet.options.meta) {
+            worksheet.options.meta = {};
         }
 
         if (k && v) {
             // Set data value. o is a cell name.
-            if (!obj.options.meta[o as string]) {
-                obj.options.meta[o as string] = {};
+            if (!worksheet.options.meta[o as string]) {
+                worksheet.options.meta[o as string] = {};
             }
-            obj.options.meta[o as string][k] = v;
+            worksheet.options.meta[o as string][k] = v;
 
-            obj.dispatch('onchangemeta', obj, { [o as string]: { [k]: v } });
+            worksheet.dispatch('onchangemeta', worksheet, { [o as string]: { [k]: v } });
         } else {
             // Apply that for all cells
             const keys = Object.keys(o);
             for (let i = 0; i < keys.length; i++) {
-                if (!obj.options.meta[keys[i]]) {
-                    obj.options.meta[keys[i]] = {};
+                if (!worksheet.options.meta[keys[i]]) {
+                    worksheet.options.meta[keys[i]] = {};
                 }
 
                 // o is the information by cell name
                 const prop = Object.keys((o as Record<string, jspreadsheet.MetaInformation>)[keys[i]]);
                 for (let j = 0; j < prop.length; j++) {
-                    obj.options.meta[keys[i]][prop[j]] = (o as Record<string, jspreadsheet.MetaInformation>)[keys[i]][prop[j]];
+                    worksheet.options.meta[keys[i]][prop[j]] = (o as Record<string, jspreadsheet.MetaInformation>)[keys[i]][prop[j]];
                 }
             }
 
-            obj.dispatch('onchangemeta', obj, o as Record<string, jspreadsheet.MetaInformation>);
+            worksheet.dispatch('onchangemeta', worksheet, o as Record<string, jspreadsheet.MetaInformation>);
         }
     }
 }

@@ -20,15 +20,15 @@ export class Rows {
      * Create row
      */
     create(j: number, data: jspreadsheet.CellValue[]) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Create container
-        if (!obj.records[j]) {
-            obj.records[j] = [];
+        if (!worksheet.records[j]) {
+            worksheet.records[j] = [];
         }
         // Default data
         if (!data) {
-            data = obj.options.data[j];
+            data = worksheet.options.data[j];
         }
         // New line of data to be append in the table
         const row = {
@@ -36,24 +36,24 @@ export class Rows {
             y: j,
         };
 
-        obj.rows[j] = row;
+        worksheet.rows[j] = row;
 
         row.element.setAttribute('data-y', j);
         // Index
         let index = null;
 
         // Set default row height
-        if (obj.options.defaultRowHeight) {
-            row.element.style.height = obj.options.defaultRowHeight + 'px';
+        if (worksheet.options.defaultRowHeight) {
+            row.element.style.height = worksheet.options.defaultRowHeight + 'px';
         }
 
         // Definitions
-        if (obj.options.rows && obj.options.rows[j]) {
-            if (obj.options.rows[j].height) {
-                row.element.style.height = obj.options.rows[j].height as string;
+        if (worksheet.options.rows && worksheet.options.rows[j]) {
+            if (worksheet.options.rows[j].height) {
+                row.element.style.height = worksheet.options.rows[j].height as string;
             }
-            if (obj.options.rows[j].title) {
-                index = obj.options.rows[j].title;
+            if (worksheet.options.rows[j].title) {
+                index = worksheet.options.rows[j].title;
             }
         }
         if (!index) {
@@ -67,34 +67,34 @@ export class Rows {
         td.className = 'jss_row';
         row.element.appendChild(td);
 
-        const numberOfColumns = obj.columns.count();
+        const numberOfColumns = worksheet.columns.count();
 
         // Data columns
         for (let i = 0; i < numberOfColumns; i++) {
             // New column of data to be append in the line
-            obj.records[j][i] = {
-                element: obj.cells.create(i, j, data[i]),
+            worksheet.records[j][i] = {
+                element: worksheet.cells.create(i, j, data[i]),
                 x: i,
                 y: j,
             };
             // Add column to the row
-            row.element.appendChild(obj.records[j][i].element);
+            row.element.appendChild(worksheet.records[j][i].element);
 
-            if (obj.options.columns && obj.options.columns[i] && typeof obj.options.columns[i].render === 'function') {
+            if (worksheet.options.columns && worksheet.options.columns[i] && typeof worksheet.options.columns[i].render === 'function') {
                 // The test above makes it a function, which TypeScript does not narrow through the index
-                (obj.options.columns[i].render as NonNullable<jspreadsheet.BaseColumn['render']>)(
-                    obj.records[j][i].element,
+                (worksheet.options.columns[i].render as NonNullable<jspreadsheet.BaseColumn['render']>)(
+                    worksheet.records[j][i].element,
                     data[i],
                     parseInt(i),
                     parseInt(j),
-                    obj,
-                    obj.options.columns[i]
+                    worksheet,
+                    worksheet.options.columns[i]
                 );
             }
         }
 
         // Role and position for assistive technology
-        obj.accessibility.setRowRole(row.element, j);
+        worksheet.accessibility.setRowRole(row.element, j);
 
         // Add row to the table body
         return row;
@@ -104,14 +104,14 @@ export class Rows {
      * The rows that insertRow inserts, with their position and their data, for the events.
      */
     private getInserted(numOfRows: number, rowNumber: number, insertBefore: boolean, data: jspreadsheet.CellValue[]) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const onbeforeinsertrowRecords = [];
 
         for (let row = 0; row < numOfRows; row++) {
             const newRow = [];
 
-            for (let col = 0; col < obj.options.columns.length; col++) {
+            for (let col = 0; col < worksheet.options.columns.length; col++) {
                 newRow[col] = data[col] ? data[col] : '';
             }
 
@@ -129,7 +129,7 @@ export class Rows {
      * @param currentRows - The rows after the new rows, which insertRow took out of the list of rows.
      */
     private add(rowIndex: number, numOfRows: number, rowNumber: number, data: jspreadsheet.CellValue[], currentRows: Worksheet['rows']) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const rowRecords = [];
         const rowData = [];
@@ -137,25 +137,25 @@ export class Rows {
 
         for (let row = rowIndex; row < numOfRows + rowIndex; row++) {
             // Push data to the data container
-            obj.options.data[row] = [];
-            for (let col = 0; col < obj.options.columns.length; col++) {
-                obj.options.data[row][col] = data[col] ? data[col] : '';
+            worksheet.options.data[row] = [];
+            for (let col = 0; col < worksheet.options.columns.length; col++) {
+                worksheet.options.data[row][col] = data[col] ? data[col] : '';
             }
             // Create row
-            const newRow = this.create(row, obj.options.data[row]);
+            const newRow = this.create(row, worksheet.options.data[row]);
             // Append node
             if (currentRows[0]) {
-                if (Array.prototype.indexOf.call(obj.tbody.children, currentRows[0].element) >= 0) {
-                    obj.tbody.insertBefore(newRow.element, currentRows[0].element);
+                if (Array.prototype.indexOf.call(worksheet.tbody.children, currentRows[0].element) >= 0) {
+                    worksheet.tbody.insertBefore(newRow.element, currentRows[0].element);
                 }
             } else {
-                if (Array.prototype.indexOf.call(obj.tbody.children, obj.rows[rowNumber].element) >= 0) {
-                    obj.tbody.appendChild(newRow.element);
+                if (Array.prototype.indexOf.call(worksheet.tbody.children, worksheet.rows[rowNumber].element) >= 0) {
+                    worksheet.tbody.appendChild(newRow.element);
                 }
             }
             // Record History
-            rowRecords.push([...obj.records[row]]);
-            rowData.push([...obj.options.data[row]]);
+            rowRecords.push([...worksheet.records[row]]);
+            rowData.push([...worksheet.options.data[row]]);
             rowNode.push(newRow);
         }
 
@@ -171,10 +171,10 @@ export class Rows {
      * @return void
      */
     insert(mixed?: number | jspreadsheet.CellValue[], rowNumber?: number, insertBefore?: boolean | number): false | undefined {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Configuration
-        if (obj.options.allowInsertRow != false) {
+        if (worksheet.options.allowInsertRow != false) {
             // Data to be insert
             let data: jspreadsheet.CellValue[] = [];
 
@@ -195,7 +195,7 @@ export class Rows {
             insertBefore = insertBefore ? true : false;
 
             // Current column number
-            const lastRow = obj.options.data.length - 1;
+            const lastRow = worksheet.options.data.length - 1;
 
             if (rowNumber == undefined || rowNumber >= parseInt(lastRow) || rowNumber < 0) {
                 rowNumber = lastRow;
@@ -204,67 +204,67 @@ export class Rows {
             const onbeforeinsertrowRecords = this.getInserted(numOfRows, rowNumber, insertBefore, data);
 
             // Onbeforeinsertrow
-            if (obj.dispatch('onbeforeinsertrow', obj, onbeforeinsertrowRecords) === false) {
+            if (worksheet.dispatch('onbeforeinsertrow', worksheet, onbeforeinsertrowRecords) === false) {
                 return false;
             }
 
             // Merged cells
-            if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
-                if (obj.merges.isRowMerged(rowNumber, insertBefore).length) {
+            if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
+                if (worksheet.merges.isRowMerged(rowNumber, insertBefore).length) {
                     if (!confirm(jSuites.translate('This action will destroy any existing merged cells. Are you sure?'))) {
                         return false;
                     } else {
-                        obj.destroyMerge();
+                        worksheet.destroyMerge();
                     }
                 }
             }
 
             // Clear any search
-            if (obj.options.search == true) {
-                if (obj.view.results && obj.view.results.length != obj.rows.length) {
+            if (worksheet.options.search == true) {
+                if (worksheet.view.results && worksheet.view.results.length != worksheet.rows.length) {
                     if (confirm(jSuites.translate('This action will clear your search results. Are you sure?'))) {
-                        obj.resetSearch();
+                        worksheet.resetSearch();
                     } else {
                         return false;
                     }
                 }
 
-                obj.view.results = null;
+                worksheet.view.results = null;
             }
 
             // Insertbefore
             const rowIndex = !insertBefore ? rowNumber + 1 : rowNumber;
 
             // Keep the current data
-            const currentRecords = obj.records.splice(rowIndex);
-            const currentData = obj.options.data.splice(rowIndex);
-            const currentRows = obj.rows.splice(rowIndex);
+            const currentRecords = worksheet.records.splice(rowIndex);
+            const currentData = worksheet.options.data.splice(rowIndex);
+            const currentRows = worksheet.rows.splice(rowIndex);
 
             // Adding lines
             const { rowRecords, rowData, rowNode } = this.add(rowIndex, numOfRows, rowNumber, data, currentRows);
 
             // Copy the data back to the main data
-            Array.prototype.push.apply(obj.records, currentRecords);
-            Array.prototype.push.apply(obj.options.data, currentData);
-            Array.prototype.push.apply(obj.rows, currentRows);
+            Array.prototype.push.apply(worksheet.records, currentRecords);
+            Array.prototype.push.apply(worksheet.options.data, currentData);
+            Array.prototype.push.apply(worksheet.rows, currentRows);
 
-            for (let j = rowIndex; j < obj.rows.length; j++) {
-                obj.rows[j].y = j;
+            for (let j = rowIndex; j < worksheet.rows.length; j++) {
+                worksheet.rows[j].y = j;
             }
 
-            for (let j = rowIndex; j < obj.records.length; j++) {
-                for (let i = 0; i < obj.records[j].length; i++) {
-                    obj.records[j][i].y = j;
+            for (let j = rowIndex; j < worksheet.records.length; j++) {
+                for (let i = 0; i < worksheet.records[j].length; i++) {
+                    worksheet.records[j][i].y = j;
                 }
             }
 
             // Respect pagination
-            if (obj.options.pagination! > 0) {
-                obj.page(obj.view.pageNumber);
+            if (worksheet.options.pagination! > 0) {
+                worksheet.page(worksheet.view.pageNumber);
             }
 
             // Keep history
-            obj.history.add({
+            worksheet.history.add({
                 action: 'insertRow',
                 rowNumber,
                 numOfRows,
@@ -275,10 +275,10 @@ export class Rows {
             });
 
             // Remove table references
-            obj.formulas.updateTableReferences();
+            worksheet.formulas.updateTableReferences();
 
             // Events
-            obj.dispatch('oninsertrow', obj, onbeforeinsertrowRecords);
+            worksheet.dispatch('oninsertrow', worksheet, onbeforeinsertrowRecords);
         }
     }
 
@@ -288,9 +288,9 @@ export class Rows {
      * @return void
      */
     move(o: number, d: number, ignoreDom?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
+        if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
             let insertBefore: 0 | 1;
 
             if (o > d) {
@@ -299,74 +299,74 @@ export class Rows {
                 insertBefore = 0;
             }
 
-            if (obj.merges.isRowMerged(o).length || obj.merges.isRowMerged(d, insertBefore).length) {
+            if (worksheet.merges.isRowMerged(o).length || worksheet.merges.isRowMerged(d, insertBefore).length) {
                 if (!confirm(jSuites.translate('This action will destroy any existing merged cells. Are you sure?'))) {
                     return false;
                 } else {
-                    obj.destroyMerge();
+                    worksheet.destroyMerge();
                 }
             }
         }
 
-        if (obj.options.search == true) {
-            if (obj.view.results && obj.view.results.length != obj.rows.length) {
+        if (worksheet.options.search == true) {
+            if (worksheet.view.results && worksheet.view.results.length != worksheet.rows.length) {
                 if (confirm(jSuites.translate('This action will clear your search results. Are you sure?'))) {
-                    obj.resetSearch();
+                    worksheet.resetSearch();
                 } else {
                     return false;
                 }
             }
 
-            obj.view.results = null;
+            worksheet.view.results = null;
         }
 
         if (!ignoreDom) {
-            if (Array.prototype.indexOf.call(obj.tbody.children, obj.rows[d].element) >= 0) {
+            if (Array.prototype.indexOf.call(worksheet.tbody.children, worksheet.rows[d].element) >= 0) {
                 if (o > d) {
-                    obj.tbody.insertBefore(obj.rows[o].element, obj.rows[d].element);
+                    worksheet.tbody.insertBefore(worksheet.rows[o].element, worksheet.rows[d].element);
                 } else {
-                    obj.tbody.insertBefore(obj.rows[o].element, obj.rows[d].element.nextSibling);
+                    worksheet.tbody.insertBefore(worksheet.rows[o].element, worksheet.rows[d].element.nextSibling);
                 }
             } else {
-                obj.tbody.removeChild(obj.rows[o].element);
+                worksheet.tbody.removeChild(worksheet.rows[o].element);
             }
         }
 
         // Place references in the correct position
-        obj.rows.splice(d, 0, obj.rows.splice(o, 1)[0]);
-        obj.records.splice(d, 0, obj.records.splice(o, 1)[0]);
-        obj.options.data.splice(d, 0, obj.options.data.splice(o, 1)[0]);
+        worksheet.rows.splice(d, 0, worksheet.rows.splice(o, 1)[0]);
+        worksheet.records.splice(d, 0, worksheet.records.splice(o, 1)[0]);
+        worksheet.options.data.splice(d, 0, worksheet.options.data.splice(o, 1)[0]);
 
         const firstAffectedIndex = Math.min(o, d);
         const lastAffectedIndex = Math.max(o, d);
 
         for (let j = firstAffectedIndex; j <= lastAffectedIndex; j++) {
-            obj.rows[j].y = j;
+            worksheet.rows[j].y = j;
         }
 
         for (let j = firstAffectedIndex; j <= lastAffectedIndex; j++) {
-            for (let i = 0; i < obj.records[j].length; i++) {
-                obj.records[j][i].y = j;
+            for (let i = 0; i < worksheet.records[j].length; i++) {
+                worksheet.records[j][i].y = j;
             }
         }
 
         // Respect pagination
-        if (obj.options.pagination! > 0 && obj.tbody.children.length != obj.options.pagination) {
-            obj.page(obj.view.pageNumber);
+        if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length != worksheet.options.pagination) {
+            worksheet.page(worksheet.view.pageNumber);
         }
 
         // Keeping history of changes
-        obj.history.add({
+        worksheet.history.add({
             action: 'moveRow',
             oldValue: o,
             newValue: d,
         });
 
         // Update table references
-        obj.formulas.updateTableReferences();
+        worksheet.formulas.updateTableReferences();
 
         // Events
-        obj.dispatch('onmoverow', obj, parseInt(o), parseInt(d), 1);
+        worksheet.dispatch('onmoverow', worksheet, parseInt(o), parseInt(d), 1);
     }
 
     /**
@@ -377,17 +377,17 @@ export class Rows {
      * @return void
      */
     delete(rowNumber?: number, numOfRows?: number): false | undefined {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Global Configuration
-        if (obj.options.allowDeleteRow != false) {
-            if (obj.options.allowDeletingAllRows == true || obj.options.data.length > 1) {
+        if (worksheet.options.allowDeleteRow != false) {
+            if (worksheet.options.allowDeletingAllRows == true || worksheet.options.data.length > 1) {
                 // Delete row definitions
                 if (rowNumber == undefined) {
-                    const number = obj.selection.getSelectedRows();
+                    const number = worksheet.selection.getSelectedRows();
 
                     if (number.length === 0) {
-                        rowNumber = obj.options.data.length - 1;
+                        rowNumber = worksheet.options.data.length - 1;
                         numOfRows = 1;
                     } else {
                         rowNumber = number[0];
@@ -396,7 +396,7 @@ export class Rows {
                 }
 
                 // Last column
-                const lastRow = obj.options.data.length - 1;
+                const lastRow = worksheet.options.data.length - 1;
 
                 if (rowNumber == undefined || rowNumber > lastRow || rowNumber < 0) {
                     rowNumber = lastRow;
@@ -407,8 +407,8 @@ export class Rows {
                 }
 
                 // Do not delete more than the number of records
-                if (rowNumber + numOfRows >= obj.options.data.length) {
-                    numOfRows = obj.options.data.length - rowNumber;
+                if (rowNumber + numOfRows >= worksheet.options.data.length) {
+                    numOfRows = worksheet.options.data.length - rowNumber;
                 }
 
                 // Onbeforedeleterow
@@ -417,16 +417,16 @@ export class Rows {
                     onbeforedeleterowRecords.push(i + rowNumber);
                 }
 
-                if (obj.dispatch('onbeforedeleterow', obj, onbeforedeleterowRecords) === false) {
+                if (worksheet.dispatch('onbeforedeleterow', worksheet, onbeforedeleterowRecords) === false) {
                     return false;
                 }
 
                 if (parseInt(rowNumber) > -1) {
                     // Merged cells
                     let mergeExists = false;
-                    if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
+                    if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
                         for (let row = rowNumber; row < rowNumber + numOfRows; row++) {
-                            if (obj.merges.isRowMerged(row, false).length) {
+                            if (worksheet.merges.isRowMerged(row, false).length) {
                                 mergeExists = true;
                             }
                         }
@@ -435,62 +435,62 @@ export class Rows {
                         if (!confirm(jSuites.translate('This action will destroy any existing merged cells. Are you sure?'))) {
                             return false;
                         } else {
-                            obj.destroyMerge();
+                            worksheet.destroyMerge();
                         }
                     }
 
                     // Clear any search
-                    if (obj.options.search == true) {
-                        if (obj.view.results && obj.view.results.length != obj.rows.length) {
+                    if (worksheet.options.search == true) {
+                        if (worksheet.view.results && worksheet.view.results.length != worksheet.rows.length) {
                             if (confirm(jSuites.translate('This action will clear your search results. Are you sure?'))) {
-                                obj.resetSearch();
+                                worksheet.resetSearch();
                             } else {
                                 return false;
                             }
                         }
 
-                        obj.view.results = null;
+                        worksheet.view.results = null;
                     }
 
                     // If delete all rows, and set allowDeletingAllRows false, will stay one row
-                    if (obj.options.allowDeletingAllRows != true && lastRow + 1 === numOfRows) {
+                    if (worksheet.options.allowDeletingAllRows != true && lastRow + 1 === numOfRows) {
                         numOfRows--;
                         console.error('Jspreadsheet: It is not possible to delete the last row');
                     }
 
                     // Remove node
                     for (let row = rowNumber; row < rowNumber + numOfRows; row++) {
-                        if (Array.prototype.indexOf.call(obj.tbody.children, obj.rows[row].element) >= 0) {
-                            obj.rows[row].element.className = '';
-                            obj.rows[row].element.parentNode!.removeChild(obj.rows[row].element);
+                        if (Array.prototype.indexOf.call(worksheet.tbody.children, worksheet.rows[row].element) >= 0) {
+                            worksheet.rows[row].element.className = '';
+                            worksheet.rows[row].element.parentNode!.removeChild(worksheet.rows[row].element);
                         }
                     }
 
                     // Remove data
-                    const rowRecords = obj.records.splice(rowNumber, numOfRows);
-                    const rowData = obj.options.data.splice(rowNumber, numOfRows);
-                    const rowNode = obj.rows.splice(rowNumber, numOfRows);
+                    const rowRecords = worksheet.records.splice(rowNumber, numOfRows);
+                    const rowData = worksheet.options.data.splice(rowNumber, numOfRows);
+                    const rowNode = worksheet.rows.splice(rowNumber, numOfRows);
 
-                    for (let j = rowNumber; j < obj.rows.length; j++) {
-                        obj.rows[j].y = j;
+                    for (let j = rowNumber; j < worksheet.rows.length; j++) {
+                        worksheet.rows[j].y = j;
                     }
 
-                    for (let j = rowNumber; j < obj.records.length; j++) {
-                        for (let i = 0; i < obj.records[j].length; i++) {
-                            obj.records[j][i].y = j;
+                    for (let j = rowNumber; j < worksheet.records.length; j++) {
+                        for (let i = 0; i < worksheet.records[j].length; i++) {
+                            worksheet.records[j][i].y = j;
                         }
                     }
 
                     // Respect pagination
-                    if (obj.options.pagination! > 0 && obj.tbody.children.length != obj.options.pagination) {
-                        obj.page(obj.view.pageNumber);
+                    if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length != worksheet.options.pagination) {
+                        worksheet.page(worksheet.view.pageNumber);
                     }
 
                     // Remove selection
-                    obj.selection.conditionalUpdate(1, rowNumber, rowNumber + numOfRows - 1);
+                    worksheet.selection.conditionalUpdate(1, rowNumber, rowNumber + numOfRows - 1);
 
                     // Keep history
-                    obj.history.add({
+                    worksheet.history.add({
                         action: 'deleteRow',
                         rowNumber,
                         numOfRows,
@@ -501,10 +501,10 @@ export class Rows {
                     });
 
                     // Remove table references
-                    obj.formulas.updateTableReferences();
+                    worksheet.formulas.updateTableReferences();
 
                     // Events
-                    obj.dispatch('ondeleterow', obj, onbeforedeleterowRecords);
+                    worksheet.dispatch('ondeleterow', worksheet, onbeforedeleterowRecords);
                 }
             } else {
                 console.error('Jspreadsheet: It is not possible to delete the last row');
@@ -519,15 +519,15 @@ export class Rows {
      * @return height - current row height
      */
     getHeight(row?: number | string | HTMLElement): string[] | string {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         let data;
 
         if (typeof row === 'undefined') {
             // Get height of all rows
             data = [];
-            for (let j = 0; j < obj.rows.length; j++) {
-                const h = obj.rows[j].element.style.height;
+            for (let j = 0; j < worksheet.rows.length; j++) {
+                const h = worksheet.rows[j].element.style.height;
                 if (h) {
                     data[j] = h;
                 }
@@ -539,7 +539,7 @@ export class Rows {
             }
 
             // data-y is the row number as text, which works as an index
-            data = obj.rows[row as number].element.style.height;
+            data = worksheet.rows[row as number].element.style.height;
         }
 
         return data;
@@ -554,16 +554,16 @@ export class Rows {
      */
     // oldHeight is the height attribute as text, or the measured height
     setHeight(row: number, height: number, oldHeight?: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         if (height > 0) {
             // Oldwidth
             if (!oldHeight) {
                 // A resize with the mouse leaves the height attribute
-                oldHeight = parseInt(obj.rows[row].element.getAttribute('height'));
+                oldHeight = parseInt(worksheet.rows[row].element.getAttribute('height'));
 
                 if (!oldHeight) {
-                    const rect = obj.rows[row].element.getBoundingClientRect();
+                    const rect = worksheet.rows[row].element.getBoundingClientRect();
                     oldHeight = rect.height;
                 }
             }
@@ -572,20 +572,20 @@ export class Rows {
             height = parseInt(height);
 
             // Set width
-            obj.rows[row].element.style.height = height + 'px';
+            worksheet.rows[row].element.style.height = height + 'px';
 
-            if (!obj.options.rows) {
-                obj.options.rows = [];
+            if (!worksheet.options.rows) {
+                worksheet.options.rows = [];
             }
 
             // Keep options updated
-            if (!obj.options.rows[row]) {
-                obj.options.rows[row] = {};
+            if (!worksheet.options.rows[row]) {
+                worksheet.options.rows[row] = {};
             }
-            obj.options.rows[row].height = height;
+            worksheet.options.rows[row].height = height;
 
             // Keeping history of changes
-            obj.history.add({
+            worksheet.history.add({
                 action: 'setHeight',
                 row,
                 oldValue: oldHeight,
@@ -593,10 +593,10 @@ export class Rows {
             });
 
             // On resize column
-            obj.dispatch('onresizerow', obj, row, height, oldHeight);
+            worksheet.dispatch('onresizerow', worksheet, row, height, oldHeight);
 
             // Update corner position
-            obj.selection.updateCorner();
+            worksheet.selection.updateCorner();
         }
     }
 
@@ -604,14 +604,14 @@ export class Rows {
      * Show row
      */
     show(rowNumber: number | number[]) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         if (!Array.isArray(rowNumber)) {
             rowNumber = [rowNumber];
         }
 
         rowNumber.forEach((rowIndex) => {
-            obj.rows[rowIndex].element.style.display = '';
+            worksheet.rows[rowIndex].element.style.display = '';
         });
     }
 
@@ -619,32 +619,32 @@ export class Rows {
      * Hide row
      */
     hide(rowNumber: number | number[]) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         if (!Array.isArray(rowNumber)) {
             rowNumber = [rowNumber];
         }
 
         rowNumber.forEach((rowIndex) => {
-            obj.rows[rowIndex].element.style.display = 'none';
+            worksheet.rows[rowIndex].element.style.display = 'none';
         });
 
         // The tab stop of the grid can be in a hidden row
-        obj.selection.updateTabStop();
+        worksheet.selection.updateTabStop();
     }
 
     /**
      * Get a row data by rowNumber
      */
     getData(rowNumber: number, processed?: boolean): jspreadsheet.CellValue[] | undefined {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         if (processed) {
-            return obj.records[rowNumber].map((record) => {
+            return worksheet.records[rowNumber].map((record) => {
                 return record.element.innerHTML;
             });
         } else {
-            return obj.options.data[rowNumber];
+            return worksheet.options.data[rowNumber];
         }
     }
 
@@ -652,14 +652,14 @@ export class Rows {
      * Set a row data by rowNumber
      */
     setData(rowNumber: number, data: (jspreadsheet.CellValue | null)[], force?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        for (let i = 0; i < obj.headers.length; i++) {
+        for (let i = 0; i < worksheet.headers.length; i++) {
             // Update cell
             const columnName = getColumnNameFromId([i, rowNumber]);
             // Set value
             if (data[i] != null) {
-                obj.setValue(columnName, data[i]!, force);
+                worksheet.setValue(columnName, data[i]!, force);
             }
         }
     }
@@ -668,13 +668,13 @@ export class Rows {
      * Show index column
      */
     showIndex() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        obj.table.classList.remove('jss_hidden_index');
+        worksheet.table.classList.remove('jss_hidden_index');
 
         // The position of the frozen columns depends on the width of the index column
-        if (obj.options.freezeColumns! > 0) {
-            obj.columns.updateFreezePosition();
+        if (worksheet.options.freezeColumns! > 0) {
+            worksheet.columns.updateFreezePosition();
         }
     }
 
@@ -682,13 +682,13 @@ export class Rows {
      * Hide index column
      */
     hideIndex() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        obj.table.classList.add('jss_hidden_index');
+        worksheet.table.classList.add('jss_hidden_index');
 
         // The position of the frozen columns depends on the width of the index column
-        if (obj.options.freezeColumns! > 0) {
-            obj.columns.updateFreezePosition();
+        if (worksheet.options.freezeColumns! > 0) {
+            worksheet.columns.updateFreezePosition();
         }
     }
 }

@@ -33,23 +33,23 @@ export class View {
      * @param query - The text to find. An empty text shows all rows again.
      */
     search(query: string) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Reset any filter
-        if (obj.options.filters) {
+        if (worksheet.options.filters) {
             this.resetFilters();
         }
 
         // Reset selection
-        obj.resetSelection();
+        worksheet.resetSelection();
 
         // Total of results
-        obj.view.pageNumber = 0;
-        obj.view.results = [];
+        worksheet.view.pageNumber = 0;
+        worksheet.view.results = [];
 
         if (query) {
-            if (obj.searchInput.value !== query) {
-                obj.searchInput.value = query;
+            if (worksheet.searchInput.value !== query) {
+                worksheet.searchInput.value = query;
             }
 
             /**
@@ -59,7 +59,10 @@ export class View {
              */
             function search(item: CellValue[], query: RegExp, index: number) {
                 for (let i = 0; i < item.length; i++) {
-                    if (('' + item[i]).toLowerCase().search(query) >= 0 || ('' + obj.records[index][i].element.innerHTML).toLowerCase().search(query) >= 0) {
+                    if (
+                        ('' + item[i]).toLowerCase().search(query) >= 0 ||
+                        ('' + worksheet.records[index][i].element.innerHTML).toLowerCase().search(query) >= 0
+                    ) {
                         return true;
                     }
                 }
@@ -71,8 +74,8 @@ export class View {
              * @param k - The row.
              */
             function addToResult(k: number) {
-                if (obj.view.results!.indexOf(k) == -1) {
-                    obj.view.results!.push(k);
+                if (worksheet.view.results!.indexOf(k) == -1) {
+                    worksheet.view.results!.push(k);
                 }
             }
 
@@ -80,14 +83,14 @@ export class View {
             parsedQuery = new RegExp(parsedQuery, 'i');
 
             // Filter
-            obj.options.data.forEach((v, k) => {
+            worksheet.options.data.forEach((v, k) => {
                 if (search(v, parsedQuery, k)) {
                     // Merged rows found
-                    const rows = obj.merges.isRowMerged(k);
+                    const rows = worksheet.merges.isRowMerged(k);
                     if (rows.length) {
                         for (let i = 0; i < rows.length; i++) {
                             const row = getIdFromColumnName(rows[i], true);
-                            for (let j = 0; j < obj.options.mergeCells![rows[i]][1]; j++) {
+                            for (let j = 0; j < worksheet.options.mergeCells![rows[i]][1]; j++) {
                                 addToResult(row[1] + j);
                             }
                         }
@@ -98,7 +101,7 @@ export class View {
                 }
             });
         } else {
-            obj.view.results = null;
+            worksheet.view.results = null;
         }
 
         this.updateResult();
@@ -108,38 +111,38 @@ export class View {
      * Reset search
      */
     resetSearch() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        obj.searchInput.value = '';
-        obj.search('');
-        obj.view.results = null;
+        worksheet.searchInput.value = '';
+        worksheet.search('');
+        worksheet.view.results = null;
     }
 
     /**
      * Open the column filter
      */
     openFilter(columnId: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (!obj.options.filters) {
+        if (!worksheet.options.filters) {
             console.log('Jspreadsheet: filters not enabled.');
         } else {
             // Make sure is integer
             columnId = parseInt(columnId);
             // Reset selection
-            obj.resetSelection();
+            worksheet.resetSelection();
             // Load options
             let optionsFiltered = [];
-            if (obj.options.columns[columnId].type == 'checkbox') {
+            if (worksheet.options.columns[columnId].type == 'checkbox') {
                 optionsFiltered.push({ id: 'true', name: 'True' });
                 optionsFiltered.push({ id: 'false', name: 'False' });
             } else {
                 // Labels by value. An array used as a map, as before.
                 const options = [] as unknown as Record<string, string>;
                 let hasBlanks = false;
-                for (let j = 0; j < obj.options.data.length; j++) {
-                    const k = obj.options.data[j][columnId];
-                    const v = obj.records[j][columnId].element.innerHTML;
+                for (let j = 0; j < worksheet.options.data.length; j++) {
+                    const k = worksheet.options.data[j][columnId];
+                    const v = worksheet.records[j][columnId].element.innerHTML;
                     if (k && v) {
                         options[k as string] = v;
                     } else {
@@ -159,31 +162,31 @@ export class View {
 
             // Create dropdown
             const div = document.createElement('div');
-            obj.filter!.children[columnId + 1].innerHTML = '';
-            obj.filter!.children[columnId + 1].appendChild(div);
-            (obj.filter!.children[columnId + 1] as HTMLElement).style.paddingLeft = '0px';
-            (obj.filter!.children[columnId + 1] as HTMLElement).style.paddingRight = '0px';
-            (obj.filter!.children[columnId + 1] as HTMLElement).style.overflow = 'initial';
+            worksheet.filter!.children[columnId + 1].innerHTML = '';
+            worksheet.filter!.children[columnId + 1].appendChild(div);
+            (worksheet.filter!.children[columnId + 1] as HTMLElement).style.paddingLeft = '0px';
+            (worksheet.filter!.children[columnId + 1] as HTMLElement).style.paddingRight = '0px';
+            (worksheet.filter!.children[columnId + 1] as HTMLElement).style.overflow = 'initial';
 
             const opt = {
                 data: optionsFiltered,
                 multiple: true,
                 autocomplete: true,
                 opened: true,
-                value: obj.view.filters[columnId] !== undefined ? obj.view.filters[columnId] : null,
+                value: worksheet.view.filters[columnId] !== undefined ? worksheet.view.filters[columnId] : null,
                 width: '100%',
-                position: obj.options.tableOverflow == true || obj.parent.config.fullscreen == true ? true : false,
+                position: worksheet.options.tableOverflow == true || worksheet.parent.config.fullscreen == true ? true : false,
                 // The element of the dropdown, which holds the dropdown
                 onclose(o: HTMLElement & { dropdown: ReturnType<typeof jSuites.dropdown> }) {
-                    obj.view.resetFilters();
+                    worksheet.view.resetFilters();
                     // A list, because the dropdown has multiple
-                    obj.view.filters[columnId] = o.dropdown.getValue(true) as string[];
-                    obj.filter!.children[columnId + 1].innerHTML = o.dropdown.getText() as string;
-                    (obj.filter!.children[columnId + 1] as HTMLElement).style.paddingLeft = '';
-                    (obj.filter!.children[columnId + 1] as HTMLElement).style.paddingRight = '';
-                    (obj.filter!.children[columnId + 1] as HTMLElement).style.overflow = '';
-                    obj.view.closeFilter(columnId);
-                    obj.selection.refresh();
+                    worksheet.view.filters[columnId] = o.dropdown.getValue(true) as string[];
+                    worksheet.filter!.children[columnId + 1].innerHTML = o.dropdown.getText() as string;
+                    (worksheet.filter!.children[columnId + 1] as HTMLElement).style.paddingLeft = '';
+                    (worksheet.filter!.children[columnId + 1] as HTMLElement).style.paddingRight = '';
+                    (worksheet.filter!.children[columnId + 1] as HTMLElement).style.overflow = '';
+                    worksheet.view.closeFilter(columnId);
+                    worksheet.selection.refresh();
                 },
             };
 
@@ -193,11 +196,11 @@ export class View {
     }
 
     closeFilter(columnId?: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         if (!columnId) {
-            for (let i = 0; i < obj.filter!.children.length; i++) {
-                if (obj.view.filters[i]) {
+            for (let i = 0; i < worksheet.filter!.children.length; i++) {
+                if (worksheet.view.filters[i]) {
                     columnId = i;
                 }
             }
@@ -206,8 +209,8 @@ export class View {
         // Search filter
         function search(query: string[], x: number, y: number) {
             for (let i = 0; i < query.length; i++) {
-                const value = '' + obj.options.data[y][x];
-                const label = '' + obj.records[y][x].element.innerHTML;
+                const value = '' + worksheet.options.data[y][x];
+                const label = '' + worksheet.records[y][x].element.innerHTML;
                 if (query[i] == value || query[i] == label) {
                     return true;
                 }
@@ -216,31 +219,31 @@ export class View {
         }
 
         // The column has a filter: openFilter passes its column, and orderBy calls this only while a filter gives results
-        const query = obj.view.filters[columnId!]!;
-        obj.view.results = [];
-        for (let j = 0; j < obj.options.data.length; j++) {
+        const query = worksheet.view.filters[columnId!]!;
+        worksheet.view.results = [];
+        for (let j = 0; j < worksheet.options.data.length; j++) {
             if (search(query, columnId!, j)) {
-                obj.view.results.push(j);
+                worksheet.view.results.push(j);
             }
         }
-        if (!obj.view.results.length) {
-            obj.view.results = null;
+        if (!worksheet.view.results.length) {
+            worksheet.view.results = null;
         }
 
         this.updateResult();
     }
 
     resetFilters() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (obj.options.filters) {
-            for (let i = 0; i < obj.filter!.children.length; i++) {
-                obj.filter!.children[i].innerHTML = '&nbsp;';
-                obj.view.filters[i] = null;
+        if (worksheet.options.filters) {
+            for (let i = 0; i < worksheet.filter!.children.length; i++) {
+                worksheet.filter!.children[i].innerHTML = '&nbsp;';
+                worksheet.view.filters[i] = null;
             }
         }
 
-        obj.view.results = null;
+        worksheet.view.results = null;
         this.updateResult();
     }
 
@@ -248,58 +251,58 @@ export class View {
      * Which page the row is
      */
     whichPage(row: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Search
-        if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
-            row = obj.view.results.indexOf(row);
+        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+            row = worksheet.view.results.indexOf(row);
         }
 
-        return Math.ceil((parseInt(row) + 1) / parseInt(obj.options.pagination)) - 1;
+        return Math.ceil((parseInt(row) + 1) / parseInt(worksheet.options.pagination)) - 1;
     }
 
     /**
      * Update the pagination
      */
     updatePagination() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Reset container
-        obj.pagination.children[0].innerHTML = '';
-        obj.pagination.children[1].innerHTML = '';
+        worksheet.pagination.children[0].innerHTML = '';
+        worksheet.pagination.children[1].innerHTML = '';
 
         // Start pagination
-        if (obj.options.pagination) {
+        if (worksheet.options.pagination) {
             // Searchable
             let results: number;
 
-            if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
-                results = obj.view.results.length;
+            if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+                results = worksheet.view.results.length;
             } else {
-                results = obj.rows.length;
+                results = worksheet.rows.length;
             }
 
             if (!results) {
                 // No records found
-                obj.pagination.children[0].innerHTML = jSuites.translate('No records found');
+                worksheet.pagination.children[0].innerHTML = jSuites.translate('No records found');
             } else {
                 // Pagination container
-                const quantyOfPages = Math.ceil(results / obj.options.pagination);
+                const quantyOfPages = Math.ceil(results / worksheet.options.pagination);
 
                 let startNumber, finalNumber;
 
-                if (obj.view.pageNumber < 6) {
+                if (worksheet.view.pageNumber < 6) {
                     startNumber = 1;
                     finalNumber = quantyOfPages < 10 ? quantyOfPages : 10;
-                } else if (quantyOfPages - obj.view.pageNumber < 5) {
+                } else if (quantyOfPages - worksheet.view.pageNumber < 5) {
                     startNumber = quantyOfPages - 9;
                     finalNumber = quantyOfPages;
                     if (startNumber < 1) {
                         startNumber = 1;
                     }
                 } else {
-                    startNumber = obj.view.pageNumber - 4;
-                    finalNumber = obj.view.pageNumber + 5;
+                    startNumber = worksheet.view.pageNumber - 4;
+                    finalNumber = worksheet.view.pageNumber + 5;
                 }
 
                 // First
@@ -308,7 +311,7 @@ export class View {
                     paginationItem.className = 'jss_page';
                     paginationItem.innerHTML = '<';
                     paginationItem.title = '1';
-                    obj.pagination.children[1].appendChild(paginationItem);
+                    worksheet.pagination.children[1].appendChild(paginationItem);
                 }
 
                 // Get page links
@@ -316,9 +319,9 @@ export class View {
                     const paginationItem = document.createElement('div');
                     paginationItem.className = 'jss_page';
                     paginationItem.innerHTML = String(i);
-                    obj.pagination.children[1].appendChild(paginationItem);
+                    worksheet.pagination.children[1].appendChild(paginationItem);
 
-                    if (obj.view.pageNumber == i - 1) {
+                    if (worksheet.view.pageNumber == i - 1) {
                         paginationItem.classList.add('jss_page_selected');
                     }
                 }
@@ -329,7 +332,7 @@ export class View {
                     paginationItem.className = 'jss_page';
                     paginationItem.innerHTML = '>';
                     paginationItem.title = String(quantyOfPages);
-                    obj.pagination.children[1].appendChild(paginationItem);
+                    worksheet.pagination.children[1].appendChild(paginationItem);
                 }
 
                 // Text
@@ -339,7 +342,11 @@ export class View {
                     });
                 }
 
-                obj.pagination.children[0].innerHTML = format(jSuites.translate('Showing page {0} of {1} entries'), obj.view.pageNumber + 1, quantyOfPages);
+                worksheet.pagination.children[0].innerHTML = format(
+                    jSuites.translate('Showing page {0} of {1} entries'),
+                    worksheet.view.pageNumber + 1,
+                    quantyOfPages
+                );
             }
         }
     }
@@ -348,21 +355,21 @@ export class View {
      * Go to page
      */
     page(pageNumber: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        const oldPage = obj.view.pageNumber;
+        const oldPage = worksheet.view.pageNumber;
 
         // Search: the indexes of the rows found, or the rows
         let results: number[] | Worksheet['rows'];
 
-        if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
-            results = obj.view.results;
+        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+            results = worksheet.view.results;
         } else {
-            results = obj.rows;
+            results = worksheet.rows;
         }
 
         // Per page
-        const quantityPerPage = parseInt(obj.options.pagination);
+        const quantityPerPage = parseInt(worksheet.options.pagination);
 
         // pageNumber
         if (pageNumber == null || pageNumber == -1) {
@@ -371,7 +378,7 @@ export class View {
         }
 
         // Page number
-        obj.view.pageNumber = pageNumber;
+        worksheet.view.pageNumber = pageNumber;
 
         let startRow = pageNumber * quantityPerPage;
         let finalRow = pageNumber * quantityPerPage + quantityPerPage;
@@ -383,94 +390,94 @@ export class View {
         }
 
         // Reset container
-        while (obj.tbody.firstChild) {
-            obj.tbody.removeChild(obj.tbody.firstChild);
+        while (worksheet.tbody.firstChild) {
+            worksheet.tbody.removeChild(worksheet.tbody.firstChild);
         }
 
         // Appeding items
         for (let j = startRow; j < finalRow; j++) {
-            if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
-                obj.tbody.appendChild(obj.rows[results[j] as number].element);
+            if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+                worksheet.tbody.appendChild(worksheet.rows[results[j] as number].element);
             } else {
-                obj.tbody.appendChild(obj.rows[j].element);
+                worksheet.tbody.appendChild(worksheet.rows[j].element);
             }
         }
 
         // The tab stop of the grid can be in a row of the old page
-        obj.selection.updateTabStop();
+        worksheet.selection.updateTabStop();
 
-        if (obj.options.pagination! > 0) {
+        if (worksheet.options.pagination! > 0) {
             this.updatePagination();
         }
 
         // Update corner position
-        obj.selection.updateCorner();
+        worksheet.selection.updateCorner();
 
         // Events. setData sets the page number of a worksheet with pagination.
-        obj.dispatch('onchangepage', obj, pageNumber, oldPage, obj.options.pagination!);
+        worksheet.dispatch('onchangepage', worksheet, pageNumber, oldPage, worksheet.options.pagination!);
     }
 
     countPages() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         let results: number;
-        if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
-            results = obj.view.results.length;
+        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+            results = worksheet.view.results.length;
         } else {
-            results = obj.rows.length;
+            results = worksheet.rows.length;
         }
 
-        return Math.ceil(results / obj.options.pagination!);
+        return Math.ceil(results / worksheet.options.pagination!);
     }
 
     updateResult() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         let total = 0;
         let index = 0;
 
         // Page 1
-        if (obj.options.lazyLoading == true) {
+        if (worksheet.options.lazyLoading == true) {
             total = 100;
-        } else if (obj.options.pagination! > 0) {
-            total = obj.options.pagination!;
+        } else if (worksheet.options.pagination! > 0) {
+            total = worksheet.options.pagination!;
         } else {
-            if (obj.view.results) {
-                total = obj.view.results.length;
+            if (worksheet.view.results) {
+                total = worksheet.view.results.length;
             } else {
-                total = obj.rows.length;
+                total = worksheet.rows.length;
             }
         }
 
         // Reset current nodes
-        while (obj.tbody.firstChild) {
-            obj.tbody.removeChild(obj.tbody.firstChild);
+        while (worksheet.tbody.firstChild) {
+            worksheet.tbody.removeChild(worksheet.tbody.firstChild);
         }
 
         // Hide all records from the table
-        for (let j = 0; j < obj.rows.length; j++) {
-            if (!obj.view.results || obj.view.results.indexOf(j) > -1) {
+        for (let j = 0; j < worksheet.rows.length; j++) {
+            if (!worksheet.view.results || worksheet.view.results.indexOf(j) > -1) {
                 if (index < total) {
-                    obj.tbody.appendChild(obj.rows[j].element);
+                    worksheet.tbody.appendChild(worksheet.rows[j].element);
                     index++;
                 }
-                obj.rows[j].element.style.display = '';
+                worksheet.rows[j].element.style.display = '';
             } else {
-                obj.rows[j].element.style.display = 'none';
+                worksheet.rows[j].element.style.display = 'none';
             }
         }
 
         // The tab stop of the grid can be in a row that is not in the results
-        obj.selection.updateTabStop();
+        worksheet.selection.updateTabStop();
 
         // Update pagination
-        if (obj.options.pagination! > 0) {
+        if (worksheet.options.pagination! > 0) {
             this.updatePagination();
         }
 
-        obj.selection.updateCorner();
+        worksheet.selection.updateCorner();
 
-        obj.dispatch('onupdateresult', obj, obj.view.results);
+        worksheet.dispatch('onupdateresult', worksheet, worksheet.view.results);
 
         return total;
     }
@@ -479,19 +486,19 @@ export class View {
      * Update order arrow
      */
     updateOrderArrow(column: number, order: boolean | number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Remove order
-        for (let i = 0; i < obj.headers.length; i++) {
-            obj.headers[i].classList.remove('arrow-up');
-            obj.headers[i].classList.remove('arrow-down');
+        for (let i = 0; i < worksheet.headers.length; i++) {
+            worksheet.headers[i].classList.remove('arrow-up');
+            worksheet.headers[i].classList.remove('arrow-down');
         }
 
         // No order specified then toggle order
         if (order) {
-            obj.headers[column].classList.add('arrow-up');
+            worksheet.headers[column].classList.add('arrow-up');
         } else {
-            obj.headers[column].classList.add('arrow-down');
+            worksheet.headers[column].classList.add('arrow-down');
         }
     }
 
@@ -499,57 +506,57 @@ export class View {
      * Update rows position
      */
     updateOrder(rows: number[]) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // History
         const data: Worksheet['options']['data'] = [];
         for (let j = 0; j < rows.length; j++) {
-            data[j] = obj.options.data[rows[j]];
+            data[j] = worksheet.options.data[rows[j]];
         }
-        obj.options.data = data;
+        worksheet.options.data = data;
 
         const records: Worksheet['records'] = [];
         for (let j = 0; j < rows.length; j++) {
-            records[j] = obj.records[rows[j]];
+            records[j] = worksheet.records[rows[j]];
 
             for (let i = 0; i < records[j].length; i++) {
                 records[j][i].y = j;
             }
         }
-        obj.records = records;
+        worksheet.records = records;
 
         const rowObjects: Worksheet['rows'] = [];
         for (let j = 0; j < rows.length; j++) {
-            rowObjects[j] = obj.rows[rows[j]];
+            rowObjects[j] = worksheet.rows[rows[j]];
             rowObjects[j].y = j;
         }
-        obj.rows = rowObjects;
+        worksheet.rows = rowObjects;
 
         // Update references
-        obj.formulas.updateTableReferences();
+        worksheet.formulas.updateTableReferences();
 
         // Redo search
-        if (obj.view.results && obj.view.results.length) {
-            if (obj.searchInput.value) {
-                obj.search(obj.searchInput.value);
+        if (worksheet.view.results && worksheet.view.results.length) {
+            if (worksheet.searchInput.value) {
+                worksheet.search(worksheet.searchInput.value);
             } else {
                 this.closeFilter();
             }
         } else {
             // Create page
-            obj.view.results = null;
-            obj.view.pageNumber = 0;
+            worksheet.view.results = null;
+            worksheet.view.pageNumber = 0;
 
-            if (obj.options.pagination! > 0) {
-                obj.page(0);
-            } else if (obj.options.lazyLoading == true) {
+            if (worksheet.options.pagination! > 0) {
+                worksheet.page(0);
+            } else if (worksheet.options.lazyLoading == true) {
                 this.loadPage(0);
             } else {
-                for (let j = 0; j < obj.rows.length; j++) {
-                    obj.tbody.appendChild(obj.rows[j].element);
+                for (let j = 0; j < worksheet.rows.length; j++) {
+                    worksheet.tbody.appendChild(worksheet.rows[j].element);
                 }
                 // A moved row loses the focus
-                obj.selection.updateTabStop();
+                worksheet.selection.updateTabStop();
             }
         }
     }
@@ -558,22 +565,22 @@ export class View {
      * Sort data and reload table
      */
     orderBy(column: number, order?: 0 | 1): boolean | undefined {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         if (column >= 0) {
             // Merged cells
-            if (obj.options.mergeCells && Object.keys(obj.options.mergeCells).length > 0) {
+            if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
                 if (!confirm(jSuites.translate('This action will destroy any existing merged cells. Are you sure?'))) {
                     return false;
                 } else {
                     // Remove merged cells
-                    obj.destroyMerge();
+                    worksheet.destroyMerge();
                 }
             }
 
             // Direction
             if (order == null) {
-                order = obj.headers[column].classList.contains('arrow-down') ? 1 : 0;
+                order = worksheet.headers[column].classList.contains('arrow-down') ? 1 : 0;
             } else {
                 order = order ? 1 : 0;
             }
@@ -582,36 +589,36 @@ export class View {
             // The row and the value to sort by
             let temp: jspreadsheet.SortingItem[] = [];
             if (
-                obj.options.columns &&
-                obj.options.columns[column] &&
-                ((obj.options.columns[column].type as string) == 'number' ||
-                    obj.options.columns[column].type == 'numeric' ||
-                    (obj.options.columns[column].type as string) == 'percentage' ||
-                    (obj.options.columns[column].type as string) == 'autonumber' ||
-                    obj.options.columns[column].type == 'color')
+                worksheet.options.columns &&
+                worksheet.options.columns[column] &&
+                ((worksheet.options.columns[column].type as string) == 'number' ||
+                    worksheet.options.columns[column].type == 'numeric' ||
+                    (worksheet.options.columns[column].type as string) == 'percentage' ||
+                    (worksheet.options.columns[column].type as string) == 'autonumber' ||
+                    worksheet.options.columns[column].type == 'color')
             ) {
-                for (let j = 0; j < obj.options.data.length; j++) {
-                    temp[j] = [j, Number(obj.options.data[j][column])];
+                for (let j = 0; j < worksheet.options.data.length; j++) {
+                    temp[j] = [j, Number(worksheet.options.data[j][column])];
                 }
             } else if (
-                obj.options.columns &&
-                obj.options.columns[column] &&
-                (obj.options.columns[column].type == 'calendar' ||
-                    obj.options.columns[column].type == 'checkbox' ||
-                    obj.options.columns[column].type == 'radio')
+                worksheet.options.columns &&
+                worksheet.options.columns[column] &&
+                (worksheet.options.columns[column].type == 'calendar' ||
+                    worksheet.options.columns[column].type == 'checkbox' ||
+                    worksheet.options.columns[column].type == 'radio')
             ) {
-                for (let j = 0; j < obj.options.data.length; j++) {
-                    temp[j] = [j, obj.options.data[j][column]];
+                for (let j = 0; j < worksheet.options.data.length; j++) {
+                    temp[j] = [j, worksheet.options.data[j][column]];
                 }
             } else {
-                for (let j = 0; j < obj.options.data.length; j++) {
-                    temp[j] = [j, obj.records[j][column].element.textContent.toLowerCase()];
+                for (let j = 0; j < worksheet.options.data.length; j++) {
+                    temp[j] = [j, worksheet.records[j][column].element.textContent.toLowerCase()];
                 }
             }
 
             // Default sorting method
-            if (typeof obj.parent.config.sorting !== 'function') {
-                obj.parent.config.sorting = (direction) => {
+            if (typeof worksheet.parent.config.sorting !== 'function') {
+                worksheet.parent.config.sorting = (direction) => {
                     return (a, b) => {
                         const valueA = a[1];
                         const valueB = b[1];
@@ -625,7 +632,7 @@ export class View {
                 };
             }
 
-            temp = temp.sort(obj.parent.config.sorting(order));
+            temp = temp.sort(worksheet.parent.config.sorting(order));
 
             // Save history
             const newValue = [];
@@ -634,7 +641,7 @@ export class View {
             }
 
             // Save history
-            obj.history.add({
+            worksheet.history.add({
                 action: 'orderBy',
                 rows: newValue,
                 column,
@@ -646,9 +653,9 @@ export class View {
             this.updateOrder(newValue);
 
             // On sort event
-            obj.dispatch(
+            worksheet.dispatch(
                 'onsort',
-                obj,
+                worksheet,
                 column,
                 order,
                 newValue.map((row) => row)
@@ -663,28 +670,28 @@ export class View {
      */
     // The callers remove a row when the body has more than a page of rows, so it has a first and a last row
     private removeRow(row: ChildNode) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (obj.editor.isOpen() && row.contains(obj.editor.cell)) {
-            obj.editor.close(obj.editor.cell, true);
+        if (worksheet.editor.isOpen() && row.contains(worksheet.editor.cell)) {
+            worksheet.editor.close(worksheet.editor.cell, true);
         }
 
-        obj.tbody.removeChild(row);
+        worksheet.tbody.removeChild(row);
     }
 
     /**
      * Go to a page in a lazyLoading
      */
     loadPage(pageNumber: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Search: the indexes of the rows found, or the rows
         let results: number[] | Worksheet['rows'];
 
-        if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
-            results = obj.view.results;
+        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+            results = worksheet.view.results;
         } else {
-            results = obj.rows;
+            results = worksheet.rows;
         }
 
         // Per page
@@ -708,34 +715,34 @@ export class View {
 
         // Appeding items
         for (let j = startRow; j < finalRow; j++) {
-            if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
-                obj.tbody.appendChild(obj.rows[results[j] as number].element);
+            if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+                worksheet.tbody.appendChild(worksheet.rows[results[j] as number].element);
             } else {
-                obj.tbody.appendChild(obj.rows[j].element);
+                worksheet.tbody.appendChild(worksheet.rows[j].element);
             }
 
-            if (obj.tbody.children.length > quantityPerPage) {
-                this.removeRow(obj.tbody.firstChild!);
+            if (worksheet.tbody.children.length > quantityPerPage) {
+                this.removeRow(worksheet.tbody.firstChild!);
             }
         }
 
         // The tab stop of the grid can be in a removed row
-        obj.selection.updateTabStop();
+        worksheet.selection.updateTabStop();
     }
 
     loadValidation() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (obj.selection.range) {
-            let currentRow = parseInt((obj.tbody.firstChild as HTMLElement).getAttribute('data-y'));
-            let selectedRow = parseInt(obj.selection.range[3]);
-            let total = obj.rows.length;
+        if (worksheet.selection.range) {
+            let currentRow = parseInt((worksheet.tbody.firstChild as HTMLElement).getAttribute('data-y'));
+            let selectedRow = parseInt(worksheet.selection.range[3]);
+            let total = worksheet.rows.length;
 
             // With search or filters, the pages are pages of the results
-            if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
-                currentRow = obj.view.results.indexOf(currentRow);
-                selectedRow = obj.view.results.indexOf(selectedRow);
-                total = obj.view.results.length;
+            if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+                currentRow = worksheet.view.results.indexOf(currentRow);
+                selectedRow = worksheet.view.results.indexOf(selectedRow);
+                total = worksheet.view.results.length;
 
                 if (selectedRow < 0) {
                     return false;
@@ -747,7 +754,7 @@ export class View {
             const totalPages = parseInt(total / 100);
 
             if (currentPage != selectedPage && selectedPage <= totalPages) {
-                if (Array.prototype.indexOf.call(obj.tbody.children, obj.rows[obj.selection.range[3] as number].element) < 0) {
+                if (Array.prototype.indexOf.call(worksheet.tbody.children, worksheet.rows[worksheet.selection.range[3] as number].element) < 0) {
                     this.loadPage(selectedPage);
                     return true;
                 }
@@ -758,34 +765,34 @@ export class View {
     }
 
     loadUp() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Search: the indexes of the rows found, or the rows
         let results: number[] | Worksheet['rows'];
 
-        if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
-            results = obj.view.results;
+        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+            results = worksheet.view.results;
         } else {
-            results = obj.rows;
+            results = worksheet.rows;
         }
         let test = 0;
         if (results.length > 100) {
             // Get the first element in the page
-            let item = parseInt((obj.tbody.firstChild as HTMLElement).getAttribute('data-y'));
-            if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
+            let item = parseInt((worksheet.tbody.firstChild as HTMLElement).getAttribute('data-y'));
+            if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
                 item = (results as number[]).indexOf(item);
             }
             if (item > 0) {
                 for (let j = 0; j < 30; j++) {
                     item = item - 1;
                     if (item > -1) {
-                        if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
-                            obj.tbody.insertBefore(obj.rows[results[item] as number].element, obj.tbody.firstChild);
+                        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+                            worksheet.tbody.insertBefore(worksheet.rows[results[item] as number].element, worksheet.tbody.firstChild);
                         } else {
-                            obj.tbody.insertBefore(obj.rows[item].element, obj.tbody.firstChild);
+                            worksheet.tbody.insertBefore(worksheet.rows[item].element, worksheet.tbody.firstChild);
                         }
-                        if (obj.tbody.children.length > 100) {
-                            this.removeRow(obj.tbody.lastChild!);
+                        if (worksheet.tbody.children.length > 100) {
+                            this.removeRow(worksheet.tbody.lastChild!);
                             test = 1;
                         }
                     }
@@ -794,39 +801,39 @@ export class View {
         }
 
         // The tab stop of the grid can be in a removed row
-        obj.selection.updateTabStop();
+        worksheet.selection.updateTabStop();
 
         return test;
     }
 
     loadDown() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Search: the indexes of the rows found, or the rows
         let results: number[] | Worksheet['rows'];
 
-        if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
-            results = obj.view.results;
+        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+            results = worksheet.view.results;
         } else {
-            results = obj.rows;
+            results = worksheet.rows;
         }
         let test = 0;
         if (results.length > 100) {
             // Get the last element in the page
-            let item = parseInt((obj.tbody.lastChild as HTMLElement).getAttribute('data-y'));
-            if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
+            let item = parseInt((worksheet.tbody.lastChild as HTMLElement).getAttribute('data-y'));
+            if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
                 item = (results as number[]).indexOf(item);
             }
-            if (item < obj.rows.length - 1) {
+            if (item < worksheet.rows.length - 1) {
                 for (let j = 0; j <= 30; j++) {
                     if (item < results.length) {
-                        if ((obj.options.search == true || obj.options.filters == true) && obj.view.results) {
-                            obj.tbody.appendChild(obj.rows[results[item] as number].element);
+                        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+                            worksheet.tbody.appendChild(worksheet.rows[results[item] as number].element);
                         } else {
-                            obj.tbody.appendChild(obj.rows[item].element);
+                            worksheet.tbody.appendChild(worksheet.rows[item].element);
                         }
-                        if (obj.tbody.children.length > 100) {
-                            this.removeRow(obj.tbody.firstChild!);
+                        if (worksheet.tbody.children.length > 100) {
+                            this.removeRow(worksheet.tbody.firstChild!);
                             test = 1;
                         }
                     }
@@ -836,7 +843,7 @@ export class View {
         }
 
         // The tab stop of the grid can be in a removed row
-        obj.selection.updateTabStop();
+        worksheet.selection.updateTabStop();
 
         return test;
     }
@@ -845,24 +852,24 @@ export class View {
      * Load more rows of the lazy loading when the content is scrolled near its top or its bottom.
      */
     wheel(e?: WheelEvent) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (obj.options.lazyLoading == true) {
+        if (worksheet.options.lazyLoading == true) {
             if (libraryBase.jspreadsheet.timeControlLoading == null) {
                 libraryBase.jspreadsheet.timeControlLoading = setTimeout(() => {
-                    if (obj.content.scrollTop + obj.content.clientHeight >= obj.content.scrollHeight - 10) {
-                        if (obj.view.loadDown()) {
-                            if (obj.content.scrollTop + obj.content.clientHeight > obj.content.scrollHeight - 10) {
-                                obj.content.scrollTop = obj.content.scrollTop - obj.content.clientHeight;
+                    if (worksheet.content.scrollTop + worksheet.content.clientHeight >= worksheet.content.scrollHeight - 10) {
+                        if (worksheet.view.loadDown()) {
+                            if (worksheet.content.scrollTop + worksheet.content.clientHeight > worksheet.content.scrollHeight - 10) {
+                                worksheet.content.scrollTop = worksheet.content.scrollTop - worksheet.content.clientHeight;
                             }
-                            obj.selection.updateCorner();
+                            worksheet.selection.updateCorner();
                         }
-                    } else if (obj.content.scrollTop <= obj.content.clientHeight) {
-                        if (obj.view.loadUp()) {
-                            if (obj.content.scrollTop < 10) {
-                                obj.content.scrollTop = obj.content.scrollTop + obj.content.clientHeight;
+                    } else if (worksheet.content.scrollTop <= worksheet.content.clientHeight) {
+                        if (worksheet.view.loadUp()) {
+                            if (worksheet.content.scrollTop < 10) {
+                                worksheet.content.scrollTop = worksheet.content.scrollTop + worksheet.content.clientHeight;
                             }
-                            obj.selection.updateCorner();
+                            worksheet.selection.updateCorner();
                         }
                     }
 
@@ -876,19 +883,19 @@ export class View {
      * The content of the worksheet scrolls: load more rows, place the frozen columns and close a floating editor.
      */
     scroll(e: Event) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         this.wheel();
 
-        if (obj.options.freezeColumns! > 0 && obj.content.scrollLeft != obj.lastScrollLeft) {
-            obj.lastScrollLeft = obj.content.scrollLeft;
-            obj.columns.updateFreezePosition();
+        if (worksheet.options.freezeColumns! > 0 && worksheet.content.scrollLeft != worksheet.lastScrollLeft) {
+            worksheet.lastScrollLeft = worksheet.content.scrollLeft;
+            worksheet.columns.updateFreezePosition();
         }
 
         // Close a floating editor. The text editor is inside the cell and scrolls with it.
-        if (obj.options.lazyLoading == true || obj.options.tableOverflow == true) {
-            if (obj.editor.isOpen() && this.hasFloatingEditor(obj.editor.x) && (e.target as HTMLElement).className.substr(0, 9) != 'jdropdown') {
-                obj.editor.close(obj.editor.cell, true);
+        if (worksheet.options.lazyLoading == true || worksheet.options.tableOverflow == true) {
+            if (worksheet.editor.isOpen() && this.hasFloatingEditor(worksheet.editor.x) && (e.target as HTMLElement).className.substr(0, 9) != 'jdropdown') {
+                worksheet.editor.close(worksheet.editor.cell, true);
             }
         }
     }
@@ -897,9 +904,9 @@ export class View {
      * Check if the editor of a column floats over the page. It does not move with the cell.
      */
     private hasFloatingEditor(x: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        const column = obj.options.columns && obj.options.columns[x];
+        const column = worksheet.options.columns && worksheet.options.columns[x];
         if (!column || !column.type) {
             return false;
         }

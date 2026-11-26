@@ -23,33 +23,34 @@ export class Keyboard {
      */
     editorKeys(e: TargetEvent<KeyboardEvent>) {
         // keyDownControls calls it only while an editor is open
-        const obj = this.worksheet as EditingWorksheet;
-        const column = obj.options.columns && obj.options.columns[obj.cells.getColumnIndex(obj.editor.x, obj.editor.y)];
+        const worksheet = this.worksheet as EditingWorksheet;
+        const column = worksheet.options.columns && worksheet.options.columns[worksheet.cells.getColumnIndex(worksheet.editor.x, worksheet.editor.y)];
 
         if (e.which == 27) {
             // Escape
-            if (obj.editor.isOpen()) {
+            if (worksheet.editor.isOpen()) {
                 // Exit without saving
-                obj.editor.close(obj.editor.cell, false);
+                worksheet.editor.close(worksheet.editor.cell, false);
             }
             e.preventDefault();
         } else if (e.which == 13) {
             // Enter
             if (column && column.type == 'calendar') {
-                obj.editor.close(obj.editor.cell, true);
+                worksheet.editor.close(worksheet.editor.cell, true);
             } else if (column && column.type == 'dropdown') {
                 // Do nothing
             } else {
                 // Alt enter -> do not close editor
                 if (
-                    (obj.options.wordWrap == true ||
+                    (worksheet.options.wordWrap == true ||
                         (column && column.wordWrap == true) ||
-                        (obj.options.data[obj.editor.y][obj.editor.x] && (obj.options.data[obj.editor.y][obj.editor.x] as string).length > 200)) &&
+                        (worksheet.options.data[worksheet.editor.y][worksheet.editor.x] &&
+                            (worksheet.options.data[worksheet.editor.y][worksheet.editor.x] as string).length > 200)) &&
                     e.altKey
                 ) {
                     // Add new line to the editor
-                    const editorTextarea = obj.editor.cell.children[0] as HTMLTextAreaElement;
-                    let editorValue = (obj.editor.cell.children[0] as HTMLTextAreaElement).value;
+                    const editorTextarea = worksheet.editor.cell.children[0] as HTMLTextAreaElement;
+                    let editorValue = (worksheet.editor.cell.children[0] as HTMLTextAreaElement).value;
                     const editorIndexOf = editorTextarea.selectionStart;
                     editorValue = editorValue.slice(0, editorIndexOf) + '\n' + editorValue.slice(editorIndexOf);
                     editorTextarea.value = editorValue;
@@ -57,15 +58,15 @@ export class Keyboard {
                     editorTextarea.selectionStart = editorIndexOf + 1;
                     editorTextarea.selectionEnd = editorIndexOf + 1;
                 } else {
-                    (obj.editor.cell.children[0] as HTMLElement).blur();
+                    (worksheet.editor.cell.children[0] as HTMLElement).blur();
                 }
             }
         } else if (e.which == 9) {
             // Tab
             if (column && ['calendar', 'html'].includes(column.type as string)) {
-                obj.editor.close(obj.editor.cell, true);
+                worksheet.editor.close(worksheet.editor.cell, true);
             } else {
-                (obj.editor.cell.children[0] as HTMLElement).blur();
+                (worksheet.editor.cell.children[0] as HTMLElement).blur();
             }
         }
     }
@@ -75,25 +76,25 @@ export class Keyboard {
      */
     private deleteKey() {
         // gridKeys calls it, when the worksheet has a selection
-        const obj = this.worksheet as SelectedWorksheet;
+        const worksheet = this.worksheet as SelectedWorksheet;
 
-        if (obj.options.editable != false) {
-            if (obj.selection.row != null) {
-                if (obj.options.allowDeleteRow != false) {
+        if (worksheet.options.editable != false) {
+            if (worksheet.selection.row != null) {
+                if (worksheet.options.allowDeleteRow != false) {
                     if (confirm(jSuites.translate('Are you sure to delete the selected rows?'))) {
-                        obj.deleteRow();
+                        worksheet.deleteRow();
                     }
                 }
-            } else if (obj.selection.column != null) {
-                if (obj.options.allowDeleteColumn != false) {
+            } else if (worksheet.selection.column != null) {
+                if (worksheet.options.allowDeleteColumn != false) {
                     if (confirm(jSuites.translate('Are you sure to delete the selected columns?'))) {
-                        obj.deleteColumn();
+                        worksheet.deleteColumn();
                     }
                 }
             } else {
                 // Change value
-                obj.setValue(
-                    obj.selection.highlighted.map((record) => {
+                worksheet.setValue(
+                    worksheet.selection.highlighted.map((record) => {
                         return record.element;
                     }),
                     ''
@@ -107,22 +108,22 @@ export class Keyboard {
      */
     private enterKey(e: TargetEvent<KeyboardEvent>) {
         // gridKeys calls it, when the worksheet has a selection
-        const obj = this.worksheet as SelectedWorksheet;
+        const worksheet = this.worksheet as SelectedWorksheet;
 
         // Move cursor
         if (e.shiftKey) {
-            obj.selection.up();
+            worksheet.selection.up();
         } else {
-            if (obj.options.allowInsertRow != false) {
-                if (obj.options.allowManualInsertRow != false) {
-                    if (obj.selection.range[1] == obj.options.data.length - 1) {
+            if (worksheet.options.allowInsertRow != false) {
+                if (worksheet.options.allowManualInsertRow != false) {
+                    if (worksheet.selection.range[1] == worksheet.options.data.length - 1) {
                         // New record in case the selection is in the last row
-                        obj.insertRow();
+                        worksheet.insertRow();
                     }
                 }
             }
 
-            obj.selection.down();
+            worksheet.selection.down();
         }
         e.preventDefault();
     }
@@ -132,22 +133,22 @@ export class Keyboard {
      */
     private tabKey(e: TargetEvent<KeyboardEvent>) {
         // gridKeys calls it, when the worksheet has a selection
-        const obj = this.worksheet as SelectedWorksheet;
+        const worksheet = this.worksheet as SelectedWorksheet;
 
         // Tab
         if (e.shiftKey) {
-            obj.selection.left();
+            worksheet.selection.left();
         } else {
-            if (obj.options.allowInsertColumn != false) {
-                if (obj.options.allowManualInsertColumn != false) {
-                    if (obj.selection.range[0] == obj.options.data[0].length - 1) {
+            if (worksheet.options.allowInsertColumn != false) {
+                if (worksheet.options.allowManualInsertColumn != false) {
+                    if (worksheet.selection.range[0] == worksheet.options.data[0].length - 1) {
                         // New record in case the selection is in the last column
-                        obj.insertColumn();
+                        worksheet.insertColumn();
                     }
                 }
             }
 
-            obj.selection.right();
+            worksheet.selection.right();
         }
         e.preventDefault();
     }
@@ -157,31 +158,31 @@ export class Keyboard {
      */
     private shortcutKeys(e: TargetEvent<KeyboardEvent>) {
         // gridKeys calls it, when the worksheet has a selection
-        const obj = this.worksheet as SelectedWorksheet;
+        const worksheet = this.worksheet as SelectedWorksheet;
 
         if (e.which == 65) {
             // Ctrl + A
-            obj.selection.selectAll();
+            worksheet.selection.selectAll();
             e.preventDefault();
         } else if (e.which == 83) {
             // Ctrl + S
-            obj.download();
+            worksheet.download();
             e.preventDefault();
         } else if (e.which == 89) {
             // Ctrl + Y
-            obj.redo();
+            worksheet.redo();
             e.preventDefault();
         } else if (e.which == 90) {
             // Ctrl + Z
-            obj.undo();
+            worksheet.undo();
             e.preventDefault();
         } else if (e.which == 67) {
             // Ctrl + C
-            obj.clipboard.copy(true);
+            worksheet.clipboard.copy(true);
             e.preventDefault();
         } else if (e.which == 88) {
             // Ctrl + X
-            if (obj.options.editable != false) {
+            if (worksheet.options.editable != false) {
                 cutControls();
             } else {
                 copyControls();
@@ -199,29 +200,29 @@ export class Keyboard {
      */
     private typingKeys(e: TargetEvent<KeyboardEvent>) {
         // gridKeys calls it, when the worksheet has a selection
-        const obj = this.worksheet as SelectedWorksheet;
+        const worksheet = this.worksheet as SelectedWorksheet;
 
-        if (obj.options.editable != false) {
-            const rowId = obj.selection.range[1];
-            const columnId = obj.selection.range[0];
-            const column = obj.options.columns[obj.cells.getColumnIndex(columnId, rowId)];
+        if (worksheet.options.editable != false) {
+            const rowId = worksheet.selection.range[1];
+            const columnId = worksheet.selection.range[0];
+            const column = worksheet.options.columns[worksheet.cells.getColumnIndex(columnId, rowId)];
 
             // Characters able to start a edition
             if (e.keyCode == 32) {
                 // Space
                 e.preventDefault();
                 if (column.type == 'checkbox' || column.type == 'radio') {
-                    obj.editor.setCheckRadioValue();
+                    worksheet.editor.setCheckRadioValue();
                 } else {
                     // Start edition
-                    obj.editor.open(obj.records[rowId][columnId].element, true, e);
+                    worksheet.editor.open(worksheet.records[rowId][columnId].element, true, e);
                 }
             } else if (e.keyCode == 113) {
                 // Start edition with current content F2
-                obj.editor.open(obj.records[rowId][columnId].element, false, e);
+                worksheet.editor.open(worksheet.records[rowId][columnId].element, false, e);
             } else if ((e.key.length === 1 || e.key === 'Process') && !(e.altKey || isCtrl(e))) {
                 // Start edition
-                obj.editor.open(obj.records[rowId][columnId].element, true, e);
+                worksheet.editor.open(worksheet.records[rowId][columnId].element, true, e);
                 // Prevent entries in the calendar
                 if (column && column.type == 'calendar') {
                     e.preventDefault();
@@ -236,26 +237,26 @@ export class Keyboard {
      */
     gridKeys(e: TargetEvent<KeyboardEvent>) {
         // keyDownControls calls it only when the worksheet has a selection
-        const obj = this.worksheet as SelectedWorksheet;
+        const worksheet = this.worksheet as SelectedWorksheet;
 
         // Which key
         if (e.which == 37) {
-            obj.selection.left(e.shiftKey, e.ctrlKey);
+            worksheet.selection.left(e.shiftKey, e.ctrlKey);
             e.preventDefault();
         } else if (e.which == 39) {
-            obj.selection.right(e.shiftKey, e.ctrlKey);
+            worksheet.selection.right(e.shiftKey, e.ctrlKey);
             e.preventDefault();
         } else if (e.which == 38) {
-            obj.selection.up(e.shiftKey, e.ctrlKey);
+            worksheet.selection.up(e.shiftKey, e.ctrlKey);
             e.preventDefault();
         } else if (e.which == 40) {
-            obj.selection.down(e.shiftKey, e.ctrlKey);
+            worksheet.selection.down(e.shiftKey, e.ctrlKey);
             e.preventDefault();
         } else if (e.which == 36) {
-            obj.selection.first(e.shiftKey, e.ctrlKey);
+            worksheet.selection.first(e.shiftKey, e.ctrlKey);
             e.preventDefault();
         } else if (e.which == 35) {
-            obj.selection.last(e.shiftKey, e.ctrlKey);
+            worksheet.selection.last(e.shiftKey, e.ctrlKey);
             e.preventDefault();
         } else if (e.which == 46 || e.which == 8) {
             // Delete

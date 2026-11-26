@@ -152,12 +152,12 @@ export class Clipboard {
      * that it spans.
      */
     private getNestedHeadersText(delimiter: string) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         let nestedHeaders = '';
 
-        if (obj.options.nestedHeaders && obj.options.nestedHeaders.length > 0) {
-            const headerRows = obj.options.nestedHeaders;
+        if (worksheet.options.nestedHeaders && worksheet.options.nestedHeaders.length > 0) {
+            const headerRows = worksheet.options.nestedHeaders;
 
             for (let j = 0; j < headerRows.length; j++) {
                 const nested = [];
@@ -182,15 +182,15 @@ export class Clipboard {
      * @param copyHeader - Put the headers before the first row.
      */
     private getCopiedRows(highlighted: boolean, delimiter: string, div: RegExp, copyHeader: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const header = [];
         let col = [];
         let colLabel = [];
         const row = [];
         const rowLabel = [];
-        const x = obj.options.data[0].length;
-        const y = obj.options.data.length;
+        const x = worksheet.options.data[0].length;
+        const y = worksheet.options.data.length;
         let numOfCols = 0;
         let numOfRows = 0;
 
@@ -204,31 +204,31 @@ export class Clipboard {
 
             for (let i = 0; i < x; i++) {
                 // If cell is highlighted
-                if (!highlighted || obj.records[j][i].element.classList.contains('highlight')) {
+                if (!highlighted || worksheet.records[j][i].element.classList.contains('highlight')) {
                     if (copyHeader == true) {
-                        header.push(obj.headers[i].textContent);
+                        header.push(worksheet.headers[i].textContent);
                     }
                     // Values
-                    const value = quote(obj.options.data[j][i], div);
+                    const value = quote(worksheet.options.data[j][i], div);
                     col.push(value);
 
                     // Labels
                     let label;
 
                     if (
-                        obj.options.columns &&
-                        obj.options.columns[i] &&
-                        (obj.options.columns[i].type == 'checkbox' || obj.options.columns[i].type == 'radio')
+                        worksheet.options.columns &&
+                        worksheet.options.columns[i] &&
+                        (worksheet.options.columns[i].type == 'checkbox' || worksheet.options.columns[i].type == 'radio')
                     ) {
                         label = value;
                     } else {
-                        label = quote(obj.records[j][i].element.innerHTML, div);
+                        label = quote(worksheet.records[j][i].element.innerHTML, div);
                     }
                     colLabel.push(label);
 
                     // Get style
                     // createCell gives each cell a style attribute
-                    const cellStyle = obj.records[j][i].element.getAttribute('style')!.replace('display: none;', '');
+                    const cellStyle = worksheet.records[j][i].element.getAttribute('style')!.replace('display: none;', '');
                     style.push(cellStyle ? cellStyle : '');
                 }
             }
@@ -261,7 +261,7 @@ export class Clipboard {
      * @return string value
      */
     copy(highlighted: boolean, delimiter?: string, returnData?: boolean, includeHeaders?: boolean, download?: boolean, isCut?: boolean, processed?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         if (!delimiter) {
             delimiter = '\t';
@@ -270,13 +270,13 @@ export class Clipboard {
         const div = new RegExp(delimiter, 'ig');
 
         // Controls
-        const x = obj.options.data[0].length;
-        const y = obj.options.data.length;
+        const x = worksheet.options.data[0].length;
+        const y = worksheet.options.data.length;
         let copyHeader = false;
         let headers = '';
         let nestedHeaders = '';
 
-        if (download && (obj.parent.config.includeHeadersOnDownload == true || includeHeaders)) {
+        if (download && (worksheet.parent.config.includeHeadersOnDownload == true || includeHeaders)) {
             // Nested headers
             nestedHeaders = this.getNestedHeadersText(delimiter);
 
@@ -296,19 +296,19 @@ export class Clipboard {
         // Create a hidden textarea to copy the values
         if (!returnData) {
             // Without a selection, no cell is highlighted: copy nothing and keep the clipboard
-            if (!obj.selection.range) {
+            if (!worksheet.selection.range) {
                 return;
             }
 
             // Paste event
             const selectedRange: [number, number, number, number] = [
-                Math.min(obj.selection.range[0], obj.selection.range[2]),
-                Math.min(obj.selection.range[1], obj.selection.range[3]),
-                Math.max(obj.selection.range[0], obj.selection.range[2]),
-                Math.max(obj.selection.range[1], obj.selection.range[3]),
+                Math.min(worksheet.selection.range[0], worksheet.selection.range[2]),
+                Math.min(worksheet.selection.range[1], worksheet.selection.range[3]),
+                Math.max(worksheet.selection.range[0], worksheet.selection.range[2]),
+                Math.max(worksheet.selection.range[1], worksheet.selection.range[3]),
             ];
 
-            const result = obj.dispatch('oncopy', obj, selectedRange, strLabel, isCut);
+            const result = worksheet.dispatch('oncopy', worksheet, selectedRange, strLabel, isCut);
 
             if (result) {
                 strLabel = result;
@@ -316,7 +316,7 @@ export class Clipboard {
                 return false;
             }
 
-            obj.clipboard.write(strLabel);
+            worksheet.clipboard.write(strLabel);
         }
 
         const data = processed == true ? strLabel : str;
@@ -324,14 +324,14 @@ export class Clipboard {
         // A copy to the clipboard keeps the data, so that a paste of the same text gets the styles too. A cancelled copy or a
         // download keeps what was copied before.
         if (!returnData) {
-            obj.clipboard.keep(data, style);
+            worksheet.clipboard.keep(data, style);
 
             // Any exiting border should go
-            obj.clipboard.clearBorder();
+            worksheet.clipboard.clearBorder();
 
             // Border
-            if (obj.selection.highlighted) {
-                obj.clipboard.showBorder(obj.selection.highlighted);
+            if (worksheet.selection.highlighted) {
+                worksheet.clipboard.showBorder(worksheet.selection.highlighted);
             }
         }
 
@@ -343,26 +343,26 @@ export class Clipboard {
      * the references once.
      */
     private insertSpaceForPaste(colIndex: number, rowIndex: number, rows: jspreadsheet.CellValue[][]) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        const hiddenColCount = obj.headers.slice(colIndex).filter((x) => x.style.display === 'none').length;
+        const hiddenColCount = worksheet.headers.slice(colIndex).filter((x) => x.style.display === 'none').length;
         const expandedColCount = colIndex + hiddenColCount + rows[0].length;
-        const currentColCount = obj.headers.length;
+        const currentColCount = worksheet.headers.length;
         if (expandedColCount > currentColCount) {
-            obj.skipUpdateTableReferences = true;
-            obj.insertColumn(expandedColCount - currentColCount);
+            worksheet.skipUpdateTableReferences = true;
+            worksheet.insertColumn(expandedColCount - currentColCount);
         }
-        const hiddenRowCount = obj.rows.slice(rowIndex).filter((x) => x.element.style.display === 'none').length;
+        const hiddenRowCount = worksheet.rows.slice(rowIndex).filter((x) => x.element.style.display === 'none').length;
         const expandedRowCount = rowIndex + hiddenRowCount + rows.length;
-        const currentRowCount = obj.rows.length;
+        const currentRowCount = worksheet.rows.length;
         if (expandedRowCount > currentRowCount) {
-            obj.skipUpdateTableReferences = true;
-            obj.insertRow(expandedRowCount - currentRowCount);
+            worksheet.skipUpdateTableReferences = true;
+            worksheet.insertRow(expandedRowCount - currentRowCount);
         }
 
-        if (obj.skipUpdateTableReferences) {
-            obj.skipUpdateTableReferences = false;
-            obj.formulas.updateTableReferences();
+        if (worksheet.skipUpdateTableReferences) {
+            worksheet.skipUpdateTableReferences = false;
+            worksheet.formulas.updateTableReferences();
         }
     }
 
@@ -372,7 +372,7 @@ export class Clipboard {
      * @returns The records for the history, the new and the old styles, and the last cell written.
      */
     private pasteRows(x: number, y: number, rows: jspreadsheet.CellValue[][], style: string[] | null) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Records
         let i = 0;
@@ -394,56 +394,56 @@ export class Clipboard {
             while (row[i] != null) {
                 let value = row[i];
 
-                if (obj.options.columns && obj.options.columns[i] && obj.options.columns[i].type == 'calendar') {
+                if (worksheet.options.columns && worksheet.options.columns[i] && worksheet.options.columns[i].type == 'calendar') {
                     // The jsuites typings miss extractDateFromString
                     value = jSuites.calendar.extractDateFromString(
                         value,
-                        (obj.options.columns[i].options && obj.options.columns[i].options.format) || 'YYYY-MM-DD'
+                        (worksheet.options.columns[i].options && worksheet.options.columns[i].options.format) || 'YYYY-MM-DD'
                     );
                 }
 
                 // Update and keep history
-                const record = obj.cells.update(colIndex, rowIndex, value);
+                const record = worksheet.cells.update(colIndex, rowIndex, value);
                 // Keep history
                 records.push(record);
                 // Update all formulas in the chain
-                obj.formulas.updateChain(colIndex, rowIndex, records);
+                worksheet.formulas.updateChain(colIndex, rowIndex, records);
                 // Style
                 if (style && style[styleIndex]) {
                     const columnName = getColumnNameFromId([colIndex, rowIndex]);
                     newStyle[columnName] = style[styleIndex];
                     // The style text of one cell
-                    oldStyle[columnName] = obj.getStyle(columnName) as string;
-                    obj.records[rowIndex][colIndex].element.setAttribute('style', style[styleIndex]);
+                    oldStyle[columnName] = worksheet.getStyle(columnName) as string;
+                    worksheet.records[rowIndex][colIndex].element.setAttribute('style', style[styleIndex]);
                     styleIndex++;
                 }
                 i++;
                 if (row[i] != null) {
-                    if (colIndex >= obj.headers.length - 1) {
+                    if (colIndex >= worksheet.headers.length - 1) {
                         // If the pasted column is out of range, create it if possible
-                        if (obj.options.allowInsertColumn != false) {
-                            obj.insertColumn();
+                        if (worksheet.options.allowInsertColumn != false) {
+                            worksheet.insertColumn();
                             // Otherwise skip the pasted data that overflows
                         } else {
                             break;
                         }
                     }
-                    colIndex = obj.selection.rightGet(colIndex, rowIndex);
+                    colIndex = worksheet.selection.rightGet(colIndex, rowIndex);
                 }
             }
 
             j++;
             if (rows[j]) {
-                if (rowIndex >= obj.rows.length - 1) {
+                if (rowIndex >= worksheet.rows.length - 1) {
                     // If the pasted row is out of range, create it if possible
-                    if (obj.options.allowInsertRow != false) {
-                        obj.insertRow();
+                    if (worksheet.options.allowInsertRow != false) {
+                        worksheet.insertRow();
                         // Otherwise skip the pasted data that overflows
                     } else {
                         break;
                     }
                 }
-                rowIndex = obj.selection.downGet(x, rowIndex);
+                rowIndex = worksheet.selection.downGet(x, rowIndex);
             }
         }
 
@@ -459,23 +459,23 @@ export class Clipboard {
      * @return string value
      */
     paste(x: number, y: number, data: string) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Controls
-        const isCopy = obj.clipboard.matches(data);
-        let style = isCopy ? obj.clipboard.style : null;
+        const isCopy = worksheet.clipboard.matches(data);
+        let style = isCopy ? worksheet.clipboard.style : null;
 
         // Depending on the behavior
         if (isCopy) {
-            data = obj.clipboard.data;
+            data = worksheet.clipboard.data;
         }
 
         // Split new line. The rows and columns of the text, which can grow below to fill the selection, or be replaced by onbeforepaste
         let rows: jspreadsheet.CellValue[][] = parseCSV(data, '\t');
 
         // The end of the selection, to repeat the data over it. Without a selection, the data is pasted once.
-        const ex = obj.selection.range ? obj.selection.range[2] : x;
-        const ey = obj.selection.range ? obj.selection.range[3] : y;
+        const ex = worksheet.selection.range ? worksheet.selection.range[2] : x;
+        const ey = worksheet.selection.range ? worksheet.selection.range[3] : y;
 
         const w = ex - x + 1;
         const h = ey - y + 1;
@@ -484,9 +484,9 @@ export class Clipboard {
         ({ rows, style } = repeatToSelection(rows, style, w, h));
 
         // Paste filter
-        const ret = obj.dispatch(
+        const ret = worksheet.dispatch(
             'onbeforepaste',
-            obj,
+            worksheet,
             rows.map((row) => {
                 return row.map((item) => {
                     return { value: item };
@@ -517,19 +517,19 @@ export class Clipboard {
             const { records, newStyle, oldStyle, lastColumn, lastRow } = this.pasteRows(x, y, rows, style);
 
             // Select the new cells
-            obj.selection.updateFromCoords(x, y, lastColumn, lastRow);
+            worksheet.selection.updateFromCoords(x, y, lastColumn, lastRow);
 
             // Update history
-            obj.history.add({
+            worksheet.history.add({
                 action: 'setValue',
                 records,
-                selection: obj.selection.range && [...obj.selection.range],
+                selection: worksheet.selection.range && [...worksheet.selection.range],
                 newStyle,
                 oldStyle,
             });
 
             // Update table
-            obj.data.updateTable();
+            worksheet.data.updateTable();
 
             // Paste event
             const eventRecords = [];
@@ -544,7 +544,7 @@ export class Clipboard {
                 }
             }
 
-            obj.dispatch('onpaste', obj, eventRecords);
+            worksheet.dispatch('onpaste', worksheet, eventRecords);
 
             // On after changes
             const onafterchangesRecords = records.map((record) => {
@@ -557,10 +557,10 @@ export class Clipboard {
             });
 
             // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-            obj.dispatch('onafterchanges', obj, onafterchangesRecords as unknown as jspreadsheet.CellChange[]);
+            worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as jspreadsheet.CellChange[]);
         }
 
-        obj.clipboard.clearBorder();
+        worksheet.clipboard.clearBorder();
     }
 
     /**
@@ -569,30 +569,30 @@ export class Clipboard {
      * @param processed - Download the shown values instead of the data.
      */
     download(includeHeaders?: boolean, processed?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (obj.parent.config.allowExport == false) {
+        if (worksheet.parent.config.allowExport == false) {
             console.error('Export not allowed');
         } else {
             // Data
             let data = '';
 
             // Get data
-            data += obj.clipboard.copy(false, obj.options.csvDelimiter, true, includeHeaders, true, undefined, processed);
+            data += worksheet.clipboard.copy(false, worksheet.options.csvDelimiter, true, includeHeaders, true, undefined, processed);
 
             // Download element
             const blob = new Blob(['\uFEFF' + data], { type: 'text/csv;charset=utf-8;' });
 
             // IE Compatibility
             if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-                window.navigator.msSaveOrOpenBlob(blob, (obj.options.csvFileName || obj.options.worksheetName) + '.csv');
+                window.navigator.msSaveOrOpenBlob(blob, (worksheet.options.csvFileName || worksheet.options.worksheetName) + '.csv');
             } else {
                 // Download element
                 const pom = document.createElement('a');
                 pom.setAttribute('target', '_top');
                 const url = URL.createObjectURL(blob);
                 pom.href = url;
-                pom.setAttribute('download', (obj.options.csvFileName || obj.options.worksheetName) + '.csv');
+                pom.setAttribute('download', (worksheet.options.csvFileName || worksheet.options.worksheetName) + '.csv');
                 document.body.appendChild(pom);
                 pom.click();
                 pom.parentNode!.removeChild(pom);

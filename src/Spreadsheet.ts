@@ -42,32 +42,31 @@ export class Spreadsheet {
      * event handlers. The element gets the spreadsheet at the end.
      */
     async build() {
-        const spreadsheet = this;
         // The options that jspreadsheet() got, and the element that the spreadsheet fills
-        const options = spreadsheet.config;
-        const el = spreadsheet.element;
+        const options = this.config;
+        const el = this.element;
 
         // setPlugins ignores a missing value
-        spreadsheet.setPlugins(options.plugins as Record<string, jspreadsheet.PluginFactory>);
+        this.setPlugins(options.plugins as Record<string, jspreadsheet.PluginFactory>);
 
         // Create as worksheets
         await this.createWorksheets(options, el);
 
-        spreadsheet.element.appendChild(spreadsheet.contextMenu);
+        this.element.appendChild(this.contextMenu);
 
         // Create element
-        jSuites.contextmenu(spreadsheet.contextMenu, {
-            onclick() {
-                spreadsheet.contextMenu.contextmenu.close(false);
+        jSuites.contextmenu(this.contextMenu, {
+            onclick: () => {
+                this.contextMenu.contextmenu.close(false);
             },
         });
 
         // Fullscreen
-        if (spreadsheet.config.fullscreen == true) {
-            spreadsheet.element.classList.add('fullscreen');
+        if (this.config.fullscreen == true) {
+            this.element.classList.add('fullscreen');
         }
 
-        spreadsheet.toolbarManager.show();
+        this.toolbarManager.show();
 
         // Build handlers
         if (options.root) {
@@ -76,51 +75,49 @@ export class Spreadsheet {
             setEvents(document);
         }
 
-        el.spreadsheet = spreadsheet;
+        el.spreadsheet = this;
     }
 
     private async createWorksheets(options: jspreadsheet.SpreadsheetOptions, el: HTMLElement) {
-        const spreadsheet = this;
-
         // Create worksheets
         const o = options.worksheets;
         if (o) {
             const tabsOptions: Partial<TabsOptions> = {
                 animation: true,
-                onbeforecreate(element: HTMLElement, title?: string | null) {
+                onbeforecreate: (element: HTMLElement, title?: string | null) => {
                     if (title) {
                         return title;
                     } else {
-                        return spreadsheet.getNextDefaultWorksheetName();
+                        return this.getNextDefaultWorksheetName();
                     }
                 },
-                oncreate(element: HTMLElement & { tabs: Tabs }, newTabContent: HTMLDivElement | undefined) {
-                    if (!spreadsheet.creationThroughJss) {
+                oncreate: (element: HTMLElement & { tabs: Tabs }, newTabContent: HTMLDivElement | undefined) => {
+                    if (!this.creationThroughJss) {
                         const worksheetName = element.tabs.headers.children[element.tabs.headers.children.length - 2].innerHTML;
 
-                        spreadsheet.createWorksheetObj({
+                        this.createWorksheetObj({
                             minDimensions: [10, 15],
                             worksheetName,
                         });
                     } else {
-                        spreadsheet.creationThroughJss = false;
+                        this.creationThroughJss = false;
                     }
 
-                    const newWorksheet = spreadsheet.worksheets[spreadsheet.worksheets.length - 1];
+                    const newWorksheet = this.worksheets[this.worksheets.length - 1];
 
                     // build adds jssWorksheet
                     // onbeforecreate always gives a title, so the tab has its content
                     newWorksheet.element = newTabContent as Worksheet['element'];
 
                     newWorksheet.build().then(() => {
-                        spreadsheet.toolbarManager.update(newWorksheet);
+                        this.toolbarManager.update(newWorksheet);
 
-                        newWorksheet.dispatch('oncreateworksheet', newWorksheet, newWorksheet.options, spreadsheet.worksheets.length - 1);
+                        newWorksheet.dispatch('oncreateworksheet', newWorksheet, newWorksheet.options, this.worksheets.length - 1);
                     });
                 },
-                onchange(element: HTMLElement, instance: Tabs, tabIndex: number) {
-                    if (spreadsheet.worksheets.length != 0 && spreadsheet.worksheets[tabIndex]) {
-                        spreadsheet.toolbarManager.update(spreadsheet.worksheets[tabIndex]);
+                onchange: (element: HTMLElement, instance: Tabs, tabIndex: number) => {
+                    if (this.worksheets.length != 0 && this.worksheets[tabIndex]) {
+                        this.toolbarManager.update(this.worksheets[tabIndex]);
                     }
                 },
             };
@@ -168,9 +165,9 @@ export class Spreadsheet {
                     });
                 }
 
-                spreadsheet.worksheets.push(new Worksheet(spreadsheet, o[i], tabs.content.children[i] as HTMLElement));
+                this.worksheets.push(new Worksheet(this, o[i], tabs.content.children[i] as HTMLElement));
 
-                await spreadsheet.worksheets[i].build();
+                await this.worksheets[i].build();
             }
         } else {
             throw new Error('JSS: worksheets are not defined');
@@ -181,12 +178,11 @@ export class Spreadsheet {
      * The name of a new worksheet: Sheet and the number after the largest number of the worksheets called Sheet and a number.
      */
     private getNextDefaultWorksheetName() {
-        const spreadsheet = this;
         const defaultWorksheetNameRegex = /^Sheet(\d+)$/;
 
         let largestWorksheetNumber = 0;
 
-        spreadsheet.worksheets.forEach((worksheet) => {
+        this.worksheets.forEach((worksheet) => {
             const regexResult = defaultWorksheetNameRegex.exec(worksheet.options.worksheetName!);
             if (regexResult) {
                 largestWorksheetNumber = Math.max(largestWorksheetNumber, parseInt(regexResult[1]));
@@ -200,16 +196,14 @@ export class Spreadsheet {
      * Create a worksheet and add it and its options to the spreadsheet. The worksheet is built when its tab is created.
      */
     createWorksheetObj(options: jspreadsheet.WorksheetOptions) {
-        const spreadsheet = this;
-
         if (!options.worksheetName) {
-            options.worksheetName = spreadsheet.getNextDefaultWorksheetName();
+            options.worksheetName = this.getNextDefaultWorksheetName();
         }
 
-        const newWorksheet = new Worksheet(spreadsheet, options);
+        const newWorksheet = new Worksheet(this, options);
 
-        spreadsheet.config.worksheets.push(newWorksheet.options);
-        spreadsheet.worksheets.push(newWorksheet);
+        this.config.worksheets.push(newWorksheet.options);
+        this.worksheets.push(newWorksheet);
 
         return newWorksheet;
     }
@@ -231,29 +225,28 @@ export class Spreadsheet {
      * `this`. It returns the result of the last handler.
      */
     callHandlers(source: Worksheet | Spreadsheet, event: EventName, args: unknown[]) {
-        const spreadsheet = this;
         let ret: unknown = null;
 
         // Dispatch events
-        if (!spreadsheet.ignoreEvents) {
+        if (!this.ignoreEvents) {
             // Call global event
-            if (typeof spreadsheet.config.onevent == 'function') {
+            if (typeof this.config.onevent == 'function') {
                 // The arguments match the handler of the event, as the type of dispatch says
-                ret = (spreadsheet.config.onevent as (...args: unknown[]) => unknown).call(source, event, ...args);
+                ret = (this.config.onevent as (...args: unknown[]) => unknown).call(source, event, ...args);
             }
             // Call specific events
-            const config = spreadsheet.config;
+            const config = this.config;
             if (typeof config[event] == 'function') {
                 // The arguments match the handler of the event, as the type of dispatch says
                 ret = (config[event] as (...args: unknown[]) => unknown).apply(source, args);
             }
 
-            if (typeof spreadsheet.plugins === 'object') {
-                const pluginKeys = Object.keys(spreadsheet.plugins);
+            if (typeof this.plugins === 'object') {
+                const pluginKeys = Object.keys(this.plugins);
 
                 for (let pluginKeyIndex = 0; pluginKeyIndex < pluginKeys.length; pluginKeyIndex++) {
                     const key = pluginKeys[pluginKeyIndex];
-                    const plugin = spreadsheet.plugins[key];
+                    const plugin = this.plugins[key];
 
                     if (typeof plugin.onevent === 'function') {
                         // The arguments match the handler of the event, as the type of dispatch says
@@ -270,22 +263,18 @@ export class Spreadsheet {
      * The index of the worksheet that the spreadsheet shows.
      */
     getWorksheetActive(): number {
-        const spreadsheet = this;
-
         // The element of a spreadsheet with tabs has the tabs object
         // getActive returns false only when no tab is open, and a tab is open while the spreadsheet has worksheets
-        return spreadsheet.element.tabs ? (spreadsheet.element.tabs.getActive() as number) : 0;
+        return this.element.tabs ? (this.element.tabs.getActive() as number) : 0;
     }
 
     /**
      * The worksheet at an index, or the worksheet that the spreadsheet shows.
      */
     getWorksheetInstance(index?: number) {
-        const spreadsheet = this;
+        const worksheetIndex = typeof index !== 'undefined' ? index : this.getWorksheetActive();
 
-        const worksheetIndex = typeof index !== 'undefined' ? index : spreadsheet.getWorksheetActive();
-
-        return spreadsheet.worksheets[worksheetIndex];
+        return this.worksheets[worksheetIndex];
     }
 
     /**
@@ -294,22 +283,20 @@ export class Spreadsheet {
      * @Param {boolean} activate
      */
     fullscreen(activate?: boolean) {
-        const spreadsheet = this;
-
         // If activate not defined, get reverse options.fullscreen
         if (activate == null) {
-            activate = !spreadsheet.config.fullscreen;
+            activate = !this.config.fullscreen;
         }
 
         // If change
-        if (spreadsheet.config.fullscreen != activate) {
-            spreadsheet.config.fullscreen = activate;
+        if (this.config.fullscreen != activate) {
+            this.config.fullscreen = activate;
 
             // Test LazyLoading conflict
             if (activate == true) {
-                spreadsheet.element.classList.add('fullscreen');
+                this.element.classList.add('fullscreen');
             } else {
-                spreadsheet.element.classList.remove('fullscreen');
+                this.element.classList.remove('fullscreen');
             }
         }
     }
@@ -326,9 +313,7 @@ export class Spreadsheet {
      * Get the options of the spreadsheet.
      */
     getConfig() {
-        const spreadsheet = this;
-
-        return spreadsheet.config;
+        return this.config;
     }
 
     /**
@@ -336,19 +321,17 @@ export class Spreadsheet {
      * @param config - The options to change.
      */
     setConfig(config: jspreadsheet.SpreadsheetOptions | jspreadsheet.WorksheetOptions) {
-        const spreadsheet = this;
-
         const keys = Object.keys(config);
 
         keys.forEach((key) => {
             // The options are set by name, and SpreadsheetOptions has no index signature
-            (spreadsheet.config as unknown as Record<string, unknown>)[key] = (config as Record<string, unknown>)[key];
+            (this.config as unknown as Record<string, unknown>)[key] = (config as Record<string, unknown>)[key];
 
             if (key === 'toolbar') {
                 if ((config as Record<string, unknown>)[key] === true) {
-                    spreadsheet.showToolbar();
+                    this.showToolbar();
                 } else if ((config as Record<string, unknown>)[key] === false) {
-                    spreadsheet.hideToolbar();
+                    this.hideToolbar();
                 }
             }
         });
@@ -358,15 +341,13 @@ export class Spreadsheet {
      * Add plugins to the spreadsheet. Each plugin factory gets the spreadsheet, empty options and the spreadsheet options.
      */
     setPlugins(newPlugins: Record<string, jspreadsheet.PluginFactory>) {
-        const spreadsheet = this;
-
-        if (!spreadsheet.plugins) {
-            spreadsheet.plugins = {};
+        if (!this.plugins) {
+            this.plugins = {};
         }
 
         if (typeof newPlugins == 'object') {
             Object.entries(newPlugins).forEach(([pluginName, plugin]) => {
-                spreadsheet.plugins[pluginName] = plugin.call(libraryBase.jspreadsheet, spreadsheet, {}, spreadsheet.config);
+                this.plugins[pluginName] = plugin.call(libraryBase.jspreadsheet, this, {}, this.config);
             });
         }
     }

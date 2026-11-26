@@ -58,10 +58,10 @@ export class Formulas {
      * Trying to extract a number from a string
      */
     private parseNumber(value: unknown, columnNumber: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Decimal point. Column 0 has one too.
-        const column = obj.options.columns[columnNumber];
+        const column = worksheet.options.columns[columnNumber];
         const decimal = column && column.decimal ? column.decimal : '.';
 
         // Parse both parts of the number
@@ -95,14 +95,14 @@ export class Formulas {
      * Parse formulas
      */
     execute(expression: string, x?: number, y?: number): unknown {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // The results and the formulas in progress, by cell name
         const formulaResults: Record<string, unknown> = {};
         const formulaLoopProtection: Record<string, boolean> = {};
 
         // A formula engine of the application calculates the formula in place of the formula plugin
-        const formulaEngine = typeof obj.parent.config.formulaEngine === 'function' ? obj.parent.config.formulaEngine : null;
+        const formulaEngine = typeof worksheet.parent.config.formulaEngine === 'function' ? worksheet.parent.config.formulaEngine : null;
 
         // Execute formula with loop protection
         function execute(expression: string, x?: number, y?: number) {
@@ -182,7 +182,7 @@ export class Formulas {
                 if (tokens) {
                     for (let i = 0; i < tokens.length; i++) {
                         // Keep chain
-                        obj.formulas.add(tokens[i], parentId);
+                        worksheet.formulas.add(tokens[i], parentId);
 
                         // Do not calculate again. The formula engine reads the values of the references itself.
                         if (!formulaEngine && typeof (globalThis as unknown as Record<string, unknown>)[tokens[i]] === 'undefined') {
@@ -191,8 +191,11 @@ export class Formulas {
                             // Get value
                             let value: unknown;
 
-                            if (typeof obj.options.data[position[1]] != 'undefined' && typeof obj.options.data[position[1]][position[0]] != 'undefined') {
-                                value = obj.options.data[position[1]][position[0]];
+                            if (
+                                typeof worksheet.options.data[position[1]] != 'undefined' &&
+                                typeof worksheet.options.data[position[1]][position[0]] != 'undefined'
+                            ) {
+                                value = worksheet.options.data[position[1]][position[0]];
                             } else {
                                 value = '';
                             }
@@ -210,13 +213,13 @@ export class Formulas {
                                 // Null
                                 formulaExpressions[tokens[i]] = null;
                             } else {
-                                if (value == Number(value) && obj.parent.config.autoCasting != false) {
+                                if (value == Number(value) && worksheet.parent.config.autoCasting != false) {
                                     // Number
                                     formulaExpressions[tokens[i]] = Number(value);
                                 } else {
                                     // Trying any formatted number
-                                    const number = obj.formulas.parseNumber(value, position[0]);
-                                    if (obj.parent.config.autoCasting != false && number) {
+                                    const number = worksheet.formulas.parseNumber(value, position[0]);
+                                    if (worksheet.parent.config.autoCasting != false && number) {
                                         formulaExpressions[tokens[i]] = number;
                                     } else {
                                         // Text as a string literal, with its quotes and backslashes escaped
@@ -230,7 +233,7 @@ export class Formulas {
 
                 let source = text;
 
-                const ret = obj.dispatch('onbeforeformula', obj, expression, x, y);
+                const ret = worksheet.dispatch('onbeforeformula', worksheet, expression, x, y);
                 if (ret === false) {
                     return expression;
                 } else if (ret) {
@@ -252,9 +255,9 @@ export class Formulas {
 
                 try {
                     if (formulaEngine) {
-                        res = formulaEngine(obj, source, x === undefined ? x : Number(x), y === undefined ? y : Number(y));
+                        res = formulaEngine(worksheet, source, x === undefined ? x : Number(x), y === undefined ? y : Number(y));
                     } else {
-                        res = formula(parsedExpression, formulaExpressions, x, y, obj);
+                        res = formula(parsedExpression, formulaExpressions, x, y, worksheet);
                     }
 
                     if (typeof res === 'function') {
@@ -263,7 +266,7 @@ export class Formulas {
                 } catch (e) {
                     res = '#ERROR';
 
-                    if (obj.parent.config.debugFormulas === true) {
+                    if (worksheet.parent.config.debugFormulas === true) {
                         console.log(expression.substr(1), formulaExpressions, e);
                     }
                 }
@@ -279,28 +282,28 @@ export class Formulas {
      * Update all related cells in the chain
      */
     updateChain(x: number, y: number, records: HistoryCellChange[]) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const cellId = getColumnNameFromId([x, y]);
-        if (obj.formulas.chain[cellId] && obj.formulas.chain[cellId].length > 0) {
+        if (worksheet.formulas.chain[cellId] && worksheet.formulas.chain[cellId].length > 0) {
             if (chainLoopProtection[cellId]) {
-                obj.records[y][x].element.innerHTML = '#ERROR';
+                worksheet.records[y][x].element.innerHTML = '#ERROR';
                 // The chain ends here
-                obj.formulas.chain[cellId] = [];
+                worksheet.formulas.chain[cellId] = [];
             } else {
                 // Protection
                 chainLoopProtection[cellId] = true;
 
-                for (let i = 0; i < obj.formulas.chain[cellId].length; i++) {
-                    const cell = getIdFromColumnName(obj.formulas.chain[cellId][i], true);
+                for (let i = 0; i < worksheet.formulas.chain[cellId].length; i++) {
+                    const cell = getIdFromColumnName(worksheet.formulas.chain[cellId][i], true);
                     // Update cell
-                    const value = '' + obj.options.data[cell[1]][cell[0]];
+                    const value = '' + worksheet.options.data[cell[1]][cell[0]];
                     if (value.substr(0, 1) == '=') {
-                        records.push(obj.cells.update(cell[0], cell[1], value, true));
+                        records.push(worksheet.cells.update(cell[0], cell[1], value, true));
                     } else {
                         // No longer a formula, remove from the chain
                         // This changes nothing: Object.keys returns a new array (issue #43)
-                        Object.keys(obj.formulas.chain)[i] = null!;
+                        Object.keys(worksheet.formulas.chain)[i] = null!;
                     }
                     this.updateChain(cell[0], cell[1], records);
                 }
@@ -356,25 +359,25 @@ export class Formulas {
      * Update formulas
      */
     private updateFormulas(referencesToUpdate: Record<string, string>) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Update formulas
-        for (let j = 0; j < obj.options.data.length; j++) {
-            for (let i = 0; i < obj.options.data[0].length; i++) {
-                const value = '' + obj.options.data[j][i];
+        for (let j = 0; j < worksheet.options.data.length; j++) {
+            for (let i = 0; i < worksheet.options.data[0].length; i++) {
+                const value = '' + worksheet.options.data[j][i];
                 // Is formula
                 if (value.substr(0, 1) == '=') {
                     // Replace tokens
                     const newFormula = this.updateFormula(value, referencesToUpdate);
                     if (newFormula != value) {
-                        obj.options.data[j][i] = newFormula;
+                        worksheet.options.data[j][i] = newFormula;
                     }
                 }
             }
         }
 
         // Update formula chain
-        obj.formulas.rename(referencesToUpdate);
+        worksheet.formulas.rename(referencesToUpdate);
     }
 
     /**
@@ -383,38 +386,38 @@ export class Formulas {
      * @return void
      */
     updateTableReferences() {
-        const obj = this.worksheet;
-        if (obj.skipUpdateTableReferences) {
+        const worksheet = this.worksheet;
+        if (worksheet.skipUpdateTableReferences) {
             return;
         }
 
         // Update headers
-        for (let i = 0; i < obj.headers.length; i++) {
-            const x = parseInt(obj.headers[i].getAttribute('data-x'));
+        for (let i = 0; i < worksheet.headers.length; i++) {
+            const x = parseInt(worksheet.headers[i].getAttribute('data-x'));
 
             if (x != i) {
                 // Update coords
-                obj.headers[i].setAttribute('data-x', i);
-                obj.headers[i].setAttribute('aria-colindex', i + 2);
+                worksheet.headers[i].setAttribute('data-x', i);
+                worksheet.headers[i].setAttribute('aria-colindex', i + 2);
                 // Title
-                if (!obj.headers[i].getAttribute('title')) {
-                    obj.headers[i].innerHTML = getColumnName(i);
+                if (!worksheet.headers[i].getAttribute('title')) {
+                    worksheet.headers[i].innerHTML = getColumnName(i);
                 }
             }
         }
 
         // Update all rows
-        for (let j = 0; j < obj.rows.length; j++) {
-            if (obj.rows[j]) {
-                const y = parseInt(obj.rows[j].element.getAttribute('data-y'));
+        for (let j = 0; j < worksheet.rows.length; j++) {
+            if (worksheet.rows[j]) {
+                const y = parseInt(worksheet.rows[j].element.getAttribute('data-y'));
 
                 if (y != j) {
                     // Update coords
-                    obj.rows[j].element.setAttribute('data-y', j);
-                    obj.rows[j].element.children[0].setAttribute('data-y', j);
-                    obj.accessibility.updateRowIndex(obj.rows[j].element, j);
+                    worksheet.rows[j].element.setAttribute('data-y', j);
+                    worksheet.rows[j].element.children[0].setAttribute('data-y', j);
+                    worksheet.accessibility.updateRowIndex(worksheet.rows[j].element, j);
                     // Row number
-                    obj.rows[j].element.children[0].innerHTML = String(j + 1);
+                    worksheet.rows[j].element.children[0].innerHTML = String(j + 1);
                 }
             }
         }
@@ -427,11 +430,11 @@ export class Formulas {
         // Update cell
         function updatePosition(x: number, y: number, i: number, j: number) {
             if (x != i) {
-                obj.records[j][i].element.setAttribute('data-x', i);
-                obj.records[j][i].element.setAttribute('aria-colindex', i + 2);
+                worksheet.records[j][i].element.setAttribute('data-x', i);
+                worksheet.records[j][i].element.setAttribute('aria-colindex', i + 2);
             }
             if (y != j) {
-                obj.records[j][i].element.setAttribute('data-y', j);
+                worksheet.records[j][i].element.setAttribute('data-y', j);
             }
 
             // Other updates
@@ -442,15 +445,15 @@ export class Formulas {
             }
         }
 
-        for (let j = 0; j < obj.records.length; j++) {
-            for (let i = 0; i < obj.records[0].length; i++) {
-                if (obj.records[j][i]) {
+        for (let j = 0; j < worksheet.records.length; j++) {
+            for (let i = 0; i < worksheet.records[0].length; i++) {
+                if (worksheet.records[j][i]) {
                     // Current values
-                    const x = parseInt(obj.records[j][i].element.getAttribute('data-x'));
-                    const y = parseInt(obj.records[j][i].element.getAttribute('data-y'));
+                    const x = parseInt(worksheet.records[j][i].element.getAttribute('data-x'));
+                    const y = parseInt(worksheet.records[j][i].element.getAttribute('data-y'));
 
                     // Update column
-                    if (obj.records[j][i].element.getAttribute('data-merged')) {
+                    if (worksheet.records[j][i].element.getAttribute('data-merged')) {
                         const columnIdFrom = getColumnNameFromId([x, y]);
                         const columnIdTo = getColumnNameFromId([i, j]);
                         if (mergeCellUpdates[columnIdFrom] == null) {
@@ -482,16 +485,16 @@ export class Formulas {
 
                     const columnIdFrom = keys[i];
                     const columnIdTo = update[0];
-                    for (let j = 0; j < (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]!.length; j++) {
-                        x = parseInt((obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].getAttribute('data-x'));
-                        y = parseInt((obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].getAttribute('data-y'));
-                        (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-x', x + update[1]);
-                        (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('aria-colindex', x + update[1] + 2);
-                        (obj.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-y', y + update[2]);
+                    for (let j = 0; j < (worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]!.length; j++) {
+                        x = parseInt((worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].getAttribute('data-x'));
+                        y = parseInt((worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].getAttribute('data-y'));
+                        (worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-x', x + update[1]);
+                        (worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('aria-colindex', x + update[1] + 2);
+                        (worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]![j].setAttribute('data-y', y + update[2]);
                     }
 
-                    obj.options.mergeCells![columnIdTo] = obj.options.mergeCells![columnIdFrom];
-                    delete obj.options.mergeCells![columnIdFrom];
+                    worksheet.options.mergeCells![columnIdTo] = worksheet.options.mergeCells![columnIdFrom];
+                    delete worksheet.options.mergeCells![columnIdFrom];
                 }
             }
         }
@@ -500,19 +503,19 @@ export class Formulas {
         this.updateFormulas(affectedTokens);
 
         // Update meta data
-        obj.meta.update(affectedTokens);
+        worksheet.meta.update(affectedTokens);
 
         // Update the size of the grid
-        obj.accessibility.updateGridSize();
+        worksheet.accessibility.updateGridSize();
 
         // The tab stop of the grid can be in a deleted row or column
-        obj.selection.updateTabStop();
+        worksheet.selection.updateTabStop();
 
         // Refresh selection
-        obj.selection.refresh();
+        worksheet.selection.refresh();
 
         // Update table with custom configuration if applicable
-        obj.data.updateTable();
+        worksheet.data.updateTable();
     }
 
     /**
@@ -520,56 +523,56 @@ export class Formulas {
      * @param data - The new footers.
      */
     setFooter(data?: string[][]) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         if (data) {
-            obj.options.footers = data;
+            worksheet.options.footers = data;
         }
 
-        if (obj.options.footers) {
-            if (!obj.tfoot) {
-                obj.tfoot = document.createElement('tfoot');
-                obj.table.appendChild(obj.tfoot);
+        if (worksheet.options.footers) {
+            if (!worksheet.tfoot) {
+                worksheet.tfoot = document.createElement('tfoot');
+                worksheet.table.appendChild(worksheet.tfoot);
             }
 
-            for (let j = 0; j < obj.options.footers.length; j++) {
+            for (let j = 0; j < worksheet.options.footers.length; j++) {
                 let tr;
 
-                if (obj.tfoot.children[j]) {
-                    tr = obj.tfoot.children[j];
+                if (worksheet.tfoot.children[j]) {
+                    tr = worksheet.tfoot.children[j];
                 } else {
                     tr = document.createElement('tr');
                     const td = document.createElement('td');
                     tr.appendChild(td);
-                    obj.tfoot.appendChild(tr);
+                    worksheet.tfoot.appendChild(tr);
                 }
-                for (let i = 0; i < obj.headers.length; i++) {
-                    if (!obj.options.footers[j][i]) {
-                        obj.options.footers[j][i] = '';
+                for (let i = 0; i < worksheet.headers.length; i++) {
+                    if (!worksheet.options.footers[j][i]) {
+                        worksheet.options.footers[j][i] = '';
                     }
 
                     let td;
 
-                    if (obj.tfoot.children[j].children[i + 1]) {
-                        td = obj.tfoot.children[j].children[i + 1] as HTMLTableCellElement;
+                    if (worksheet.tfoot.children[j].children[i + 1]) {
+                        td = worksheet.tfoot.children[j].children[i + 1] as HTMLTableCellElement;
                     } else {
                         td = document.createElement('td');
                         tr.appendChild(td);
 
                         // Text align
-                        const colAlign = obj.options.columns[i].align || obj.options.defaultColAlign || 'center';
+                        const colAlign = worksheet.options.columns[i].align || worksheet.options.defaultColAlign || 'center';
                         td.style.textAlign = colAlign;
                     }
                     // The DOM converts a number or a boolean to text
-                    td.textContent = obj.cells.parseValue(+obj.records.length + i, j, obj.options.footers[j][i]) as string;
+                    td.textContent = worksheet.cells.parseValue(+worksheet.records.length + i, j, worksheet.options.footers[j][i]) as string;
 
                     // Hide/Show with hideColumn()/showColumn()
-                    td.style.display = obj.cols[i].colElement.style.display;
+                    td.style.display = worksheet.cols[i].colElement.style.display;
                 }
             }
 
             // Update the size of the grid
-            obj.accessibility.updateGridSize();
+            worksheet.accessibility.updateGridSize();
         }
     }
 }
