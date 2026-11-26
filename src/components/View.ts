@@ -86,7 +86,7 @@ export class View {
                     const rows = worksheet.merges.isRowMerged(k);
                     if (rows.length) {
                         for (const cellName of rows) {
-                            const row = getIdFromColumnName(cellName, true);
+                            const row = getIdFromColumnName(cellName);
                             for (let j = 0; j < worksheet.options.mergeCells![cellName][1]; j++) {
                                 addToResult(row[1] + j);
                             }

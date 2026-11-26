@@ -89,7 +89,7 @@ export class Styles {
 
             return data;
         } else {
-            cell = getIdFromColumnName(cell as string, true);
+            cell = getIdFromColumnName(cell as string);
 
             // Each cell gets a style attribute when it is created (the text alignment)
             return key
@@ -120,7 +120,7 @@ export class Styles {
          */
         function applyStyle(cellId: string, key: string, value: string) {
             // Position
-            const cell = getIdFromColumnName(cellId, true);
+            const cell = getIdFromColumnName(cellId);
 
             if (worksheet.records[cell[1]]?.[cell[0]] && (worksheet.records[cell[1]][cell[0]].element.classList.contains('readonly') === false || force)) {
                 // Current value
@@ -207,7 +207,7 @@ export class Styles {
 
         for (const key of Object.keys(o)) {
             // Position
-            const cell = getIdFromColumnName(key, true);
+            const cell = getIdFromColumnName(key);
             if (worksheet.records[cell[1]]?.[cell[0]]) {
                 worksheet.records[cell[1]][cell[0]].element.setAttribute('style', '');
             }

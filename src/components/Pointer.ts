@@ -164,7 +164,7 @@ export class Pointer {
                                     // An array used as a map, as before
                                     const affectedTokens = [] as unknown as Record<string, string>;
                                     for (const reference of tokens) {
-                                        const position = getIdFromColumnName(reference, true);
+                                        const position = getIdFromColumnName(reference);
                                         position[0] += colNumber;
                                         position[1] += rowNumber;
                                         if (position[1] < 0) {

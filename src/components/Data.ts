@@ -154,7 +154,7 @@ export class Data {
             return null;
         }
 
-        const coords = getIdFromColumnName(cell, true);
+        const coords = getIdFromColumnName(cell);
         const x = coords[0];
         const y = coords[1];
 
@@ -212,7 +212,7 @@ export class Data {
         const cells: [number, number, CellValue | undefined][] = [];
         for (const item of typeof cell === 'string' || 'getAttribute' in cell ? [cell] : Object.values(cell)) {
             if (typeof item === 'string') {
-                const columnId = getIdFromColumnName(item, true);
+                const columnId = getIdFromColumnName(item);
                 cells.push([columnId[0], columnId[1], value]);
             } else if ('getAttribute' in item) {
                 const x = item.getAttribute('data-x');
