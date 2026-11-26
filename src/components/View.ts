@@ -6,6 +6,7 @@ import type jspreadsheet from '../jspreadsheet';
 import type { CellValue } from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
 import { askConfirm } from '../utils/dialogs.js';
+import { applyZoom, toScreen } from '../utils/zoom.js';
 
 /**
  * The row that a load of the lazy loading keeps in place, and its offsetTop: the last row that shows for a load at the
@@ -880,6 +881,23 @@ export class View {
     }
 
     /**
+     * Change the zoom factor of the spreadsheet, and apply it to the built worksheets. The frozen columns and the
+     * selection corner use the factor, so they are placed again.
+     */
+    setZoom(zoom: number) {
+        const spreadsheet = this.worksheet.parent;
+        const factor = Number(zoom);
+        spreadsheet.config.zoom = Number.isFinite(factor) && factor > 0 ? factor : 1;
+        for (const worksheet of spreadsheet.worksheets) {
+            if (worksheet.zoomed) {
+                applyZoom(worksheet);
+                worksheet.columns.updateFreezePosition();
+                worksheet.selection.updateCorner();
+            }
+        }
+    }
+
+    /**
      * Go to a page in a lazyLoading
      */
     loadPage(pageNumber: number) {
@@ -1077,7 +1095,8 @@ export class View {
     private keepAnchor(anchor: ReturnType<typeof anchorRow>) {
         const content = this.worksheet.content;
         if (anchor && anchor.row.offsetParent !== null) {
-            content.scrollTop = content.scrollTop + anchor.row.offsetTop - anchor.top;
+            // offsetTop is in grid pixels, and the scroll position in screen pixels
+            content.scrollTop = content.scrollTop + toScreen(this.worksheet, anchor.row.offsetTop - anchor.top);
         }
         // The browser can clamp the position, so the next check must see no scroll
         this.lazyScrollTop = content.scrollTop;

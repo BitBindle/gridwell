@@ -125,6 +125,9 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
     /** The square in the lower-right corner of the selection, which fills the cells it is dragged over. */
     corner: HTMLDivElement;
 
+    /** The wrapper of the table, the corner and the clipboard helper in the content, which has the zoom of the spreadsheet. */
+    zoomed: HTMLDivElement;
+
     /** The row of the thead that holds the headers of the columns. */
     headerContainer: HTMLTableRowElement;
 

@@ -2,6 +2,7 @@ import { translate } from '../utils/dictionary.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
+import { toGrid } from '../utils/zoom.js';
 import { askConfirm } from '../utils/dialogs.js';
 
 /**
@@ -756,7 +757,7 @@ export class Rows {
 
                 if (!oldHeight) {
                     const rect = worksheet.rows[row].element.getBoundingClientRect();
-                    oldHeight = rect.height;
+                    oldHeight = toGrid(worksheet, rect.height);
                 }
             }
 
