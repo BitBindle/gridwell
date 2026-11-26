@@ -1,4 +1,3 @@
-import { closeEditor } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
 import { updateCornerPosition } from '../utils/selection.js';
 import { updateFreezePosition } from '../utils/freezePosition.js';
@@ -45,7 +44,7 @@ export const scrollControls = function (this: Worksheet, e: Event) {
     // Close a floating editor. The text editor is inside the cell and scrolls with it.
     if (obj.options.lazyLoading == true || obj.options.tableOverflow == true) {
         if (obj.editor.isOpen() && hasFloatingEditor.call(obj, obj.editor.x) && (e.target as HTMLElement).className.substr(0, 9) != 'jdropdown') {
-            closeEditor.call(obj, obj.editor.cell, true);
+            obj.editor.close(obj.editor.cell, true);
         }
     }
 };

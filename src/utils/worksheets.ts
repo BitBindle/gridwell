@@ -39,7 +39,6 @@ import { createNestedHeader } from './headers.js';
 import { hideIndex, showIndex } from './rows.js';
 import { getWorksheetActive } from './activeWorksheet.js';
 import { getWorksheetConfig, setConfig } from './config.js';
-import { closeEditor, openEditor } from './editor.js';
 import dispatch from './dispatch.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import { copy, paste } from './copyPaste.js';
@@ -819,8 +818,18 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
     ['showIndex', showIndex],
     ['hideIndex', hideIndex],
     ['getWorksheetActive', getWorksheetActive],
-    ['openEditor', openEditor],
-    ['closeEditor', closeEditor],
+    [
+        'openEditor',
+        function (this: Worksheet, cell: HTMLTableCellElement, empty?: boolean, e?: KeyboardEvent | MouseEvent | TouchEvent) {
+            return this.editor.open(cell, empty, e);
+        },
+    ],
+    [
+        'closeEditor',
+        function (this: Worksheet, cell: HTMLTableCellElement, save: boolean) {
+            return this.editor.close(cell, save);
+        },
+    ],
     ['createWorksheet', createWorksheet],
     ['openWorksheet', openWorksheet],
     ['deleteWorksheet', deleteWorksheet],

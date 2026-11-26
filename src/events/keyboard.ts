@@ -1,5 +1,4 @@
 import jSuites from 'jsuites';
-import { closeEditor, openEditor, setCheckRadioValue } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
 import { down, first, last, left, right, up } from '../utils/keys.js';
 import { getCellColumnIndex } from '../utils/values.js';
@@ -21,13 +20,13 @@ const editorKeys = function (this: EditingWorksheet, e: TargetEvent<KeyboardEven
         // Escape
         if (obj.editor.isOpen()) {
             // Exit without saving
-            closeEditor.call(obj, obj.editor.cell, false);
+            obj.editor.close(obj.editor.cell, false);
         }
         e.preventDefault();
     } else if (e.which == 13) {
         // Enter
         if (column && column.type == 'calendar') {
-            closeEditor.call(obj, obj.editor.cell, true);
+            obj.editor.close(obj.editor.cell, true);
         } else if (column && column.type == 'dropdown') {
             // Do nothing
         } else {
@@ -54,7 +53,7 @@ const editorKeys = function (this: EditingWorksheet, e: TargetEvent<KeyboardEven
     } else if (e.which == 9) {
         // Tab
         if (column && ['calendar', 'html'].includes(column.type as string)) {
-            closeEditor.call(obj, obj.editor.cell, true);
+            obj.editor.close(obj.editor.cell, true);
         } else {
             (obj.editor.cell.children[0] as HTMLElement).blur();
         }
@@ -197,17 +196,17 @@ const typingKeys = function (this: SelectedWorksheet, e: TargetEvent<KeyboardEve
             // Space
             e.preventDefault();
             if (column.type == 'checkbox' || column.type == 'radio') {
-                setCheckRadioValue.call(obj);
+                obj.editor.setCheckRadioValue();
             } else {
                 // Start edition
-                openEditor.call(obj, obj.records[rowId][columnId].element, true, e);
+                obj.editor.open(obj.records[rowId][columnId].element, true, e);
             }
         } else if (e.keyCode == 113) {
             // Start edition with current content F2
-            openEditor.call(obj, obj.records[rowId][columnId].element, false, e);
+            obj.editor.open(obj.records[rowId][columnId].element, false, e);
         } else if ((e.key.length === 1 || e.key === 'Process') && !(e.altKey || isCtrl(e))) {
             // Start edition
-            openEditor.call(obj, obj.records[rowId][columnId].element, true, e);
+            obj.editor.open(obj.records[rowId][columnId].element, true, e);
             // Prevent entries in the calendar
             if (column && column.type == 'calendar') {
                 e.preventDefault();

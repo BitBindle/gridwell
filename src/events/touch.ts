@@ -1,4 +1,3 @@
-import { openEditor } from '../utils/editor.js';
 import libraryBase from '../utils/libraryBase.js';
 import { getCellColumnIndex } from '../utils/values.js';
 import { updateSelectionFromCoords } from '../utils/selection.js';
@@ -48,7 +47,7 @@ export const touchStartControls = function (e: TargetEvent<TouchEvent>) {
                     } else {
                         libraryBase.jspreadsheet.tmpElement = e.target;
                     }
-                    openEditor.call(libraryBase.jspreadsheet.current!, e.target as HTMLTableCellElement, false, e);
+                    libraryBase.jspreadsheet.current!.editor.open(e.target as HTMLTableCellElement, false, e);
                 }, 500);
             }
         }

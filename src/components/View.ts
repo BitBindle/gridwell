@@ -3,7 +3,6 @@ import dispatch from '../utils/dispatch.js';
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import { refreshSelection, updateCornerPosition } from '../utils/selection.js';
 import { updateTabStop } from '../utils/accessibility.js';
-import { closeEditor } from '../utils/editor.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { CellValue } from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
@@ -670,7 +669,7 @@ export class View {
         const obj = this.worksheet;
 
         if (obj.editor.isOpen() && row.contains(obj.editor.cell)) {
-            closeEditor.call(obj, obj.editor.cell, true);
+            obj.editor.close(obj.editor.cell, true);
         }
 
         obj.tbody.removeChild(row);
