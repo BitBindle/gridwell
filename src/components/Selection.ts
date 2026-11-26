@@ -1332,16 +1332,22 @@ export class Selection {
             y = y2 - y1 + worksheet.content.scrollTop + h2;
         }
 
+        // Each header row sticks at the top of the content, so the header covers the height of its highest row
+        let above = 0;
+        for (const row of Array.from(worksheet.thead.children) as HTMLElement[]) {
+            above = Math.max(above, row.offsetHeight);
+        }
+        const top = y2 - y1 + worksheet.content.scrollTop;
+
         // Top position check
-        if (y > worksheet.content.scrollTop + 30 && y < worksheet.content.scrollTop + h1) {
+        if (top >= worksheet.content.scrollTop + above && y < worksheet.content.scrollTop + h1) {
             // In the viewport
+        } else if (top < worksheet.content.scrollTop + above) {
+            // A cell of the first row scrolls the content to the top, so all the header rows show
+            const first = top <= worksheet.tbody.getBoundingClientRect().top - y1 + worksheet.content.scrollTop;
+            worksheet.content.scrollTop = first ? 0 : top - above;
         } else {
-            // Out of viewport
-            if (y < worksheet.content.scrollTop + 30) {
-                worksheet.content.scrollTop = y - h2;
-            } else {
-                worksheet.content.scrollTop = y - (h1 - 2);
-            }
+            worksheet.content.scrollTop = y - (h1 - 2);
         }
 
         // Freeze columns?
