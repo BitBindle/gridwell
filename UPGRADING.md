@@ -641,3 +641,11 @@ direction comes from `deltaY` of the last wheel event, else from the change of `
 `deltaY`, for example a horizontal scroll, and a scroll event that does not change `scrollTop`, load no rows. Version 5
 loaded rows for such an event when the view was near the bottom. To load rows from code, use the keyboard methods, such
 as `down`.
+
+## deleteWorksheet removes the options of the worksheet
+
+`deleteWorksheet` removes the options of the worksheet from `getConfig().worksheets`. Version 5 left them there, so the
+list named a worksheet that did not exist. `getConfig()` gives the options object that the application passed, so the
+worksheet also leaves the `worksheets` array of the application. An `ondeleteworksheet` handler sees the list without the
+deleted worksheet, and gets its options as `worksheet.options`. An application that removed the options itself must stop,
+or it removes the options of another worksheet.
