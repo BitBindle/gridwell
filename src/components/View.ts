@@ -140,7 +140,8 @@ export class View {
                 let hasBlanks = false;
                 for (let j = 0; j < worksheet.options.data.length; j++) {
                     const k = worksheet.options.data[j][columnId];
-                    const v = worksheet.records[j][columnId].element.innerHTML;
+                    // The text of the cell, which the dropdown shows as text
+                    const v = worksheet.records[j][columnId].element.textContent;
                     if (k && v) {
                         options[k as string] = v;
                     } else {
@@ -178,7 +179,7 @@ export class View {
                     worksheet.view.resetFilters();
                     // A list, because the dropdown has multiple
                     worksheet.view.filters[columnId] = o.dropdown.getValue(true) as string[];
-                    worksheet.filter!.children[columnId + 1].innerHTML = o.dropdown.getText() as string;
+                    worksheet.filter!.children[columnId + 1].textContent = o.dropdown.getText() as string;
                     (worksheet.filter!.children[columnId + 1] as HTMLElement).style.paddingLeft = '';
                     (worksheet.filter!.children[columnId + 1] as HTMLElement).style.paddingRight = '';
                     (worksheet.filter!.children[columnId + 1] as HTMLElement).style.overflow = '';
