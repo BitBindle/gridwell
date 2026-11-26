@@ -982,7 +982,8 @@ export class Columns {
 
         let width = 0;
         if (worksheet.options.freezeColumns! > 0) {
-            for (let i = 0; i < worksheet.options.freezeColumns!; i++) {
+            const freezeColumns = Math.min(worksheet.options.freezeColumns!, worksheet.headers.length);
+            for (let i = 0; i < freezeColumns; i++) {
                 let columnWidth;
                 if (worksheet.options.columns?.[i]?.width !== undefined) {
                     columnWidth = parseInt(worksheet.options.columns[i].width);

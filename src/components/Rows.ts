@@ -27,6 +27,30 @@ export class Rows {
     }
 
     /**
+     * Change the number of frozen rows and frozen columns, and apply them at once. Undefined keeps the current number. A
+     * value that is not a finite number of 0 or more gives 0.
+     */
+    setFreeze(rows?: number, columns?: number) {
+        const worksheet = this.worksheet;
+        function count(value: number) {
+            const number = Math.floor(Number(value));
+            return Number.isFinite(number) && number > 0 ? number : 0;
+        }
+        if (rows !== undefined) {
+            worksheet.options.freezeRows = count(rows);
+        }
+        if (columns !== undefined) {
+            worksheet.options.freezeColumns = count(columns);
+        }
+        this.updateFreeze();
+        // The scroll handler keeps this value only while columns are frozen, so it can be old
+        worksheet.lastScrollLeft = worksheet.content.scrollLeft;
+        worksheet.columns.updateFreezePosition();
+        // With lazy loading, the selected row can leave the table
+        worksheet.selection.updateTabStop();
+    }
+
+    /**
      * The number of frozen rows: the freezeRows option, but not more than the rows of the worksheet. With lazy loading,
      * at most 40 rows freeze: a load starts 30 rows from the edge of a page of 100 rows and removes 31 rows, so the page
      * needs 60 rows that scroll.

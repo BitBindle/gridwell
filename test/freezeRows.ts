@@ -445,17 +445,85 @@ describe('setFreeze', () => {
 
     it('freezes and unfreezes columns at the current scroll position', () => {
         const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: rows(5), tableOverflow: true, columns: [{ width: 100 }, { width: 300 }, { width: 100 }] }],
+        });
+        Object.defineProperty(worksheet.content, 'scrollLeft', { value: 400, writable: true });
+        const classes = (cell: HTMLElement) => ['jss_freezed', 'jss_freezed_last'].filter((name) => cell.classList.contains(name));
+
+        worksheet.setFreeze(undefined, 1);
+        expect(classes(worksheet.headers[0])).to.eql(['jss_freezed', 'jss_freezed_last']);
+        expect(classes(worksheet.records[2][0].element)).to.eql(['jss_freezed', 'jss_freezed_last']);
+        expect(worksheet.headers[0].style.left).to.equal('0px');
+
+        worksheet.setFreeze(undefined, 2);
+        expect(classes(worksheet.headers[0])).to.eql(['jss_freezed']);
+        expect(classes(worksheet.records[2][0].element)).to.eql(['jss_freezed']);
+        expect(classes(worksheet.headers[1])).to.eql(['jss_freezed', 'jss_freezed_last']);
+        expect(classes(worksheet.records[2][1].element)).to.eql(['jss_freezed', 'jss_freezed_last']);
+        expect(worksheet.headers[1].style.left).to.equal('100px');
+
+        worksheet.setFreeze(undefined, 0);
+        for (const cell of [worksheet.headers[0], worksheet.headers[1], worksheet.records[2][0].element, worksheet.records[2][1].element]) {
+            expect(classes(cell)).to.eql([]);
+            expect(cell.style.left).to.equal('');
+        }
+    });
+
+    it('gives a crossing cell the distance of its header when the number of frozen rows changes', () => {
+        const [worksheet] = jspreadsheet(root, {
             worksheets: [{ data: rows(5), tableOverflow: true, columns: [{ width: 100 }, { width: 300 }] }],
         });
         Object.defineProperty(worksheet.content, 'scrollLeft', { value: 400, writable: true });
+        worksheet.setFreeze(undefined, 2);
+        const shifted = worksheet.records[3][1].element.style.left;
+        expect(shifted).to.not.equal('100px');
 
+        worksheet.setFreeze(2);
+        expect(worksheet.records[1][1].element.style.left).to.equal('100px');
+        expect(worksheet.records[3][1].element.style.left).to.equal(shifted);
+
+        worksheet.setFreeze(0);
+        expect(worksheet.records[1][1].element.style.left).to.equal(shifted);
+    });
+
+    it('freezes the columns again after a scroll that occurred while no column was frozen', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: rows(5), tableOverflow: true, columns: [{ width: 100 }, { width: 300 }] }],
+        });
+        const content = worksheet.content;
+        function scrollTo(left: number) {
+            Object.defineProperty(content, 'scrollLeft', { value: left, writable: true, configurable: true });
+            content.dispatchEvent(new window.Event('scroll'));
+        }
         worksheet.setFreeze(undefined, 1);
-        expect(worksheet.headers[0].classList.contains('jss_freezed')).to.equal(true);
-        expect(worksheet.records[2][0].element.classList.contains('jss_freezed')).to.equal(true);
-
+        scrollTo(400);
         worksheet.setFreeze(undefined, 0);
-        expect(worksheet.headers[0].classList.contains('jss_freezed')).to.equal(false);
-        expect(worksheet.records[2][0].element.classList.contains('jss_freezed')).to.equal(false);
+        scrollTo(0);
+        worksheet.setFreeze(undefined, 1);
+
+        scrollTo(400);
+
+        expect(worksheet.headers[0].classList.contains('jss_freezed')).to.equal(true);
+    });
+
+    it('gives 0 for a value that is not a finite number of 0 or more', () => {
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(5), freezeRows: 2, freezeColumns: 1 }] });
+
+        for (const value of [Infinity, NaN, -2, 'abc', null]) {
+            worksheet.setFreeze(2, 1);
+            worksheet.setFreeze(value as number, value as number);
+            expect([worksheet.options.freezeRows, worksheet.options.freezeColumns]).to.eql([0, 0]);
+        }
+        worksheet.setFreeze(2.7, '3' as unknown as number);
+        expect([worksheet.options.freezeRows, worksheet.options.freezeColumns]).to.eql([2, 3]);
+    });
+
+    it('gives the frozen width of the columns that exist when the option is larger', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: rows(5), freezeColumns: 1e9, columns: [{ width: 100 }, { width: 300 }] }],
+        });
+
+        expect(worksheet.columns.getFreezeWidth()).to.equal(400);
     });
 
     it('puts the new frozen rows first in the table with lazy loading, and removes the rows that leave', () => {
@@ -465,7 +533,7 @@ describe('setFreeze', () => {
         worksheet.down();
 
         worksheet.setFreeze(3);
-        expect(attached().slice(0, 4)).to.eql([0, 1, 2, attached()[3]]);
+        expect(attached().slice(0, 3)).to.eql([0, 1, 2]);
         expect(attached()[3]).to.be.greaterThan(150);
 
         worksheet.setFreeze(1);
@@ -473,5 +541,34 @@ describe('setFreeze', () => {
         expect(attached()[1]).to.be.greaterThan(150);
         const rest = attached().slice(1);
         expect(rest.every((y, k) => k === 0 || y === rest[k - 1] + 1)).to.equal(true);
+    });
+
+    it('removes the last frozen rows from the table with lazy loading, so that the rows above can load again', () => {
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true, freezeRows: 3 }] });
+        const attached = () => Array.from(worksheet.tbody.children).map((row) => Number(row.getAttribute('data-y')));
+        worksheet.updateSelectionFromCoords(0, 298, 0, 298);
+        worksheet.down();
+        expect(attached().slice(0, 3)).to.eql([0, 1, 2]);
+
+        worksheet.setFreeze(0);
+
+        const first = attached()[0];
+        expect(first).to.be.greaterThan(150);
+        expect(attached().every((y, k) => k === 0 || y === attached()[k - 1] + 1)).to.equal(true);
+        worksheet.view.loadUp();
+        expect(attached()[0]).to.be.lessThan(first);
+    });
+
+    it('keeps a tab stop in the table when the selected row leaves it with lazy loading', () => {
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true, freezeRows: 3 }] });
+        worksheet.updateSelectionFromCoords(0, 298, 0, 298);
+        worksheet.down();
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+        expect(worksheet.tbody.querySelector('td[tabindex="0"]')).to.equal(worksheet.records[2][1].element);
+
+        worksheet.setFreeze(1);
+
+        expect(worksheet.tbody.contains(worksheet.records[2][1].element)).to.equal(false);
+        expect(worksheet.tbody.querySelector('td[tabindex="0"]')).to.not.equal(null);
     });
 });

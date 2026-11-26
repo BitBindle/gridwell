@@ -692,11 +692,15 @@ export class View {
      * filters, the body holds only the results, so it keeps no frozen row.
      */
     private frozenRows() {
+        return this.showsResults() ? 0 : this.worksheet.rowManager.getFreezeCount();
+    }
+
+    /**
+     * True when the table body holds the results of a search or the filters.
+     */
+    private showsResults() {
         const worksheet = this.worksheet;
-        if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
-            return 0;
-        }
-        return worksheet.rowManager.getFreezeCount();
+        return (worksheet.options.search === true || worksheet.options.filters === true) && !!worksheet.view.results;
     }
 
     /**
@@ -707,7 +711,9 @@ export class View {
     attachFrozen(left: HTMLTableRowElement[] = []) {
         const worksheet = this.worksheet;
         const frozen = this.frozenRows();
-        if (worksheet.options.lazyLoading !== true || !frozen) {
+        // The rows of the results have gaps in data-y, so the runs below do not apply to them. When the last frozen
+        // rows leave, they leave the table as the other rows do.
+        if (worksheet.options.lazyLoading !== true || this.showsResults() || (!frozen && !left.length)) {
             return;
         }
 
