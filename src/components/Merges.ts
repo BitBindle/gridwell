@@ -324,22 +324,24 @@ export class Merges {
             const cell = getIdFromColumnName(cellName);
             const [colspan, rowspan] = worksheet.options.mergeCells[cellName];
 
-            this.unmerge(cellName, data, keepOptions);
+            this.unmerge(cellName, data);
 
-            // Update selection
+            // Update selection. The selection events still see the range.
             worksheet.selection.update(worksheet.records[cell[1]][cell[0]].element, worksheet.records[cell[1] + rowspan - 1][cell[0] + colspan - 1].element);
+
+            this.forget(cellName, keepOptions);
 
             worksheet.dispatch('onunmerge', worksheet, cellName, beforeMerges);
         }
     }
 
     /**
-     * Split a merged range without an event or a change of the selection.
+     * Split a merged range in the table, without an event or a change of the selection. The range stays in the options
+     * until forget removes it.
      * @param cellName - The first cell of the range.
      * @param data - The values of the other cells of the range, which the history kept.
-     * @param keepOptions - Keep the range in the options.
      */
-    private unmerge(cellName: string, data?: jspreadsheet.CellValue[] | null, keepOptions?: boolean) {
+    private unmerge(cellName: string, data?: jspreadsheet.CellValue[] | null) {
         const worksheet = this.worksheet;
 
         const cell = getIdFromColumnName(cellName);
@@ -365,12 +367,21 @@ export class Merges {
                 }
             }
         }
+    }
+
+    /**
+     * After a split: remove the range from the options, and show a first cell in a column with the type hidden with the
+     * options of its own column again.
+     */
+    private forget(cellName: string, keepOptions?: boolean) {
+        const worksheet = this.worksheet;
+
+        const cell = getIdFromColumnName(cellName);
 
         if (!keepOptions) {
             delete worksheet.options.mergeCells![cellName];
         }
 
-        // A first cell in a column with the type hidden uses the options of its own column again
         if (worksheet.options.columns?.[cell[0]]?.type === 'hidden') {
             worksheet.cells.render(cell[0], cell[1]);
         }
@@ -378,45 +389,89 @@ export class Merges {
 
     /**
      * Make the merged ranges equal to merges. The ranges that do not change stay. No dialog, history entry or change of the
-     * selection.
+     * selection. The method checks each entry before it changes a range, because the entries can come from a server.
      * @returns The first cells of the ranges that cannot be merged.
      */
     replace(merges: Record<string, [number, number]>) {
         const worksheet = this.worksheet;
 
-        const removed: Record<string, Record<string, [number, number]>> = {};
-        for (const [cellName, [colspan, rowspan]] of Object.entries(worksheet.options.mergeCells || {})) {
-            const target = merges[cellName];
-            if (target?.[0] !== colspan || target[1] !== rowspan) {
-                removed[cellName] = { [cellName]: [colspan, rowspan] };
-                this.unmerge(cellName);
+        if (!merges || typeof merges !== 'object' || Array.isArray(merges)) {
+            throw new TypeError('replaceMerges needs an object of ranges');
+        }
+
+        // A range of the options that the build did not merge has no list of cells: it is not merged
+        const current = (worksheet.options.mergeCells || {}) as Record<string, MergeInfo>;
+        for (const cellName of Object.keys(current)) {
+            if (!Array.isArray(current[cellName][2])) {
+                delete current[cellName];
             }
         }
 
         const refused: string[] = [];
-        const added: Record<string, [number, number]> = {};
-        for (const [cellName, [colspan, rowspan]] of Object.entries(merges)) {
-            if (worksheet.options.mergeCells?.[cellName]) {
-                continue;
-            }
-            const valid = /^[A-Z]+[0-9]+$/.test(cellName) && Number.isInteger(colspan) && Number.isInteger(rowspan) && colspan > 0 && rowspan > 0;
-            const cell = valid ? getIdFromColumnName(cellName) : null;
-            if (
-                !cell ||
-                cell[1] + rowspan > worksheet.records.length ||
-                cell[0] + colspan > worksheet.headers.length ||
-                this.check(cellName, colspan, rowspan)
-            ) {
-                refused.push(cellName);
+        const wanted: [string, number, number][] = [];
+        for (const [cellName, spans] of Object.entries(merges as Record<string, unknown>)) {
+            const valid =
+                /^[A-Z]+[1-9][0-9]*$/.test(cellName) &&
+                Array.isArray(spans) &&
+                spans.length === 2 &&
+                spans.every((span) => Number.isInteger(span) && span > 0) &&
+                spans[0] * spans[1] > 1;
+            if (valid) {
+                wanted.push([cellName, spans[0], spans[1]]);
             } else {
-                this.merge(cellName, colspan, rowspan);
-                added[cellName] = [colspan, rowspan];
+                refused.push(cellName);
             }
         }
 
-        for (const [cellName, beforeMerges] of Object.entries(removed)) {
-            worksheet.dispatch('onunmerge', worksheet, cellName, beforeMerges);
+        const removed: string[] = [];
+        for (const cellName of Object.keys(current)) {
+            const target = wanted.find(([name]) => name === cellName);
+            if (target?.[1] !== current[cellName][0] || target[2] !== current[cellName][1]) {
+                removed.push(cellName);
+            }
         }
+        const beforeMerges = removed.map((cellName) => ({ [cellName]: [current[cellName][0], current[cellName][1]] as [number, number] }));
+        for (const cellName of removed) {
+            this.unmerge(cellName);
+            this.forget(cellName);
+        }
+
+        const added: Record<string, [number, number]> = {};
+        for (const [cellName, colspan, rowspan] of wanted) {
+            if (Object.hasOwn(current, cellName)) {
+                continue;
+            }
+            const cell = getIdFromColumnName(cellName);
+            if (cell[1] + rowspan > worksheet.records.length || cell[0] + colspan > worksheet.headers.length || this.check(cellName, colspan, rowspan)) {
+                refused.push(cellName);
+                continue;
+            }
+
+            // The editor of a cell that the range hides loses its cell, so it closes without a save
+            const editor = worksheet.editor;
+            if (
+                editor.isOpen() &&
+                editor.x >= cell[0] &&
+                editor.x < cell[0] + colspan &&
+                editor.y >= cell[1] &&
+                editor.y < cell[1] + rowspan &&
+                (editor.x !== cell[0] || editor.y !== cell[1])
+            ) {
+                worksheet.closeEditor(editor.cell, false);
+            }
+
+            this.merge(cellName, colspan, rowspan);
+            added[cellName] = [colspan, rowspan];
+        }
+
+        // The tab stop can be in a cell that a new range hides
+        if (removed.length || Object.keys(added).length) {
+            worksheet.selection.updateTabStop();
+        }
+
+        removed.forEach((cellName, k) => {
+            worksheet.dispatch('onunmerge', worksheet, cellName, beforeMerges[k]);
+        });
         if (Object.keys(added).length) {
             worksheet.dispatch('onmerge', worksheet, added);
         }
