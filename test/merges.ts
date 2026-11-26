@@ -546,6 +546,48 @@ describe('replaceMerges', () => {
         expect(Array.from(worksheet.tbody.querySelectorAll('td[tabindex="0"]')).every((td) => (td as HTMLElement).style.display !== 'none')).to.equal(true);
     });
 
+    it('selects the first cell of a new range also for a selection from the bottom right', () => {
+        const worksheet = build([]);
+        worksheet.updateSelectionFromCoords(3, 3, 0, 2);
+
+        worksheet.replaceMerges({ A1: [2, 1], C1: [2, 2], C3: [2, 2] });
+
+        expect(worksheet.selection.range!.map(Number)).to.eql([2, 2, 2, 2]);
+        expect(worksheet.records[2][2].element.classList.contains('highlight-selected')).to.equal(true);
+    });
+
+    it('moves the tab stop to a visible cell when onbeforeselection cancels the selection', () => {
+        const data: string[][] = [];
+        for (let j = 0; j < 4; j++) {
+            data.push(['a', 'b', 'c', 'd']);
+        }
+        let cancel = false;
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data }],
+            onbeforeselection: () => (cancel ? false : undefined),
+        })[0];
+        worksheet.updateSelectionFromCoords(3, 3, 3, 3);
+
+        cancel = true;
+        worksheet.replaceMerges({ C3: [2, 2] });
+
+        const stops = Array.from(worksheet.tbody.querySelectorAll('td[tabindex="0"]')) as HTMLElement[];
+        expect(stops.length).to.equal(1);
+        expect(stops[0].style.display).to.not.equal('none');
+    });
+
+    it('selects again a cell that a removed range shows, as removeMerge does', () => {
+        const worksheet = build([]);
+        worksheet.updateSelectionFromCoords(3, 1, 3, 1);
+
+        worksheet.replaceMerges({ A1: [2, 1] });
+
+        const cell = worksheet.records[1][3].element;
+        expect(cell.style.display).to.equal('');
+        expect(cell.tabIndex).to.equal(0);
+        expect(cell.getAttribute('aria-selected')).to.equal('true');
+    });
+
     it('closes without a save an editor in a cell that a new range hides', () => {
         const worksheet = build([]);
         worksheet.openEditor(worksheet.records[2][1].element);

@@ -7,8 +7,8 @@ import type { MergeInfo, Worksheet } from '../types/internal';
  * The merged cells of a worksheet. The ranges are in options.mergeCells: the colspan, the rowspan and the td elements
  * that the first cell covers.
  *
- * Each worksheet has one, as worksheet.merges. getMerge, setMerge, replaceMerges, removeMerge and destroyMerge call it, and the moves
- * and inserts of rows and columns ask it which ranges a row or a column is in.
+ * Each worksheet has one, as worksheet.merges. getMerge, setMerge, replaceMerges, removeMerge and destroyMerge call it,
+ * and the moves and inserts of rows and columns ask it which ranges a row or a column is in.
  */
 export class Merges {
     readonly worksheet: Worksheet;
@@ -388,8 +388,9 @@ export class Merges {
     }
 
     /**
-     * Make the merged ranges equal to merges. The ranges that do not change stay. No dialog, history entry or change of the
-     * selection. The method checks each entry before it changes a range, because the entries can come from a server.
+     * Make the merged ranges equal to merges. The ranges that do not change stay. No dialog or history entry. A new range
+     * that hides the selected cell selects its first cell. The method checks the form of each entry before it changes a
+     * range, because the entries can come from a server.
      * @returns The first cells of the ranges that cannot be merged.
      */
     replace(merges: Record<string, [number, number]>) {
@@ -465,25 +466,31 @@ export class Merges {
             added[cellName] = [colspan, rowspan];
         }
 
-        // A new range that hides the selected cell selects its first cell, as setMerge does
-        const selection = worksheet.getSelection();
-        const hiding = selection
-            ? Object.entries(added).find(([cellName, [colspan, rowspan]]) => {
-                  const [x, y] = getIdFromColumnName(cellName);
-                  return (
-                      selection[0] >= x &&
-                      selection[0] < x + colspan &&
-                      selection[1] >= y &&
-                      selection[1] < y + rowspan &&
-                      (selection[0] !== x || selection[1] !== y)
-                  );
-              })
-            : undefined;
-        if (hiding) {
-            const [x, y] = getIdFromColumnName(hiding[0]);
-            worksheet.selection.update(worksheet.records[y][x].element);
-        } else if (removed.length || Object.keys(added).length) {
-            // The tab stop can be in a cell that a new range hides
+        // The selection starts in its first selected cell, also when the user selected from the bottom right
+        const range = worksheet.selection.range;
+        function contains(cellName: string, colspan: number, rowspan: number, x: number, y: number) {
+            const [left, top] = getIdFromColumnName(cellName);
+            return x >= left && x < left + colspan && y >= top && y < top + rowspan;
+        }
+        let selected: boolean | undefined;
+        if (range) {
+            const [x, y] = [Number(range[0]), Number(range[1])];
+            const hiding = Object.entries(added).find(
+                ([cellName, [colspan, rowspan]]) => contains(cellName, colspan, rowspan, x, y) && cellName !== getColumnNameFromId([x, y])
+            );
+            if (hiding) {
+                // A new range that hides the selected cell selects its first cell, as setMerge does
+                const [left, top] = getIdFromColumnName(hiding[0]);
+                selected = worksheet.selection.updateFromCoords(left, top, left, top) !== false;
+            } else if (
+                beforeMerges.some((before) => Object.entries(before).some(([cellName, [colspan, rowspan]]) => contains(cellName, colspan, rowspan, x, y)))
+            ) {
+                // A removed range shows its cells again, so the selection is set again on the cells that show
+                selected = worksheet.selection.updateFromCoords(range[0], range[1], range[2], range[3]) !== false;
+            }
+        }
+        // The tab stop can be in a cell that a new range hides, also when a handler cancels the selection
+        if (!selected && (removed.length || Object.keys(added).length)) {
             worksheet.selection.updateTabStop();
         }
 

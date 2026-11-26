@@ -2372,8 +2372,8 @@ declare namespace jspreadsheet {
          * Make the merged ranges of the worksheet equal to a map from the first cell of each range to its colspan and rowspan.
          * The method checks the form of each entry before it changes a range. The ranges that do not change stay. An existing
          * range whose new spans do not fit is removed. The other cells of a new range lose their values, as with
-         * `setMerge`, and the cells of a removed range show again, empty. When two entries cross, the first one in the order
-         * of the keys stays. The method shows no dialog and writes no history entry. A new range that hides the selected cell
+         * `setMerge`, and the cells of a removed range show again, empty. A range that does not change stays. When two new entries
+         * cross, the first one in the order of the keys stays. The method shows no dialog and writes no history entry. A new range that hides the selected cell
          * selects its first cell, as `setMerge` does, and an editor in such a cell closes without a save. The undo of an
          * earlier `setMerge` on a range that this method changed can put the saved values in other cells. `onunmerge` occurs
          * for each removed range, with its colspan and rowspan, `onmerge` once with the new ranges, `onchange` for each cell
