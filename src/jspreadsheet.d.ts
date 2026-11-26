@@ -127,6 +127,9 @@ declare namespace jspreadsheet {
 
         decimal?: string;
 
+        /** The mask of the cells when the column has no {@link mask}. */
+        format?: string;
+
         /** Cell mask. */
         mask?: string;
 
@@ -173,6 +176,16 @@ declare namespace jspreadsheet {
         autocomplete?: boolean;
 
         /**
+         * Gives the items that the dropdown of a cell shows, instead of {@link source}.
+         * @param element - The element of the spreadsheet.
+         * @param cell - The td of the cell being edited.
+         * @param x - The column of the cell, as text.
+         * @param y - The row of the cell, as text.
+         * @param source - The source of the column.
+         */
+        filter?: (element: HTMLElement, cell: HTMLTableCellElement, x: string, y: string, source: DropdownSourceItem[] | undefined) => DropdownSourceItem[];
+
+        /**
          * Allow selection of more than one item.
          * @default false
          */
@@ -190,12 +203,26 @@ declare namespace jspreadsheet {
         options?: CalendarOptions;
     }
 
+    interface NumericColumn extends BaseColumn {
+        /**
+         * Save an empty text when the editor of a cell is emptied, instead of 0.
+         * @default false
+         */
+        allowEmpty?: boolean;
+
+        /** The locale of the numbers, when the column has no {@link BaseColumn.mask} or {@link BaseColumn.format}. */
+        locale?: string;
+
+        /** The options of the numbers with a {@link locale}, as Intl.NumberFormat takes them. */
+        options?: Intl.NumberFormatOptions;
+    }
+
     interface ColorColumn extends Omit<BaseColumn, 'render'> {
         /** If undefined, the cell shows the hex code of the color, if "square", it shows a square filled with the color. */
         render?: 'square';
     }
 
-    type Column = DropdownColumn | CalendarColumn | ColorColumn | BaseColumn;
+    type Column = DropdownColumn | CalendarColumn | NumericColumn | ColorColumn | BaseColumn;
 
     interface Row {
         /** Row height. */

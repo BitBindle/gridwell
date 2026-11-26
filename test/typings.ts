@@ -290,3 +290,10 @@ const emptyDelimiterData = worksheet.getData(false, false, '');
 assertType<Equals<typeof emptyDelimiterData, jspreadsheet.CellValue[][]>>();
 const emptyDelimiterJson = worksheet.getData(false, false, '', true);
 assertType<Equals<typeof emptyDelimiterJson, Record<number, jspreadsheet.CellValue>[]>>();
+
+// A column can have a format, a locale with the options of Intl.NumberFormat, allowEmpty and the filter of a dropdown
+const columns: jspreadsheet.Column[] = [
+    { type: 'numeric', format: '0.0' },
+    { type: 'numeric', locale: 'en-US', options: { style: 'currency', currency: 'USD' }, allowEmpty: true },
+    { type: 'dropdown', source: ['a'], filter: (element, cell, x, y, source) => source ?? [] },
+];

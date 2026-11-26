@@ -155,10 +155,8 @@ describe('Show a value with the mask of its column', () => {
                         data: [[1.5, 1.5, 3, 1234.5]],
                         columns: [
                             { type: 'numeric', mask: '0.00' },
-                            // TYPING: Column has no format, which the library uses as the mask of a column without a mask
-                            { type: 'numeric', format: '0.0' } as Jspreadsheet.Column,
-                            // TYPING: Column has no locale, and its options are the options of a calendar, but the library gives a column with a locale its options as the options of Intl.NumberFormat
-                            { type: 'numeric', locale: 'en-US', options: { style: 'currency', currency: 'USD' } } as Jspreadsheet.Column,
+                            { type: 'numeric', format: '0.0' },
+                            { type: 'numeric', locale: 'en-US', options: { style: 'currency', currency: 'USD' } },
                             { type: 'numeric', mask: '#.##0,00', decimal: ',' },
                         ],
                     },

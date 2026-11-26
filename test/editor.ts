@@ -286,15 +286,14 @@ describe('The editor of a worksheet', () => {
         const calls: string[][] = [];
         const worksheet = create({
             columns: [
-                // TYPING: a dropdown column has a filter, which the editor calls with the column and the row as text, but the typings have no filter
                 {
                     type: 'dropdown',
                     source: ['a', 'c'],
-                    filter: (element: HTMLElement, cell: HTMLTableCellElement, x: string, y: string, source: Jspreadsheet.DropdownSourceItem[]) => {
+                    filter: (element, cell, x, y, source) => {
                         calls.push([x, y]);
-                        return source;
+                        return source!;
                     },
-                } as Jspreadsheet.Column,
+                },
             ],
         });
 
@@ -328,8 +327,7 @@ describe('The editor of a worksheet', () => {
     });
 
     it('saves 0 for an empty numeric cell, or an empty value with allowEmpty', () => {
-        // TYPING: a numeric column has allowEmpty, which the editor reads, but the typings have no allowEmpty
-        const worksheet = create({ columns: [{ type: 'numeric' }, { type: 'numeric', allowEmpty: true } as Jspreadsheet.Column], data: [[1, 2]] });
+        const worksheet = create({ columns: [{ type: 'numeric' }, { type: 'numeric', allowEmpty: true }], data: [[1, 2]] });
 
         worksheet.openEditor(worksheet.getCell('A1'));
         (worksheet.getCell('A1').children[0] as HTMLInputElement).value = '';
