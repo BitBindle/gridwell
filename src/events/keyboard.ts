@@ -3,7 +3,6 @@ import libraryBase from '../utils/libraryBase.js';
 import { down, first, last, left, right, up } from '../utils/keys.js';
 import { getCellColumnIndex } from '../utils/values.js';
 import { selectAll } from '../utils/selection.js';
-import { copy } from '../utils/copyPaste.js';
 import { copyControls, cutControls, pasteControls } from './clipboard.js';
 import { getElement, isCtrl } from './helpers.js';
 import type { EditingWorksheet, SelectedWorksheet, TargetEvent } from '../types/internal';
@@ -163,7 +162,7 @@ const shortcutKeys = function (this: SelectedWorksheet, e: TargetEvent<KeyboardE
         e.preventDefault();
     } else if (e.which == 67) {
         // Ctrl + C
-        copy.call(obj, true);
+        obj.clipboard.copy(true);
         e.preventDefault();
     } else if (e.which == 88) {
         // Ctrl + X
