@@ -81,6 +81,23 @@ describe('Calculations', () => {
         expect(['A1', 'B1', 'C1', 'D1'].map((name) => worksheet.getValue(name, true))).to.deep.equal(['a\\tb', 'path\\data', 'temp\\', 'say "a\\" now']);
     });
 
+    it('does not read a cell name in a string literal as a reference (issue #17)', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['="A1"', '="B2"', '="A1 is "&A2'],
+                        ['1', '="B2"&A2', ''],
+                    ],
+                },
+            ],
+        })[0];
+
+        expect(['A1', 'B1', 'C1', 'B2'].map((name) => worksheet.getValue(name, true))).to.deep.equal(['A1', 'B2', 'A1 is 1', 'B21']);
+        // Only the references outside the string literals are in the formula chain
+        expect(worksheet.formulas.chain).to.deep.equal({ A2: ['C1', 'B2'] });
+    });
+
     describe('Test updating formulas when adding new rows', () => {
         it('1', () => {
             let test = jspreadsheet(root, {

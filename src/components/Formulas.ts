@@ -123,42 +123,23 @@ export class Formulas {
                 formulaLoopProtection[parentId] = true;
             }
 
-            // Convert range tokens
-            function tokensUpdate(tokens: string[]) {
-                for (const range of tokens) {
-                    const f = [];
-                    const token = range.split(':');
-                    const e1 = getIdFromColumnName(token[0], true);
-                    const e2 = getIdFromColumnName(token[1], true);
+            // The names of the cells of a range
+            function getRangeNames(from: string, to: string) {
+                const names = [];
+                const e1 = getIdFromColumnName(from, true);
+                const e2 = getIdFromColumnName(to, true);
+                const x1 = Math.min(e1[0], e2[0]);
+                const x2 = Math.max(e1[0], e2[0]);
+                const y1 = Math.min(e1[1], e2[1]);
+                const y2 = Math.max(e1[1], e2[1]);
 
-                    let x1, x2;
-
-                    if (e1[0] <= e2[0]) {
-                        x1 = e1[0];
-                        x2 = e2[0];
-                    } else {
-                        x1 = e2[0];
-                        x2 = e1[0];
+                for (let j = y1; j <= y2; j++) {
+                    for (let i = x1; i <= x2; i++) {
+                        names.push(getColumnNameFromId([i, j]));
                     }
-
-                    let y1, y2;
-
-                    if (e1[1] <= e2[1]) {
-                        y1 = e1[1];
-                        y2 = e2[1];
-                    } else {
-                        y1 = e2[1];
-                        y2 = e1[1];
-                    }
-
-                    for (let j = y1; j <= y2; j++) {
-                        for (let i = x1; i <= x2; i++) {
-                            f.push(getColumnNameFromId([i, j]));
-                        }
-                    }
-
-                    expression = expression.replace(range, f.join(','));
                 }
+
+                return names;
             }
 
             // Range with $ remove $ (string literals are kept untouched)
@@ -166,13 +147,13 @@ export class Formulas {
                 return literal ? literal : column + row;
             });
 
-            let tokens = expression.match(/([A-Z]+[0-9]+):([A-Z]+[0-9]+)/g);
-            if (tokens?.length) {
-                tokensUpdate(tokens);
-            }
+            // A range becomes the list of its cells. A string literal has no references, so it is kept as it is.
+            expression = expression.replace(/("(?:[^"]|"")*")|([A-Z]+[0-9]+):([A-Z]+[0-9]+)/g, (match, literal, from, to) => {
+                return literal ? literal : getRangeNames(from, to).join(',');
+            });
 
-            // Get tokens
-            tokens = expression.match(/([A-Z]+[0-9]+)/g);
+            // Get the references, outside the string literals
+            const tokens = expression.replace(/"(?:[^"]|"")*"/g, '""').match(/([A-Z]+[0-9]+)/g);
 
             // Direct self-reference protection
             if (parentId && tokens?.includes(parentId)) {
