@@ -24,7 +24,6 @@ Explore the available events to monitor and respond to worksheet interactions in
 
 | Event                     | Description                                                                                                                                                               |
 |---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `onopenworksheet`         | `onopenworksheet(worksheet: Object, worksheetNumber: Number) : void`                                                                                                      |
 | `onbeforecreateworksheet` | Intercept worksheet creation to cancel or configure the new worksheet.<br/>`onbeforecreateworksheet(worksheet: Object, options: Object, worksheetNumber: Number) : mixed` |
 | `oncreateworksheet`       | `oncreateworksheet(worksheet: Object, worksheetOptions: Object, worksheetNumber: Number) : void`                                                                          |
 | `ondeleteworksheet`       | `ondeleteworksheet(worksheet: Object, oldWorksheetNumber: Number) : void`                                                                                                 |
@@ -47,14 +46,15 @@ You can customize spreadsheet and worksheet behaviour using the following settin
 |----------------------------------|----------------------------------------------------------------------------------------------------|
 | `tabs: boolean`                  | Enables tabs for worksheet navigation and allows users to create new worksheets. Default: `false`. |
 | `hideTabs: boolean`              | Hides the worksheet tabs with any number of worksheets, for example when the application shows its own tabs. `openWorksheet` still opens a worksheet. Default: `false`. |
-| `allowDeleteWorksheet: boolean`  | Enables the delete worksheet option in the context menu. Default: `true`.                          |
-| `allowRenameWorksheet: boolean`  | Enables the rename worksheet option in the context menu. Default: `true`.                          |
-| `allowMoveWorksheet: boolean`    | Enables drag-and-drop functionality for rearranging worksheets. Default: `true`.                   |
 
 
 {.green}
 > ##### Tabs
 > The worksheet tabs show when the spreadsheet has two or more worksheets, or when `tabs` is `true`. With `tabs: true`, a button adds a new worksheet. The tabs use the keyboard interaction of the [WAI-ARIA tabs pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/): the arrow keys, Home and End move between the tabs. Use `hideTabs: true` to hide them.
+
+{.green}
+> ##### Not in this edition
+> The `onopenworksheet` event, the `allowDeleteWorksheet`, `allowRenameWorksheet` and `allowMoveWorksheet` settings, and a `tabs` object with the options of `jSuites.tabs` are not in Jspreadsheet CE. The tabs have no menu to delete or rename a worksheet, and the tabs cannot be moved.
 
  
 #### Quick example
@@ -171,10 +171,6 @@ jspreadsheet(document.getElementById('spreadsheet'), {
             worksheetName: 'Albums ' + index
         }
     },
-    // When you open the worksheet
-    onopenworksheet: function(element, instance, worksheetNumber) {
-        console.log(element, instance, worksheetNumber);
-    },
 });
 </script>
 </html>
@@ -209,14 +205,10 @@ export default function App() {
             minDimensions: [5,5],
         }
     }
-    // When a new worksheet is opened
-    const onopenworksheet = (element, instance, worksheetNumber) => {
-        console.log(element, instance, worksheetNumber);
-    }
 
     // Render component
     return (
-        <Spreadsheet ref={spreadsheet} tabs onbeforecreateworksheet={onbeforecreateworksheet} onopenworksheet={onopenworksheet}>
+        <Spreadsheet ref={spreadsheet} tabs onbeforecreateworksheet={onbeforecreateworksheet}>
                 <Worksheet data={data} columns={columns} worksheetName={"Albums"} />
         </Spreadsheet>
     );
@@ -225,7 +217,7 @@ export default function App() {
 ```vue
 <template>
     <Spreadsheet ref="spreadsheet" tabs
-            :onbeforecreateworksheet="onbeforecreateworksheet" :onopenworksheet="onopenworksheet">
+            :onbeforecreateworksheet="onbeforecreateworksheet">
         <Worksheet :data="data" :columns="columns" worksheetName="Albums" />
     </Spreadsheet>
 </template>
@@ -247,10 +239,6 @@ export default {
                 minDimensions: [5,5],
             }
         },
-        // When a new worksheet is opened
-        onopenworksheet(element, instance, worksheetNumber) {
-            console.log(element, instance, worksheetNumber);
-        }
     },
     data() {
         return {
@@ -319,10 +307,6 @@ export class AppComponent {
                     worksheetName: 'Albums ' + index
                 }
                 return options;
-            },
-            // When you open the worksheet
-            onopenworksheet: function(element, instance, worksheetNumber) {
-                console.log(element, instance, worksheetNumber);
             },
         });
     }
