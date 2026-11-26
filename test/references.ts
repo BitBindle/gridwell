@@ -16,9 +16,9 @@ describe('The updateReferences option', () => {
     const changes: [string, (w: Worksheet) => void, string][] = [
         ['insertRow', (w) => w.insertRow(1, 2), 'C1'],
         ['deleteRow', (w) => w.deleteRow(2, 1), 'C1'],
-        ['moveRow', (w) => w.moveRow(0, 2), 'C3'],
+        ['moveRow', (w) => w.moveRow(4, 0), 'C2'],
         ['insertColumn', (w) => w.insertColumn(1, 0, true), 'D1'],
-        ['deleteColumn', (w) => w.deleteColumn(1, 1), 'B1'],
+        ['deleteColumn', (w) => w.deleteColumn(0, 1), 'B1'],
         ['moveColumn', (w) => w.moveColumn(0, 3), 'B1'],
     ];
 
