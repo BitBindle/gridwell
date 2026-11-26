@@ -128,4 +128,35 @@ describe('The updateReferences option', () => {
         expect(worksheet.getValue('A2')).to.equal('=A2');
         expect(worksheet.getValue('A2', true)).to.equal('#ERROR');
     });
+
+    it('dispatches no change event and writes no formula text when it shows the new results', () => {
+        const events: string[] = [];
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', ''],
+                        ['2', '=A2*2'],
+                    ],
+                },
+            ],
+            updateReferences: false,
+            onbeforechange: () => {
+                events.push('beforechange');
+                return false;
+            },
+            onchange: () => {
+                events.push('change');
+            },
+            oninsertrow: () => {
+                events.push('insertrow');
+            },
+        });
+
+        worksheet.insertRow(1, 0, true);
+
+        expect(events).to.eql(['insertrow']);
+        expect(worksheet.getValue('B3')).to.equal('=A2*2');
+        expect(worksheet.getValue('B3', true)).to.equal('2');
+    });
 });

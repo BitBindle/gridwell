@@ -178,6 +178,22 @@ export class Cells {
     }
 
     /**
+     * Show the value of a text cell again, for example the new result of its formula. It writes no data and dispatches
+     * no event.
+     */
+    showValue(x: number, y: number) {
+        const worksheet = this.worksheet;
+        const element = worksheet.records[y][x].element;
+        const column = worksheet.options.columns?.[this.getColumnIndex(x, y)];
+        const value = worksheet.options.data[y][x];
+        if (column?.type === 'html' || worksheet.parent.config.parseHTML === true) {
+            element.innerHTML = stripScript(this.parseValue(x, y, value, element));
+        } else {
+            element.textContent = this.parseValue(x, y, value, element) as string;
+        }
+    }
+
+    /**
      * Render a cell again when getColumnIndex gives another column for it.
      * A setting changes only when the options of the two columns are different for it,
      * so a value from setReadOnly or setStyle stays.
