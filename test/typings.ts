@@ -264,3 +264,9 @@ const rangeData = worksheet.getDataFromRange('A1:C1');
 assertType<Equals<typeof rangeData, jspreadsheet.CellValue[][]>>();
 worksheet.getDataFromRange('A1:C1', false);
 worksheet.getDataFromRange('A1:C1', true);
+
+// An empty delimiter counts as none, so getData gives rows (issue #39)
+const emptyDelimiterData = worksheet.getData(false, false, '');
+assertType<Equals<typeof emptyDelimiterData, jspreadsheet.CellValue[][]>>();
+const emptyDelimiterJson = worksheet.getData(false, false, '', true);
+assertType<Equals<typeof emptyDelimiterJson, Record<number, jspreadsheet.CellValue>[]>>();

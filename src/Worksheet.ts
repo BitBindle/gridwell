@@ -225,7 +225,8 @@ export class Worksheet {
         return this.selection.getSelectedRows(visibleOnly);
     }
 
-    getData(highlighted?: boolean, processed?: boolean, delimiter?: undefined | null, asJson?: false): jspreadsheet.CellValue[][];
+    getData(highlighted?: boolean, processed?: boolean, delimiter?: undefined | null | '', asJson?: false): jspreadsheet.CellValue[][];
+    getData(highlighted: boolean | undefined, processed: boolean | undefined, delimiter: '', asJson: true): Record<number, jspreadsheet.CellValue>[];
     getData(highlighted: boolean | undefined, processed: boolean | undefined, delimiter: string, asJson?: boolean): string;
     getData(
         highlighted: boolean | undefined,
