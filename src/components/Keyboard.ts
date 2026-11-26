@@ -5,6 +5,21 @@ import type { EditingWorksheet, SelectedWorksheet, TargetEvent, Worksheet } from
 import { askConfirm } from '../utils/dialogs.js';
 
 /**
+ * Type text at the caret of a focused field with the insertText command, as the user does. False when the browser does
+ * not do the command, for example in a test without a layout.
+ */
+function insertText(field: HTMLTextAreaElement, text: string) {
+    if (document.activeElement !== field || typeof document.execCommand !== 'function') {
+        return false;
+    }
+    try {
+        return document.execCommand('insertText', false, text);
+    } catch {
+        return false;
+    }
+}
+
+/**
  * The keys on a worksheet: the keys of an open editor, and the keys of the grid, which move the selection, delete,
  * copy, paste and start the editor when a key is typed.
  *
@@ -20,7 +35,7 @@ export class Keyboard {
 
     /**
      * The keys while an editor is open: Escape closes it without saving, Enter and Tab close it and save, and Alt+Enter adds
-     * a line to a text editor that wraps.
+     * a line break to a textarea editor.
      */
     editorKeys(e: TargetEvent<KeyboardEvent>) {
         // keyDownControls calls it only while an editor is open
@@ -41,12 +56,19 @@ export class Keyboard {
             } else if (column?.type === 'dropdown') {
                 // Do nothing
             } else {
-                // Alt+Enter adds a line break at the caret of a textarea, and the editor stays open. setRangeText and the
-                // input event let the undo of the browser and the listeners of the editor see the change.
+                // Alt+Enter adds a line break at the caret of a textarea, and the editor stays open. The insertText command
+                // goes into the undo of the browser and shows the caret. Without it, setRangeText adds the line break.
                 const editor = worksheet.editor.cell.children[0] as HTMLTextAreaElement;
                 if (e.altKey && editor.tagName === 'TEXTAREA') {
-                    editor.setRangeText('\n', editor.selectionStart, editor.selectionEnd, 'end');
-                    editor.dispatchEvent(new Event('input', { bubbles: true }));
+                    if (!insertText(editor, '\n')) {
+                        editor.setRangeText('\n', editor.selectionStart, editor.selectionEnd, 'end');
+                        editor.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    // Each line of a one-line editor has the height of the editor. Chromium does not scroll to the new line.
+                    if (editor.getAttribute('wrap') === 'off') {
+                        const line = editor.value.slice(0, editor.selectionStart).split('\n').length - 1;
+                        editor.scrollTop = line * editor.clientHeight;
+                    }
                     e.preventDefault();
                 } else {
                     editor.blur();

@@ -323,7 +323,7 @@ export class Editor {
     }
 
     /**
-     * The text editor: an input, or a text area when the column wraps its text, with the mask of the column. empty opens it
+     * The text editor: a textarea, which shows one line without word wrap, with the mask of the column. empty opens it
      * without the value of the cell.
      */
     private openText(
@@ -370,7 +370,9 @@ export class Editor {
         editor.onblur = () => {
             worksheet.editor.close(cell, true);
         };
+        // The caret is at the end of the text, so the end shows
         editor.scrollLeft = editor.scrollWidth;
+        editor.scrollTop = editor.scrollHeight;
     }
 
     /**

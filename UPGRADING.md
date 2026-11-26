@@ -666,8 +666,12 @@ was built, both events got the index of the last worksheet.
 ## The text editor of a cell is a textarea
 
 The editor of a text or numeric cell is a `textarea` in each cell, so it keeps the line breaks of the value. Version 5
-used an `input`, except with `wordWrap`, and the input removed the line breaks when it saved the value. Without word
-wrap, the textarea has `rows="1"` and `wrap="off"`, the font of the cell and the line height of the cell, and it shows
-one line as the input did. Alt+Enter adds a line break at the caret in each cell, not only with `wordWrap` or a value of
-more than 200 characters. CSS or an `oncreateeditor` handler that looks for `td > input` must look for `td > textarea`.
-The calendar and color editors are still inputs.
+used an `input`, except with `wordWrap`, and the input removed the line breaks when it saved the value. No option keeps
+the input, because an input cannot keep the value as it is. Without word wrap, the textarea has `rows="1"` and
+`wrap="off"`, and the font of the cell, and it shows the line of the caret, as the input showed its line.
+
+- Code, CSS or tests that find the open editor with `input`, for example `td > input`, must look for `td > textarea`.
+  The calendar and color editors are still inputs.
+- Alt+Enter adds a line break at the caret in each text cell. In version 5, it did this only with `wordWrap` or a value
+  of more than 200 characters, and in other cells it saved the value and moved the selection down.
+- Text with line breaks that the user pastes into an open editor keeps them. The input changed them to spaces.

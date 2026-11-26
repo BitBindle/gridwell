@@ -506,7 +506,7 @@ describe('The editor of a worksheet', () => {
 });
 
 describe('The text editor and line breaks', () => {
-    function altEnter(editor: HTMLTextAreaElement) {
+    function altEnter(editor: HTMLElement) {
         editor.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter', keyCode: 13, which: 13, altKey: true }));
     }
 
@@ -574,11 +574,10 @@ describe('The text editor and line breaks', () => {
         });
         editor.focus();
 
-        altEnter(editor as unknown as HTMLTextAreaElement);
+        altEnter(editor);
 
         expect(blurred).to.equal(true);
-        if (worksheet.editor.isOpen()) {
-            worksheet.closeEditor(cell, false);
-        }
+        // The color picker closes on its own events, which jsdom does not send
+        worksheet.closeEditor(cell, false);
     });
 });

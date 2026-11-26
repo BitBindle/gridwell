@@ -340,6 +340,7 @@
     overflow: hidden;
     font: inherit;
     padding-top: 0px !important;
+    padding-left: 4px;
 }
 
 .jss_worksheet > tbody > tr > td > input[type='checkbox'] {
