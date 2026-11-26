@@ -98,6 +98,30 @@ describe('Calculations', () => {
         expect(worksheet.formulas.chain).to.deep.equal({ A2: ['C1', 'B2'] });
     });
 
+    it('keeps a text with a colon after letters (issue #15)', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['C:\\temp', '=A1'],
+                        ['x', '="C:\\temp"'],
+                        ['Ratio A:B', '=A3'],
+                        ['x', '="Ratio A:B"&" "&A5'],
+                        ['Pages A:C', '="a\\:"'],
+                    ],
+                },
+            ],
+        })[0];
+
+        expect(['B1', 'B2', 'B3', 'B4', 'B5'].map((name) => worksheet.getValue(name, true))).to.deep.equal([
+            'C:\\temp',
+            'C:\\temp',
+            'Ratio A:B',
+            'Ratio A:B Pages A:C',
+            'a\\:',
+        ]);
+    });
+
     describe('Test updating formulas when adding new rows', () => {
         it('1', () => {
             let test = jspreadsheet(root, {

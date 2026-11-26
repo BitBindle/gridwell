@@ -7,6 +7,15 @@ import type { HistoryCellChange, MergeInfo, Worksheet } from '../types/internal'
 let chainLoopProtection: Record<string, boolean> = {};
 
 /**
+ * Writes a text as a JavaScript string literal for the formula plugin. The plugin searches the value of each variable for
+ * ranges, such as A:B in "Ratio A:B", so a colon is written as an escape, which gives the same text.
+ * @param text - The text.
+ */
+function toStringLiteral(text: string) {
+    return JSON.stringify(text).replace(/:/g, '\\u003a');
+}
+
+/**
  * The formulas of a worksheet: their calculation, the formula chain, the references to rename after columns or rows
  * move, are inserted or are deleted, and the footers.
  *
@@ -208,7 +217,7 @@ export class Formulas {
                                         formulaExpressions[reference] = number;
                                     } else {
                                         // Text as a string literal, with its quotes and backslashes escaped
-                                        formulaExpressions[reference] = JSON.stringify(`${value}`);
+                                        formulaExpressions[reference] = toStringLiteral(`${value}`);
                                     }
                                 }
                             }
@@ -232,7 +241,7 @@ export class Formulas {
                 const parsedExpression = expression.substr(1).replace(/"(?:[^"]|"")*"/g, (literal) => {
                     const name = `__JSSSTR${literalIndex++}__`;
                     // The text of the literal, with "" as a quote, as JavaScript code: a backslash is a character, as in Excel
-                    formulaExpressions[name] = JSON.stringify(literal.slice(1, -1).replace(/""/g, '"'));
+                    formulaExpressions[name] = toStringLiteral(literal.slice(1, -1).replace(/""/g, '"'));
                     return name;
                 });
 
