@@ -317,6 +317,35 @@ describe('Merge tests', () => {
         expect(instance[0].getMerge('A1')).to.equal(null);
     });
 
+    it('selects no cell and dispatches no onselection for the merged ranges of the options', async () => {
+        let selections = 0;
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['a', 'b', 'c'],
+                        ['d', 'e', 'f'],
+                        ['g', 'h', 'i'],
+                    ],
+                    mergeCells: { A1: [2, 1], B2: [2, 2] },
+                },
+            ],
+            onselection: () => {
+                selections++;
+            },
+        })[0];
+        await new Promise((resolve) => setTimeout(resolve));
+
+        expect(worksheet.getMerge()).to.eql({ A1: [2, 1], B2: [2, 2] });
+        expect(worksheet.getSelection()).to.equal(null);
+        expect(selections).to.equal(0);
+
+        // A merge through the API still selects the first cell of the range
+        worksheet.removeMerge('A1');
+        worksheet.setMerge('A1', 2, 1);
+        expect(worksheet.getSelection()).to.eql([0, 0, 0, 0]);
+    });
+
     it('setMerge without arguments merges the selected cells', () => {
         const instance = jspreadsheet(root, {
             worksheets: [
