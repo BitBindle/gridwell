@@ -10,7 +10,6 @@ import { getWorksheetActive } from './activeWorksheet.js';
 import { getWorksheetConfig, setConfig } from './config.js';
 import dispatch from './dispatch.js';
 import { getIdFromColumnName } from './internalHelpers.js';
-import { redo, undo } from './history.js';
 import { setGridLabels, setGridRoles } from './accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import { Worksheet } from '../Worksheet.js';
@@ -888,8 +887,18 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.view.orderBy(column, order);
         },
     ],
-    ['undo', undo],
-    ['redo', redo],
+    [
+        'undo',
+        function (this: Worksheet) {
+            return this.history.undo();
+        },
+    ],
+    [
+        'redo',
+        function (this: Worksheet) {
+            return this.history.redo();
+        },
+    ],
     [
         'getCell',
         function (this: Worksheet, x: number, y: number) {
