@@ -92,6 +92,9 @@ describe('Positions after an insert, a move or a delete', () => {
             [{ B3: [2, 3] }, (w) => w.insertRow(2, 4), { B3: [2, 3] }],
             [{ A2: [2, 1] }, (w) => w.insertColumn(1, 1), { A2: [2, 1] }],
             [{ B2: [2, 2] }, (w) => w.insertColumn(1, 2), { B2: [2, 2] }],
+            // A range before the start leads to a second range before it
+            [{ C2: [1, 2], A3: [2, 2] }, (w) => w.insertRow(1, 3), { C2: [1, 2], A3: [2, 2] }],
+            [{ B3: [2, 1], C1: [2, 2] }, (w) => w.insertColumn(1, 3), { B3: [2, 1], C1: [2, 2] }],
         ];
         for (const [mergeCells, change, expected] of cases) {
             const data = grid(10, 6);
@@ -100,13 +103,15 @@ describe('Positions after an insert, a move or a delete', () => {
 
             change(worksheet);
 
-            const name = Object.keys(expected)[0];
-            expect(worksheet.getMerge(), JSON.stringify(mergeCells)).to.eql(expected);
+            const names = Object.keys(expected);
+            expect(worksheet.getMerge(), JSON.stringify(mergeCells)).to.deep.equal(expected);
             // An inserted column moves the formula, but its reference stays
             expect(worksheet.getRowData(0), JSON.stringify(mergeCells)).to.include('=A2');
 
-            // The range splits as one range
-            worksheet.removeMerge(name);
+            // Each range splits as one range
+            for (const name of names) {
+                worksheet.removeMerge(name);
+            }
             expect(worksheet.getMerge()).to.eql({});
         }
     });
