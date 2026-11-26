@@ -642,6 +642,13 @@ direction comes from `deltaY` of the last wheel event, else from the change of `
 loaded rows for such an event when the view was near the bottom. To load rows from code, use the keyboard methods, such
 as `down`.
 
+## The createCell of a custom type can set the alignment
+
+The column `align` applies before the content of a cell, so that the `formatValue` option can change it. A custom
+column type that sets `textAlign` in `createCell` now keeps it. Version 5 set the column alignment after `createCell`,
+so the alignment of the column replaced it. To keep the column alignment, do not set `textAlign` in `createCell`, or set
+it from `column.align`.
+
 ## deleteWorksheet removes the options of the worksheet
 
 `deleteWorksheet` removes the options of the worksheet from `getConfig().worksheets`. Version 5 left them there, so the

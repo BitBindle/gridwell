@@ -35,6 +35,12 @@ export class Spreadsheet {
         this.contextMenu.className = 'jss_contextmenu';
         new ContextMenu(this.contextMenu);
 
+        // The polite live region of announce
+        this.liveRegion = document.createElement('div');
+        this.liveRegion.className = 'jss_live';
+        this.liveRegion.setAttribute('role', 'status');
+        this.liveRegion.setAttribute('aria-live', 'polite');
+
         this.toolbarManager = new Toolbar(this);
     }
 
@@ -54,6 +60,7 @@ export class Spreadsheet {
         await this.createWorksheets(options, el);
 
         this.element.appendChild(this.contextMenu);
+        this.element.appendChild(this.liveRegion);
 
         // Fullscreen
         if (this.config.fullscreen === true) {
@@ -326,6 +333,17 @@ export class Spreadsheet {
                 this.element.classList.remove('fullscreen');
             }
         }
+    }
+
+    /**
+     * Read a text to the user of assistive technology through the polite live region of the spreadsheet.
+     * @param text - Text to read.
+     */
+    announce(text: string) {
+        // A new element, so that a screen reader also reads the same text again
+        const item = document.createElement('div');
+        item.textContent = text;
+        this.liveRegion.replaceChildren(item);
     }
 
     showToolbar() {
