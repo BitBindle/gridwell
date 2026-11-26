@@ -3,27 +3,6 @@ import { expect } from 'chai';
 import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
 
 describe('Toolbar', () => {
-    let getContext: typeof HTMLCanvasElement.prototype.getContext;
-
-    before(() => {
-        // The color picker of the default toolbar draws on a canvas, which jsdom does not implement
-        getContext = HTMLCanvasElement.prototype.getContext;
-        // A stub of the context, not a real one
-        HTMLCanvasElement.prototype.getContext = function () {
-            return new Proxy({} as Record<string | symbol, unknown>, {
-                get: (target, name) => (name in target ? target[name] : () => ({ data: [0, 0, 0, 0], addColorStop() {} })),
-                set: (target, name, value) => {
-                    target[name] = value;
-                    return true;
-                },
-            });
-        } as unknown as typeof getContext;
-    });
-
-    after(() => {
-        HTMLCanvasElement.prototype.getContext = getContext;
-    });
-
     const createWithToolbar = async () => {
         const instance = jspreadsheet(root, {
             toolbar: true,
@@ -313,6 +292,129 @@ describe('Toolbar', () => {
             root.querySelector('.jss_toolbar .jpicker')!.querySelectorAll<HTMLElement>('.jpicker-item')[1].click();
 
             expect(changes).to.eql([{ A1: 'text-align:right', B1: 'text-align:right' }]);
+        });
+    });
+
+    describe('Items', () => {
+        it('creates labels, icons with other classes, and items with an id, a width, a title, and active or disabled', async () => {
+            const clicks: unknown[][] = [];
+            const instance = jspreadsheet(root, {
+                toolbar: [
+                    { type: 'label', content: '<b>Label</b>' },
+                    { type: 'divisor' },
+                    {
+                        content: 'star',
+                        class: 'fa fa-star',
+                        id: 'star',
+                        width: '40px',
+                        title: 'Star',
+                        active: true,
+                        render(element: HTMLElement) {
+                            element.dataset.rendered = 'yes';
+                        },
+                        onclick(...args: unknown[]) {
+                            clicks.push(args);
+                        },
+                    },
+                    { content: 'block', tooltip: 'Disabled', disabled: true },
+                    { content: 'info' },
+                ],
+                worksheets: [{ minDimensions: [3, 3] }],
+            });
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            const items = root.querySelectorAll<HTMLElement>('.jss_toolbar .jtoolbar-item');
+            // The content of a label is text
+            expect(items[0].classList.contains('jtoolbar-label')).to.equal(true);
+            expect(items[0].textContent).to.equal('<b>Label</b>');
+            expect(items[1].getAttribute('role')).to.equal('separator');
+
+            const star = items[2];
+            expect(star.id).to.equal('star');
+            expect(star.style.width).to.equal('40px');
+            expect(star.title).to.equal('Star');
+            expect(star.dataset.rendered).to.equal('yes');
+            expect(star.classList.contains('jtoolbar-active')).to.equal(true);
+            expect(star.children[0].className).to.equal('fa fa-star');
+            // An icon without a tooltip is the name of its item
+            expect(star.children[0].hasAttribute('aria-hidden')).to.equal(false);
+
+            expect(items[3].classList.contains('jtoolbar-disabled')).to.equal(true);
+            expect(items[3].getAttribute('aria-disabled')).to.equal('true');
+            expect(items[3].children[0].getAttribute('aria-hidden')).to.equal('true');
+
+            // onclick gets the toolbar, its instance, the item and the click, and the item is selected
+            star.click();
+            const toolbar = instance[0].parent.toolbar;
+            expect(clicks[0].slice(0, 3)).to.eql([toolbar, toolbar.toolbar, star]);
+            expect(clicks[0][3]).to.be.instanceOf(MouseEvent);
+            expect(star.classList.contains('jtoolbar-selected')).to.equal(true);
+            items[4].click();
+            expect(star.classList.contains('jtoolbar-selected')).to.equal(false);
+        });
+
+        it('has the methods of the toolbar on the element', async () => {
+            const instance = await createWithToolbar();
+            const element = instance[0].parent.toolbar;
+            const toolbar = element.toolbar as unknown as Jspreadsheet.ToolbarInstance;
+
+            expect(toolbar.get()).to.equal(element);
+            expect((toolbar.options.items as unknown[]).length).to.equal(15);
+
+            toolbar.hide();
+            expect(element.style.display).to.equal('none');
+            toolbar.show();
+            expect(element.style.display).to.equal('');
+
+            toolbar.setReadonly(true);
+            expect(element.classList.contains('jtoolbar-disabled')).to.equal(true);
+            toolbar.setReadonly(false);
+            expect(element.classList.contains('jtoolbar-disabled')).to.equal(false);
+
+            toolbar.create([{ content: 'undo', tooltip: 'Undo' }, { content: 'redo' }]);
+            const items = element.querySelectorAll<HTMLElement>('.jtoolbar-item');
+            expect(items.length).to.equal(2);
+            expect(Array.from(items).map((item) => item.getAttribute('tabindex'))).to.eql(['0', '-1']);
+
+            toolbar.destroy();
+            expect(element.querySelectorAll('.jtoolbar-item').length).to.equal(0);
+        });
+
+        it('marks the chosen option of a picker, and lays out the options in columns', async () => {
+            await createWithToolbar();
+
+            const font = root.querySelector<HTMLElement>('.jss_toolbar .jpicker')!;
+            const fonts = font.querySelectorAll<HTMLElement>('.jpicker-item');
+            expect(fonts[0].getAttribute('aria-selected')).to.equal('true');
+            expect(font.querySelector('.jpicker-header')!.textContent).to.equal('Default');
+
+            fonts[2].click();
+            expect(fonts[0].getAttribute('aria-selected')).to.equal('false');
+            expect(fonts[2].getAttribute('aria-selected')).to.equal('true');
+            expect(font.querySelector('.jpicker-header')!.textContent).to.equal('Arial');
+            expect((font as HTMLElement & { picker: Jspreadsheet.PickerInstance }).picker.getValue()).to.equal('2');
+
+            // The borders have five columns
+            const borders = root.querySelector<HTMLElement>('.jss_toolbar [aria-label="Borders"] > .jpicker-content')!;
+            expect(borders.classList.contains('jpicker-columns')).to.equal(true);
+            expect(borders.style.width).to.equal('180px');
+        });
+
+        it('closes a picker on a press outside it', async () => {
+            await createWithToolbar();
+
+            const picker = root.querySelector<HTMLElement>('.jss_toolbar .jpicker')!;
+            const instance = (picker as HTMLElement & { picker: Jspreadsheet.PickerInstance }).picker;
+            picker.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            expect(instance.isOpened()).to.equal(true);
+
+            // A press in the picker keeps it open
+            picker.querySelector('.jpicker-content')!.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            expect(instance.isOpened()).to.equal(true);
+
+            document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            expect(instance.isOpened()).to.equal(false);
+            expect(picker.getAttribute('aria-expanded')).to.equal('false');
         });
     });
 

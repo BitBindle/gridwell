@@ -233,47 +233,39 @@ declare namespace jspreadsheet {
     }
 
     /**
-     * The toolbar, which jSuites.toolbar creates. These are the methods that applications use; see the jSuites toolbar
-     * documentation for the others.
+     * The toolbar of a spreadsheet, which the element of the toolbar keeps as its toolbar property.
      */
     interface ToolbarInstance {
-        /** The options that jSuites.toolbar got, with its defaults. */
+        /** The settings of the toolbar, with its items. */
         options: Record<string, unknown>;
         /** Replace the items of the toolbar. */
         create(items: ToolbarItem[]): void;
         /** Call updateState on each item, with the two arguments. */
         update(a?: unknown, b?: unknown): void;
-        /** Move the items that do not fit into the menu of the toolbar, or back. */
-        refresh(): void;
-        /** Mark an item element as selected. */
+        /** Mark an item element as selected, with the class jtoolbar-selected. */
         selectItem(element: HTMLElement): void;
-        /** Set the badge of the item at index. The value is HTML. */
-        setBadge(index: number, value: string | number): void;
         /** Disable or enable the toolbar. */
         setReadonly(state: boolean): void;
         /** The element of the toolbar. */
         get(): HTMLElement;
         show(): void;
         hide(): void;
-        /** Open the menu with the items that do not fit. */
-        open(): void;
-        /** Close the menu with the items that do not fit. */
-        close(): void;
-        /** Remove the toolbar from its element. */
+        /** Remove the items of the toolbar. */
         destroy(): void;
     }
 
     /**
-     * The picker of a select item of the toolbar, which jSuites.picker creates. These are the methods that applications
-     * use; see the jSuites picker documentation for the others.
+     * The picker of a select item of the toolbar, which the element of the item keeps as its picker property.
      */
     interface PickerInstance {
-        /** The options that jSuites.picker got, with its defaults. */
+        /** The options of the picker, with their defaults. */
         options: Record<string, unknown>;
-        /** The index of the selected option, as text after the user chose one. */
+        /** The key of the selected option: the first value, or the key as text after the user chose one. */
         getValue(): number | string;
-        /** Select the option at index. With an event, the picker calls its onchange. */
+        /** Select the option with a key. With an event, the picker calls its onchange. */
         setValue(index: number | string, event?: Event): void;
+        /** Tell whether the list of options is open. */
+        isOpened(): boolean;
         open(): void;
         close(): void;
     }
@@ -285,7 +277,7 @@ declare namespace jspreadsheet {
         /**
          * Method called when the toolbar state should be updated.
          * @param toolbarElement - Toolbar HTML element.
-         * @param toolbarInstance - Toolbar instance. For more information, read the jSuites toolbar documentation.
+         * @param toolbarInstance - Toolbar instance.
          * @param itemElement - Toolbar item HTML element.
          * @param worksheetInstance - Worksheet instance.
          */
@@ -296,7 +288,10 @@ declare namespace jspreadsheet {
             worksheetInstance: WorksheetInstance
         ) => void;
 
-        /** jSuites.toolbar gets the item, and reads more properties than these. */
+        /**
+         * The toolbar also reads id, width, title, active, disabled, class (the classes of the icon in place of
+         * material-icons) and render(itemElement, item) of an item, and k, the style property of a color item.
+         */
         [property: string]: unknown;
     }
 
@@ -307,7 +302,7 @@ declare namespace jspreadsheet {
         /**
          * Event fired when clicking on the html item referring to that item.
          * @param toolbarElement - Toolbar HTML element.
-         * @param toolbarInstance - Toolbar instance. For more information, read the jSuites toolbar documentation.
+         * @param toolbarInstance - Toolbar instance.
          * @param itemElement - Toolbar item HTML element.
          * @param event - Pointer event that triggered the onclick.
          */
@@ -323,7 +318,7 @@ declare namespace jspreadsheet {
         /**
          * Event called when the item picker value is changed.
          * @param itemElement - Toolbar item HTML element.
-         * @param pickerInstance - Picker instance. For more information, read the jSuites picker documentation.
+         * @param pickerInstance - Picker instance.
          * @param value - New picker value.
          * @param value2 - New picker value.
          * @param valueIndex - Index of the new picker value.
@@ -346,10 +341,10 @@ declare namespace jspreadsheet {
         /**
          * Creates picker items based on the picker options.
          * @param option - One of the items in the {@link ToolbarSelectItem.options} array.
-         * @param pickerInstance - Picker instance. For more information, read the jSuites picker documentation.
-         * @returns string representing the HTML of the picker item.
+         * @param element - The element of the option in the list, or null for the option that the picker shows.
+         * @returns The HTML of the option, or an element.
          */
-        render?: (option: string, pickerInstance: PickerInstance) => string;
+        render?: (option: string, element: HTMLElement | null) => string | Element;
 
         /** The index in {@link ToolbarSelectItem.options} of the option that the item shows first. */
         value?: number | string;
@@ -375,12 +370,12 @@ declare namespace jspreadsheet {
     }
 
     /**
-     * Item that makes up the toolbar configuration array. This item may have properties not described here. For more information, read the jSuites toolbar documentation.
+     * Item that makes up the toolbar configuration array. This item may have properties not described here.
      */
     type ToolbarItem = ToolbarIconItem | ToolbarSelectItem | ToolbarColorItem | ToolbarDivisorItem;
 
     /**
-     * The settings of the toolbar: the items, and the other options of the jSuites toolbar. For more information, read the jSuites toolbar documentation.
+     * The settings of the toolbar: the items, and other properties, which the toolbar keeps in its options.
      */
     interface ToolbarOptions {
         items: ToolbarItem[];

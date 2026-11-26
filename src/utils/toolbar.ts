@@ -1,15 +1,13 @@
-import jSuites from 'jsuites';
 import { translate } from './dictionary.js';
 import { getCellNameFromCoords } from './helpers.js';
+import { ColorPicker, type ColorElement } from './color.js';
+import { Picker } from './picker.js';
+import { ToolbarControl } from './toolbarControl.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Spreadsheet, Worksheet } from '../types/internal';
-import type { Color } from 'jsuites';
 
 /** The picker of the borders, which keeps the thickness, the color and the style that the user chose. */
 type BorderPicker = jspreadsheet.PickerInstance & { thickness?: number; color?: string; style?: string };
-
-/** The element of a picker, on which jsuites keeps the picker. */
-type PickerElement = HTMLElement & { picker?: jspreadsheet.PickerInstance };
 
 function setItemStatus(toolbarItem: HTMLElement, worksheet: Worksheet) {
     const disabled = worksheet.options.editable === false;
@@ -313,7 +311,7 @@ function addBorderControls(a: HTMLElement, b: BorderPicker) {
     let div = document.createElement('div');
     container.appendChild(div);
 
-    const colorPicker = jSuites.color(div, {
+    const colorPicker = new ColorPicker(div, {
         closeOnChange: false,
         onchange(o: HTMLElement, v: string) {
             (o.parentNode!.children[1] as HTMLElement).style.color = v;
@@ -323,15 +321,25 @@ function addBorderControls(a: HTMLElement, b: BorderPicker) {
 
     const i = document.createElement('i');
     i.classList.add('material-icons');
-    i.innerHTML = 'color_lens';
+    i.textContent = 'color_lens';
+    i.setAttribute('role', 'button');
+    i.setAttribute('tabindex', '0');
+    i.setAttribute('aria-label', translate('Border color'));
     i.onclick = () => {
         colorPicker.open();
+    };
+    i.onkeydown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            colorPicker.open();
+        }
     };
     container.appendChild(i);
     a.children[1].appendChild(container);
 
     div = document.createElement('div');
-    jSuites.picker(div, {
+    div.setAttribute('aria-label', translate('Border thickness'));
+    new Picker<number>(div, {
         data: [1, 2, 3, 4, 5],
         render(e: number) {
             return `<div style="height: ${e}px; width: 30px; background-color: black;"></div>`;
@@ -344,7 +352,8 @@ function addBorderControls(a: HTMLElement, b: BorderPicker) {
     a.children[1].appendChild(div);
 
     const borderStylePicker = document.createElement('div');
-    jSuites.picker(borderStylePicker, {
+    borderStylePicker.setAttribute('aria-label', translate('Border style'));
+    new Picker(borderStylePicker, {
         data: ['solid', 'dotted', 'dashed', 'double'],
         render(e: string) {
             if (e === 'double') {
@@ -423,7 +432,7 @@ function getFullscreenItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
 }
 
 /**
- * The toolbar of a spreadsheet: it builds the default items, creates the jSuites toolbar, shows and hides it, and updates
+ * The toolbar of a spreadsheet: it builds the default items, creates the ToolbarControl, shows and hides it, and updates
  * the state of its items for a worksheet.
  *
  * Each spreadsheet has one, as spreadsheet.toolbarManager, which the factory creates. spreadsheet.toolbar is the element
@@ -454,15 +463,18 @@ export class Toolbar {
         ];
     }
 
-    private adjustForJSuites(toolbar: jspreadsheet.ToolbarOptions) {
+    /**
+     * Change the items in place into the items that the toolbar creates: a select item gets its options as data, and a
+     * color item becomes a button that opens a color picker.
+     * @param toolbar - The settings of the toolbar.
+     */
+    private adjustItems(toolbar: jspreadsheet.ToolbarOptions) {
         const spreadsheet = this.spreadsheet;
 
-        // The items are changed in place into items of jSuites.toolbar. A divisor has no other properties.
+        // A divisor has no other properties
         const items = toolbar.items as jspreadsheet.ToolbarItemBase[];
 
         for (const item of items) {
-            // jSuites.toolbar gives an item with a tooltip its title and its accessible name
-
             if (item.type === 'select') {
                 if (item.options) {
                     item.data = item.options;
@@ -481,19 +493,22 @@ export class Toolbar {
             } else if (item.type === 'color') {
                 item.type = 'i';
 
-                item.onclick = (a: HTMLElement, b: object, c: HTMLElement & { color?: Color }) => {
-                    if (!c.color) {
-                        jSuites.color(c, {
+                item.onclick = (a: HTMLElement, b: object, c: ColorElement, e: Event) => {
+                    const picker =
+                        c.color ||
+                        new ColorPicker(c, {
                             onchange(o: HTMLElement, v: string) {
                                 // The CSS property of a color item
                                 setSelectedStyle(spreadsheet.getWorksheetInstance(), item.k as string, v);
                             },
-                            onopen(o: HTMLElement & { color: Color }) {
-                                o.color.select('');
+                            onopen(o: ColorElement, picker: ColorPicker) {
+                                picker.select('');
                             },
                         });
 
-                        c.color!.open();
+                    // A click in the picker, which is in the item, does not open it again
+                    if (!picker.content.contains(e.target as Node)) {
+                        picker.open();
                     }
                 };
             }
@@ -501,7 +516,8 @@ export class Toolbar {
     }
 
     /**
-     * Create toolbar
+     * Create the element of the toolbar.
+     * @param toolbar - The settings of the toolbar.
      */
     create(toolbar: jspreadsheet.ToolbarOptions) {
         const spreadsheet = this.spreadsheet;
@@ -509,7 +525,7 @@ export class Toolbar {
         const toolbarElement = document.createElement('div');
         toolbarElement.classList.add('jss_toolbar');
 
-        this.adjustForJSuites(toolbar);
+        this.adjustItems(toolbar);
 
         if (typeof spreadsheet.plugins === 'object') {
             for (const plugin of Object.values(spreadsheet.plugins)) {
@@ -523,222 +539,14 @@ export class Toolbar {
             }
         }
 
-        jSuites.toolbar(toolbarElement, toolbar);
-
-        this.addPickerKeys(toolbarElement);
-        this.addToolbarKeys(toolbarElement);
+        new ToolbarControl(toolbarElement, toolbar);
 
         return toolbarElement;
     }
 
-    /**
-     * The items of the toolbar that take the focus: the buttons and the pickers.
-     * @param toolbarElement - The element of the toolbar.
-     */
-    private getFocusableItems(toolbarElement: HTMLElement) {
-        return Array.from(toolbarElement.querySelectorAll<HTMLElement>('.jtoolbar-item[role="button"], .jtoolbar-item.jpicker'));
-    }
-
-    /**
-     * Make the toolbar work with the keyboard, with the WAI-ARIA toolbar pattern. The toolbar is one tab stop: Tab goes to the
-     * item that had the focus last, the arrows, Home and End move between the items, and Enter and Space press a button.
-     * @param toolbarElement - The element of the toolbar.
-     */
-    private addToolbarKeys(toolbarElement: HTMLElement) {
-        toolbarElement.setAttribute('role', 'toolbar');
-        toolbarElement.setAttribute('aria-label', translate('Toolbar'));
-
-        const items = this.getFocusableItems(toolbarElement);
-        for (const [i, item] of items.entries()) {
-            item.setAttribute('tabindex', i === 0 ? '0' : '-1');
-        }
-
-        // The item that gets the focus, also from a press, is the tab stop
-        toolbarElement.addEventListener('focusin', (e) => {
-            const target = e.target as HTMLElement;
-            const items = this.getFocusableItems(toolbarElement);
-
-            if (items.includes(target)) {
-                for (const item of items) {
-                    item.setAttribute('tabindex', item === target ? '0' : '-1');
-                }
-            }
-        });
-
-        toolbarElement.addEventListener('keydown', (e) => this.toolbarKeys(toolbarElement, e));
-    }
-
-    /**
-     * Handle a key on an item of the toolbar.
-     * @param toolbarElement - The element of the toolbar.
-     * @param e - The keydown.
-     */
-    private toolbarKeys(toolbarElement: HTMLElement, e: KeyboardEvent) {
-        const target = e.target as HTMLElement;
-        const items = this.getFocusableItems(toolbarElement);
-        let index = items.indexOf(target);
-
-        // An open picker uses the keys for its options
-        if (index === -1 || target.classList.contains('jpicker-focus')) {
-            return;
-        }
-
-        switch (e.key) {
-            case 'ArrowRight':
-                index = (index + 1) % items.length;
-                break;
-            case 'ArrowLeft':
-                index = (index - 1 + items.length) % items.length;
-                break;
-            case 'Home':
-                index = 0;
-                break;
-            case 'End':
-                index = items.length - 1;
-                break;
-            case 'Enter':
-            case ' ':
-                // A picker opens with these keys itself
-                if (target.getAttribute('role') === 'button') {
-                    e.preventDefault();
-                    if (!target.classList.contains('jtoolbar-disabled')) {
-                        target.click();
-                    }
-                }
-                return;
-            default:
-                return;
-        }
-
-        e.preventDefault();
-        items[index].focus();
-    }
-
-    /**
-     * Let the pickers of the toolbar be used from the keyboard, which jsuites does not do. Enter, Space and the arrows open a
-     * picker, the arrows, Home and End move through its options, Enter and Space choose one, and Escape closes it. The picker
-     * tells whether it is open in aria-expanded, and names the option that the keys are on in aria-activedescendant.
-     * @param toolbarElement - The element of the toolbar.
-     */
-    private addPickerKeys(toolbarElement: HTMLElement) {
-        for (const element of toolbarElement.querySelectorAll<PickerElement>('.jpicker')) {
-            const picker = element.picker;
-
-            if (picker) {
-                // jsuites opens and closes a picker with these methods, also after a press, but leaves aria-expanded as it is
-                const { open, close } = picker;
-
-                picker.open = () => {
-                    open();
-                    element.setAttribute('aria-expanded', 'true');
-                };
-
-                picker.close = () => {
-                    close();
-                    element.setAttribute('aria-expanded', 'false');
-                    element.removeAttribute('aria-activedescendant');
-                    for (const option of element.querySelectorAll('.jss_picker_active')) {
-                        option.classList.remove('jss_picker_active');
-                    }
-                };
-            }
-        }
-
-        toolbarElement.addEventListener('keydown', (e) => this.pickerKeys(e));
-    }
-
-    /**
-     * Handle a key on a picker of the toolbar.
-     * @param e - The keydown.
-     */
-    private pickerKeys(e: KeyboardEvent) {
-        const element = e.target as PickerElement;
-
-        // Only the keys on the picker itself, not on the controls in its options, such as those of the borders
-        if (!element.picker || !element.classList.contains('jpicker')) {
-            return;
-        }
-
-        const picker = element.picker;
-        const options = Array.from(element.querySelectorAll<HTMLElement & { k?: string }>(':scope > .jpicker-content > .jpicker-item'));
-
-        if (!options.length) {
-            return;
-        }
-
-        if (!element.classList.contains('jpicker-focus')) {
-            if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
-                e.preventDefault();
-                picker.open();
-
-                // Start on the chosen option
-                const index = options.findIndex((option) => `${option.k}` === `${picker.getValue()}`);
-                this.setActiveOption(element, options, index === -1 ? 0 : index);
-            }
-
-            return;
-        }
-
-        const active = element.getAttribute('aria-activedescendant');
-        let index = options.findIndex((option) => option.id !== '' && option.id === active);
-
-        switch (e.key) {
-            case 'ArrowDown':
-            case 'ArrowRight':
-                index = Math.min(index + 1, options.length - 1);
-                break;
-            case 'ArrowUp':
-            case 'ArrowLeft':
-                index = Math.max(index - 1, 0);
-                break;
-            case 'Home':
-                index = 0;
-                break;
-            case 'End':
-                index = options.length - 1;
-                break;
-            case 'Enter':
-            case ' ':
-                e.preventDefault();
-                // jsuites chooses an option on a click, and closes the picker unless the option has controls
-                options[index]?.click();
-                return;
-            case 'Escape':
-                e.preventDefault();
-                picker.close();
-                return;
-            case 'Tab':
-                picker.close();
-                return;
-            default:
-                return;
-        }
-
-        e.preventDefault();
-        this.setActiveOption(element, options, index);
-    }
-
-    /**
-     * Mark the option of a picker that the keys are on.
-     * @param element - The element of the picker.
-     * @param options - The options of the picker.
-     * @param index - The index of the option.
-     */
-    private setActiveOption(element: HTMLElement, options: HTMLElement[], index: number) {
-        for (const [i, option] of options.entries()) {
-            if (!option.id) {
-                // The list of options has an id, which the picker names in aria-controls
-                option.id = `${element.getAttribute('aria-controls')}-${i}`;
-            }
-            option.classList.toggle('jss_picker_active', i === index);
-        }
-
-        element.setAttribute('aria-activedescendant', options[index].id);
-    }
-
     update(worksheet: Worksheet) {
         if (worksheet.parent.toolbar) {
-            // jsuites keeps the toolbar instance on the element
+            // The element keeps its ToolbarControl
             worksheet.parent.toolbar.toolbar.update(worksheet);
         }
     }
@@ -765,7 +573,7 @@ export class Toolbar {
                 }
             }
 
-            // jSuites.toolbar in createToolbar added the toolbar instance
+            // create gives the element with its ToolbarControl
             spreadsheet.toolbar = spreadsheet.element.insertBefore(this.create(toolbar), spreadsheet.element.children[1]) as Spreadsheet['toolbar'];
         }
     }
