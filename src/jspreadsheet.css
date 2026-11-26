@@ -617,6 +617,12 @@
     display: none;
 }
 
+.jss_toolbar .jpicker:focus-visible,
+.jss_toolbar .jpicker-item.jss_picker_active {
+    outline: 2px solid var(--jss-border-color);
+    outline-offset: -2px;
+}
+
 .jss_worksheet .dragging-left {
     background-repeat: no-repeat;
     background-position: top 50% left 0px;

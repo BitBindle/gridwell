@@ -373,9 +373,13 @@ export class Selection {
         if (!borderRight) {
             borderRight = 0;
         }
+        // When every selected row is hidden, the top and bottom are the selected rows
+        if (borderTop == null || borderBottom == null) {
+            borderTop = py;
+            borderBottom = uy;
+        }
 
-        // The top and bottom are null when every selected row is hidden (issue #59)
-        const ret = worksheet.dispatch('onbeforeselection', worksheet, borderLeft, borderTop!, borderRight, borderBottom!, origin);
+        const ret = worksheet.dispatch('onbeforeselection', worksheet, borderLeft, borderTop, borderRight, borderBottom, origin);
         if (ret === false) {
             return false;
         }
@@ -408,20 +412,20 @@ export class Selection {
                 worksheet.cols[i].colElement.style &&
                 worksheet.cols[i].colElement.style.display !== 'none'
             ) {
-                // Top border. The borders are null when each row of the range is hidden.
-                if (worksheet.records[borderTop!]?.[i]) {
-                    worksheet.records[borderTop!][i].element.classList.add('highlight-top');
+                // Top border
+                if (worksheet.records[borderTop]?.[i]) {
+                    worksheet.records[borderTop][i].element.classList.add('highlight-top');
                 }
                 // Bottom border
-                if (worksheet.records[borderBottom!]?.[i]) {
-                    worksheet.records[borderBottom!][i].element.classList.add('highlight-bottom');
+                if (worksheet.records[borderBottom]?.[i]) {
+                    worksheet.records[borderBottom][i].element.classList.add('highlight-bottom');
                 }
                 // Add selected from headers
                 worksheet.headers[i].classList.add('selected');
             }
         }
 
-        for (let j = borderTop!; j <= borderBottom!; j++) {
+        for (let j = borderTop; j <= borderBottom; j++) {
             if (worksheet.rows[j] && worksheet.rows[j].element.style.display !== 'none') {
                 // Left border
                 worksheet.records[j][borderLeft].element.classList.add('highlight-left');
@@ -432,7 +436,7 @@ export class Selection {
             }
         }
 
-        worksheet.selection.bounds = [borderLeft, borderTop!, borderRight, borderBottom!];
+        worksheet.selection.bounds = [borderLeft, borderTop, borderRight, borderBottom];
 
         // The selected cell is the tab stop of the grid
         this.updateActiveCell(x1, y1, origin);
@@ -444,8 +448,7 @@ export class Selection {
             worksheet.clipboard.clearBorder();
         }
 
-        // The top and bottom are null when every selected row is hidden (issue #59)
-        worksheet.dispatch('onselection', worksheet, borderLeft, borderTop!, borderRight, borderBottom!, origin);
+        worksheet.dispatch('onselection', worksheet, borderLeft, borderTop, borderRight, borderBottom, origin);
 
         // Find corner cell
         this.updateCorner();
@@ -815,15 +818,14 @@ export class Selection {
     /**
      * Move the selection from a cell that a merged range hides to the first cell of the range
      */
-    private toFirstCell() {
-        // The moves call it after they check that the worksheet has a selection
-        const worksheet = this.worksheet as SelectedWorksheet;
+    private toFirstCell(range: Range) {
+        const worksheet = this.worksheet;
 
-        const element = worksheet.records[worksheet.selection.range[1]][worksheet.selection.range[0]].element;
+        const element = worksheet.records[range[1]][range[0]].element;
 
         if (element.getAttribute('data-merged')) {
-            worksheet.selection.range[0] = parseInt(element.getAttribute('data-x'));
-            worksheet.selection.range[1] = parseInt(element.getAttribute('data-y'));
+            range[0] = parseInt(element.getAttribute('data-x'));
+            range[1] = parseInt(element.getAttribute('data-y'));
         }
     }
 
@@ -847,18 +849,17 @@ export class Selection {
         return y;
     }
 
-    private upVisible(group: Corner, direction: Step) {
-        // The moves call it after they check that the worksheet has a selection
-        const worksheet = this.worksheet as SelectedWorksheet;
+    private upVisible(range: Range, group: Corner, direction: Step) {
+        const worksheet = this.worksheet;
 
         let x, y;
 
         if (group === 0) {
-            x = parseInt(worksheet.selection.range[0]);
-            y = parseInt(worksheet.selection.range[1]);
+            x = parseInt(range[0]);
+            y = parseInt(range[1]);
         } else {
-            x = parseInt(worksheet.selection.range[2]);
-            y = parseInt(worksheet.selection.range[3]);
+            x = parseInt(range[2]);
+            y = parseInt(range[3]);
         }
 
         if (direction === 0) {
@@ -873,11 +874,11 @@ export class Selection {
         }
 
         if (group === 0) {
-            worksheet.selection.range[0] = x;
-            worksheet.selection.range[1] = y;
+            range[0] = x;
+            range[1] = y;
         } else {
-            worksheet.selection.range[2] = x;
-            worksheet.selection.range[3] = y;
+            range[2] = x;
+            range[3] = y;
         }
     }
 
@@ -889,60 +890,45 @@ export class Selection {
             return;
         }
 
+        // Work out the new range in a copy: the selection changes only when onbeforeselection does not cancel it
+        const range = [...worksheet.selection.range] as Range;
+
         if (shiftKey) {
-            if (worksheet.selection.range[3] > 0) {
-                this.upVisible(1, ctrlKey ? 0 : 1);
+            if (range[3] > 0) {
+                this.upVisible(range, 1, ctrlKey ? 0 : 1);
             }
         } else {
-            if (worksheet.selection.range[1] > 0) {
-                this.upVisible(0, ctrlKey ? 0 : 1);
+            if (range[1] > 0) {
+                this.upVisible(range, 0, ctrlKey ? 0 : 1);
             }
-            this.toFirstCell();
-            worksheet.selection.range[2] = worksheet.selection.range[0];
-            worksheet.selection.range[3] = worksheet.selection.range[1];
+            this.toFirstCell(range);
+            range[2] = range[0];
+            range[3] = range[1];
         }
 
-        // Update selection
-        worksheet.updateSelectionFromCoords(
-            worksheet.selection.range[0],
-            worksheet.selection.range[1],
-            worksheet.selection.range[2],
-            worksheet.selection.range[3]
-        );
+        // Nothing moves when onbeforeselection cancels the selection
+        if (worksheet.updateSelectionFromCoords(...range) === false) {
+            return;
+        }
 
         // Change page
         if (worksheet.options.lazyLoading === true) {
-            if (worksheet.selection.range[1] === 0 || worksheet.selection.range[3] === 0) {
+            if (range[1] === 0 || range[3] === 0) {
                 worksheet.view.loadPage(0);
-                worksheet.updateSelectionFromCoords(
-                    worksheet.selection.range[0],
-                    worksheet.selection.range[1],
-                    worksheet.selection.range[2],
-                    worksheet.selection.range[3]
-                );
+                worksheet.updateSelectionFromCoords(...range);
             } else {
                 if (worksheet.view.loadValidation()) {
-                    worksheet.updateSelectionFromCoords(
-                        worksheet.selection.range[0],
-                        worksheet.selection.range[1],
-                        worksheet.selection.range[2],
-                        worksheet.selection.range[3]
-                    );
+                    worksheet.updateSelectionFromCoords(...range);
                 } else {
                     const item = parseInt((worksheet.tbody.firstChild as HTMLElement).getAttribute('data-y'));
-                    if (worksheet.selection.range[1] - item < 30) {
+                    if (range[1] - item < 30) {
                         worksheet.view.loadUp();
-                        worksheet.updateSelectionFromCoords(
-                            worksheet.selection.range[0],
-                            worksheet.selection.range[1],
-                            worksheet.selection.range[2],
-                            worksheet.selection.range[3]
-                        );
+                        worksheet.updateSelectionFromCoords(...range);
                     }
                 }
             }
         } else if (worksheet.options.pagination! > 0) {
-            const pageNumber = worksheet.whichPage(worksheet.selection.range[3]);
+            const pageNumber = worksheet.whichPage(range[3]);
             if (pageNumber !== worksheet.view.pageNumber) {
                 worksheet.page(pageNumber);
             }
@@ -972,18 +958,17 @@ export class Selection {
         return x;
     }
 
-    private rightVisible(group: Corner, direction: Step) {
-        // The moves call it after they check that the worksheet has a selection
-        const worksheet = this.worksheet as SelectedWorksheet;
+    private rightVisible(range: Range, group: Corner, direction: Step) {
+        const worksheet = this.worksheet;
 
         let x, y;
 
         if (group === 0) {
-            x = parseInt(worksheet.selection.range[0]);
-            y = parseInt(worksheet.selection.range[1]);
+            x = parseInt(range[0]);
+            y = parseInt(range[1]);
         } else {
-            x = parseInt(worksheet.selection.range[2]);
-            y = parseInt(worksheet.selection.range[3]);
+            x = parseInt(range[2]);
+            y = parseInt(range[3]);
         }
 
         if (direction === 0) {
@@ -998,11 +983,11 @@ export class Selection {
         }
 
         if (group === 0) {
-            worksheet.selection.range[0] = x;
-            worksheet.selection.range[1] = y;
+            range[0] = x;
+            range[1] = y;
         } else {
-            worksheet.selection.range[2] = x;
-            worksheet.selection.range[3] = y;
+            range[2] = x;
+            range[3] = y;
         }
     }
 
@@ -1014,25 +999,26 @@ export class Selection {
             return;
         }
 
+        // Work out the new range in a copy: the selection changes only when onbeforeselection does not cancel it
+        const range = [...worksheet.selection.range] as Range;
+
         if (shiftKey) {
-            if (worksheet.selection.range[2] < worksheet.headers.length - 1) {
-                this.rightVisible(1, ctrlKey ? 0 : 1);
+            if (range[2] < worksheet.headers.length - 1) {
+                this.rightVisible(range, 1, ctrlKey ? 0 : 1);
             }
         } else {
-            if (worksheet.selection.range[0] < worksheet.headers.length - 1) {
-                this.rightVisible(0, ctrlKey ? 0 : 1);
+            if (range[0] < worksheet.headers.length - 1) {
+                this.rightVisible(range, 0, ctrlKey ? 0 : 1);
             }
-            this.toFirstCell();
-            worksheet.selection.range[2] = worksheet.selection.range[0];
-            worksheet.selection.range[3] = worksheet.selection.range[1];
+            this.toFirstCell(range);
+            range[2] = range[0];
+            range[3] = range[1];
         }
 
-        worksheet.updateSelectionFromCoords(
-            worksheet.selection.range[0],
-            worksheet.selection.range[1],
-            worksheet.selection.range[2],
-            worksheet.selection.range[3]
-        );
+        // Nothing moves when onbeforeselection cancels the selection
+        if (worksheet.updateSelectionFromCoords(...range) === false) {
+            return;
+        }
         this.updateScroll(2);
     }
 
@@ -1056,18 +1042,17 @@ export class Selection {
         return y;
     }
 
-    private downVisible(group: Corner, direction: Step) {
-        // The moves call it after they check that the worksheet has a selection
-        const worksheet = this.worksheet as SelectedWorksheet;
+    private downVisible(range: Range, group: Corner, direction: Step) {
+        const worksheet = this.worksheet;
 
         let x, y;
 
         if (group === 0) {
-            x = parseInt(worksheet.selection.range[0]);
-            y = parseInt(worksheet.selection.range[1]);
+            x = parseInt(range[0]);
+            y = parseInt(range[1]);
         } else {
-            x = parseInt(worksheet.selection.range[2]);
-            y = parseInt(worksheet.selection.range[3]);
+            x = parseInt(range[2]);
+            y = parseInt(range[3]);
         }
 
         if (direction === 0) {
@@ -1082,11 +1067,11 @@ export class Selection {
         }
 
         if (group === 0) {
-            worksheet.selection.range[0] = x;
-            worksheet.selection.range[1] = y;
+            range[0] = x;
+            range[1] = y;
         } else {
-            worksheet.selection.range[2] = x;
-            worksheet.selection.range[3] = y;
+            range[2] = x;
+            range[3] = y;
         }
     }
 
@@ -1098,59 +1083,45 @@ export class Selection {
             return;
         }
 
+        // Work out the new range in a copy: the selection changes only when onbeforeselection does not cancel it
+        const range = [...worksheet.selection.range] as Range;
+
         if (shiftKey) {
-            if (worksheet.selection.range[3] < worksheet.records.length - 1) {
-                this.downVisible(1, ctrlKey ? 0 : 1);
+            if (range[3] < worksheet.records.length - 1) {
+                this.downVisible(range, 1, ctrlKey ? 0 : 1);
             }
         } else {
-            if (worksheet.selection.range[1] < worksheet.records.length - 1) {
-                this.downVisible(0, ctrlKey ? 0 : 1);
+            if (range[1] < worksheet.records.length - 1) {
+                this.downVisible(range, 0, ctrlKey ? 0 : 1);
             }
-            this.toFirstCell();
-            worksheet.selection.range[2] = worksheet.selection.range[0];
-            worksheet.selection.range[3] = worksheet.selection.range[1];
+            this.toFirstCell(range);
+            range[2] = range[0];
+            range[3] = range[1];
         }
 
-        worksheet.updateSelectionFromCoords(
-            worksheet.selection.range[0],
-            worksheet.selection.range[1],
-            worksheet.selection.range[2],
-            worksheet.selection.range[3]
-        );
+        // Nothing moves when onbeforeselection cancels the selection
+        if (worksheet.updateSelectionFromCoords(...range) === false) {
+            return;
+        }
 
         // Change page
         if (worksheet.options.lazyLoading === true) {
-            if (worksheet.selection.range[1] === worksheet.records.length - 1 || worksheet.selection.range[3] === worksheet.records.length - 1) {
+            if (range[1] === worksheet.records.length - 1 || range[3] === worksheet.records.length - 1) {
                 worksheet.view.loadPage(-1);
-                worksheet.updateSelectionFromCoords(
-                    worksheet.selection.range[0],
-                    worksheet.selection.range[1],
-                    worksheet.selection.range[2],
-                    worksheet.selection.range[3]
-                );
+                worksheet.updateSelectionFromCoords(...range);
             } else {
                 if (worksheet.view.loadValidation()) {
-                    worksheet.updateSelectionFromCoords(
-                        worksheet.selection.range[0],
-                        worksheet.selection.range[1],
-                        worksheet.selection.range[2],
-                        worksheet.selection.range[3]
-                    );
+                    worksheet.updateSelectionFromCoords(...range);
                 } else {
                     const item = parseInt((worksheet.tbody.lastChild as HTMLElement).getAttribute('data-y'));
-                    if (item - worksheet.selection.range[3] < 30) {
+                    if (item - range[3] < 30) {
                         worksheet.view.loadDown();
-                        worksheet.updateSelectionFromCoords(
-                            worksheet.selection.range[0],
-                            worksheet.selection.range[1],
-                            worksheet.selection.range[2],
-                            worksheet.selection.range[3]
-                        );
+                        worksheet.updateSelectionFromCoords(...range);
                     }
                 }
             }
         } else if (worksheet.options.pagination! > 0) {
-            const pageNumber = worksheet.whichPage(worksheet.selection.range[3]);
+            const pageNumber = worksheet.whichPage(range[3]);
             if (pageNumber !== worksheet.view.pageNumber) {
                 worksheet.page(pageNumber);
             }
@@ -1179,18 +1150,17 @@ export class Selection {
         return x;
     }
 
-    private leftVisible(group: Corner, direction: Step) {
-        // The moves call it after they check that the worksheet has a selection
-        const worksheet = this.worksheet as SelectedWorksheet;
+    private leftVisible(range: Range, group: Corner, direction: Step) {
+        const worksheet = this.worksheet;
 
         let x, y;
 
         if (group === 0) {
-            x = parseInt(worksheet.selection.range[0]);
-            y = parseInt(worksheet.selection.range[1]);
+            x = parseInt(range[0]);
+            y = parseInt(range[1]);
         } else {
-            x = parseInt(worksheet.selection.range[2]);
-            y = parseInt(worksheet.selection.range[3]);
+            x = parseInt(range[2]);
+            y = parseInt(range[3]);
         }
 
         if (direction === 0) {
@@ -1205,11 +1175,11 @@ export class Selection {
         }
 
         if (group === 0) {
-            worksheet.selection.range[0] = x;
-            worksheet.selection.range[1] = y;
+            range[0] = x;
+            range[1] = y;
         } else {
-            worksheet.selection.range[2] = x;
-            worksheet.selection.range[3] = y;
+            range[2] = x;
+            range[3] = y;
         }
     }
 
@@ -1221,25 +1191,26 @@ export class Selection {
             return;
         }
 
+        // Work out the new range in a copy: the selection changes only when onbeforeselection does not cancel it
+        const range = [...worksheet.selection.range] as Range;
+
         if (shiftKey) {
-            if (worksheet.selection.range[2] > 0) {
-                this.leftVisible(1, ctrlKey ? 0 : 1);
+            if (range[2] > 0) {
+                this.leftVisible(range, 1, ctrlKey ? 0 : 1);
             }
         } else {
-            if (worksheet.selection.range[0] > 0) {
-                this.leftVisible(0, ctrlKey ? 0 : 1);
+            if (range[0] > 0) {
+                this.leftVisible(range, 0, ctrlKey ? 0 : 1);
             }
-            this.toFirstCell();
-            worksheet.selection.range[2] = worksheet.selection.range[0];
-            worksheet.selection.range[3] = worksheet.selection.range[1];
+            this.toFirstCell(range);
+            range[2] = range[0];
+            range[3] = range[1];
         }
 
-        worksheet.updateSelectionFromCoords(
-            worksheet.selection.range[0],
-            worksheet.selection.range[1],
-            worksheet.selection.range[2],
-            worksheet.selection.range[3]
-        );
+        // Nothing moves when onbeforeselection cancels the selection
+        if (worksheet.updateSelectionFromCoords(...range) === false) {
+            return;
+        }
         this.updateScroll(0);
     }
 
@@ -1251,39 +1222,37 @@ export class Selection {
             return;
         }
 
+        // Work out the new range in a copy: the selection changes only when onbeforeselection does not cancel it
+        const range = [...worksheet.selection.range] as Range;
+
         if (shiftKey) {
             if (ctrlKey) {
-                worksheet.selection.range[3] = 0;
+                range[3] = 0;
             } else {
-                this.leftVisible(1, 0);
+                this.leftVisible(range, 1, 0);
             }
         } else {
             if (ctrlKey) {
-                worksheet.selection.range[1] = 0;
+                range[1] = 0;
             } else {
-                this.leftVisible(0, 0);
+                this.leftVisible(range, 0, 0);
             }
-            this.toFirstCell();
-            worksheet.selection.range[2] = worksheet.selection.range[0];
-            worksheet.selection.range[3] = worksheet.selection.range[1];
+            this.toFirstCell(range);
+            range[2] = range[0];
+            range[3] = range[1];
         }
 
         // Change page
-        if (worksheet.options.lazyLoading === true && (worksheet.selection.range[1] === 0 || worksheet.selection.range[3] === 0)) {
+        if (worksheet.options.lazyLoading === true && (range[1] === 0 || range[3] === 0)) {
             worksheet.view.loadPage(0);
         } else if (worksheet.options.pagination! > 0) {
-            const pageNumber = worksheet.whichPage(worksheet.selection.range[3]);
+            const pageNumber = worksheet.whichPage(range[3]);
             if (pageNumber !== worksheet.view.pageNumber) {
                 worksheet.page(pageNumber);
             }
         }
 
-        worksheet.updateSelectionFromCoords(
-            worksheet.selection.range[0],
-            worksheet.selection.range[1],
-            worksheet.selection.range[2],
-            worksheet.selection.range[3]
-        );
+        worksheet.updateSelectionFromCoords(...range);
         this.updateScroll(1);
     }
 
@@ -1295,42 +1264,37 @@ export class Selection {
             return;
         }
 
+        // Work out the new range in a copy: the selection changes only when onbeforeselection does not cancel it
+        const range = [...worksheet.selection.range] as Range;
+
         if (shiftKey) {
             if (ctrlKey) {
-                worksheet.selection.range[3] = worksheet.records.length - 1;
+                range[3] = worksheet.records.length - 1;
             } else {
-                this.rightVisible(1, 0);
+                this.rightVisible(range, 1, 0);
             }
         } else {
             if (ctrlKey) {
-                worksheet.selection.range[1] = worksheet.records.length - 1;
+                range[1] = worksheet.records.length - 1;
             } else {
-                this.rightVisible(0, 0);
+                this.rightVisible(range, 0, 0);
             }
-            this.toFirstCell();
-            worksheet.selection.range[2] = worksheet.selection.range[0];
-            worksheet.selection.range[3] = worksheet.selection.range[1];
+            this.toFirstCell(range);
+            range[2] = range[0];
+            range[3] = range[1];
         }
 
         // Change page
-        if (
-            worksheet.options.lazyLoading === true &&
-            (worksheet.selection.range[1] === worksheet.records.length - 1 || worksheet.selection.range[3] === worksheet.records.length - 1)
-        ) {
+        if (worksheet.options.lazyLoading === true && (range[1] === worksheet.records.length - 1 || range[3] === worksheet.records.length - 1)) {
             worksheet.view.loadPage(-1);
         } else if (worksheet.options.pagination! > 0) {
-            const pageNumber = worksheet.whichPage(worksheet.selection.range[3]);
+            const pageNumber = worksheet.whichPage(range[3]);
             if (pageNumber !== worksheet.view.pageNumber) {
                 worksheet.page(pageNumber);
             }
         }
 
-        worksheet.updateSelectionFromCoords(
-            worksheet.selection.range[0],
-            worksheet.selection.range[1],
-            worksheet.selection.range[2],
-            worksheet.selection.range[3]
-        );
+        worksheet.updateSelectionFromCoords(...range);
         this.updateScroll(3);
     }
 

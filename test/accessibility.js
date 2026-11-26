@@ -370,6 +370,34 @@ describe('Accessible names', () => {
             delete document.dictionary['Edit cell {0}'];
         }
     });
+
+    it('Translate the names of the tabs with setDictionary (issue #32)', () => {
+        jspreadsheet.setDictionary({ Worksheets: 'Arbeitsblätter', 'Tab Panels': 'Tabellenblätter', 'Add a new worksheet': 'Arbeitsblatt hinzufügen' });
+
+        try {
+            jspreadsheet(root, { tabs: true, worksheets: [{}, {}] });
+
+            expect(root.querySelector('.jtabs-headers').getAttribute('aria-label')).to.equal('Arbeitsblätter');
+            expect(root.querySelector('.jtabs-content').getAttribute('aria-label')).to.equal('Tabellenblätter');
+            expect(root.querySelector('.jtabs-add').getAttribute('aria-label')).to.equal('Arbeitsblatt hinzufügen');
+        } finally {
+            delete document.dictionary['Worksheets'];
+            delete document.dictionary['Tab Panels'];
+            delete document.dictionary['Add a new worksheet'];
+        }
+    });
+
+    it('Use the labels option for the names of the tabs', () => {
+        jspreadsheet(root, {
+            tabs: true,
+            labels: { worksheets: 'Arbeitsblätter', tabPanels: 'Tabellenblätter', addWorksheet: 'Arbeitsblatt hinzufügen' },
+            worksheets: [{}, {}],
+        });
+
+        expect(root.querySelector('.jtabs-headers').getAttribute('aria-label')).to.equal('Arbeitsblätter');
+        expect(root.querySelector('.jtabs-content').getAttribute('aria-label')).to.equal('Tabellenblätter');
+        expect(root.querySelector('.jtabs-add').getAttribute('aria-label')).to.equal('Arbeitsblatt hinzufügen');
+    });
 });
 
 describe('Keyboard focus', () => {
@@ -819,5 +847,17 @@ describe('Keyboard focus', () => {
         lazy.orderBy(0, 0);
 
         expect(getTabStops(lazy)).to.deep.equal([lazy.tbody.firstChild.children[1]]);
+    });
+});
+
+describe('Ids', () => {
+    it('gives no two elements of a spreadsheet with two worksheets the same id (issue #68)', async () => {
+        jspreadsheet(root, { tabs: true, worksheets: [{ minDimensions: [2, 2] }, { minDimensions: [2, 2] }] });
+        await new Promise((resolve) => setTimeout(resolve));
+
+        const ids = Array.from(root.querySelectorAll('[id]')).map((element) => element.id);
+
+        expect(ids.filter((id, index) => ids.indexOf(id) !== index)).to.eql([]);
+        expect(root.querySelectorAll('.jss_textarea').length).to.equal(2);
     });
 });

@@ -314,4 +314,72 @@ describe('Toolbar', () => {
             expect(changes).to.eql([{ A1: 'text-align:right', B1: 'text-align:right' }]);
         });
     });
+
+    describe('Keys', () => {
+        const key = (element, keyName, keyCode) => {
+            const event = new KeyboardEvent('keydown', { key: keyName, keyCode, which: keyCode, bubbles: true, cancelable: true });
+            element.dispatchEvent(event);
+            return event;
+        };
+
+        it('keeps the keys on a focused picker away from the grid (issue #79)', async () => {
+            const instance = await createWithToolbar();
+            const worksheet = instance[0];
+            worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+
+            const picker = root.querySelector('.jss_toolbar .jpicker');
+            picker.focus();
+
+            key(picker, 'a', 65);
+            expect(worksheet.editor.isOpen()).to.equal(false);
+
+            key(picker, 'Delete', 46);
+            key(picker, 'ArrowRight', 39);
+            expect(worksheet.selection.range).to.eql([0, 0, 0, 0]);
+        });
+
+        it('opens a picker and chooses an option with the keyboard', async () => {
+            const instance = await createWithToolbar();
+            instance[0].updateSelectionFromCoords(0, 0, 0, 0);
+
+            const picker = root.querySelector('.jss_toolbar .jpicker');
+            const fonts = picker.querySelectorAll('.jpicker-item');
+            picker.focus();
+
+            expect(key(picker, 'Enter', 13).defaultPrevented).to.equal(true);
+            expect(picker.classList.contains('jpicker-focus')).to.equal(true);
+            expect(picker.getAttribute('aria-expanded')).to.equal('true');
+            expect(picker.getAttribute('aria-activedescendant')).to.equal(fonts[0].id);
+
+            key(picker, 'ArrowDown', 40);
+            expect(picker.getAttribute('aria-activedescendant')).to.equal(fonts[1].id);
+            expect(fonts[1].classList.contains('jss_picker_active')).to.equal(true);
+
+            key(picker, 'Enter', 13);
+            expect(instance[0].getCell('A1').style.fontFamily.trim()).to.equal('Verdana');
+            expect(picker.classList.contains('jpicker-focus')).to.equal(false);
+            expect(picker.getAttribute('aria-expanded')).to.equal('false');
+            expect(picker.hasAttribute('aria-activedescendant')).to.equal(false);
+
+            // It opens on the chosen option
+            key(picker, ' ', 32);
+            expect(picker.getAttribute('aria-activedescendant')).to.equal(fonts[1].id);
+
+            key(picker, 'End', 35);
+            expect(picker.getAttribute('aria-activedescendant')).to.equal(fonts[fonts.length - 1].id);
+
+            key(picker, 'Escape', 27);
+            expect(picker.classList.contains('jpicker-focus')).to.equal(false);
+            expect(instance[0].getCell('A1').style.fontFamily.trim()).to.equal('Verdana');
+        });
+
+        it('tells in aria-expanded that a press opened a picker', async () => {
+            await createWithToolbar();
+
+            const picker = root.querySelector('.jss_toolbar .jpicker');
+            picker.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+
+            expect(picker.getAttribute('aria-expanded')).to.equal('true');
+        });
+    });
 });

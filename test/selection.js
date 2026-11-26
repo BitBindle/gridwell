@@ -322,3 +322,62 @@ describe('The pointer of a worksheet', () => {
         expect(worksheet.selection.range).to.eql([0, 2, 2, 2]);
     });
 });
+
+describe('A selection of hidden rows', () => {
+    it('gives onbeforeselection and onselection the selected rows as the top and bottom (issue #59)', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [3, 3] }],
+            onbeforeselection: (instance, left, top, right, bottom) => calls.push(['before', left, top, right, bottom]),
+            onselection: (instance, left, top, right, bottom) => calls.push(['selection', left, top, right, bottom]),
+        })[0];
+
+        worksheet.hideRow(1);
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+
+        expect(calls).to.eql([
+            ['before', 1, 1, 1, 1],
+            ['selection', 1, 1, 1, 1],
+        ]);
+        expect(worksheet.selection.highlighted).to.eql([]);
+    });
+});
+
+describe('A move that onbeforeselection cancels', () => {
+    const moves = [
+        ['up', [1, 1, 1, 1]],
+        ['down', [1, 1, 1, 1]],
+        ['left', [1, 1, 1, 1]],
+        ['right', [1, 1, 1, 1]],
+        ['first', [1, 1, 1, 1]],
+        ['last', [1, 1, 1, 1]],
+    ];
+
+    for (const [move, start] of moves) {
+        for (const shiftKey of [false, true]) {
+            it(`keeps the selected range with ${move}${shiftKey ? ' and Shift' : ''} (issue #71)`, () => {
+                const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 3] }] })[0];
+
+                worksheet.updateSelectionFromCoords(...start);
+                worksheet.parent.config.onbeforeselection = () => false;
+
+                worksheet[move](shiftKey, false);
+
+                expect(worksheet.getSelection()).to.eql(start);
+                expect(worksheet.selection.highlighted.map((cell) => [cell.x, cell.y])).to.eql([[1, 1]]);
+            });
+        }
+    }
+
+    it('moves from the selected range with the next key', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 3] }] })[0];
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.parent.config.onbeforeselection = () => false;
+        worksheet.right();
+        worksheet.parent.config.onbeforeselection = null;
+        worksheet.right();
+
+        expect(worksheet.getSelection()).to.eql([1, 0, 1, 0]);
+    });
+});

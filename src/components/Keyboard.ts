@@ -129,28 +129,24 @@ export class Keyboard {
     }
 
     /**
-     * Tab moves the selection right, and adds a column after the last column. Shift+Tab moves it left.
+     * Tab moves the selection right, and Shift+Tab moves it left. At the end of the row, where the selection does not move,
+     * the key keeps its default action and moves the focus out of the grid, as in the WAI-ARIA grid pattern.
      */
     private tabKey(e: TargetEvent<KeyboardEvent>) {
         // gridKeys calls it, when the worksheet has a selection
         const worksheet = this.worksheet as SelectedWorksheet;
 
-        // Tab
+        const before = worksheet.selection.range.join();
+
         if (e.shiftKey) {
             worksheet.selection.left();
         } else {
-            if (worksheet.options.allowInsertColumn !== false) {
-                if (worksheet.options.allowManualInsertColumn !== false) {
-                    if (worksheet.selection.range[0] === worksheet.options.data[0].length - 1) {
-                        // New record in case the selection is in the last column
-                        worksheet.insertColumn();
-                    }
-                }
-            }
-
             worksheet.selection.right();
         }
-        e.preventDefault();
+
+        if (worksheet.selection.range?.join() !== before) {
+            e.preventDefault();
+        }
     }
 
     /**

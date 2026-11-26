@@ -296,3 +296,16 @@ A footer shows the result of its formula, or its text, without the mask of a col
 `setStyle` with an object and the `style` option trim the value of each declaration, as they trim the property, so
 `color: red` sets `red`. Version 5 set `' red'`: setting the same style again did not toggle it off (#67). The history
 and `onchangestyle` get the trimmed value, for example `color:red` for `color: red`.
+
+## Tab moves the focus out of the grid at the end of a row
+
+Tab on the last column and Shift+Tab on the first column keep their default action, so the focus moves to the control
+after or before the grid, as the WAI-ARIA grid pattern asks (#28). Version 5 kept the focus in the grid, and Tab on the
+last column inserted a column. The option `allowManualInsertColumn` has no effect any more. To add a column with the
+keyboard, an application handles a key itself and calls `insertColumn`.
+
+## The clipboard textarea has no id
+
+The hidden textarea that a worksheet uses for the clipboard has no `id` any more. Version 5 gave the textarea of every
+worksheet the id `jss_textarea`, so a page with two worksheets had duplicate ids (#68). Select it by its class,
+`.jss_textarea`, or through `worksheet.clipboard.textarea`.

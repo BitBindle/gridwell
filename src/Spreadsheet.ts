@@ -84,6 +84,7 @@ export class Spreadsheet {
         if (o) {
             const tabsOptions: Partial<TabsOptions> = {
                 animation: true,
+                labels: options.labels ?? {},
                 onbeforecreate: (element: HTMLElement, title?: string | null) => {
                     if (title) {
                         return title;

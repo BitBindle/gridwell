@@ -92,7 +92,6 @@ export class Clipboard {
         this.worksheet = worksheet;
         this.textarea = document.createElement('textarea');
         this.textarea.className = 'jss_textarea';
-        this.textarea.id = 'jss_textarea';
         this.textarea.tabIndex = -1;
         this.textarea.ariaHidden = 'true';
     }

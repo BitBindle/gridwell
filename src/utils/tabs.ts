@@ -1,4 +1,5 @@
 import jSuites from 'jsuites';
+import type jspreadsheet from '../jspreadsheet';
 
 /** A tab header. It keeps a reference to its panel. */
 type TabHeader = HTMLButtonElement & { content?: HTMLElement };
@@ -20,7 +21,16 @@ export interface TabsOptions {
     /** Returns the title of the new tab, or false to cancel. */
     onbeforecreate: ((el: HTMLElement, title?: string | null) => string | false) | null;
     onchangeposition: ((headers: HTMLDivElement, from: number, to: number) => void) | null;
+    /** The labels option of the spreadsheet, with the accessible names of the tabs. */
+    labels: NonNullable<jspreadsheet.SpreadsheetOptions['labels']>;
 }
+
+/** English accessible names of the tabs, which the labels option replaces and jspreadsheet.setDictionary can translate. */
+const defaultLabels = {
+    worksheets: 'Worksheets',
+    tabPanels: 'Tab Panels',
+    addWorksheet: 'Add a new worksheet',
+};
 
 /**
  * Worksheet tabs. CE uses only part of jSuites.tabs, and needs the keyboard and ARIA behaviour of the
@@ -65,6 +75,7 @@ export class Tabs {
             ondelete: null,
             onbeforecreate: null,
             onchangeposition: null,
+            labels: {},
         };
 
         for (const property in defaults) {
@@ -453,6 +464,16 @@ export class Tabs {
         this.updatePosition(f, t, ignoreEvents, openTab);
     }
 
+    /**
+     * The text of an accessible name of the tabs.
+     * @param key - The name in the labels option.
+     */
+    private getLabelText(key: keyof typeof defaultLabels) {
+        const text = this.options.labels[key];
+
+        return typeof text === 'string' ? text : jSuites.translate(defaultLabels[key]);
+    }
+
     init() {
         this.el.classList.add('jtabs');
         this.el.textContent = '';
@@ -460,12 +481,12 @@ export class Tabs {
         this.headers = document.createElement('div');
         this.headers.className = 'jtabs-headers';
         this.headers.setAttribute('role', 'tablist');
-        this.headers.setAttribute('aria-label', jSuites.translate('Worksheets'));
+        this.headers.setAttribute('aria-label', this.getLabelText('worksheets'));
 
         this.content = document.createElement('div');
         this.content.className = 'jtabs-content';
         this.content.setAttribute('role', 'region');
-        this.content.setAttribute('aria-label', 'Tab Panels');
+        this.content.setAttribute('aria-label', this.getLabelText('tabPanels'));
 
         const header = document.createElement('div');
         header.className = 'jtabs-headers-container';
@@ -484,7 +505,7 @@ export class Tabs {
             const add = document.createElement('button');
             add.type = 'button';
             add.className = 'jtabs-add';
-            add.setAttribute('aria-label', jSuites.translate('Add a new worksheet'));
+            add.setAttribute('aria-label', this.getLabelText('addWorksheet'));
             add.onclick = () => {
                 this.create();
             };

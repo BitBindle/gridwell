@@ -7,6 +7,9 @@ import type { Color } from 'jsuites';
 /** The picker of the borders, which keeps the thickness, the color and the style that the user chose. */
 type BorderPicker = jspreadsheet.PickerInstance & { thickness?: number; color?: string; style?: string };
 
+/** The element of a picker, on which jsuites keeps the picker. */
+type PickerElement = HTMLElement & { picker?: jspreadsheet.PickerInstance };
+
 function setItemStatus(toolbarItem: HTMLElement, worksheet: Worksheet) {
     if (worksheet.options.editable !== false) {
         toolbarItem.classList.remove('jtoolbar-disabled');
@@ -515,7 +518,131 @@ export class Toolbar {
 
         jSuites.toolbar(toolbarElement, toolbar);
 
+        this.addPickerKeys(toolbarElement);
+
         return toolbarElement;
+    }
+
+    /**
+     * Let the pickers of the toolbar be used from the keyboard, which jsuites does not do. Enter, Space and the arrows open a
+     * picker, the arrows, Home and End move through its options, Enter and Space choose one, and Escape closes it. The picker
+     * tells whether it is open in aria-expanded, and names the option that the keys are on in aria-activedescendant.
+     * @param toolbarElement - The element of the toolbar.
+     */
+    private addPickerKeys(toolbarElement: HTMLElement) {
+        for (const element of toolbarElement.querySelectorAll<PickerElement>('.jpicker')) {
+            const picker = element.picker;
+
+            if (picker) {
+                // jsuites opens and closes a picker with these methods, also after a press, but leaves aria-expanded as it is
+                const { open, close } = picker;
+
+                picker.open = () => {
+                    open();
+                    element.setAttribute('aria-expanded', 'true');
+                };
+
+                picker.close = () => {
+                    close();
+                    element.setAttribute('aria-expanded', 'false');
+                    element.removeAttribute('aria-activedescendant');
+                    for (const option of element.querySelectorAll('.jss_picker_active')) {
+                        option.classList.remove('jss_picker_active');
+                    }
+                };
+            }
+        }
+
+        toolbarElement.addEventListener('keydown', (e) => this.pickerKeys(e));
+    }
+
+    /**
+     * Handle a key on a picker of the toolbar.
+     * @param e - The keydown.
+     */
+    private pickerKeys(e: KeyboardEvent) {
+        const element = e.target as PickerElement;
+
+        // Only the keys on the picker itself, not on the controls in its options, such as those of the borders
+        if (!element.picker || !element.classList.contains('jpicker')) {
+            return;
+        }
+
+        const picker = element.picker;
+        const options = Array.from(element.querySelectorAll<HTMLElement & { k?: string }>(':scope > .jpicker-content > .jpicker-item'));
+
+        if (!options.length) {
+            return;
+        }
+
+        if (!element.classList.contains('jpicker-focus')) {
+            if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+                e.preventDefault();
+                picker.open();
+
+                // Start on the chosen option
+                const index = options.findIndex((option) => `${option.k}` === `${picker.getValue()}`);
+                this.setActiveOption(element, options, index === -1 ? 0 : index);
+            }
+
+            return;
+        }
+
+        const active = element.getAttribute('aria-activedescendant');
+        let index = options.findIndex((option) => option.id !== '' && option.id === active);
+
+        switch (e.key) {
+            case 'ArrowDown':
+            case 'ArrowRight':
+                index = Math.min(index + 1, options.length - 1);
+                break;
+            case 'ArrowUp':
+            case 'ArrowLeft':
+                index = Math.max(index - 1, 0);
+                break;
+            case 'Home':
+                index = 0;
+                break;
+            case 'End':
+                index = options.length - 1;
+                break;
+            case 'Enter':
+            case ' ':
+                e.preventDefault();
+                // jsuites chooses an option on a click, and closes the picker unless the option has controls
+                options[index]?.click();
+                return;
+            case 'Escape':
+                e.preventDefault();
+                picker.close();
+                return;
+            case 'Tab':
+                picker.close();
+                return;
+            default:
+                return;
+        }
+
+        e.preventDefault();
+        this.setActiveOption(element, options, index);
+    }
+
+    /**
+     * Mark the option of a picker that the keys are on.
+     * @param element - The element of the picker.
+     * @param options - The options of the picker.
+     * @param index - The index of the option.
+     */
+    private setActiveOption(element: HTMLElement, options: HTMLElement[], index: number) {
+        for (const [i, option] of options.entries()) {
+            if (!option.id) {
+                // The list of options has an id, which the picker names in aria-controls
+                option.id = `${element.getAttribute('aria-controls')}-${i}`;
+            }
+            option.classList.toggle('jss_picker_active', i === index);
+        }
+
+        element.setAttribute('aria-activedescendant', options[index].id);
     }
 
     update(worksheet: Worksheet) {
