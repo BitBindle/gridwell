@@ -275,6 +275,14 @@ on the prototypes. The next steps move each of them into a class, so that no fun
 33. **The event handlers of a worksheet.** The mouse gestures (`events/mouse.ts`) move into `Pointer`, the keys of the grid
     and of the editor (`events/keyboard.ts`) into a new component `Keyboard`, and the scrolling (`events/scroll.ts`) into
     `View`.
+    Done. `worksheet.pointer` handles each mouse gesture: the presses (`pressHeader`, `pressRowNumber`, `pressCell`,
+    `pressPage`), the moves (`moveResize`, `moveDrag`, `updateCursor`, `extendSelection`), the ends (`endResize`,
+    `endDrag`, `endFill`) and the double click on the corner (`fillDown`). `worksheet.keyboard` handles the keys of an
+    open editor (`editorKeys`) and of the grid (`gridKeys`, with the private `deleteKey`, `enterKey`, `tabKey`,
+    `shortcutKeys` and `typingKeys`). `worksheet.view` handles the scrolling (`scroll`, `wheel`); `events/scroll.ts` goes.
+    The document handlers in `events/` find the worksheet and call its component. A method that needs a selection or an
+    open editor casts `this.worksheet` to `SelectedWorksheet` or `EditingWorksheet`, as the private methods of
+    `Selection` do, because the handler checks it before the call.
 34. **The spreadsheet.** `dispatch`, the active worksheet (`activeWorksheet.ts`), `fullscreen`, the configuration of a
     spreadsheet (`config.ts`), `setPlugins` and the build of a spreadsheet (`factory.ts`) become methods of `Spreadsheet`.
 35. **The worksheet.** The build of a worksheet (`worksheets.ts`), its configuration, and creating, opening and deleting

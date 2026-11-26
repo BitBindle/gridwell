@@ -8,6 +8,7 @@ import { Data } from './components/Data.js';
 import { Editor } from './components/Editor.js';
 import { Formulas } from './components/Formulas.js';
 import { History } from './components/History.js';
+import { Keyboard } from './components/Keyboard.js';
 import { Merges } from './components/Merges.js';
 import { Meta } from './components/Meta.js';
 import { Pointer } from './components/Pointer.js';
@@ -56,6 +57,7 @@ export class Worksheet {
         this.rowManager = new Rows(this);
         this.data = new Data(this);
         this.accessibility = new Accessibility(this);
+        this.keyboard = new Keyboard(this);
         this.lastScrollLeft = 0;
     }
 }
