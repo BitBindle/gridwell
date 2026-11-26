@@ -174,6 +174,26 @@ describe('Use the helpers', () => {
 
         expect(jspreadsheet.helpers.getCaretIndex(element)).to.equal(5);
     });
+
+    it('getCaretIndex reads the selection of the window for a spreadsheet whose root has no getSelection (issue #46)', async () => {
+        const host = document.body.appendChild(document.createElement('div'));
+
+        try {
+            const worksheets = jspreadsheet(root, { root: host, worksheets: [{ data: [['Hello world']] }] });
+            await new Promise((resolve) => setTimeout(resolve));
+
+            const cell = worksheets[0].getCell('A1');
+            const range = document.createRange();
+            range.setStart(cell.firstChild, 5);
+            range.collapse(true);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+
+            expect(jspreadsheet.helpers.getCaretIndex.call(worksheets[0].parent, cell)).to.equal(5);
+        } finally {
+            host.remove();
+        }
+    });
 });
 
 describe('Worksheet and spreadsheet methods', () => {
