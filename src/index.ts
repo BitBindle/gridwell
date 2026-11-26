@@ -83,8 +83,8 @@ libraryBase.jspreadsheet.destroy = (
 };
 
 libraryBase.jspreadsheet.destroyAll = () => {
-    // destroy removes the spreadsheet from the list, so the loop skips every other one (issue #114)
-    for (const spreadsheet of libraryBase.jspreadsheet.spreadsheet) {
+    // destroy removes the spreadsheet from the list, so the loop goes over a copy
+    for (const spreadsheet of [...libraryBase.jspreadsheet.spreadsheet]) {
         libraryBase.jspreadsheet.destroy(spreadsheet.element);
     }
 };
