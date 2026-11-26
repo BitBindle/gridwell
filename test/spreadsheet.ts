@@ -9,8 +9,7 @@ describe('Events of the spreadsheet', () => {
         let spreadsheet: Jspreadsheet.SpreadsheetInstance | undefined;
         const worksheet = jspreadsheet(root, {
             worksheets: [{ data: [['a']] }],
-            // onevent takes its arguments as a rest of a union of tuples, which a handler with named parameters does not fit (issue #133)
-            onevent(...[event]) {
+            onevent(event) {
                 if (event === 'onchange' || event === 'onload') {
                     calls.push(['onevent', event, this]);
                 }
@@ -25,8 +24,7 @@ describe('Events of the spreadsheet', () => {
             plugins: {
                 test() {
                     return {
-                        // As onevent above (issue #133)
-                        onevent(...[event]) {
+                        onevent(event) {
                             if (event === 'onchange') {
                                 calls.push(['plugin', event, this]);
                             }

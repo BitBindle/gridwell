@@ -125,8 +125,9 @@ that is hard to read but does not need a new owner. They change no behaviour.
     `element.tabs`. The variables of the closure are fields, and its inner functions are private methods.
 14. **The anys in the public typings.** The `any` types left in `src/jspreadsheet.d.ts` get real types.
     Done. The values that the application or a formula gives (the meta information, the properties of a history record,
-    the data of `onsave` and the result of `executeFormula`) are `unknown`. `onevent` gets `EventArguments`, the name of
-    an event and the arguments of its handler, and `dispatch` takes only those. The toolbar and picker instances have
+    the data of `onsave` and the result of `executeFormula`) are `unknown`. `onevent` gets the name of
+    an event and the arguments of its handler, with one signature for each event (`EventListener`), and `dispatch`
+    takes only those. The toolbar and picker instances have
     the interfaces `ToolbarInstance` and `PickerInstance`, written from what jsuites puts on them; the typings of
     jsuites are not used, because they fail a strict check. A context menu item gets the element of the item. The
     library object has no index signature. The bundle is the same as before.

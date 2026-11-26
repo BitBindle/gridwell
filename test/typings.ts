@@ -239,10 +239,27 @@ worksheet.dispatch('onselection', 0);
 // @ts-expect-error The event must be an event of SpreadsheetOptions
 worksheet.dispatch('oncustom');
 
-// onevent gets the name of the event, then its arguments. A test of the name in args[0] narrows the arguments.
+// onevent gets the name of the event, then its arguments. A handler can name fewer parameters than an event gives (issue #133)
+const shortOptions: jspreadsheet.SpreadsheetOptions = {
+    worksheets: [],
+    onevent: (event) => {
+        assertType<Equals<typeof event, jspreadsheet.EventName>>();
+    },
+    plugins: {
+        test: () => ({
+            onevent(event, instance) {
+                assertType<Equals<typeof event, jspreadsheet.EventName>>();
+                // The second argument of the events: a worksheet, or the spreadsheet
+                assertType<Equals<typeof instance, jspreadsheet.WorksheetInstance | jspreadsheet.SpreadsheetInstance>>();
+            },
+        }),
+    },
+};
+void shortOptions;
+// Taken as EventArguments, a test of the name in args[0] narrows the arguments
 const eventOptions: jspreadsheet.SpreadsheetOptions = {
     worksheets: [],
-    onevent(...args) {
+    onevent(...args: jspreadsheet.EventArguments) {
         if (args[0] === 'onselection') {
             assertType<Equals<(typeof args)[1], jspreadsheet.WorksheetInstance>>();
             assertType<Equals<(typeof args)[2], number>>();
@@ -250,6 +267,12 @@ const eventOptions: jspreadsheet.SpreadsheetOptions = {
     },
 };
 void eventOptions;
+// A parameter that the shortest events do not give is optional
+const optionalOptions: jspreadsheet.SpreadsheetOptions = { worksheets: [], onevent: (event, instance, cell?) => void [event, instance, cell] };
+void optionalOptions;
+// @ts-expect-error onblur gives only the worksheet, so a third parameter must be optional
+const requiredOptions: jspreadsheet.SpreadsheetOptions = { worksheets: [], onevent: (event, instance, cell) => void [event, instance, cell] };
+void requiredOptions;
 // A handler that takes any arguments still fits, but not one that expects a worksheet for every event
 function looseOnevent(event: string, ...rest: unknown[]) {
     return [event, rest];

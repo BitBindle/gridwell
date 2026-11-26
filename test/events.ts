@@ -213,9 +213,10 @@ describe('Dispatch events', () => {
         const calls: unknown[][] = [];
         const worksheet = jspreadsheet(root, {
             worksheets: [{ data: [['a', 'b']] }],
-            // onevent takes its arguments as a rest of a union of tuples, which a handler with named parameters does not fit (issue #133)
-            onevent(...[event, instance, cell, x, y, value]) {
-                if (event === 'onchange') {
+            // The arguments of an event with more arguments than the shortest event, narrowed by a test of the name
+            onevent(...args: Jspreadsheet.EventArguments) {
+                if (args[0] === 'onchange') {
+                    const [, instance, , x, y, value] = args;
                     calls.push(['onevent', instance === worksheet, x, y, value]);
                 }
             },
@@ -225,9 +226,9 @@ describe('Dispatch events', () => {
             plugins: {
                 test() {
                     return {
-                        // As onevent above (issue #133)
-                        onevent(...[event, instance, cell, x, y, value]) {
-                            if (event === 'onchange') {
+                        onevent(...args: Jspreadsheet.EventArguments) {
+                            if (args[0] === 'onchange') {
+                                const [, instance, , x, y, value] = args;
                                 calls.push(['plugin', instance === worksheet, x, y, value]);
                             }
                         },
@@ -284,8 +285,7 @@ describe('Dispatch events', () => {
             onbeforeinsertrow: () => false,
             plugins: {
                 logger: () => ({ onevent: () => {} }),
-                // onevent takes its arguments as a rest of a union of tuples, which a handler with named parameters does not fit (issue #133)
-                other: () => ({ onevent: (...[event]) => (event === 'onbeforeinsertrow' ? true : undefined) }),
+                other: () => ({ onevent: (event) => (event === 'onbeforeinsertrow' ? true : undefined) }),
             },
         })[0];
 
@@ -299,8 +299,7 @@ describe('Dispatch events', () => {
             worksheets: [{ data: [['a']] }],
             onevent: () => {},
             onbeforechange: (instance, cell, x, y, value) => `${value}!`,
-            // onevent takes its arguments as a rest of a union of tuples, which a handler with named parameters does not fit (issue #133)
-            plugins: { guard: () => ({ onevent: (...[event]) => (event === 'onbeforedeleterow' ? false : undefined) }) },
+            plugins: { guard: () => ({ onevent: (event) => (event === 'onbeforedeleterow' ? false : undefined) }) },
         })[0];
 
         worksheet.setValue('A1', 'b');

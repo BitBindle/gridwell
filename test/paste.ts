@@ -245,8 +245,7 @@ describe('Paste', () => {
                     data: fixtureData(),
                 },
             ],
-            // onevent takes its arguments as a rest of a union of tuples, which a handler with named parameters does not fit (issue #133)
-            onevent: (...[event]) => {
+            onevent: (event) => {
                 count[event] = (count[event] ?? 0) + 1;
             },
         })[0];
@@ -285,8 +284,7 @@ describe('Paste', () => {
                     data: fixtureData(),
                 },
             ],
-            // onevent takes its arguments as a rest of a union of tuples, which a handler with named parameters does not fit (issue #133)
-            onevent: (...[event]) => {
+            onevent: (event) => {
                 count[event] = (count[event] ?? 0) + 1;
             },
         })[0];

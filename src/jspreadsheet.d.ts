@@ -623,6 +623,18 @@ declare namespace jspreadsheet {
     /** The arguments of onevent: the name of an event, then the arguments of its handler. */
     type EventArguments = { [E in EventName]: [event: E, ...args: Parameters<EventHandlers[E]>] }[EventName];
 
+    /**
+     * The type of onevent, which gets every event: one signature for each event, with the name of the event, then the
+     * arguments of its handler. A handler can name fewer parameters than an event gives, such as `(event) => …` or
+     * `(event, instance) => …`. To narrow the arguments with a test of the name, take them as
+     * `(...args: jspreadsheet.EventArguments) => …`.
+     */
+    type EventListener = {
+        [E in EventName]: (listener: (event: E, ...args: Parameters<EventHandlers[E]>) => unknown) => void;
+    }[EventName] extends (listener: infer L) => void
+        ? L
+        : never;
+
     type MetaInformation = Record<string, unknown>;
 
     type ContextMenuItem =
@@ -1103,10 +1115,10 @@ declare namespace jspreadsheet {
          * Its result counts as a result of the called event. When onevent, the handler of the event or the onevent of a
          * plugin returns false, the result of the event is false, so any of them can cancel an `onbefore…` action. Otherwise
          * the result is the last one that is not undefined.
-         * @param args - The name of the event that was called, then the arguments of the event. A test of the name in
-         * `args[0]` narrows the other arguments.
+         *
+         * It gets the name of the event that was called, then the arguments of the event. See {@link EventListener}.
          */
-        onevent?: (...args: EventArguments) => unknown;
+        onevent?: EventListener;
 
         /**
          * Occurs when the table is focused.
@@ -1725,9 +1737,10 @@ declare namespace jspreadsheet {
          *
          * Returning false cancels an `onbefore…` action, as the handler in the options does. Returning nothing keeps the
          * result of the handlers before it, and returning another value replaces it.
-         * @param args - The name of the event that was called, then the arguments of the event.
+         *
+         * It gets the name of the event that was called, then the arguments of the event. See {@link EventListener}.
          */
-        onevent?: (...args: EventArguments) => unknown;
+        onevent?: EventListener;
 
         /**
          * This method is called before the spreadsheet sends data to the server.
