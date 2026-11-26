@@ -1163,18 +1163,6 @@ declare namespace jspreadsheet {
         ) => void;
 
         /**
-         * Occurs when the cell of the open editor leaves the table, for example when lazy loading removes its row. The
-         * event also occurs while `ignoreEvents` is set, for example during an undo.
-         * @param instance - Worksheet of the cell.
-         * @param td - Element of the cell.
-         * @param colIndex - Column index of the cell.
-         * @param rowIndex - Row index of the cell.
-         * @returns True to take the edit: the editor closes without a save, and the application keeps the edit, for example
-         * to open it again on the cell. Else the editor saves its value and closes.
-         */
-        oneditordetach?: (instance: WorksheetInstance, td: HTMLTableCellElement, colIndex: number, rowIndex: number) => boolean | void;
-
-        /**
          * Occurs when a openEditor is called.
          * @param instance - Instance of the worksheet where the change occurred.
          * @param td - Td tag of the cell whose editor was opened.
@@ -1182,6 +1170,20 @@ declare namespace jspreadsheet {
          * @param rowIndex - Row index of the cell whose editor was opened.
          */
         oneditionstart?: (instance: WorksheetInstance, td: HTMLTableCellElement, colIndex: number, rowIndex: number) => void;
+
+        /**
+         * Occurs when lazy loading removes the row of the open editor, for example after a scroll, a sort, or a move of the
+         * selection with `down` or `last`. On a scroll, an editor that floats over the grid closes and saves before the row
+         * leaves, so only the text editor gets the event then. The event also occurs while `ignoreEvents` is set, for
+         * example during an undo, also for `onevent`.
+         * @param instance - Worksheet of the cell.
+         * @param td - Element of the cell.
+         * @param colIndex - Column index of the cell.
+         * @param rowIndex - Row index of the cell.
+         * @returns True to take the edit: the editor closes without a save, and the application keeps the edit, for example
+         * to open it again on the cell. Else the editor saves its value and closes.
+         */
+        oneditordetach?: (instance: WorksheetInstance, td: HTMLTableCellElement, colIndex: number, rowIndex: number) => undefined | boolean;
 
         /**
          * Event fired when any other event fires. It runs before the event that was called.
@@ -1938,7 +1940,8 @@ declare namespace jspreadsheet {
 
         /**
          * If true, the spreadsheet does not emit events, except onbeforerequest, onbeforesave and onsave: the persistence
-         * still saves the changes, for example of an undo or a redo.
+         * still saves the changes, for example of an undo or a redo. oneditordetach also occurs, so the application can take
+         * the edit of an editor whose row lazy loading removes.
          */
         ignoreEvents?: boolean;
 

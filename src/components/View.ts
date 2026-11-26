@@ -765,9 +765,9 @@ export class View {
     }
 
     /**
-     * Remove a row from the table. If the row holds the open editor, save and close the editor first.
+     * Remove a row from the table. If the row holds the open editor, detach the editor first: oneditordetach can take the
+     * edit, else the editor saves.
      */
-    // The callers remove a row when the body has more than a page of rows, so it has a first and a last row
     private removeRow(row: ChildNode) {
         const worksheet = this.worksheet;
 

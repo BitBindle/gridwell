@@ -127,21 +127,88 @@ describe('Editor', () => {
         });
 
         it('saves the editor when the handler does not take the edit', async () => {
-            const worksheet = await detachByScroll({ oneditordetach: () => undefined });
+            let calls = 0;
+            const worksheet = await detachByScroll({
+                oneditordetach: () => {
+                    calls++;
+                    return undefined;
+                },
+            });
 
+            expect(calls).to.equal(1);
             expect(worksheet.editor.isOpen()).to.equal(false);
             expect(worksheet.getValueFromCoords(1, 0)).to.equal('typed');
         });
 
         it('does nothing more when the handler closed the editor itself', async () => {
+            const ends: boolean[] = [];
             const worksheet = await detachByScroll({
                 oneditordetach: (instance, td) => {
                     instance.closeEditor(td, true);
+                    return undefined;
+                },
+                oneditionend: (instance, td, x, y, value, saved) => {
+                    ends.push(saved);
                 },
             });
 
+            expect(ends).to.eql([true]);
             expect(worksheet.editor.isOpen()).to.equal(false);
             expect(worksheet.getValueFromCoords(1, 0)).to.equal('typed');
+        });
+
+        it('does not save the edit when the handler moves the focus and takes the edit', async () => {
+            const other = document.body.appendChild(document.createElement('input'));
+            try {
+                const worksheet = await detachByScroll({
+                    oneditordetach: () => {
+                        other.focus();
+                        return true;
+                    },
+                });
+
+                expect(document.activeElement).to.equal(other);
+                expect(worksheet.getValueFromCoords(1, 0)).to.not.equal('typed');
+            } finally {
+                other.remove();
+            }
+        });
+
+        it('gives the position of the cell after an insert above the editor', async () => {
+            const calls: [number, number][] = [];
+            await new Promise((resolve) => setTimeout(resolve, 150));
+            const worksheet = jspreadsheet(root, {
+                worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }],
+                oneditordetach: (instance, td, x, y) => {
+                    calls.push([x, y]);
+                    return true;
+                },
+            })[0];
+            worksheet.openEditor(worksheet.records[2][1].element);
+
+            worksheet.insertRow(3, 0, true);
+            worksheet.content.dispatchEvent(new window.WheelEvent('wheel', { deltaY: 100 }));
+            await new Promise((resolve) => setTimeout(resolve, 150));
+
+            expect(calls).to.eql([[1, 5]]);
+        });
+
+        it('occurs when a move of the selection loads another page', () => {
+            const calls: [number, number][] = [];
+            const worksheet = jspreadsheet(root, {
+                worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }],
+                oneditordetach: (instance, td, x, y) => {
+                    calls.push([x, y]);
+                    return true;
+                },
+            })[0];
+            worksheet.updateSelectionFromCoords(1, 0, 1, 0);
+            worksheet.openEditor(worksheet.records[0][1].element);
+
+            worksheet.last(false, true);
+
+            expect(calls).to.eql([[1, 0]]);
+            expect(worksheet.editor.isOpen()).to.equal(false);
         });
 
         it('occurs while ignoreEvents is set', async () => {
