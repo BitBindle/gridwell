@@ -51,6 +51,11 @@
     background-color: var(--cursor, #eee);
 }
 
+/* The background of a frozen row is stronger than the rule above */
+.jss_worksheet > tbody > tr.jss_frozen_row > td.highlight-selected {
+    background-color: var(--cursor, #eee);
+}
+
 .jss_pagination > div > div {
     color: var(--header_color, #000);
     background: var(--header_background, #f3f3f3);

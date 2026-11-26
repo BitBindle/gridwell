@@ -520,6 +520,10 @@ export class Formulas {
         // Update the size of the grid
         worksheet.accessibility.updateGridSize();
 
+        // The frozen rows are the first rows. This comes after the cells know their new rows, because a row that leaves
+        // the table saves and closes its editor.
+        worksheet.rowManager.updateFreeze();
+
         // The tab stop of the grid can be in a deleted row or column
         worksheet.selection.updateTabStop();
 

@@ -11,7 +11,7 @@ and issues now, and does not merge changes from upstream.
 - Column types: text, numbers with masks, dropdowns, calendars, checkboxes, colors, images and rich text.
 - Copy and paste with Excel and Google Sheets, undo and redo, and filling cells by dragging the selection corner.
 - Sorting, search, column filters, pagination and lazy loading.
-- Merged cells, comments, frozen columns, nested headers, a toolbar and a context menu.
+- Merged cells, comments, frozen rows and columns, nested headers, a toolbar and a context menu.
 - Several worksheets in tabs.
 - An ARIA grid. The keyboard reaches every control, and the selected cell is the focus. The application can add a note to
   the name of a cell (`cellNote`) and read a text through a live region (`announce`).

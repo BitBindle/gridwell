@@ -1034,15 +1034,17 @@ export class Columns {
                 worksheet.headers[i].classList.add('jss_freezed');
                 worksheet.headers[i].classList.toggle('jss_freezed_last', isLast);
                 worksheet.headers[i].style.left = `${width}px`;
+                // The cells are relative, so all the frozen cells move by the same distance as the scroll. A cell of a
+                // frozen row is sticky, as a header is, so it gets the same distance from the left as the header.
+                const shifted = `${scrollLeft - indexWidth - 1}px`;
+                const frozenRows = worksheet.rowManager.getFreezeCount();
                 for (let j = 0; j < worksheet.rows.length; j++) {
                     if (worksheet.rows[j] && worksheet.records[j][i]) {
-                        // The cells are relative, so all the frozen cells move by the same distance as the scroll
-                        const shifted = `${scrollLeft - indexWidth - 1}px`;
                         worksheet.records[j][i].element.classList.add('jss_freezed');
                         if (isLast || wasLast) {
                             worksheet.records[j][i].element.classList.toggle('jss_freezed_last', isLast);
                         }
-                        worksheet.records[j][i].element.style.left = shifted;
+                        worksheet.records[j][i].element.style.left = j < frozenRows ? `${width}px` : shifted;
                     }
                 }
             }
