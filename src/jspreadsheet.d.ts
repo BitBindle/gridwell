@@ -1361,6 +1361,14 @@ declare namespace jspreadsheet {
         onsort?: (instance: WorksheetInstance, colIndex: number, order: 0 | 1, newOrderValues: number[]) => void;
 
         /**
+         * Occurs when lazy loading puts rows in the table that were not in it: a scroll, a page that loads for the
+         * selection, or `loadRow`. The application can, for example, measure the new rows.
+         * @param instance - Instance of the worksheet.
+         * @param ranges - The new rows, as `[from, to]` pairs of row indexes, in order.
+         */
+        onrowsattached?: (instance: WorksheetInstance, ranges: [number, number][]) => void;
+
+        /**
          * Occurs when the rows that a search or a filter shows have changed.
          * @param instance - Instance of the worksheet.
          * @param results - Indexes of the rows that are shown, or null when every row is shown.
@@ -2325,6 +2333,15 @@ declare namespace jspreadsheet {
          * @param y - Cell row index.
          */
         isSelected: (x: number, y: number) => boolean;
+
+        /**
+         * With lazy loading, fill the table with the frozen rows and the rows from 10 rows above a row, up to 100 rows, or
+         * with the last rows. With a search or the filters, the rows are rows of the results. The scroll position does not
+         * change, so the application can set it, for example to show the same rows after it builds the worksheet again.
+         * `onrowsattached` occurs for the new rows. Without lazy loading, nothing occurs.
+         * @param y - Row index.
+         */
+        loadRow: (y: number) => void;
 
         /**
          * Insert one or more columns.

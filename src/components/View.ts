@@ -780,6 +780,86 @@ export class View {
     }
 
     /**
+     * Tell the application the rows that lazy loading attached, as [from, to] pairs of row indexes, with onrowsattached.
+     * A row that a load attached and removed again is not in the pairs.
+     */
+    private attached(rows: HTMLTableRowElement[]) {
+        const worksheet = this.worksheet;
+        const indexes = rows
+            .filter((row) => row.parentNode === worksheet.tbody)
+            .map((row) => parseInt(row.getAttribute('data-y')!))
+            .sort((a, b) => a - b);
+        const ranges: [number, number][] = [];
+        for (const y of indexes) {
+            const last = ranges[ranges.length - 1];
+            if (last && last[1] + 1 >= y) {
+                last[1] = Math.max(last[1], y);
+            } else {
+                ranges.push([y, y]);
+            }
+        }
+        if (ranges.length) {
+            worksheet.dispatch('onrowsattached', worksheet, ranges);
+        }
+    }
+
+    /**
+     * Fill the table body with the frozen rows and the rows from 10 rows above a row, up to a page of 100 rows, or with
+     * the last rows. With a search or the filters, the rows are rows of the results, from the first result at or after the
+     * row. The scroll position does not change. Without lazy loading, all the rows are in the table, and nothing occurs.
+     * @param y - Index of the row.
+     */
+    loadRow(y: number) {
+        const worksheet = this.worksheet;
+        if (worksheet.options.lazyLoading !== true || !Number.isFinite(Number(y))) {
+            return;
+        }
+
+        const quantityPerPage = 100;
+        const results = (worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results ? worksheet.view.results : null;
+        const total = results ? results.length : worksheet.rows.length;
+        const frozen = this.frozenRows();
+        let position = Math.floor(Number(y));
+        if (results) {
+            position = results.findIndex((row) => row >= position);
+            if (position < 0) {
+                position = total;
+            }
+        }
+        const start = Math.max(frozen, Math.min(position - 10, total - (quantityPerPage - frozen)));
+        const end = Math.min(total, start + quantityPerPage - frozen);
+
+        const wanted: HTMLTableRowElement[] = [];
+        for (let j = 0; j < frozen; j++) {
+            wanted.push(worksheet.rows[j].element);
+        }
+        for (let j = start; j < end; j++) {
+            wanted.push(worksheet.rows[results ? results[j] : j].element);
+        }
+
+        const keep = new Set<Element>(wanted);
+        for (const row of Array.from(worksheet.tbody.children)) {
+            if (!keep.has(row)) {
+                this.removeRow(row);
+            }
+        }
+        const added: HTMLTableRowElement[] = [];
+        for (let k = 0; k < wanted.length; k++) {
+            if (wanted[k].parentNode !== worksheet.tbody) {
+                added.push(wanted[k]);
+            }
+            if (worksheet.tbody.children[k] !== wanted[k]) {
+                worksheet.tbody.insertBefore(wanted[k], worksheet.tbody.children[k] || null);
+            }
+        }
+
+        // The tab stop of the grid can be in a removed row
+        worksheet.selection.updateTabStop();
+
+        this.attached(added);
+    }
+
+    /**
      * Go to a page in a lazyLoading
      */
     loadPage(pageNumber: number) {
@@ -812,21 +892,32 @@ export class View {
             startRow = 0;
         }
 
+        // The rows that were not in the table
+        const added: HTMLTableRowElement[] = [];
+
         // The frozen rows stay first
         const frozen = this.frozenRows();
         for (let j = 0; j < frozen; j++) {
             if (worksheet.tbody.children[j] !== worksheet.rows[j].element) {
+                if (worksheet.rows[j].element.parentNode !== worksheet.tbody) {
+                    added.push(worksheet.rows[j].element);
+                }
                 worksheet.tbody.insertBefore(worksheet.rows[j].element, worksheet.tbody.children[j] || null);
             }
         }
 
         // Appeding items
         for (let j = Math.max(startRow, frozen); j < finalRow; j++) {
+            let row;
             if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
-                worksheet.tbody.appendChild(worksheet.rows[results[j] as number].element);
+                row = worksheet.rows[results[j] as number].element;
             } else {
-                worksheet.tbody.appendChild(worksheet.rows[j].element);
+                row = worksheet.rows[j].element;
             }
+            if (row.parentNode !== worksheet.tbody) {
+                added.push(row);
+            }
+            worksheet.tbody.appendChild(row);
 
             // More than one page can be attached, for example after an insert next to the attached rows
             while (worksheet.tbody.children.length > quantityPerPage) {
@@ -836,6 +927,8 @@ export class View {
 
         // The tab stop of the grid can be in a removed row
         worksheet.selection.updateTabStop();
+
+        this.attached(added);
     }
 
     loadValidation() {
@@ -884,6 +977,7 @@ export class View {
             results = worksheet.rows;
         }
         let test = 0;
+        const added: HTMLTableRowElement[] = [];
         if (results.length > 100) {
             // Get the first element in the page, after the frozen rows
             const frozen = this.frozenRows();
@@ -896,11 +990,14 @@ export class View {
                 for (let j = 0; j < 30; j++) {
                     item = item - 1;
                     if (item >= frozen) {
+                        let row;
                         if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
-                            worksheet.tbody.insertBefore(worksheet.rows[results[item] as number].element, this.firstScrollRow());
+                            row = worksheet.rows[results[item] as number].element;
                         } else {
-                            worksheet.tbody.insertBefore(worksheet.rows[item].element, this.firstScrollRow());
+                            row = worksheet.rows[item].element;
                         }
+                        added.push(row);
+                        worksheet.tbody.insertBefore(row, this.firstScrollRow());
                         if (worksheet.tbody.children.length > 100) {
                             this.removeRow(worksheet.tbody.lastChild!);
                             test = 1;
@@ -913,6 +1010,8 @@ export class View {
 
         // The tab stop of the grid can be in a removed row
         worksheet.selection.updateTabStop();
+
+        this.attached(added);
 
         return test;
     }
@@ -929,6 +1028,7 @@ export class View {
             results = worksheet.rows;
         }
         let test = 0;
+        const added: HTMLTableRowElement[] = [];
         if (results.length > 100) {
             // Get the last element in the page
             let item = parseInt((worksheet.tbody.lastChild as HTMLElement).getAttribute('data-y'));
@@ -939,11 +1039,16 @@ export class View {
                 const anchor = anchorRow(worksheet.tbody, true, this.frozenRows());
                 for (let j = 0; j <= 30; j++) {
                     if (item < results.length) {
+                        let row;
                         if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
-                            worksheet.tbody.appendChild(worksheet.rows[results[item] as number].element);
+                            row = worksheet.rows[results[item] as number].element;
                         } else {
-                            worksheet.tbody.appendChild(worksheet.rows[item].element);
+                            row = worksheet.rows[item].element;
                         }
+                        if (row.parentNode !== worksheet.tbody) {
+                            added.push(row);
+                        }
+                        worksheet.tbody.appendChild(row);
                         if (worksheet.tbody.children.length > 100) {
                             this.removeRow(this.firstScrollRow());
                             test = 1;
@@ -957,6 +1062,8 @@ export class View {
 
         // The tab stop of the grid can be in a removed row
         worksheet.selection.updateTabStop();
+
+        this.attached(added);
 
         return test;
     }
