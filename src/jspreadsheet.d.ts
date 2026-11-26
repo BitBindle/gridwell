@@ -703,6 +703,17 @@ declare namespace jspreadsheet {
         autoIncrement?: boolean;
 
         /**
+         * Give a note that the accessible name of the active cell adds after the address and the text of the cell, for
+         * example "cached, not recalculated". The name of A5 is then "A5 12, cached, not recalculated". Call
+         * `worksheet.labelCell` after the note of a cell changes.
+         * @param instance - Worksheet of the cell.
+         * @param x - Column index of the cell.
+         * @param y - Row index of the cell.
+         * @returns Text of the note. An empty text, null or undefined adds nothing.
+         */
+        cellNote?: (instance: WorksheetInstance, x: number, y: number) => string | null | undefined;
+
+        /**
          * Creates context menu when user clicks with secondary mouse button.
          * @param instance - Instance of the worksheet on which the click was made.
          * @param colIndex - Horizontal index of the element that was clicked. The meaning of this value depends on the {@link role} argument.
@@ -1787,6 +1798,15 @@ declare namespace jspreadsheet {
      */
     interface SpreadsheetInstance {
         /**
+         * Read a text to the user of assistive technology, for example "B4 changed by another user". The spreadsheet has a
+         * polite live region, so the text does not stop what the screen reader reads. The region is hidden on the screen.
+         * The spreadsheet adds the region when it is built, so call `announce` after `onload`. Each call adds the text as a
+         * new element, so the same text two times is read two times.
+         * @param text - Text to read.
+         */
+        announce: (text: string) => void;
+
+        /**
          * Spreadsheet settings.
          */
         config: SpreadsheetOptions;
@@ -2244,6 +2264,14 @@ declare namespace jspreadsheet {
          * @param cellName - Cell name.
          */
         isReadOnly(cellName: string): boolean;
+
+        /**
+         * Set the accessible name of a cell again, from its address, its text and the `cellNote` option. Call it after the
+         * note of a cell changes. Only the active cell has a name, so the call does nothing for another cell.
+         * @param x - Column index of the cell.
+         * @param y - Row index of the cell.
+         */
+        labelCell: (x: number, y: number) => void;
 
         /**
          * Simulates the action of the End key. Does nothing when no cell is selected.
