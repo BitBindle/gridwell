@@ -3,7 +3,6 @@ import jSuites from 'jsuites';
 import libraryBase from './libraryBase.js';
 
 import { parseCSV } from './helpers.js';
-import { getData, getDataFromRange, getValue, getValueFromCoords, setData, setValue, setValueFromCoords } from './data.js';
 import { cutControls } from '../events/clipboard.js';
 import { scrollControls, wheelControls } from '../events/scroll.js';
 import { download } from './download.js';
@@ -273,7 +272,7 @@ const loadContent = function (this: Worksheet) {
     const obj = this;
 
     // Load data
-    obj.setData.call(obj);
+    obj.data.set();
 
     // Style
     if (obj.options.style) {
@@ -641,12 +640,42 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.selection.getSelectedRows(visibleOnly);
         },
     ],
-    ['getData', getData],
-    ['setData', setData],
-    ['getValue', getValue],
-    ['getValueFromCoords', getValueFromCoords],
-    ['setValue', setValue],
-    ['setValueFromCoords', setValueFromCoords],
+    [
+        'getData',
+        function (this: Worksheet, highlighted?: boolean, processed?: boolean, delimiter?: string, asJson?: boolean) {
+            return this.data.get(highlighted, processed, delimiter, asJson);
+        },
+    ],
+    [
+        'setData',
+        function (this: Worksheet, data?: jspreadsheet.CellValue[][] | Record<string, jspreadsheet.CellValue>[]) {
+            return this.data.set(data);
+        },
+    ],
+    [
+        'getValue',
+        function (this: Worksheet, cell: string, processedValue?: boolean) {
+            return this.data.getValue(cell, processedValue);
+        },
+    ],
+    [
+        'getValueFromCoords',
+        function (this: Worksheet, x: number, y: number, processedValue?: boolean) {
+            return this.data.getValueFromCoords(x, y, processedValue);
+        },
+    ],
+    [
+        'setValue',
+        function (this: Worksheet, cell: Parameters<jspreadsheet.WorksheetInstance['setValue']>[0], value?: jspreadsheet.CellValue, force?: boolean) {
+            return this.data.setValue(cell, value, force);
+        },
+    ],
+    [
+        'setValueFromCoords',
+        function (this: Worksheet, x: number, y: number, value: jspreadsheet.CellValue, force?: boolean) {
+            return this.data.setValueFromCoords(x, y, value, force);
+        },
+    ],
     [
         'getWidth',
         function (this: Worksheet, column?: number) {
@@ -955,7 +984,12 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.formulas.execute(expression, x, y);
         },
     ],
-    ['getDataFromRange', getDataFromRange],
+    [
+        'getDataFromRange',
+        function (this: Worksheet, range: string, processed: true) {
+            return this.data.getFromRange(range, processed);
+        },
+    ],
     [
         'quantiyOfPages',
         function (this: Worksheet) {

@@ -17,6 +17,7 @@ import type { History } from '../components/History';
 import type { Merges } from '../components/Merges';
 import type { Columns } from '../components/Columns';
 import type { Rows } from '../components/Rows';
+import type { Data } from '../components/Data';
 import type { Meta } from '../components/Meta';
 import type { Pointer } from '../components/Pointer';
 import type { Selection } from '../components/Selection';
@@ -89,6 +90,9 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
      * called rows, because rows is the list of row records.
      */
     rowManager: Rows;
+
+    /** Gets and sets the data, the data of a range and the values of the cells. The data is in options.data. */
+    data: Data;
 
     /** The div that holds the link to the Jspreadsheet site, below the table. */
     ads: HTMLDivElement;
