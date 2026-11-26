@@ -436,6 +436,30 @@ export class Editor {
     }
 
     /**
+     * Close the editor when lazy loading removes its row. The application can take the edit in oneditordetach: when the
+     * handler returns true, the editor closes without a save. Else the editor saves and closes, as before.
+     */
+    detach() {
+        if (!this.isOpen()) {
+            return;
+        }
+        const worksheet = this.worksheet;
+        const cell = this.cell;
+        // The editor input leaves the table, so its blur must not save it. A handler can move the focus.
+        const input = cell.children[0] as HTMLElement | undefined;
+        if (input) {
+            input.onblur = null;
+        }
+
+        // The cell has its position now. The position of the open, kept in x and y, can be old after an insert above it.
+        const x = parseInt(cell.getAttribute('data-x'));
+        const y = parseInt(cell.getAttribute('data-y'));
+        const taken = worksheet.dispatch('oneditordetach', worksheet, cell, x, y) === true;
+        // When the handler closed the editor itself, close does nothing
+        this.close(cell, !taken);
+    }
+
+    /**
      * Close the editor of a cell.
      * @param cell - The td of the cell.
      * @param save - Save the value of the editor in the cell.

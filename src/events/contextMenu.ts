@@ -4,6 +4,7 @@ import version from '../utils/version.js';
 import { getCellNameFromCoords } from '../utils/helpers.js';
 import { getElementIndex, getRole } from './helpers.js';
 import type { TargetEvent, Worksheet } from '../types/internal';
+import { showAlert } from '../utils/dialogs.js';
 
 function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: jspreadsheet.ContextMenuRole): jspreadsheet.ContextMenuItem[] {
     const items: jspreadsheet.ContextMenuItem[] = [];
@@ -172,11 +173,8 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
         items.push({
             title: translate('About'),
             onclick() {
-                if (typeof worksheet.parent.config.about === 'undefined' || worksheet.parent.config.about === true) {
-                    alert(version.print());
-                } else {
-                    alert(worksheet.parent.config.about);
-                }
+                const about = worksheet.parent.config.about;
+                showAlert(worksheet.parent.config, typeof about === 'string' ? about : version.print()[0]);
             },
         });
     }

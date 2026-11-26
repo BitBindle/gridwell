@@ -670,6 +670,22 @@ declare namespace jspreadsheet {
         about?: boolean | string;
 
         /**
+         * Show a message in place of the alert dialog of the browser, for example "There is a conflict with another merged
+         * cell". False shows no message.
+         * @param text - The translated message.
+         */
+        alert?: false | ((text: string) => void);
+
+        /**
+         * Ask the user to confirm an action in place of the confirm dialog of the browser, for example before an insert of
+         * rows destroys merged cells, or before an action clears the results of a search. The function must answer at once,
+         * and each answer other than true cancels the action. False confirms each action without a dialog.
+         * @param text - The translated question.
+         * @returns True to do the action.
+         */
+        confirm?: false | ((text: string) => boolean);
+
+        /**
          * Spreadsheet plugins. Each function is called with the spreadsheet, an empty object and the spreadsheet options, and returns the plugin.
          */
         plugins?: Record<string, PluginFactory>;
@@ -1156,6 +1172,21 @@ declare namespace jspreadsheet {
         oneditionstart?: (instance: WorksheetInstance, td: HTMLTableCellElement, colIndex: number, rowIndex: number) => void;
 
         /**
+         * Occurs when lazy loading removes the row of the open editor, for example after a scroll, a sort, or a move of the
+         * selection with `down` or `last`. With `first` or a sort, the event can also occur for a row that the same load adds
+         * again. On a scroll, an editor that floats over the grid closes and saves before the row leaves, so only the text
+         * editor gets the event then. The event also occurs while `ignoreEvents` is set, for
+         * example during an undo, also for `onevent`.
+         * @param instance - Worksheet of the cell.
+         * @param td - Element of the cell.
+         * @param colIndex - Column index of the cell.
+         * @param rowIndex - Row index of the cell.
+         * @returns True to take the edit: the editor closes without a save, and the application keeps the edit, for example
+         * to open it again on the cell. Else the editor saves its value and closes.
+         */
+        oneditordetach?: (instance: WorksheetInstance, td: HTMLTableCellElement, colIndex: number, rowIndex: number) => undefined | boolean;
+
+        /**
          * Event fired when any other event fires. It runs before the event that was called.
          *
          * Its result counts as a result of the called event. When onevent, the handler of the event or the onevent of a
@@ -1543,6 +1574,16 @@ declare namespace jspreadsheet {
          */
         freezeColumns?: number;
 
+        /**
+         * Number of rows frozen at the top of the worksheet. The frozen rows stay below the header row when the content
+         * scrolls. Lazy loading keeps them in the table, and freezes at most 40 rows. With pagination, a search or the
+         * filters, a frozen row stays at the top only while it is in the rows that show. A merged cell that starts in a
+         * frozen row and ends below the frozen rows sticks with its full height. With lazy loading, a change that takes the
+         * row of an open editor out of the frozen rows and out of the table detaches the editor during the change, as
+         * `oneditordetach` describes.
+         */
+        freezeRows?: number;
+
         /** Activate the table lazyloading. */
         lazyLoading?: boolean;
 
@@ -1901,7 +1942,8 @@ declare namespace jspreadsheet {
 
         /**
          * If true, the spreadsheet does not emit events, except onbeforerequest, onbeforesave and onsave: the persistence
-         * still saves the changes, for example of an undo or a redo.
+         * still saves the changes, for example of an undo or a redo. oneditordetach also occurs, so the application can take
+         * the edit of an editor whose row lazy loading removes.
          */
         ignoreEvents?: boolean;
 

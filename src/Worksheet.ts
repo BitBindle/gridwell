@@ -639,6 +639,9 @@ export class Worksheet {
 
         const removedWorksheet = this.parent.worksheets.splice(position, 1)[0];
 
+        // The size observer of the frozen rows holds the worksheet
+        removedWorksheet?.rowManager.stopFreeze();
+
         // getConfig gives the options of the worksheets that the spreadsheet has. A position without a worksheet removes none.
         const index = removedWorksheet ? this.parent.config.worksheets.indexOf(removedWorksheet.options) : -1;
         if (index >= 0) {
