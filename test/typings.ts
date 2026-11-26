@@ -279,6 +279,10 @@ toolbarInstance.refresh();
 declare const pickerInstance: jspreadsheet.PickerInstance;
 pickerInstance.close();
 assertType<Equals<ReturnType<typeof pickerInstance.isOpened>, boolean>>();
+// render gets the element of the option in the list, or null for the option that the picker shows, and can give an element
+type PickerRender = NonNullable<jspreadsheet.ToolbarSelectItem['render']>;
+assertType<Equals<Parameters<PickerRender>, [option: string, element: HTMLElement | null]>>();
+assertType<Equals<ReturnType<PickerRender>, string | Element>>();
 
 // The library has the static methods that it declares, and no others
 // @ts-expect-error The library has no index signature

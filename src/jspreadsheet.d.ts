@@ -341,10 +341,10 @@ declare namespace jspreadsheet {
         /**
          * Creates picker items based on the picker options.
          * @param option - One of the items in the {@link ToolbarSelectItem.options} array.
-         * @param pickerInstance - Picker instance.
-         * @returns string representing the HTML of the picker item.
+         * @param element - The element of the option in the list, or null for the option that the picker shows.
+         * @returns The HTML of the option, or an element.
          */
-        render?: (option: string, pickerInstance: PickerInstance) => string;
+        render?: (option: string, element: HTMLElement | null) => string | Element;
 
         /** The index in {@link ToolbarSelectItem.options} of the option that the item shows first. */
         value?: number | string;

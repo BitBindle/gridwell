@@ -443,6 +443,7 @@ and `color`. These change:
   the toolbar.
 - The content of a `label` item, and the icon name of an item, are shown as text. jSuites wrote them with `innerHTML`.
 - An option of a select item without `render` is shown as text. `render` still gives HTML, or an element.
+- The typings of `render` of a select item are corrected: its second argument is the element of the option in the list, or `null` for the option that the picker shows, not the picker, and it can give an element. A `render` that declares the picker as its second argument fails the type check.
 - The options of a picker have `aria-selected`, and the picker has `isOpened()`. The pickers no longer have the
   options `header`, `grid`, `height`, `onmouseover` and `onselect`, nor `setOptions`, `getLabel` and `setLabel`, nor
   the `val` and `change` properties on their element.
