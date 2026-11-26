@@ -19,7 +19,9 @@ import '@bitbindle/gridwell/dist/jspreadsheet.css';
 ```
 
 - The script of the bundle sets the global `gridwell` as well as `jspreadsheet`.
-- The Vue wrapper is `@bitbindle/gridwell-vue`, not `@jspreadsheet-ce/vue`.
+- There is no Vue wrapper. `@jspreadsheet-ce/vue` was a component that called `jspreadsheet()` in `mounted`: call
+  `gridwell()` on an element of your component instead. The repository no longer has the `<jspreadsheet>` web
+  component example (`src/webcomponent.js`) or the documentation of version 4 (`docs/`).
 - "About" in the context menu shows `Gridwell`, and the link below the table (`worksheet.ads`) goes to the repository of
   the fork.
 - The package has only `dist/` and `resources/lang/`, with the README and the license.

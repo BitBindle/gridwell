@@ -1,20 +1,15 @@
 # Contributing
 
-When contributing to this repository, please follow the following process
+1. Open an issue for a bug or a feature first, unless the change is small. A bug report has a reproduction, the
+   expected result and the actual result.
+2. Create a branch from `master`, and make one change per pull request.
+3. For a bug fix, add a test that fails before the fix. Run `npm run format`, `npm run lint`, `npm run typecheck` and
+   `npm test` before you push. CI runs them on Node 22 and 24.
+4. Add each breaking change to [UPGRADING.md](UPGRADING.md).
+5. Describe in the pull request the problem, a reproduction, the fix, the breaking changes and the tests.
 
-## Pull Request Process
-
-1. Create a fork of this repo
-2. Create a branch named according to what you are developing (new-feature, fix-issue)
-3. Make your changes
-4. Create a Pull Request (PR) against origin:dev branch (origin:master)
-5. Comment your PR explaining your changes, if it resolves an issue or adds a feature, also modify documentation accordingly if necessary.
-6. Wait for yout PR to be reviewed and approved
-
-## Steps to run the project locally after forking the repository.
-
-Open [http://localhost:8000](http://localhost:8000/) in your browser, or check the devServer settings in webpack.config.js if the port is different.
-Alternatively, you can change the port in the webpack.config.js file.
+[AGENTS.md](AGENTS.md) describes the code, the commands and the conventions. `npm start` serves a page with a grid on
+[http://localhost:8000](http://localhost:8000/).
 
 # Code of Conduct
 
