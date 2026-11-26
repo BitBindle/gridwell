@@ -1079,12 +1079,19 @@ export class Worksheet {
 
         libraryBase.jspreadsheet.current = this;
 
+        // A load of the worksheet that starts before the data of this build arrives replaces this build
+        const generation = this.generation;
+        const replaced = () => this.generation !== generation;
+
         const promises = [];
 
         // Load the table data based on an CSV file
         if (this.options.csv) {
             promises.push(
                 request(this, this.options.csv, 'text').then((response) => {
+                    if (replaced()) {
+                        return;
+                    }
                     if (response) {
                         // Convert data
                         const newData = parseCSV(response.result as string, this.options.csvDelimiter);
@@ -1119,6 +1126,9 @@ export class Worksheet {
         } else if (this.options.url) {
             promises.push(
                 request(this, this.options.url, 'json').then((response) => {
+                    if (replaced()) {
+                        return;
+                    }
                     if (response) {
                         // The data, or an object with the data in its data property. setData changes rows of objects to arrays.
                         this.options.data = (response.result as { data?: jspreadsheet.CellValue[][] }).data || (response.result as jspreadsheet.CellValue[][]);
@@ -1133,6 +1143,9 @@ export class Worksheet {
         }
 
         await Promise.all(promises);
+        if (replaced()) {
+            return;
+        }
 
         if (typeof spreadsheet.plugins === 'object') {
             for (const plugin of Object.values(spreadsheet.plugins)) {

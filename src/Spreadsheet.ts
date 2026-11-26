@@ -224,47 +224,83 @@ export class Spreadsheet {
             return undefined;
         }
 
-        if (worksheet.editor.isOpen()) {
+        if (worksheet.editor?.isOpen()) {
             worksheet.editor.close(worksheet.editor.cell, false);
         }
+        // An open filter and the context menu belong to the old table, so they close without their events
+        for (const dropdown of worksheet.element.querySelectorAll<HTMLElement & { dropdown?: { close: (ignoreEvents?: boolean) => void } }>('.jdropdown')) {
+            dropdown.dropdown?.close(true);
+        }
+        this.contextMenu.contextmenu?.close();
+
+        const oldName = worksheet.options.worksheetName!;
         const name = options.worksheetName;
-        if (typeof name !== 'string' || !name.trim() || this.worksheets.some((other) => other !== worksheet && other.options.worksheetName === name)) {
-            options.worksheetName = worksheet.options.worksheetName;
-        } else if (name !== worksheet.options.worksheetName) {
+        const renamed =
+            typeof name === 'string' &&
+            !!name.trim() &&
+            name !== oldName &&
+            !this.worksheets.some((other) => other !== worksheet && other.options.worksheetName === name);
+        if (renamed) {
             this.element.tabs!.rename(position, name);
+        } else {
+            options.worksheetName = oldName;
+        }
+        // The options of the first build give the styles of the cells with a getter, which the reset would empty
+        if (options === worksheet.options && worksheet.records) {
+            Object.defineProperty(options, 'style', { value: worksheet.getStyle(), writable: true, enumerable: true, configurable: true });
         }
 
         // The size observer of the frozen rows holds the old rows
-        worksheet.rowManager.stopFreeze();
+        worksheet.rowManager?.stopFreeze();
 
         const element = worksheet.element;
         const focused = element.contains(document.activeElement);
-        const ignore = worksheet.history.ignore;
+        const ignore = worksheet.history?.ignore;
         const current = libraryBase.jspreadsheet.current;
         const index = this.config.worksheets.indexOf(worksheet.options);
         if (index >= 0) {
             this.config.worksheets[index] = options;
         }
 
-        // The state of the old table goes, and the methods stay on the class
+        // The state of the old table goes, and the methods stay on the class. The number of the load stays, so that a load
+        // that has not ended can see that a later load replaced it.
+        const generation = (worksheet.generation ?? 0) + 1;
         for (const key of Object.keys(worksheet) as (keyof Worksheet)[]) {
             if (key !== 'parent' && key !== 'element') {
                 delete worksheet[key];
             }
         }
         element.innerHTML = '';
+        element.classList.remove('with-toolbar');
+        worksheet.generation = generation;
         worksheet.setup(options);
-        worksheet.history.ignore = ignore;
+        worksheet.history.ignore = ignore === true;
 
-        await worksheet.build();
-
-        // build makes the worksheet the active worksheet
+        // build makes the worksheet the active worksheet. While the data of a url or a csv file loads, the worksheet has
+        // no table, so the active worksheet stays.
+        const building = worksheet.build();
         libraryBase.jspreadsheet.current = current;
+        await building;
+        if (worksheet.generation !== generation) {
+            return worksheet;
+        }
+        libraryBase.jspreadsheet.current = current;
+
         if (focused) {
-            (element.querySelector('td[tabindex="0"]') as HTMLElement | null)?.focus({ preventScroll: true });
+            // The tab stop becomes the selection, so that the keys move it
+            const td = element.querySelector<HTMLTableCellElement>('td[tabindex="0"]');
+            if (td) {
+                const x = Number(td.getAttribute('data-x'));
+                const y = Number(td.getAttribute('data-y'));
+                worksheet.updateSelectionFromCoords(x, y, x, y);
+                td.focus({ preventScroll: true });
+            }
         }
         if (this.worksheets[this.getWorksheetActive()] === worksheet) {
             this.toolbarManager.update(worksheet);
+        }
+        if (renamed) {
+            worksheet.dispatch('onrenameworksheet', worksheet, this.worksheets.indexOf(worksheet), name, oldName);
         }
 
         return worksheet;
