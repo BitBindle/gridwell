@@ -113,29 +113,33 @@ describe('Toolbar', () => {
             worksheet.updateSelectionFromCoords(0, 0, 1, 1);
 
             choose(1, 3);
+            // The cells are centered already: choosing center keeps them centered, and changes nothing
             choose(2, 1);
             getIconItem('format_bold').click();
             choose(3, 0);
 
-            // The toolbar gives the values with a space after the colon. A browser trims it, but jsdom drops a font size
-            // that starts with a space and keeps the space of the others, so the test reads the styles from the events.
+            // The toolbar gives the values with a space after the colon, and setStyle trims them (issue #67)
             expect(changes.map((change) => Object.keys(change).sort())).to.eql([
-                ['A1', 'A2', 'B1', 'B2'],
                 ['A1', 'A2', 'B1', 'B2'],
                 ['A1', 'A2', 'B1', 'B2'],
                 ['A1', 'A2', 'B1', 'B2'],
             ]);
             ['A1', 'B1', 'A2', 'B2'].forEach((cellName) => {
-                expect(changes[0][cellName], cellName).to.equal('font-size: large');
-                expect(changes[1][cellName], cellName).to.equal('text-align: center');
-                expect(changes[2][cellName], cellName).to.equal('font-weight:bold');
-                expect(changes[3][cellName], cellName).to.equal('vertical-align: top');
+                expect(changes[0][cellName], cellName).to.equal('font-size:large');
+                expect(changes[1][cellName], cellName).to.equal('font-weight:bold');
+                expect(changes[2][cellName], cellName).to.equal('vertical-align:top');
 
                 const style = getStyle(worksheet, cellName);
-                expect(style, cellName).to.match(/text-align: +center/);
+                expect(style, cellName).to.contain('font-size: large');
+                expect(style, cellName).to.contain('text-align: center');
                 expect(style, cellName).to.contain('font-weight: bold');
-                expect(style, cellName).to.match(/vertical-align: +top/);
+                expect(style, cellName).to.contain('vertical-align: top');
             });
+
+            // Bold toggles off
+            getIconItem('format_bold').click();
+            expect(getStyle(worksheet, 'A1')).not.to.contain('font-weight');
+
             // The other cells keep the alignment of their column
             expect(getStyle(worksheet, 'C3')).to.equal('text-align: center;');
         });
@@ -307,7 +311,7 @@ describe('Toolbar', () => {
             instance[0].updateSelectionFromCoords(0, 0, 1, 0);
             root.querySelector('.jss_toolbar .jpicker').querySelectorAll('.jpicker-item')[1].click();
 
-            expect(changes).to.eql([{ A1: 'text-align: right', B1: 'text-align: right' }]);
+            expect(changes).to.eql([{ A1: 'text-align:right', B1: 'text-align:right' }]);
         });
     });
 });
