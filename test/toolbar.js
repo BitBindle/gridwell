@@ -373,6 +373,97 @@ describe('Toolbar', () => {
             expect(instance[0].getCell('A1').style.fontFamily.trim()).to.equal('Verdana');
         });
 
+        it('is one tab stop, and the arrows, Home and End move between its items (issue #125)', async () => {
+            await createWithToolbar();
+
+            const toolbar = root.querySelector('.jss_toolbar');
+            expect(toolbar.getAttribute('role')).to.equal('toolbar');
+            expect(toolbar.getAttribute('aria-label')).to.equal('Toolbar');
+
+            const items = Array.from(toolbar.querySelectorAll('.jtoolbar-item[role="button"], .jtoolbar-item.jpicker'));
+            // Undo, redo, save, the font, the size, the alignment, bold, the two colors, the vertical alignment, merge, the borders and fullscreen
+            expect(items.length).to.equal(13);
+            expect(items.map((item) => item.getAttribute('tabindex'))).to.eql(['0', ...Array(12).fill('-1')]);
+
+            items[0].focus();
+            expect(key(items[0], 'ArrowRight', 39).defaultPrevented).to.equal(true);
+            expect(document.activeElement).to.equal(items[1]);
+            expect(items[0].getAttribute('tabindex')).to.equal('-1');
+            expect(items[1].getAttribute('tabindex')).to.equal('0');
+
+            key(items[1], 'End', 35);
+            expect(document.activeElement).to.equal(items[12]);
+            key(items[12], 'ArrowRight', 39);
+            expect(document.activeElement).to.equal(items[0]);
+            key(items[0], 'ArrowLeft', 37);
+            expect(document.activeElement).to.equal(items[12]);
+            key(items[12], 'Home', 36);
+            expect(document.activeElement).to.equal(items[0]);
+
+            // The arrows move past a closed picker, and stay in an open one
+            const picker = toolbar.querySelector('.jpicker');
+            picker.focus();
+            key(picker, 'ArrowRight', 39);
+            expect(document.activeElement).to.not.equal(picker);
+            picker.focus();
+            key(picker, 'Enter', 13);
+            key(picker, 'ArrowRight', 39);
+            expect(document.activeElement).to.equal(picker);
+            key(picker, 'Escape', 27);
+        });
+
+        it('presses a button with Enter and Space (issue #125)', async () => {
+            const instance = await createWithToolbar();
+            const worksheet = instance[0];
+            worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+
+            const bold = root.querySelector('.jss_toolbar [aria-label="Bold"]');
+            bold.focus();
+            expect(key(bold, 'Enter', 13).defaultPrevented).to.equal(true);
+            expect(worksheet.getCell('A1').style.fontWeight).to.equal('bold');
+
+            key(bold, ' ', 32);
+            expect(worksheet.getCell('A1').style.fontWeight).to.equal('');
+
+            // Undo is a button too
+            const undo = root.querySelector('.jss_toolbar [aria-label="Undo"]');
+            key(undo, 'Enter', 13);
+            expect(worksheet.getCell('A1').style.fontWeight).to.equal('bold');
+        });
+
+        it('names its items, and says which are disabled (issue #125)', async () => {
+            const instance = await createWithToolbar();
+
+            const names = Array.from(root.querySelectorAll('.jss_toolbar .jtoolbar-item[role="button"], .jss_toolbar .jtoolbar-item.jpicker')).map((item) =>
+                item.getAttribute('aria-label')
+            );
+            expect(names).to.eql([
+                'Undo',
+                'Redo',
+                'Save',
+                'Font',
+                'Font size',
+                'Text alignment',
+                'Bold',
+                'Text color',
+                'Background color',
+                'Vertical alignment',
+                'Merge the selected cells',
+                'Borders',
+                'Toggle Fullscreen',
+            ]);
+
+            instance[0].options.editable = false;
+            instance[0].parent.toolbarManager.update(instance[0]);
+            const bold = root.querySelector('.jss_toolbar [aria-label="Bold"]');
+            expect(bold.getAttribute('aria-disabled')).to.equal('true');
+
+            // A disabled button does nothing
+            instance[0].updateSelectionFromCoords(0, 0, 0, 0);
+            key(bold, 'Enter', 13);
+            expect(instance[0].getCell('A1').style.fontWeight).to.equal('');
+        });
+
         it('tells in aria-expanded that a press opened a picker', async () => {
             await createWithToolbar();
 

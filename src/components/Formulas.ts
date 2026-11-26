@@ -7,6 +7,14 @@ import type { HistoryCellChange, MergeInfo, Worksheet } from '../types/internal'
 let chainLoopProtection: Record<string, boolean> = {};
 
 /**
+ * Escapes the characters of a text that have a meaning in a regular expression.
+ * @param text - The text.
+ */
+function escapeRegExp(text: string) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
  * Writes a text as a JavaScript string literal for the formula plugin. The plugin searches the value of each variable for
  * ranges, such as A:B in "Ratio A:B", so a colon is written as an escape, which gives the same text.
  * @param text - The text.
@@ -64,7 +72,12 @@ export class Formulas {
     }
 
     /**
-     * Trying to extract a number from a string
+     * Reads a formatted number, such as "$ 1,234.50", "1 234,5 €" or "-5%", with the decimal point of its column. Symbols
+     * may come before and after the number, and its integer part may have thousands separators. Any other text, such as
+     * "Room 12b" or a date, is not a number.
+     * @param value - The value of a cell.
+     * @param columnNumber - The column whose options the cell uses.
+     * @returns The number, or null when the text is not a formatted number.
      */
     private parseNumber(value: unknown, columnNumber: number) {
         const worksheet = this.worksheet;
@@ -72,32 +85,20 @@ export class Formulas {
         // Decimal point. Column 0 has one too.
         const column = worksheet.options.columns[columnNumber];
         const decimal = column?.decimal ? column.decimal : '.';
+        const thousands = decimal === ',' ? '.' : ',';
 
-        // Parse both parts of the number
-        // Text, then its parts, then the digits of the integer part, then the digits as text
-        let number: string | (string | string[] | null)[] = `${value}`;
-        number = number.split(decimal);
-        number[0] = (number[0] as string).match(/[+-]?[0-9]/g);
-        if (number[0]) {
-            number[0] = (number[0] as string[]).join('');
-        }
-        if (number[1]) {
-            // The pattern also matches an empty text, so there is a match
-            number[1] = (number[1] as string).match(/[0-9]*/g)!.join('');
+        // Symbols, such as a sign, a currency or a percent sign, then the integer part, then the decimal part, then symbols
+        const symbols = '[^\\p{L}\\p{N}\\s]*';
+        const pattern = new RegExp(`^(${symbols})\\s*(\\d[\\d\\s'${escapeRegExp(thousands)}]*?)(?:${escapeRegExp(decimal)}(\\d*))?\\s*${symbols}$`, 'u');
+        const parts = pattern.exec(`${value}`.trim());
+
+        if (!parts) {
+            return null;
         }
 
-        // Is a valid number
-        if (number[0] && Number.isInteger(Number(number[0]))) {
-            if (!number[1]) {
-                value = Number(`${number[0]}.00`);
-            } else {
-                value = Number(`${number[0]}.${number[1]}`);
-            }
-        } else {
-            value = null;
-        }
+        const sign = parts[1].includes('-') ? '-' : '';
 
-        return value;
+        return Number(`${sign}${parts[2].replace(/\D/g, '')}.${parts[3] || '0'}`);
     }
 
     /**
@@ -213,7 +214,7 @@ export class Formulas {
                                     // Trying any formatted number
                                     // The decimal point of the column whose options the cell uses
                                     const number = worksheet.formulas.parseNumber(value, worksheet.cells.getColumnIndex(position[0], position[1]));
-                                    if (worksheet.parent.config.autoCasting !== false && number) {
+                                    if (worksheet.parent.config.autoCasting !== false && number !== null) {
                                         formulaExpressions[reference] = number;
                                     } else {
                                         // Text as a string literal, with its quotes and backslashes escaped

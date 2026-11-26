@@ -549,6 +549,42 @@ describe('Calculations', () => {
     });
 });
 
+describe('A referenced text in a formula (issue #129)', () => {
+    const calculate = (text, column = {}) => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: [[text, '=A1']], columns: [column, {}] }] })[0];
+        return worksheet.getValue('B1', true);
+    };
+
+    it('stays a text when it has letters or digits in other places', () => {
+        expect(calculate('Room 12b')).to.equal('Room 12b');
+        expect(calculate('A1-B2')).to.equal('A1-B2');
+        expect(calculate('01/02/2024')).to.equal('01/02/2024');
+        expect(calculate('2024-01-05')).to.equal('2024-01-05');
+        expect(calculate('1.2.3')).to.equal('1.2.3');
+    });
+
+    it('is a number when it is a formatted number', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['$ 1,234.50', '=A1*2'],
+                        ['-$5', '=A2*2'],
+                        ['50%', '=A3*2'],
+                        ['$ 0', '=A4+1'],
+                    ],
+                },
+            ],
+        })[0];
+
+        expect(worksheet.getValue('B1', true)).to.equal('2469');
+        expect(worksheet.getValue('B2', true)).to.equal('-10');
+        expect(worksheet.getValue('B3', true)).to.equal('100');
+        expect(worksheet.getValue('B4', true)).to.equal('1');
+        expect(calculate('1 234,5 €', { decimal: ',' })).to.equal('1234.5');
+    });
+});
+
 describe('The formula chain of a worksheet', () => {
     const create = (data) => jspreadsheet(root, { worksheets: [{ data }] })[0];
 
