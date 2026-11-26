@@ -6,7 +6,7 @@
 // The element that mocha.config.js adds to the document for each test. It is emptied after each test.
 declare var root: HTMLDivElement;
 
-// The global object of Node, where jsdom-global puts window, document and the other browser globals
+// The global object of Node, where mocha.config.js puts window, document and the other browser globals
 declare var global: typeof globalThis;
 
 declare function require(id: string): unknown;

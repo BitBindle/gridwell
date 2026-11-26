@@ -48,8 +48,6 @@ export class Data {
         }
 
         // Adjust minimal dimensions
-        let j = 0;
-        let i = 0;
         const size_i = worksheet.options.columns?.length || 0;
         const size_j = worksheet.options.data.length;
         const min_i = worksheet.options.minDimensions[0];
@@ -57,8 +55,8 @@ export class Data {
         const max_i = min_i > size_i ? min_i : size_i;
         const max_j = min_j > size_j ? min_j : size_j;
 
-        for (j = 0; j < max_j; j++) {
-            for (i = 0; i < max_i; i++) {
+        for (let j = 0; j < max_j; j++) {
+            for (let i = 0; i < max_i; i++) {
                 if (worksheet.options.data[j] == null) {
                     worksheet.options.data[j] = [];
                 }
@@ -109,7 +107,7 @@ export class Data {
         }
 
         // Append nodes to the HTML
-        for (j = 0; j < worksheet.options.data.length; j++) {
+        for (let j = 0; j < worksheet.options.data.length; j++) {
             // Create row
             const row = worksheet.rowManager.create(j, worksheet.options.data[j]);
             // Append line to the table
@@ -326,7 +324,6 @@ export class Data {
 
         // Control vars
         const dataset: CellValue[][] = [];
-        let px = 0;
         let py = 0;
 
         // Column and row length
@@ -339,7 +336,7 @@ export class Data {
 
         // Go through the columns to get the data
         for (let j = 0; j < y; j++) {
-            px = 0;
+            let px = 0;
             for (let i = 0; i < x; i++) {
                 // Cell selected or fullset
                 if (!highlighted || worksheet.records[j][i].element.classList.contains('highlight')) {

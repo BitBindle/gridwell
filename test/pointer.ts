@@ -22,7 +22,7 @@ describe('Mouse gestures', () => {
 
     const rect = (element: HTMLElement, width: number, height: number) => {
         // Only the sizes that the library reads
-        element.getBoundingClientRect = () => ({ left: 0, top: 0, right: width, bottom: height, width, height } as DOMRect);
+        element.getBoundingClientRect = () => ({ left: 0, top: 0, right: width, bottom: height, width, height }) as DOMRect;
         Object.defineProperty(element, 'clientWidth', { configurable: true, value: width });
         Object.defineProperty(element, 'clientHeight', { configurable: true, value: height });
     };

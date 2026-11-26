@@ -184,8 +184,6 @@ export class Clipboard {
         const worksheet = this.worksheet;
 
         const header = [];
-        let col = [];
-        let colLabel = [];
         const row = [];
         const rowLabel = [];
         const x = worksheet.options.data[0].length;
@@ -198,8 +196,8 @@ export class Clipboard {
 
         // Go through the columns to get the data
         for (let j = 0; j < y; j++) {
-            col = [];
-            colLabel = [];
+            const col = [];
+            const colLabel = [];
 
             for (let i = 0; i < x; i++) {
                 // If cell is highlighted
@@ -373,7 +371,7 @@ export class Clipboard {
         const worksheet = this.worksheet;
 
         // Records
-        let i = 0;
+        let i;
         let j = 0;
         const records = [];
         const newStyle: Record<string, string> = {};
@@ -383,7 +381,7 @@ export class Clipboard {
         // Index
         let colIndex = parseInt(x);
         let rowIndex = parseInt(y);
-        let row = null;
+        let row;
 
         while ((row = rows[j])) {
             i = 0;

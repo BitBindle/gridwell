@@ -639,18 +639,7 @@ declare namespace jspreadsheet {
     };
 
     type ContextMenuRole =
-        | 'select-all'
-        | 'fill-handle'
-        | 'row'
-        | 'nested'
-        | 'tabs'
-        | 'toolbar'
-        | 'pagination'
-        | 'cell'
-        | 'grid'
-        | 'footer'
-        | 'header'
-        | 'applications';
+        'select-all' | 'fill-handle' | 'row' | 'nested' | 'tabs' | 'toolbar' | 'pagination' | 'cell' | 'grid' | 'footer' | 'header' | 'applications';
 
     interface SpreadsheetOptions {
         /**

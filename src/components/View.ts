@@ -429,7 +429,7 @@ export class View {
     updateResult() {
         const worksheet = this.worksheet;
 
-        let total = 0;
+        let total;
         let index = 0;
 
         // Page 1
@@ -697,12 +697,11 @@ export class View {
             pageNumber = Math.ceil(results.length / quantityPerPage) - 1;
         }
 
-        let startRow = pageNumber * quantityPerPage;
         let finalRow = pageNumber * quantityPerPage + quantityPerPage;
         if (finalRow > results.length) {
             finalRow = results.length;
         }
-        startRow = finalRow - 100;
+        let startRow = finalRow - 100;
         if (startRow < 0) {
             startRow = 0;
         }
