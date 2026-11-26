@@ -858,4 +858,24 @@ describe('Ids', () => {
         expect(ids.filter((id, index) => ids.indexOf(id) !== index)).to.eql([]);
         expect(root.querySelectorAll('.jss_textarea').length).to.equal(2);
     });
+
+    it('gives the tabs of two spreadsheets different ids', async () => {
+        const other = document.createElement('div');
+        document.body.appendChild(other);
+
+        try {
+            jspreadsheet(root, { tabs: true, worksheets: [{}, {}] });
+            jspreadsheet(other, { tabs: true, worksheets: [{}, {}] });
+            await new Promise((resolve) => setTimeout(resolve));
+
+            const ids = Array.from(document.querySelectorAll('[role=tab], [role=tabpanel]')).map((element) => element.id);
+
+            expect(ids.length).to.equal(8);
+            expect(new Set(ids).size).to.equal(8);
+            expect(ids.every((id) => id !== '')).to.equal(true);
+        } finally {
+            jspreadsheet.destroy(other as Jspreadsheet.JspreadsheetInstanceElement);
+            other.remove();
+        }
+    });
 });
