@@ -194,25 +194,37 @@ cast where it relied on `any`:
 | The data of `onsave`                            | `any`                             | `unknown`: the rows, or what `onbeforesave` returned    |
 | `executeFormula()`                              | `any`                             | `unknown`                                               |
 | `dispatch()`                                    | any event name, returns any       | the events of `SpreadsheetOptions` with their arguments |
-| `onevent` of the options and of plugins         | `(event: string, ...rest: any[])` | `(...args: EventArguments)`                             |
+| `onevent` of the options and of plugins         | `(event: string, ...rest: any[])` | `EventListener`: one signature for each event           |
 | The first argument of a context menu `onclick`  | `any`                             | `HTMLDivElement`, the element of the item               |
 | The toolbar and picker instances of the toolbar | `Record<string, any>`             | `ToolbarInstance` and `PickerInstance`                  |
 | The other properties of a toolbar item          | `any`                             | `unknown`                                               |
 | Other properties of `jspreadsheet`              | `any`                             | not declared                                            |
 
-- **onevent.** `EventArguments` is the name of an event, then the arguments of its handler. A test of `args[0]`
-  narrows the other arguments:
+- **onevent.** `EventListener` has one signature for each event: the name of the event, then the arguments of its
+  handler. A handler can name fewer parameters than an event gives (#133). The parameters have the types of all the
+  events together: `event` is an `EventName`, and the second parameter is a `WorksheetInstance` or, for events such as
+  `onbeforesave`, the `SpreadsheetInstance`:
 
     ```ts
-    onevent: function (...args) {
+    onevent: function (event, instance) {
+        console.log(event, instance);
+    },
+    ```
+
+    A parameter that the shortest events do not give, such as the third, must be optional:
+    `(event, instance, cell?) => …`. To narrow the arguments with a test of the name, take them as `EventArguments`:
+
+    ```ts
+    onevent: function (...args: jspreadsheet.EventArguments) {
         if (args[0] === 'onchange') {
-            const worksheet = args[1]; // WorksheetInstance
+            const [, worksheet, cell, x, y, value] = args; // WorksheetInstance, HTMLTableCellElement, number, …
         }
     },
     ```
 
-    A handler declared as `(event: string, ...rest: unknown[])` still fits. A handler that declares a worksheet as its
-    second parameter no longer fits, because some events, such as `onbeforesave`, give the spreadsheet there.
+    Without the type, `(...args) => …` gets no narrowing. A handler declared as `(event: string, ...rest: unknown[])`
+    still fits. A handler that declares a worksheet as its second parameter does not fit, because some events give the
+    spreadsheet there.
 
 - **dispatch.** It takes the name of an event of `SpreadsheetOptions` and the arguments of its handler. To dispatch an
   event of your own, cast the name, for example `worksheet.dispatch('oncustom' as jspreadsheet.EventName, worksheet)`.
