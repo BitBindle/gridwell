@@ -496,9 +496,13 @@ export class Clipboard {
         } else if (typeof ret === 'string') {
             // The text to paste instead
             rows = parseCSV(ret, '\t');
-        } else if (ret && ret !== true) {
-            // Rows of values to paste instead, which the typings do not declare
-            rows = ret;
+        } else if (Array.isArray(ret)) {
+            // The rows to paste instead, of { value } objects as the event got them, or of values
+            rows = ret.map((row) => {
+                return row.map((item) => {
+                    return item !== null && typeof item === 'object' ? item.value : item;
+                });
+            });
         }
 
         if (x != null && y != null && rows) {

@@ -826,9 +826,10 @@ declare namespace jspreadsheet {
          *
          * If it returns false, the jss cancels the paste.
          * If it returns a string, it will be the content pasted into the worksheet.
+         * If it returns rows, of `{ value }` objects as it got them or of values, they are pasted instead.
          *
          * @param instance - Instance of the worksheet where data will be pasted.
-         * @param copiedText - Text being pasted to the spreadsheet.
+         * @param copiedText - The rows of the pasted cells.
          * @param colIndex - Column index where it will start the paste.
          * @param rowIndex - Row index where it will start the paste.
          */
@@ -837,7 +838,7 @@ declare namespace jspreadsheet {
             copiedText: { value: CellValue }[][],
             colIndex: number | string,
             rowIndex: number | string
-        ) => undefined | boolean | string;
+        ) => undefined | boolean | string | ({ value: CellValue } | CellValue)[][];
 
         /**
          * Occurs before persisting any changes to the server.

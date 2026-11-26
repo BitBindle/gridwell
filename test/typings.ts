@@ -111,6 +111,14 @@ type Handler<E extends keyof jspreadsheet.SpreadsheetOptions> = Parameters<Extra
 // onpaste gets one item for each pasted cell
 assertType<Equals<Handler<'onpaste'>[1], { x: number; y: number; value: jspreadsheet.CellValue }[]>>();
 
+// onbeforepaste can return the rows to paste, of { value } objects as it got them or of values
+assertType<
+    Equals<
+        ReturnType<Extract<jspreadsheet.SpreadsheetOptions['onbeforepaste'], (...args: never[]) => unknown>>,
+        undefined | boolean | string | ({ value: jspreadsheet.CellValue } | jspreadsheet.CellValue)[][]
+    >
+>();
+
 // oneditionend gets undefined as the value when the edit was not saved
 assertType<Equals<Handler<'oneditionend'>[4], jspreadsheet.CellValue | undefined>>();
 
