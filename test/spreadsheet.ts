@@ -195,14 +195,12 @@ describe('Spreadsheet methods', () => {
         // @ts-expect-error -- the test checks that the spreadsheet has no option of a worksheet
         expect(spreadsheet.config.columnSorting).to.equal(undefined);
 
-        // TYPING: setConfig takes only the options to change, but its config is typed SpreadsheetOptions, which needs worksheets
-        worksheet.setConfig({ tabs: true } as Jspreadsheet.SpreadsheetOptions, true);
+        worksheet.setConfig({ tabs: true }, true);
         expect(spreadsheet.config.tabs).to.equal(true);
         // @ts-expect-error -- the test checks that the worksheet has no option of the spreadsheet
         expect(worksheet.options.tabs).to.equal(undefined);
 
-        // TYPING: as above
-        spreadsheet.setConfig({ toolbar: true } as Jspreadsheet.SpreadsheetOptions);
+        spreadsheet.setConfig({ toolbar: true });
         expect(spreadsheet.config.toolbar).to.equal(true);
         expect(spreadsheet.toolbar.style.display).to.equal('');
     });

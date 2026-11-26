@@ -217,6 +217,13 @@ cast where it relied on `any`:
 -   **dispatch.** It takes the name of an event of `SpreadsheetOptions` and the arguments of its handler. To dispatch an
     event of your own, cast the name, for example `worksheet.dispatch('oncustom' as jspreadsheet.EventName, worksheet)`.
 
+## setConfig takes the options to change
+
+The typings of `setConfig` take only the options to change. On a worksheet they are the options of a worksheet, or with
+`spreadsheetLevel` set to `true` the options of the spreadsheet. A TypeScript call that gives a worksheet an option of
+the spreadsheet without `spreadsheetLevel` no longer compiles, because the worksheet would keep the option without using
+it.
+
 ## The boolean options must be booleans
 
 The library compares the boolean options with `true` and `false` strictly (`===`). Version 5 compared them loosely, so `1`

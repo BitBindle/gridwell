@@ -297,3 +297,10 @@ const columns: jspreadsheet.Column[] = [
     { type: 'numeric', locale: 'en-US', options: { style: 'currency', currency: 'USD' }, allowEmpty: true },
     { type: 'dropdown', source: ['a'], filter: (element, cell, x, y, source) => source ?? [] },
 ];
+
+// setConfig takes the options to change: of the worksheet, or of the spreadsheet with spreadsheetLevel
+worksheet.setConfig({ columnSorting: false });
+worksheet.setConfig({ tabs: true }, true);
+// @ts-expect-error -- tabs is an option of the spreadsheet
+worksheet.setConfig({ tabs: true });
+worksheet.parent.setConfig({ toolbar: true });

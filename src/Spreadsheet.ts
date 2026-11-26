@@ -326,7 +326,7 @@ export class Spreadsheet {
      * Change options of the spreadsheet.
      * @param config - The options to change.
      */
-    setConfig(config: jspreadsheet.SpreadsheetOptions | jspreadsheet.WorksheetOptions) {
+    setConfig(config: Partial<jspreadsheet.SpreadsheetOptions> | Partial<jspreadsheet.WorksheetOptions>) {
         for (const [key, value] of Object.entries(config)) {
             // The options are set by name, and SpreadsheetOptions has no index signature
             (this.config as unknown as Record<string, unknown>)[key] = value;

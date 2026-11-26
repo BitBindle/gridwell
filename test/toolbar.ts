@@ -262,12 +262,10 @@ describe('Toolbar', () => {
             const instance = await createWithToolbar();
             const spreadsheet = instance[0].parent;
 
-            // TYPING: setConfig takes only the options to change, but its config is typed SpreadsheetOptions, which needs worksheets
-            spreadsheet.setConfig({ toolbar: false } as Jspreadsheet.SpreadsheetOptions);
+            spreadsheet.setConfig({ toolbar: false });
             expect(root.querySelector('.jss_toolbar')).to.equal(null);
 
-            // TYPING: as above
-            spreadsheet.setConfig({ toolbar: true } as Jspreadsheet.SpreadsheetOptions);
+            spreadsheet.setConfig({ toolbar: true });
             expect(root.querySelector('.jss_toolbar')).to.equal(spreadsheet.toolbar);
         });
 

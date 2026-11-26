@@ -171,7 +171,9 @@ export class Worksheet {
      * @param config - The options to change.
      * @param spreadsheetLevel - Change the options of the spreadsheet of the worksheet.
      */
-    setConfig(config: jspreadsheet.SpreadsheetOptions | jspreadsheet.WorksheetOptions, spreadsheetLevel?: boolean) {
+    setConfig(config: Partial<jspreadsheet.WorksheetOptions>, spreadsheetLevel?: false): void;
+    setConfig(config: Partial<jspreadsheet.SpreadsheetOptions>, spreadsheetLevel: true): void;
+    setConfig(config: Partial<jspreadsheet.SpreadsheetOptions> | Partial<jspreadsheet.WorksheetOptions>, spreadsheetLevel?: boolean) {
         if (spreadsheetLevel) {
             this.parent.setConfig(config);
             return;

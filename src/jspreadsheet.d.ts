@@ -1809,9 +1809,9 @@ declare namespace jspreadsheet {
 
         /**
          * Change the spreadsheet settings.
-         * @param config - New settings.
+         * @param config - The settings to change.
          */
-        setConfig: (config: SpreadsheetOptions) => void;
+        setConfig: (config: Partial<SpreadsheetOptions>) => void;
 
         /**
          * Add new plugins to the spreadsheet.
@@ -2418,11 +2418,18 @@ declare namespace jspreadsheet {
         setComments(cellId: Record<string, string | null | undefined>): void;
 
         /**
-         * Change the worksheet or spreadsheet settings.
-         * @param config - New settings.
-         * @param spreadsheetLevel - If true, the settings are applied to the spreadsheet. If not, they are applied to the worksheet.
+         * Change the worksheet settings.
+         * @param config - The settings of the worksheet to change.
+         * @param spreadsheetLevel - False or missing: the settings are applied to the worksheet.
          */
-        setConfig: (config: SpreadsheetOptions, spreadsheetLevel?: boolean) => void;
+        setConfig(config: Partial<WorksheetOptions>, spreadsheetLevel?: false): void;
+
+        /**
+         * Change the spreadsheet settings.
+         * @param config - The settings of the spreadsheet to change.
+         * @param spreadsheetLevel - True: the settings are applied to the spreadsheet.
+         */
+        setConfig(config: Partial<SpreadsheetOptions>, spreadsheetLevel: true): void;
 
         /**
          * Set data.
