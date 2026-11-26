@@ -104,7 +104,7 @@ describe('Positions after an insert, a move or a delete', () => {
             change(worksheet);
 
             const names = Object.keys(expected);
-            expect(worksheet.getMerge(), JSON.stringify(mergeCells)).to.deep.equal(expected);
+            expect(worksheet.getMerge(), JSON.stringify(mergeCells)).to.eql(expected);
             // An inserted column moves the formula, but its reference stays
             expect(worksheet.getRowData(0), JSON.stringify(mergeCells)).to.include('=A2');
 

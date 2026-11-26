@@ -2,6 +2,7 @@ import { translate } from '../utils/dictionary.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
+import { askConfirm } from '../utils/dialogs.js';
 
 /**
  * The rows of a worksheet: it creates, inserts, moves, deletes, hides and shows them, gets and sets their heights and
@@ -12,8 +13,174 @@ import type { Worksheet } from '../types/internal';
 export class Rows {
     readonly worksheet: Worksheet;
 
+    /** The elements of the frozen rows, in their order. */
+    private frozen: HTMLTableRowElement[] = [];
+
+    /** Places the frozen rows again when the header row or a frozen row changes its height. */
+    private freezeObserver: ResizeObserver | null = null;
+
+    /** True while a placement of the frozen rows waits for the end of the current task. */
+    private placing = false;
+
     constructor(worksheet: Worksheet) {
         this.worksheet = worksheet;
+    }
+
+    /**
+     * The number of frozen rows: the freezeRows option, but not more than the rows of the worksheet. With lazy loading,
+     * at most 40 rows freeze: a load starts 30 rows from the edge of a page of 100 rows and removes 31 rows, so the page
+     * needs 60 rows that scroll.
+     */
+    getFreezeCount() {
+        const worksheet = this.worksheet;
+        const max = worksheet.options.lazyLoading === true ? Math.min(40, worksheet.rows.length) : worksheet.rows.length;
+        return Math.max(0, Math.min(Math.floor(worksheet.options.freezeRows || 0), max));
+    }
+
+    /**
+     * The height that the sticky header covers at the top of the content. Each header row sticks at the top, so the
+     * header covers the height of its highest row.
+     */
+    getHeaderHeight() {
+        let height = 0;
+        for (const row of Array.from(this.worksheet.thead.children) as HTMLElement[]) {
+            height = Math.max(height, row.offsetHeight);
+        }
+        return height;
+    }
+
+    /**
+     * The height of the frozen rows that show.
+     */
+    getFreezeHeight() {
+        let height = 0;
+        for (const row of this.frozen) {
+            if (row.parentNode === this.worksheet.tbody) {
+                height += row.offsetHeight;
+            }
+        }
+        return height;
+    }
+
+    /**
+     * Make the first freezeRows rows stick below the header row. Each frozen row gets the class jss_frozen_row and its
+     * distance from the top of the content in the custom property --jss-frozen-top, so its cells keep their own style.
+     * Call it after the order or the number of the rows changes.
+     */
+    updateFreeze() {
+        const worksheet = this.worksheet;
+
+        const count = this.getFreezeCount();
+        // A worksheet without frozen rows does no work, also no layout
+        if (!count && !this.frozen.length) {
+            return;
+        }
+
+        const frozen: HTMLTableRowElement[] = [];
+        for (let j = 0; j < count; j++) {
+            frozen.push(worksheet.rows[j].element);
+        }
+        const changed = frozen.length !== this.frozen.length || frozen.some((row, j) => row !== this.frozen[j]);
+
+        // A row that is not in the first rows any more is not frozen
+        const left = this.frozen.filter((row) => !frozen.includes(row));
+        for (const row of left) {
+            row.classList.remove('jss_frozen_row', 'jss_frozen_last');
+            row.style.removeProperty('--jss-frozen-top');
+        }
+        for (const row of frozen) {
+            row.classList.add('jss_frozen_row');
+        }
+        this.frozen = frozen;
+
+        // A change can take a frozen row out of the rows that lazy loading attached, or put a row that left the frozen
+        // rows ahead of the rows that scroll
+        worksheet.view.attachFrozen(left);
+
+        if (changed) {
+            this.schedulePlace();
+            this.observeFrozen();
+        }
+    }
+
+    /**
+     * Give each frozen row its distance from the top of the content. The last frozen row that shows gets the class
+     * jss_frozen_last, which draws the line of the frozen pane.
+     */
+    placeFrozen() {
+        const tbody = this.worksheet.tbody;
+
+        // All reads come before the writes, so the browser computes the layout once
+        const header = this.getHeaderHeight();
+        const heights = this.frozen.map((row) => (row.style.display !== 'none' && row.parentNode === tbody ? row.offsetHeight : null));
+
+        let top = header;
+        let last: HTMLTableRowElement | null = null;
+        this.frozen.forEach((row, j) => {
+            const value = `${top}px`;
+            if (row.style.getPropertyValue('--jss-frozen-top') !== value) {
+                row.style.setProperty('--jss-frozen-top', value);
+            }
+            if (heights[j] !== null) {
+                top += heights[j]!;
+                last = row;
+            }
+        });
+        for (const row of this.frozen) {
+            if (row.classList.contains('jss_frozen_last') !== (row === last)) {
+                row.classList.toggle('jss_frozen_last', row === last);
+            }
+        }
+    }
+
+    /**
+     * Place the frozen rows at the end of the current task. The placement reads the layout, so many changes in one task,
+     * for example the inserts of a batch, need one layout, not one for each change.
+     */
+    private schedulePlace() {
+        if (this.placing) {
+            return;
+        }
+        this.placing = true;
+        queueMicrotask(() => {
+            this.placing = false;
+            this.placeFrozen();
+
+            // A cell of a frozen row and a frozen column sticks on both axes. The placement reads the scroll position.
+            if (this.worksheet.options.freezeColumns) {
+                this.worksheet.columns.updateFreezePosition();
+            }
+        });
+    }
+
+    /**
+     * Observe the size of the header row and of the frozen rows. A hidden worksheet has no layout, and the observer places
+     * the rows when the worksheet shows. The callback observes no new element, so it cannot run in a loop.
+     */
+    private observeFrozen() {
+        if (typeof ResizeObserver !== 'function') {
+            return;
+        }
+        if (!this.freezeObserver) {
+            this.freezeObserver = new ResizeObserver(() => {
+                this.placeFrozen();
+            });
+        }
+        this.freezeObserver.disconnect();
+        if (this.frozen.length) {
+            this.freezeObserver.observe(this.worksheet.thead);
+            for (const row of this.frozen) {
+                this.freezeObserver.observe(row);
+            }
+        }
+    }
+
+    /**
+     * Stop the size observer of the frozen rows, for example when the spreadsheet is destroyed.
+     */
+    stopFreeze() {
+        this.freezeObserver?.disconnect();
+        this.freezeObserver = null;
     }
 
     /**
@@ -209,7 +376,7 @@ export class Rows {
             // Merged cells
             if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
                 if (worksheet.merges.isRowMerged(rowNumber, insertBefore).length) {
-                    if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                    if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                         return false;
                     } else {
                         worksheet.destroyMerge();
@@ -220,7 +387,7 @@ export class Rows {
             // Clear any search
             if (worksheet.options.search === true) {
                 if (worksheet.view.results && worksheet.view.results.length !== worksheet.rows.length) {
-                    if (confirm(translate('This action will clear your search results. Are you sure?'))) {
+                    if (askConfirm(worksheet.parent.config, translate('This action will clear your search results. Are you sure?'))) {
                         worksheet.resetSearch();
                     } else {
                         return false;
@@ -299,7 +466,7 @@ export class Rows {
             }
 
             if (worksheet.merges.isRowMerged(o).length || worksheet.merges.isRowMerged(d, insertBefore).length) {
-                if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                     return false;
                 } else {
                     worksheet.destroyMerge();
@@ -309,7 +476,7 @@ export class Rows {
 
         if (worksheet.options.search === true) {
             if (worksheet.view.results && worksheet.view.results.length !== worksheet.rows.length) {
-                if (confirm(translate('This action will clear your search results. Are you sure?'))) {
+                if (askConfirm(worksheet.parent.config, translate('This action will clear your search results. Are you sure?'))) {
                     worksheet.resetSearch();
                 } else {
                     return false;
@@ -429,7 +596,7 @@ export class Rows {
                         }
                     }
                     if (mergeExists) {
-                        if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                        if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                             return false;
                         } else {
                             worksheet.destroyMerge();
@@ -439,7 +606,7 @@ export class Rows {
                     // Clear any search
                     if (worksheet.options.search === true) {
                         if (worksheet.view.results && worksheet.view.results.length !== worksheet.rows.length) {
-                            if (confirm(translate('This action will clear your search results. Are you sure?'))) {
+                            if (askConfirm(worksheet.parent.config, translate('This action will clear your search results. Are you sure?'))) {
                                 worksheet.resetSearch();
                             } else {
                                 return false;
@@ -610,6 +777,11 @@ export class Rows {
         rowNumber.forEach((rowIndex) => {
             worksheet.rows[rowIndex].element.style.display = '';
         });
+
+        // The rows after a frozen row move
+        if (rowNumber.some((rowIndex) => rowIndex < this.getFreezeCount())) {
+            this.schedulePlace();
+        }
     }
 
     /**
@@ -625,6 +797,11 @@ export class Rows {
         rowNumber.forEach((rowIndex) => {
             worksheet.rows[rowIndex].element.style.display = 'none';
         });
+
+        // The rows after a frozen row move
+        if (rowNumber.some((rowIndex) => rowIndex < this.getFreezeCount())) {
+            this.schedulePlace();
+        }
 
         // The tab stop of the grid can be in a hidden row
         worksheet.selection.updateTabStop();

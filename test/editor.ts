@@ -94,6 +94,140 @@ describe('Editor', () => {
         expect(worksheet.editor.cell).to.equal(null);
         expect(worksheet.getValueFromCoords(1, 0)).to.equal('typed');
     });
+    describe('oneditordetach', () => {
+        // The wheel loads rows 100 ms after the event, and the load removes the first rows, also the row of the editor
+        async function detachByScroll(options: Partial<Jspreadsheet.SpreadsheetOptions>, ignoreEvents = false) {
+            // The grid loads one page at a time. Let the loads of the tests before end.
+            await new Promise((resolve) => setTimeout(resolve, 150));
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }], ...options })[0];
+            worksheet.openEditor(worksheet.records[0][1].element);
+            worksheet.records[0][1].element.querySelector<HTMLInputElement | HTMLTextAreaElement>('input, textarea')!.value = 'typed';
+            worksheet.parent.ignoreEvents = ignoreEvents;
+            try {
+                worksheet.content.dispatchEvent(new window.WheelEvent('wheel', { deltaY: 100 }));
+                await new Promise((resolve) => setTimeout(resolve, 150));
+            } finally {
+                worksheet.parent.ignoreEvents = false;
+            }
+            return worksheet;
+        }
+
+        it('closes the editor without a save when the handler takes the edit', async () => {
+            const calls: [number, number, string][] = [];
+            const worksheet = await detachByScroll({
+                oneditordetach: (instance, td, x, y) => {
+                    calls.push([x, y, (td.children[0] as HTMLInputElement).value]);
+                    return true;
+                },
+            });
+
+            expect(calls).to.eql([[1, 0, 'typed']]);
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 0)).to.not.equal('typed');
+        });
+
+        it('saves the editor when the handler does not take the edit', async () => {
+            let calls = 0;
+            const worksheet = await detachByScroll({
+                oneditordetach: () => {
+                    calls++;
+                    return undefined;
+                },
+            });
+
+            expect(calls).to.equal(1);
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 0)).to.equal('typed');
+        });
+
+        it('does nothing more when the handler closed the editor itself', async () => {
+            const ends: boolean[] = [];
+            const worksheet = await detachByScroll({
+                oneditordetach: (instance, td) => {
+                    instance.closeEditor(td, true);
+                    return undefined;
+                },
+                oneditionend: (instance, td, x, y, value, saved) => {
+                    ends.push(saved);
+                },
+            });
+
+            expect(ends).to.eql([true]);
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 0)).to.equal('typed');
+        });
+
+        it('does not save the edit when the handler moves the focus and takes the edit', async () => {
+            const other = document.body.appendChild(document.createElement('input'));
+            try {
+                const worksheet = await detachByScroll({
+                    oneditordetach: () => {
+                        other.focus();
+                        return true;
+                    },
+                });
+
+                expect(document.activeElement).to.equal(other);
+                expect(worksheet.getValueFromCoords(1, 0)).to.not.equal('typed');
+            } finally {
+                other.remove();
+            }
+        });
+
+        it('gives the position of the cell after an insert above the editor', async () => {
+            const calls: [number, number][] = [];
+            await new Promise((resolve) => setTimeout(resolve, 150));
+            const worksheet = jspreadsheet(root, {
+                worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }],
+                oneditordetach: (instance, td, x, y) => {
+                    calls.push([x, y]);
+                    return true;
+                },
+            })[0];
+            worksheet.openEditor(worksheet.records[2][1].element);
+
+            worksheet.insertRow(3, 0, true);
+            worksheet.content.dispatchEvent(new window.WheelEvent('wheel', { deltaY: 100 }));
+            await new Promise((resolve) => setTimeout(resolve, 150));
+
+            expect(calls).to.eql([[1, 5]]);
+        });
+
+        it('occurs when a move of the selection loads another page', () => {
+            const calls: [number, number][] = [];
+            const worksheet = jspreadsheet(root, {
+                worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }],
+                oneditordetach: (instance, td, x, y) => {
+                    calls.push([x, y]);
+                    return true;
+                },
+            })[0];
+            worksheet.updateSelectionFromCoords(1, 0, 1, 0);
+            worksheet.openEditor(worksheet.records[0][1].element);
+
+            worksheet.last(false, true);
+
+            expect(calls).to.eql([[1, 0]]);
+            expect(worksheet.editor.isOpen()).to.equal(false);
+        });
+
+        it('occurs while ignoreEvents is set', async () => {
+            let calls = 0;
+            const worksheet = await detachByScroll(
+                {
+                    oneditordetach: () => {
+                        calls++;
+                        return true;
+                    },
+                },
+                true
+            );
+
+            expect(calls).to.equal(1);
+            expect(worksheet.getValueFromCoords(1, 0)).to.not.equal('typed');
+        });
+    });
+
     describe('closeEditor without an open editor', () => {
         it('does nothing for a cell that is not edited', () => {
             const events: string[] = [];

@@ -5,6 +5,7 @@ import { BordersDialog, type BorderOptions } from './borders.js';
 import { ToolbarControl } from './toolbarControl.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Spreadsheet, Worksheet } from '../types/internal';
+import { askConfirm } from './dialogs.js';
 
 function setItemStatus(toolbarItem: HTMLElement, worksheet: Worksheet) {
     const disabled = worksheet.options.editable === false;
@@ -195,7 +196,10 @@ function getMergeItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
         onclick() {
             const worksheet = spreadsheet.getWorksheetInstance();
 
-            if (worksheet.selection.range && confirm(translate('The merged cells will retain the value of the top-left cell only. Are you sure?'))) {
+            if (
+                worksheet.selection.range &&
+                askConfirm(worksheet.parent.config, translate('The merged cells will retain the value of the top-left cell only. Are you sure?'))
+            ) {
                 const selectedRange = getSelectedRange(worksheet.selection.range);
 
                 const cell = getCellNameFromCoords(selectedRange[0], selectedRange[1]);
