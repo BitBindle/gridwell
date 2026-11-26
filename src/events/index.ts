@@ -5,7 +5,7 @@ import { keyDownControls } from './keyboard.js';
 import { doubleClickControls, mouseDownControls, mouseMoveControls, mouseOverControls, mouseUpControls } from './mouse.js';
 import { touchEndControls, touchStartControls } from './touch.js';
 
-export const setEvents = function (root: Document | HTMLElement | ShadowRoot) {
+export function setEvents(root: Document | HTMLElement | ShadowRoot) {
     destroyEvents(root);
     // The handlers read the target as an element, which the type of a listener does not promise
     root.addEventListener('mouseup', mouseUpControls as EventListener);
@@ -21,9 +21,9 @@ export const setEvents = function (root: Document | HTMLElement | ShadowRoot) {
     root.addEventListener('touchmove', touchEndControls as EventListener);
     root.addEventListener('focusin', focusInControls as EventListener);
     document.addEventListener('keydown', keyDownControls as EventListener);
-};
+}
 
-export const destroyEvents = function (root: Document | HTMLElement | ShadowRoot) {
+export function destroyEvents(root: Document | HTMLElement | ShadowRoot) {
     // The handlers read the target as an element, which the type of a listener does not promise
     root.removeEventListener('mouseup', mouseUpControls as EventListener);
     root.removeEventListener('mousedown', mouseDownControls as EventListener);
@@ -38,4 +38,4 @@ export const destroyEvents = function (root: Document | HTMLElement | ShadowRoot
     root.removeEventListener('touchmove', touchEndControls as EventListener);
     root.removeEventListener('focusin', focusInControls as EventListener);
     document.removeEventListener('keydown', keyDownControls as EventListener);
-};
+}

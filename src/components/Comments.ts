@@ -62,7 +62,7 @@ export class Comments {
 
         const oldValue: Record<string, string | null> = {};
 
-        Object.entries(commentsObj).forEach(function ([cellName, comment]) {
+        Object.entries(commentsObj).forEach(([cellName, comment]) => {
             const cellCoords = getCoordsFromCellName(cellName);
 
             // Keep old value
@@ -93,7 +93,7 @@ export class Comments {
         obj.history.add({
             action: 'setComments',
             newValue: commentsObj,
-            oldValue: oldValue,
+            oldValue,
         });
 
         // Set comments

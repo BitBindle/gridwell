@@ -87,7 +87,7 @@ export class Worksheet {
 
         if (event == 'onafterchanges') {
             if (typeof spreadsheet.plugins === 'object') {
-                Object.entries(spreadsheet.plugins).forEach(function ([, plugin]) {
+                Object.entries(spreadsheet.plugins).forEach(([, plugin]) => {
                     if (typeof plugin.persistence === 'function') {
                         // The changes of onafterchanges
                         plugin.persistence(worksheet, 'setValue', { data: args[1] as jspreadsheet.CellChange[] });
@@ -131,7 +131,7 @@ export class Worksheet {
         }
 
         // Filter rows
-        return rows.filter(function (el) {
+        return rows.filter((el) => {
             return el != null;
         });
     }
@@ -156,11 +156,11 @@ export class Worksheet {
 
         // Remove update
         jSuites.ajax({
-            url: url,
+            url,
             method: 'POST',
             dataType: 'json',
             data: { data: JSON.stringify(data) },
-            success: function (result: unknown) {
+            success(result: unknown) {
                 // Event
                 obj.dispatch('onsave', obj.parent, obj, data);
             },
@@ -191,7 +191,7 @@ export class Worksheet {
 
         const keys = Object.keys(config);
 
-        keys.forEach(function (key) {
+        keys.forEach((key) => {
             (obj.options as Record<string, unknown>)[key] = (config as Record<string, unknown>)[key];
         });
     }
@@ -608,10 +608,10 @@ export class Worksheet {
         // Create table container
         obj.content = document.createElement('div');
         obj.content.classList.add('jss_content');
-        obj.content.onscroll = function (e) {
+        obj.content.onscroll = (e) => {
             obj.view.scroll(e);
         };
-        obj.content.onwheel = function (e) {
+        obj.content.onwheel = (e) => {
             obj.view.wheel(e);
         };
     }
@@ -632,7 +632,7 @@ export class Worksheet {
         obj.searchInput = document.createElement('input');
         obj.searchInput.classList.add('jss_search');
         searchLabel.appendChild(obj.searchInput);
-        obj.searchInput.onfocus = function () {
+        obj.searchInput.onfocus = () => {
             obj.resetSelection();
         };
 
@@ -999,7 +999,7 @@ export class Worksheet {
                         index: i,
                         method: 'GET',
                         dataType: 'json',
-                        success: function (this: { index: number }, data: unknown[]) {
+                        success(this: { index: number }, data: unknown[]) {
                             if (!obj.options.columns[this.index].source) {
                                 obj.options.columns[this.index].source = [];
                             }
@@ -1017,7 +1017,7 @@ export class Worksheet {
         if (!multiple.length) {
             obj.createTable();
         } else {
-            jSuites.ajax(multiple, function () {
+            jSuites.ajax(multiple, () => {
                 obj.createTable();
             });
         }
@@ -1030,7 +1030,7 @@ export class Worksheet {
         const spreadsheet = obj.parent;
 
         if (typeof spreadsheet.plugins === 'object') {
-            Object.entries(spreadsheet.plugins).forEach(function ([, plugin]) {
+            Object.entries(spreadsheet.plugins).forEach(([, plugin]) => {
                 if (typeof plugin.beforeinit === 'function') {
                     plugin.beforeinit(obj);
                 }
@@ -1049,7 +1049,7 @@ export class Worksheet {
                     url: obj.options.csv,
                     method: 'GET',
                     dataType: 'text',
-                    success: function (result: string) {
+                    success(result: string) {
                         // Convert data
                         const newData = parseCSV(result, obj.options.csvDelimiter);
 
@@ -1091,7 +1091,7 @@ export class Worksheet {
                     method: 'GET',
                     dataType: 'json',
                     // The data, or an object with the data in its data property. setData changes rows of objects to arrays.
-                    success: function (result: { data?: jspreadsheet.CellValue[][] }) {
+                    success(result: { data?: jspreadsheet.CellValue[][] }) {
                         // Data
                         obj.options.data = result.data ? result.data : (result as jspreadsheet.CellValue[][]);
                         // Prepare table
@@ -1111,7 +1111,7 @@ export class Worksheet {
         await Promise.all(promises);
 
         if (typeof spreadsheet.plugins === 'object') {
-            Object.entries(spreadsheet.plugins).forEach(function ([, plugin]) {
+            Object.entries(spreadsheet.plugins).forEach(([, plugin]) => {
                 if (typeof plugin.init === 'function') {
                     plugin.init(obj);
                 }

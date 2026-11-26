@@ -6,7 +6,7 @@ import { getColumnName } from './helpers.js';
  * @param idx - The position.
  * @param arr - The items to insert.
  */
-export const injectArray = function <T>(o: T[], idx: number, arr: T[]): T[] {
+export function injectArray<T>(o: T[], idx: number, arr: T[]): T[] {
     if (idx <= o.length) {
         return o.slice(0, idx).concat(arr).concat(o.slice(idx));
     }
@@ -19,7 +19,7 @@ export const injectArray = function <T>(o: T[], idx: number, arr: T[]): T[] {
 
     // A position after the end leaves undefined items between. The callers insert into the array or at its end.
     return array.concat(arr) as T[];
-};
+}
 
 /**
  * Convert excel like column to jss id
@@ -27,10 +27,10 @@ export const injectArray = function <T>(o: T[], idx: number, arr: T[]): T[] {
  * With arr true, it returns the coordinates, for example [1, 2] for "B3". Otherwise it returns the id, for example "1-2".
  * When id does not start with letters, it returns id.
  */
-type GetIdFromColumnName = { (id: string, arr: true): number[]; (id: string, arr?: boolean): string };
-
+export function getIdFromColumnName(id: string, arr: true): number[];
+export function getIdFromColumnName(id: string, arr?: boolean): string;
 // id becomes the result, so it can be a list
-export const getIdFromColumnName = function (id: string | number[], arr?: boolean) {
+export function getIdFromColumnName(id: string | number[], arr?: boolean) {
     // Get the letters
     const t = /^[a-zA-Z]+/.exec(id as string);
 
@@ -61,17 +61,17 @@ export const getIdFromColumnName = function (id: string | number[], arr?: boolea
     }
 
     return id;
-} as GetIdFromColumnName;
+}
 
 /**
  * Convert jss id to excel like column name
  * @param cellId - An id, for example "1-2", or the coordinates, for example [1, 2].
  * @returns The cell name, for example "B3".
  */
-export const getColumnNameFromId = function (cellId: string | (string | number)[]): string {
+export function getColumnNameFromId(cellId: string | (string | number)[]): string {
     if (!Array.isArray(cellId)) {
         cellId = cellId.split('-');
     }
 
     return getColumnName(parseInt(cellId[0])) + (parseInt(cellId[1]) + 1);
-};
+}

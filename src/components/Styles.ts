@@ -80,7 +80,7 @@ export class Styles {
          * @param cellId - The cell name.
          * @param key - A CSS property.
          */
-        const applyStyle = function (cellId: string, key: string, value: string) {
+        function applyStyle(cellId: string, key: string, value: string) {
             // Position
             const cell = getIdFromColumnName(cellId, true);
 
@@ -111,7 +111,7 @@ export class Styles {
                 oldValue[cellId].push([key + ':' + currentValue]);
                 newValue[cellId].push([key + ':' + value]);
             }
-        };
+        }
 
         if (k && v) {
             // Get object from string

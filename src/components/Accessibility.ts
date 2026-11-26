@@ -16,19 +16,19 @@ const defaultLabels = {
 /**
  * Role and position of a column header
  */
-export const setHeaderRole = function (td: HTMLTableCellElement, x: number) {
+export function setHeaderRole(td: HTMLTableCellElement, x: number) {
     td.setAttribute('role', 'columnheader');
     td.setAttribute('aria-colindex', parseInt(x) + 2);
-};
+}
 
 /**
  * Column positions of the cells of a filter or footer row. The first cell is in the row number column.
  */
-const updateRowCells = function (tr: Element) {
+function updateRowCells(tr: Element) {
     for (let i = 0; i < tr.children.length; i++) {
         tr.children[i].setAttribute('aria-colindex', i + 1);
     }
-};
+}
 
 /**
  * ARIA grid semantics of the worksheet table (https://www.w3.org/WAI/ARIA/apg/patterns/grid/): the roles, the accessible

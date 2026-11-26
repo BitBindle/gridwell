@@ -3,13 +3,13 @@ import type { TargetEvent, Worksheet } from '../types/internal';
 /**
  * The index in the data-x or data-y attribute of an element, or null when the element has none
  */
-export const getIndex = function (element: Element, name: 'data-x' | 'data-y') {
+export function getIndex(element: Element, name: 'data-x' | 'data-y') {
     const text = element.getAttribute(name);
     return text ? parseInt(text) : null;
-};
+}
 
 // The element of the worksheet that contains the element, which keeps the worksheet, and the section: 1 for the header, 2 for the body
-export const getElement = function (element: HTMLElement): [Worksheet['element'] | 0 | null, number] {
+export function getElement(element: HTMLElement): [Worksheet['element'] | 0 | null, number] {
     let jssSection = 0;
     let jssElement: Worksheet['element'] | 0 | null = 0;
 
@@ -42,9 +42,9 @@ export const getElement = function (element: HTMLElement): [Worksheet['element']
 
     // A section of a table outside a worksheet is not a section of the grid
     return [jssElement, jssElement ? jssSection : 0];
-};
+}
 
-export const getRole = function (element: HTMLElement) {
+export function getRole(element: HTMLElement) {
     if (element.classList.contains('jss_selectall')) {
         return 'select-all';
     }
@@ -93,9 +93,9 @@ export const getRole = function (element: HTMLElement) {
     }
 
     return 'applications';
-};
+}
 
-export const getElementIndex = function (element: HTMLElement) {
+export function getElementIndex(element: HTMLElement) {
     const parentChildren = element.parentElement!.children;
 
     for (let i = 0; i < parentChildren.length; i++) {
@@ -107,16 +107,16 @@ export const getElementIndex = function (element: HTMLElement) {
     }
 
     return -1;
-};
+}
 
-const isMac = function () {
+function isMac() {
     return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-};
+}
 
-export const isCtrl = function (e: TargetEvent<KeyboardEvent | MouseEvent>) {
+export function isCtrl(e: TargetEvent<KeyboardEvent | MouseEvent>) {
     if (isMac()) {
         return e.metaKey;
     } else {
         return e.ctrlKey;
     }
-};
+}

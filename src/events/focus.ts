@@ -8,7 +8,7 @@ import type { TargetEvent, Worksheet } from '../types/internal';
  * after a press on the other worksheet. A focused cell of a worksheet without a selection becomes the selection. The
  * focus on the tabs or the toolbar of a spreadsheet, which are outside its worksheets, changes nothing.
  */
-export const focusInControls = function (e: TargetEvent<FocusEvent>) {
+export function focusInControls(e: TargetEvent<FocusEvent>) {
     // The target can be a node without classList, such as the document
     if (!e.target || e.target.nodeType !== 1) {
         return;
@@ -37,4 +37,4 @@ export const focusInControls = function (e: TargetEvent<FocusEvent>) {
             worksheet.updateSelectionFromCoords(x, y);
         }
     }
-};
+}

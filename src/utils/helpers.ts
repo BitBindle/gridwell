@@ -3,7 +3,7 @@ import type { Spreadsheet } from '../types/internal';
 /**
  * Get carret position for one element
  */
-export const getCaretIndex = function (this: Spreadsheet, e: Node) {
+export function getCaretIndex(this: Spreadsheet, e: Node) {
     let d;
 
     // Applications call it as jspreadsheet.helpers.getCaretIndex, so this is a spreadsheet only when the caller sets it.
@@ -25,12 +25,12 @@ export const getCaretIndex = function (this: Spreadsheet, e: Node) {
         }
     }
     return pos;
-};
+}
 
 /**
  * Invert keys and values
  */
-export const invert = function (o: Record<string, string | number>) {
+export function invert(o: Record<string, string | number>) {
     // The values become the indexes, or the keys when they are not numbers
     const d = [] as unknown as string[] & Record<string, string>;
     const k = Object.keys(o);
@@ -38,7 +38,7 @@ export const invert = function (o: Record<string, string | number>) {
         d[o[k[i]]] = k[i];
     }
     return d;
-};
+}
 
 /**
  * Get letter based on a number
@@ -46,7 +46,7 @@ export const invert = function (o: Record<string, string | number>) {
  * @param {number} columnNumber
  * @return string letter
  */
-export const getColumnName = function (columnNumber: number) {
+export function getColumnName(columnNumber: number) {
     let dividend = columnNumber + 1;
     let columnName = '';
     let modulo;
@@ -58,16 +58,16 @@ export const getColumnName = function (columnNumber: number) {
     }
 
     return columnName;
-};
+}
 
 /**
  * Get column name from coords
  */
-export const getCellNameFromCoords = function (x: number, y: number) {
+export function getCellNameFromCoords(x: number, y: number) {
     return getColumnName(parseInt(x)) + (parseInt(y) + 1);
-};
+}
 
-export const getCoordsFromCellName = function (columnName: string): [number, number | null] | undefined {
+export function getCoordsFromCellName(columnName: string): [number, number | null] | undefined {
     // Get the letters
     const t = /^[a-zA-Z]+/.exec(columnName);
 
@@ -92,19 +92,19 @@ export const getCoordsFromCellName = function (columnName: string): [number, num
 
         return [code, number];
     }
-};
+}
 
-export const getCoordsFromRange = function (range: string): [number, number, number, number] {
+export function getCoordsFromRange(range: string): [number, number, number, number] {
     const [start, end] = range.split(':');
 
     // A range of whole columns, for example A:B, has no rows
     return [...getCoordsFromCellName(start)!, ...getCoordsFromCellName(end)!] as [number, number, number, number];
-};
+}
 
 /**
  * From stack overflow contributions
  */
-export const parseCSV = function (str: string, delimiter?: string) {
+export function parseCSV(str: string, delimiter?: string) {
     // user-supplied delimeter or default comma
     delimiter = delimiter || ',';
     // Remove last line break
@@ -175,10 +175,10 @@ export const parseCSV = function (str: string, delimiter?: string) {
         }
     });
     return arr;
-};
+}
 
 // The options are optional here: factory.ts passes the first worksheet of the options, which can be missing
-export const createFromTable = function (el: HTMLElement, options?: jspreadsheet.WorksheetOptions) {
+export function createFromTable(el: HTMLElement, options?: jspreadsheet.WorksheetOptions) {
     if (el.tagName != 'TABLE') {
         console.log('Element is not a table');
     } else {
@@ -213,7 +213,7 @@ export const createFromTable = function (el: HTMLElement, options?: jspreadsheet
         }
 
         // Parse header
-        const parseHeader = function (header: HTMLElement, i: number) {
+        function parseHeader(header: HTMLElement, i: number) {
             // Get width information
             const rect = header.getBoundingClientRect();
             const width = rect.width > 50 ? rect.width : 50;
@@ -244,7 +244,7 @@ export const createFromTable = function (el: HTMLElement, options?: jspreadsheet
             if ((info = header.getAttribute('data-mask'))) {
                 columns[i].mask = info;
             }
-        };
+        }
 
         // Headers
         const nested = [];
@@ -419,4 +419,4 @@ export const createFromTable = function (el: HTMLElement, options?: jspreadsheet
 
         return options;
     }
-};
+}

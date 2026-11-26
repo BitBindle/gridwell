@@ -9,11 +9,11 @@ type Range = [number, number, number, number];
 /**
  * The focus is on no element, for example after the focused element was removed
  */
-const isFocusLost = function () {
+function isFocusLost() {
     const active = document.activeElement;
 
     return !active || active === document.body;
-};
+}
 
 /** The corner of the selection that moves: 0 for the cell in selection.range[0] and [1], 1 for the cell in [2] and [3]. */
 type Corner = 0 | 1;
@@ -24,9 +24,9 @@ type Step = 0 | 1;
 /**
  * Whether the worksheet has a selection
  */
-const hasSelection = function (obj: Worksheet): obj is SelectedWorksheet {
+function hasSelection(obj: Worksheet): obj is SelectedWorksheet {
     return obj.selection.range ? true : false;
-};
+}
 
 /**
  * The selection of a worksheet: the selected range, the highlighted cells, the cells that a drag of the corner fills,
@@ -742,7 +742,7 @@ export class Selection {
     setFocusEvents() {
         const obj = this.worksheet;
 
-        obj.table.addEventListener('focusout', function (e) {
+        obj.table.addEventListener('focusout', (e) => {
             if (e.relatedTarget && (e.relatedTarget as Node).nodeType === 1 && !obj.parent.element.contains(e.relatedTarget as Node)) {
                 obj.selection.focusInGrid = false;
             }
@@ -791,7 +791,7 @@ export class Selection {
         cell.tabIndex = 0;
         obj.accessibility.setCellLabel(cell);
 
-        setTimeout(function () {
+        setTimeout(() => {
             if (isFocusLost() && libraryBase.jspreadsheet.current === obj && obj.selection.activeCell === cell && !obj.editor.isOpen()) {
                 cell.focus({ preventScroll: true });
             }

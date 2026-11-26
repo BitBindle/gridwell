@@ -315,6 +315,45 @@ on the prototypes. The next steps move each of them into a class, so that no fun
     `cells.getLabel` take a cell name as declared, `data.get` a null delimiter, and `selection.reset` returns `0 | 1`.
     `WorksheetMethod` goes. Apart from `jspreadsheet.helpers.getCaretIndex`, no function outside a class reads `this`.
 
+After step 36 the code is in classes, but it is still written in the style of 2015 JavaScript: module functions are
+function expressions in constants (`const getCellName = function (...) { ... }`), callbacks are `function` expressions
+that close over `const obj = this`, loops count indexes, strings are joined with `+`, and most comparisons are loose
+(`==`). The next steps write the code in the style of current TypeScript. Each step changes the syntax, not the
+behaviour, and turns on the ESLint rule that keeps the new style, so that new code follows it.
+
+-   **One kind of change per step**, so that a reviewer can check it as a pattern. Where ESLint has a safe autofix, the
+    step runs it; the commit says which rule made which change.
+-   **The bundle shows the change.** As for the moves, the non-minified bundle before and after is compared. A step
+    that only changes syntax shows only that syntax in the comparison.
+-   **What changes behaviour waits.** A rewrite that is not the same in every case, such as `==` between values of
+    different types, is not made blindly: the step makes the comparisons that are provably the same, and lists the
+    others for review.
+
+37. **Functions.** Module functions become function declarations (`export function getCellName(...) { ... }`), and
+    `factory` a function. A callback that does not use its own `this` becomes an arrow function, and a function in an
+    object literal a method (`onclick() { ... }`). Rules: `func-style`, `prefer-arrow-callback`, `object-shorthand`.
+    Done. The 61 module functions and the 11 functions in constants inside methods are declarations. `factory.ts`
+    exports `createSpreadsheet`, and `jspreadsheet` is a function declaration that `index.ts` gives its static helpers,
+    which are arrow functions. ESLint changed 49 callbacks to arrow functions and 92 properties of object literals to
+    shorthand properties and methods, and 11 functions that the code gives to an element or an option became arrow
+    functions by hand. Two handlers still read `this`, the element they are on (the checkbox of a cell, the number of
+    rows on a page), and stay function expressions. `getIdFromColumnName` has overloads instead of a cast.
+38. **`this` in the classes.** With arrow callbacks, the methods of `Worksheet`, `Spreadsheet` and the classes of
+    `utils/` use `this` instead of `const obj = this` and `const spreadsheet = this`, and the components name their
+    worksheet `worksheet` instead of `obj`. Rule: `@typescript-eslint/no-this-alias`, which is off today.
+39. **Loops.** A loop over an array whose index only reads the item becomes `for (const item of items)`, a loop over
+    `Object.keys` with a lookup becomes `for (const [key, value] of Object.entries(...))`, `indexOf(...) >= 0` becomes
+    `includes`, and `Array.prototype.x.call(list, ...)` becomes `Array.from(list).x(...)`. Rules:
+    `@typescript-eslint/prefer-for-of`, `@typescript-eslint/prefer-includes`.
+40. **Strings.** Strings joined with `+` become template literals. Rule: `prefer-template`.
+41. **Equality.** `==` and `!=` become `===` and `!==` where the type check shows both sides have the same primitive
+    type, so that the result is the same; `x == null` stays, as the one loose comparison that is clearer. The other
+    loose comparisons, where the two sides can have different types, are listed in the pull request and changed one by
+    one, with a test where the conversion matters. Rule: `eqeqeq` with `null: 'ignore'`.
+42. **The rest.** Optional chaining and `??` where they mean the same as the `&&` chain they replace, the code for
+    Internet Explorer (which cannot run the classes of the bundle) goes, and the JSDoc comments left from the old code
+    (`@Param`, `@return string value`) describe their parameters.
+
 ## Rules for each step
 
 -   A step moves code; it does not rewrite it. Fix a bug that the move finds in its own commit, with a test.

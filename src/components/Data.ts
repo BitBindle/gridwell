@@ -278,7 +278,7 @@ export class Data {
         // Update history
         obj.history.add({
             action: 'setValue',
-            records: records,
+            records,
             selection: obj.selection.range && [...obj.selection.range],
         });
 
@@ -286,7 +286,7 @@ export class Data {
         this.updateTable();
 
         // On after changes
-        const onafterchangesRecords = records.map(function (record) {
+        const onafterchangesRecords = records.map((record) => {
             return {
                 x: record.x,
                 y: record.y,
@@ -319,7 +319,7 @@ export class Data {
         // Update history
         obj.history.add({
             action: 'setValue',
-            records: records,
+            records,
             selection: obj.selection.range && [...obj.selection.range],
         });
 
@@ -327,7 +327,7 @@ export class Data {
         this.updateTable();
 
         // On after changes
-        const onafterchangesRecords = records.map(function (record) {
+        const onafterchangesRecords = records.map((record) => {
             return {
                 x: record.x,
                 y: record.y,
@@ -357,7 +357,7 @@ export class Data {
 
         // Column and row length
         const x = Math.max(
-            ...obj.options.data.map(function (row) {
+            ...obj.options.data.map((row) => {
                 return row.length;
             })
         );
@@ -389,7 +389,7 @@ export class Data {
         if (delimiter) {
             return (
                 dataset
-                    .map(function (row) {
+                    .map((row) => {
                         return row.join(delimiter);
                     })
                     .join('\r\n') + '\r\n'
@@ -397,10 +397,10 @@ export class Data {
         }
 
         if (asJson) {
-            return dataset.map(function (row) {
+            return dataset.map((row) => {
                 const resultRow: Record<number, CellValue> = {};
 
-                row.forEach(function (item, index) {
+                row.forEach((item, index) => {
                     resultRow[index] = item;
                 });
 
@@ -493,7 +493,7 @@ export class Data {
         }
 
         // Update corner position
-        setTimeout(function () {
+        setTimeout(() => {
             obj.selection.updateCorner();
         }, 0);
     }

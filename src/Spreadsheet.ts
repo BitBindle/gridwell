@@ -57,7 +57,7 @@ export class Spreadsheet {
 
         // Create element
         jSuites.contextmenu(spreadsheet.contextMenu, {
-            onclick: function () {
+            onclick() {
                 spreadsheet.contextMenu.contextmenu.close(false);
             },
         });
@@ -87,20 +87,20 @@ export class Spreadsheet {
         if (o) {
             const tabsOptions: Partial<TabsOptions> = {
                 animation: true,
-                onbeforecreate: function (element: HTMLElement, title?: string | null) {
+                onbeforecreate(element: HTMLElement, title?: string | null) {
                     if (title) {
                         return title;
                     } else {
                         return spreadsheet.getNextDefaultWorksheetName();
                     }
                 },
-                oncreate: function (element: HTMLElement & { tabs: Tabs }, newTabContent: HTMLDivElement | undefined) {
+                oncreate(element: HTMLElement & { tabs: Tabs }, newTabContent: HTMLDivElement | undefined) {
                     if (!spreadsheet.creationThroughJss) {
                         const worksheetName = element.tabs.headers.children[element.tabs.headers.children.length - 2].innerHTML;
 
                         spreadsheet.createWorksheetObj({
                             minDimensions: [10, 15],
-                            worksheetName: worksheetName,
+                            worksheetName,
                         });
                     } else {
                         spreadsheet.creationThroughJss = false;
@@ -112,13 +112,13 @@ export class Spreadsheet {
                     // onbeforecreate always gives a title, so the tab has its content
                     newWorksheet.element = newTabContent as Worksheet['element'];
 
-                    newWorksheet.build().then(function () {
+                    newWorksheet.build().then(() => {
                         spreadsheet.toolbarManager.update(newWorksheet);
 
                         newWorksheet.dispatch('oncreateworksheet', newWorksheet, newWorksheet.options, spreadsheet.worksheets.length - 1);
                     });
                 },
-                onchange: function (element: HTMLElement, instance: Tabs, tabIndex: number) {
+                onchange(element: HTMLElement, instance: Tabs, tabIndex: number) {
                     if (spreadsheet.worksheets.length != 0 && spreadsheet.worksheets[tabIndex]) {
                         spreadsheet.toolbarManager.update(spreadsheet.worksheets[tabIndex]);
                     }
@@ -160,7 +160,7 @@ export class Spreadsheet {
 
             for (let i = 0; i < o.length; i++) {
                 if (o[i].style) {
-                    Object.entries(o[i].style!).forEach(function ([cellName, value]) {
+                    Object.entries(o[i].style!).forEach(([cellName, value]) => {
                         if (typeof value === 'number') {
                             // A number is the index of a style in the spreadsheet options, which the application passes with it
                             o[i].style![cellName] = spreadsheetStyles![value];
@@ -186,7 +186,7 @@ export class Spreadsheet {
 
         let largestWorksheetNumber = 0;
 
-        spreadsheet.worksheets.forEach(function (worksheet) {
+        spreadsheet.worksheets.forEach((worksheet) => {
             const regexResult = defaultWorksheetNameRegex.exec(worksheet.options.worksheetName!);
             if (regexResult) {
                 largestWorksheetNumber = Math.max(largestWorksheetNumber, parseInt(regexResult[1]));
@@ -340,7 +340,7 @@ export class Spreadsheet {
 
         const keys = Object.keys(config);
 
-        keys.forEach(function (key) {
+        keys.forEach((key) => {
             // The options are set by name, and SpreadsheetOptions has no index signature
             (spreadsheet.config as unknown as Record<string, unknown>)[key] = (config as Record<string, unknown>)[key];
 
@@ -365,7 +365,7 @@ export class Spreadsheet {
         }
 
         if (typeof newPlugins == 'object') {
-            Object.entries(newPlugins).forEach(function ([pluginName, plugin]) {
+            Object.entries(newPlugins).forEach(([pluginName, plugin]) => {
                 spreadsheet.plugins[pluginName] = plugin.call(libraryBase.jspreadsheet, spreadsheet, {}, spreadsheet.config);
             });
         }

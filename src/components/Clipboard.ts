@@ -9,14 +9,14 @@ import type { Worksheet } from '../types/internal';
  * quotes in it. A value that is not text stays as it is.
  * @param div - The delimiter, as a regular expression.
  */
-const quote = function <T>(value: T, div: RegExp): T | string {
+function quote<T>(value: T, div: RegExp): T | string {
     // Only text has match
     const text = value as unknown as string;
     if (text.match && (text.match(div) || text.match(/,/g) || text.match(/\n/) || text.match(/"/))) {
         return '"' + text.replace(new RegExp('"', 'g'), '""') + '"';
     }
     return value;
-};
+}
 
 /**
  * Repeat the rows and the styles of a paste to fill the selection, when the selection is a multiple of their width or
@@ -24,7 +24,7 @@ const quote = function <T>(value: T, div: RegExp): T | string {
  * @param w - The width of the selection.
  * @param h - The height of the selection.
  */
-const repeatToSelection = function (rows: jspreadsheet.CellValue[][], style: string[] | null, w: number, h: number) {
+function repeatToSelection(rows: jspreadsheet.CellValue[][], style: string[] | null, w: number, h: number) {
     const srcW = rows[0].length;
     if (w > 1 && Number.isInteger(w / srcW)) {
         const repeats = w / srcW;
@@ -39,8 +39,8 @@ const repeatToSelection = function (rows: jspreadsheet.CellValue[][], style: str
             style = newStyle;
         }
 
-        const arrayB = rows.map(function (row, i) {
-            const arrayC = Array.from({ length: repeats * row.length }, function (e: unknown, i: number) {
+        const arrayB = rows.map((row, i) => {
+            const arrayC = Array.from({ length: repeats * row.length }, (e: unknown, i: number) => {
                 return row[i % row.length];
             });
             return arrayC;
@@ -57,14 +57,14 @@ const repeatToSelection = function (rows: jspreadsheet.CellValue[][], style: str
             }
             style = newStyle;
         }
-        const arrayB = Array.from({ length: repeats * srcH }, function (e: unknown, i: number) {
+        const arrayB = Array.from({ length: repeats * srcH }, (e: unknown, i: number) => {
             return rows[i % srcH];
         });
         rows = arrayB;
     }
 
     return { rows, style };
-};
+}
 
 /**
  * The clipboard of a worksheet: the text it copied last, the styles of the copied cells, the hidden textarea that puts
@@ -487,8 +487,8 @@ export class Clipboard {
         const ret = obj.dispatch(
             'onbeforepaste',
             obj,
-            rows.map(function (row) {
-                return row.map(function (item) {
+            rows.map((row) => {
+                return row.map((item) => {
                     return { value: item };
                 });
             }),
@@ -522,10 +522,10 @@ export class Clipboard {
             // Update history
             obj.history.add({
                 action: 'setValue',
-                records: records,
+                records,
                 selection: obj.selection.range && [...obj.selection.range],
-                newStyle: newStyle,
-                oldStyle: oldStyle,
+                newStyle,
+                oldStyle,
             });
 
             // Update table
@@ -547,7 +547,7 @@ export class Clipboard {
             obj.dispatch('onpaste', obj, eventRecords);
 
             // On after changes
-            const onafterchangesRecords = records.map(function (record) {
+            const onafterchangesRecords = records.map((record) => {
                 return {
                     x: record.x,
                     y: record.y,
@@ -602,7 +602,7 @@ export class Clipboard {
 }
 
 /** A 32-bit hash of a text. */
-const hashText = function (str: string) {
+function hashText(str: string) {
     let hash = 0,
         i,
         chr;
@@ -617,4 +617,4 @@ const hashText = function (str: string) {
         }
     }
     return hash;
-};
+}

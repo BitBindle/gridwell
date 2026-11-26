@@ -2,7 +2,7 @@ import libraryBase from '../utils/libraryBase.js';
 import { getElement, getIndex } from './helpers.js';
 import type { TargetEvent } from '../types/internal';
 
-export const touchStartControls = function (e: TargetEvent<TouchEvent>) {
+export function touchStartControls(e: TargetEvent<TouchEvent>) {
     const jssTable = getElement(e.target);
 
     // A touch on a worksheet makes it the active worksheet. A touch outside the spreadsheets leaves no active worksheet.
@@ -36,7 +36,7 @@ export const touchStartControls = function (e: TargetEvent<TouchEvent>) {
                 }
 
                 // The active worksheet when the timer runs
-                libraryBase.jspreadsheet.timeControl = setTimeout(function () {
+                libraryBase.jspreadsheet.timeControl = setTimeout(() => {
                     // Keep temporary reference to the element
                     const column = libraryBase.jspreadsheet.current!.options.columns[libraryBase.jspreadsheet.current!.cells.getColumnIndex(columnId, rowId)];
                     if (column.type == 'color') {
@@ -49,9 +49,9 @@ export const touchStartControls = function (e: TargetEvent<TouchEvent>) {
             }
         }
     }
-};
+}
 
-export const touchEndControls = function (e: TargetEvent<TouchEvent>) {
+export function touchEndControls(e: TargetEvent<TouchEvent>) {
     // Clear any time control
     if (libraryBase.jspreadsheet.timeControl) {
         clearTimeout(libraryBase.jspreadsheet.timeControl);
@@ -63,4 +63,4 @@ export const touchEndControls = function (e: TargetEvent<TouchEvent>) {
         }
         libraryBase.jspreadsheet.tmpElement = null;
     }
-};
+}

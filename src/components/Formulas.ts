@@ -105,7 +105,7 @@ export class Formulas {
         const formulaEngine = typeof obj.parent.config.formulaEngine === 'function' ? obj.parent.config.formulaEngine : null;
 
         // Execute formula with loop protection
-        const execute = function (expression: string, x?: number, y?: number) {
+        function execute(expression: string, x?: number, y?: number) {
             // The formula text as typed, for the formula engine
             const text = expression;
 
@@ -121,7 +121,7 @@ export class Formulas {
             formulaLoopProtection[parentId] = true;
 
             // Convert range tokens
-            const tokensUpdate = function (tokens: string[]) {
+            function tokensUpdate(tokens: string[]) {
                 for (let index = 0; index < tokens.length; index++) {
                     const f = [];
                     const token = tokens[index].split(':');
@@ -156,10 +156,10 @@ export class Formulas {
 
                     expression = expression.replace(tokens[index], f.join(','));
                 }
-            };
+            }
 
             // Range with $ remove $ (string literals are kept untouched)
-            expression = expression.replace(/("(?:[^"]|"")*")|\$?([A-Z]+)\$?([0-9]+)/g, function (match, literal, column, row) {
+            expression = expression.replace(/("(?:[^"]|"")*")|\$?([A-Z]+)\$?([0-9]+)/g, (match, literal, column, row) => {
                 return literal ? literal : column + row;
             });
 
@@ -241,7 +241,7 @@ export class Formulas {
                 // Hand string literals to the formula parser as variables, so characters such as $ or & inside them are not
                 // interpreted as part of the formula syntax
                 let literalIndex = 0;
-                const parsedExpression = expression.substr(1).replace(/"(?:[^"]|"")*"/g, function (literal) {
+                const parsedExpression = expression.substr(1).replace(/"(?:[^"]|"")*"/g, (literal) => {
                     const name = '__JSSSTR' + literalIndex++ + '__';
                     formulaExpressions[name] = '"' + literal.slice(1, -1).replace(/""/g, '\\"') + '"';
                     return name;
@@ -270,7 +270,7 @@ export class Formulas {
 
                 return res;
             }
-        };
+        }
 
         return execute(expression, x, y);
     }
@@ -425,7 +425,7 @@ export class Formulas {
         const mergeCellUpdates: Record<string, false | [string, number, number]> = {};
 
         // Update cell
-        const updatePosition = function (x: number, y: number, i: number, j: number) {
+        function updatePosition(x: number, y: number, i: number, j: number) {
             if (x != i) {
                 obj.records[j][i].element.setAttribute('data-x', i);
                 obj.records[j][i].element.setAttribute('aria-colindex', i + 2);
@@ -440,7 +440,7 @@ export class Formulas {
                 const columnIdTo = getColumnNameFromId([i, j]);
                 affectedTokens[columnIdFrom] = columnIdTo;
             }
-        };
+        }
 
         for (let j = 0; j < obj.records.length; j++) {
             for (let i = 0; i < obj.records[0].length; i++) {

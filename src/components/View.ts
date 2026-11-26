@@ -57,30 +57,30 @@ export class View {
              * @param item - The data of the row.
              * @param index - The row.
              */
-            const search = function (item: CellValue[], query: RegExp, index: number) {
+            function search(item: CellValue[], query: RegExp, index: number) {
                 for (let i = 0; i < item.length; i++) {
                     if (('' + item[i]).toLowerCase().search(query) >= 0 || ('' + obj.records[index][i].element.innerHTML).toLowerCase().search(query) >= 0) {
                         return true;
                     }
                 }
                 return false;
-            };
+            }
 
             /**
              * Result
              * @param k - The row.
              */
-            const addToResult = function (k: number) {
+            function addToResult(k: number) {
                 if (obj.view.results!.indexOf(k) == -1) {
                     obj.view.results!.push(k);
                 }
-            };
+            }
 
             let parsedQuery: string | RegExp = query.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
             parsedQuery = new RegExp(parsedQuery, 'i');
 
             // Filter
-            obj.options.data.forEach(function (v, k) {
+            obj.options.data.forEach((v, k) => {
                 if (search(v, parsedQuery, k)) {
                     // Merged rows found
                     const rows = obj.merges.isRowMerged(k);
@@ -174,7 +174,7 @@ export class View {
                 width: '100%',
                 position: obj.options.tableOverflow == true || obj.parent.config.fullscreen == true ? true : false,
                 // The element of the dropdown, which holds the dropdown
-                onclose: function (o: HTMLElement & { dropdown: ReturnType<typeof jSuites.dropdown> }) {
+                onclose(o: HTMLElement & { dropdown: ReturnType<typeof jSuites.dropdown> }) {
                     obj.view.resetFilters();
                     // A list, because the dropdown has multiple
                     obj.view.filters[columnId] = o.dropdown.getValue(true) as string[];
@@ -204,7 +204,7 @@ export class View {
         }
 
         // Search filter
-        const search = function (query: string[], x: number, y: number) {
+        function search(query: string[], x: number, y: number) {
             for (let i = 0; i < query.length; i++) {
                 const value = '' + obj.options.data[y][x];
                 const label = '' + obj.records[y][x].element.innerHTML;
@@ -213,7 +213,7 @@ export class View {
                 }
             }
             return false;
-        };
+        }
 
         // The column has a filter: openFilter passes its column, and orderBy calls this only while a filter gives results
         const query = obj.view.filters[columnId!]!;
@@ -333,11 +333,11 @@ export class View {
                 }
 
                 // Text
-                const format = function (format: string, ...args: number[]): string {
-                    return format.replace(/{(\d+)}/g, function (match: string, number: number) {
+                function format(format: string, ...args: number[]): string {
+                    return format.replace(/{(\d+)}/g, (match: string, number: number) => {
                         return typeof args[number] != 'undefined' ? String(args[number]) : match;
                     });
-                };
+                }
 
                 obj.pagination.children[0].innerHTML = format(jSuites.translate('Showing page {0} of {1} entries'), obj.view.pageNumber + 1, quantyOfPages);
             }
@@ -611,8 +611,8 @@ export class View {
 
             // Default sorting method
             if (typeof obj.parent.config.sorting !== 'function') {
-                obj.parent.config.sorting = function (direction) {
-                    return function (a, b) {
+                obj.parent.config.sorting = (direction) => {
+                    return (a, b) => {
                         const valueA = a[1];
                         const valueB = b[1];
 
@@ -637,8 +637,8 @@ export class View {
             obj.history.add({
                 action: 'orderBy',
                 rows: newValue,
-                column: column,
-                order: order,
+                column,
+                order,
             });
 
             // Update order
@@ -849,7 +849,7 @@ export class View {
 
         if (obj.options.lazyLoading == true) {
             if (libraryBase.jspreadsheet.timeControlLoading == null) {
-                libraryBase.jspreadsheet.timeControlLoading = setTimeout(function () {
+                libraryBase.jspreadsheet.timeControlLoading = setTimeout(() => {
                     if (obj.content.scrollTop + obj.content.clientHeight >= obj.content.scrollHeight - 10) {
                         if (obj.view.loadDown()) {
                             if (obj.content.scrollTop + obj.content.clientHeight > obj.content.scrollHeight - 10) {
