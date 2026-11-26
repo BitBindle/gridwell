@@ -678,7 +678,8 @@ declare namespace jspreadsheet {
 
         /**
          * Ask the user to confirm an action in place of the confirm dialog of the browser, for example before an insert of
-         * rows destroys merged cells. The function must answer at once. False confirms each action without a dialog.
+         * rows destroys merged cells, or before an action clears the results of a search. The function must answer at once,
+         * and each answer other than true cancels the action. False confirms each action without a dialog.
          * @param text - The translated question.
          * @returns True to do the action.
          */

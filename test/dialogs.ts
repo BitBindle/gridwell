@@ -85,4 +85,58 @@ describe('The confirm and alert options', () => {
         expect(calls).to.eql([]);
         expect(silent.getMerge()).to.eql({ A1: [1, 3] });
     });
+
+    it('does each insert and delete of rows and columns over a merged range without a dialog when confirm is false', () => {
+        const actions: [string, (w: ReturnType<typeof build>) => unknown][] = [
+            ['insertRow', (w) => w.insertRow(1, 1)],
+            ['deleteRow', (w) => w.deleteRow(1, 1)],
+            ['insertColumn', (w) => w.insertColumn(1, 0)],
+            ['deleteColumn', (w) => w.deleteColumn(0, 1)],
+        ];
+        for (const [name, action] of actions) {
+            const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 5], mergeCells: { A1: [2, 3] } }], confirm: false })[0];
+
+            expect(action(worksheet), name).to.not.equal(false);
+            expect(worksheet.getMerge(), name).to.eql({});
+        }
+        expect(calls).to.eql([]);
+    });
+
+    it('cancels the action for each answer of the confirm function other than true', () => {
+        for (const answer of [1, 'yes', undefined, null, Promise.resolve(true)]) {
+            // @ts-expect-error -- a function in JavaScript can return any value
+            const worksheet = build({ confirm: () => answer });
+
+            expect(worksheet.insertRow(1, 1)).to.equal(false);
+            expect(worksheet.rows.length).to.equal(5);
+        }
+    });
+
+    it('gives the translated texts to the confirm and alert functions', () => {
+        jspreadsheet.setDictionary({
+            'This action will destroy any existing merged cells. Are you sure?': 'Verbundene Zellen gehen verloren. Fortfahren?',
+            'There is a conflict with another merged cell': 'Konflikt mit einer verbundenen Zelle',
+        });
+        try {
+            const texts: string[] = [];
+            const worksheet = build({
+                confirm: (text) => {
+                    texts.push(text);
+                    return false;
+                },
+                alert: (text) => texts.push(text),
+            });
+
+            worksheet.insertRow(1, 1);
+            worksheet.setMerge('A2', 2, 1);
+
+            expect(texts).to.eql(['Verbundene Zellen gehen verloren. Fortfahren?', 'Konflikt mit einer verbundenen Zelle']);
+        } finally {
+            // An empty translation shows the English text again
+            jspreadsheet.setDictionary({
+                'This action will destroy any existing merged cells. Are you sure?': '',
+                'There is a conflict with another merged cell': '',
+            });
+        }
+    });
 });
