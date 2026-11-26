@@ -6,15 +6,12 @@
  */
 import type { JSuites as Base } from 'jsuites/dist/types';
 
-export interface JSuites extends Omit<Base, 'calendar' | 'dropdown'> {
+export interface JSuites extends Omit<Base, 'calendar' | 'dropdown' | 'editor'> {
     /** Translate a text with the dictionary from setDictionary. */
     translate(text: string): string;
 
     /** Make a random unique id. */
     guid(): string;
-
-    /** Make an image upload control in the element. */
-    image(element: HTMLElement, options?: object): unknown;
 
     /** Make one request, or several requests and call complete when all have finished. */
     ajax(options: object | object[], complete?: () => void): unknown;

@@ -318,18 +318,9 @@ describe('Accessible names', () => {
     });
 
     it('Give the rich text editor a role and a name', () => {
-        // The html cells use the Option constructor of the window, and the rich text editor uses execCommand, which
-        // jsdom does not have
+        // The html cells use the Option constructor of the window
         const option = global.Option;
-        const execCommand = document.execCommand;
         global.Option = window.Option;
-        document.execCommand = function () {
-            const range = document.createRange();
-            range.selectNodeContents(document.activeElement!);
-            window.getSelection()!.removeAllRanges();
-            window.getSelection()!.addRange(range);
-            return true;
-        };
 
         try {
             const instance = jspreadsheet(root, {
@@ -346,7 +337,6 @@ describe('Accessible names', () => {
             expect(richText.getAttribute('aria-label')).to.equal('Zelle B1 bearbeiten');
         } finally {
             global.Option = option;
-            document.execCommand = execCommand;
         }
     });
 
