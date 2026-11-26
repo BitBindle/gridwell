@@ -107,7 +107,8 @@ export class Spreadsheet {
                     newWorksheet.build().then(() => {
                         this.toolbarManager.update(newWorksheet);
 
-                        newWorksheet.dispatch('oncreateworksheet', newWorksheet, newWorksheet.options, this.worksheets.length - 1);
+                        // createWorksheet can move the new worksheet before it is built
+                        newWorksheet.dispatch('oncreateworksheet', newWorksheet, newWorksheet.options, this.worksheets.indexOf(newWorksheet));
                     });
                 },
                 onchange: (element: HTMLElement, instance: Tabs, tabIndex: number) => {
@@ -201,6 +202,32 @@ export class Spreadsheet {
         this.worksheets.push(newWorksheet);
 
         return newWorksheet;
+    }
+
+    /**
+     * Move a worksheet, its options and its tab to another position. The open tab stays open, and an element of the
+     * moved worksheet that has the focus keeps it.
+     */
+    placeWorksheet(from: number, to: number) {
+        const worksheet = this.worksheets[from];
+        const tabs = this.element.tabs!;
+        const header = tabs.headers.children[from];
+        const active = document.activeElement as HTMLElement | null;
+        const focused = active && (header.contains(active) || worksheet.element.contains(active)) ? active : null;
+
+        this.worksheets.splice(to, 0, this.worksheets.splice(from, 1)[0]);
+        // The options are found by identity, so a list that does not match the worksheets keeps its other options
+        const index = this.config.worksheets.indexOf(worksheet.options);
+        if (index >= 0) {
+            this.config.worksheets.splice(index, 1);
+            this.config.worksheets.splice(Math.min(to, this.config.worksheets.length), 0, worksheet.options);
+        }
+        tabs.move(from, to, true, false);
+
+        // The browser takes the focus from an element that the DOM moves
+        if (focused && document.activeElement !== focused) {
+            focused.focus({ preventScroll: true });
+        }
     }
 
     /**

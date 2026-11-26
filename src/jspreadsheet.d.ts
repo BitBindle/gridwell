@@ -1193,6 +1193,14 @@ declare namespace jspreadsheet {
         onmoverow?: (instance: WorksheetInstance, oldPosition: number, newPosition: number, quantity: number) => void;
 
         /**
+         * Occurs when moveWorksheet moves a worksheet.
+         * @param worksheet - Instance of the moved worksheet.
+         * @param from - Old index of the worksheet.
+         * @param to - New index of the worksheet.
+         */
+        onmoveworksheet?: (worksheet: WorksheetInstance, from: number, to: number) => void;
+
+        /**
          * Occurs after a paste action is performed in the javascript table.
          * @param instance - Instance of the worksheet where the change occurred.
          * @param pastedInfo - The pasted cells, one item for each cell.
@@ -1212,6 +1220,15 @@ declare namespace jspreadsheet {
          * @param historyRecord - History item that was redone. If there are no more actions to redo, it takes the value undefined.
          */
         onredo?: (instance: WorksheetInstance, historyRecord: HistoryRecord | undefined) => void;
+
+        /**
+         * Occurs when renameWorksheet renames a worksheet.
+         * @param worksheet - Instance of the renamed worksheet.
+         * @param index - Index of the worksheet.
+         * @param newName - New name of the worksheet.
+         * @param oldName - Old name of the worksheet.
+         */
+        onrenameworksheet?: (worksheet: WorksheetInstance, index: number, newName: string, oldName: string) => void;
 
         /**
          * Occurs after a change in column width.
@@ -1890,8 +1907,9 @@ declare namespace jspreadsheet {
         /**
          * Create a new worksheet.
          * @param options - Worksheet options.
+         * @param position - Index of the new worksheet. Without it, or outside the worksheets, the new worksheet is the last one.
          */
-        createWorksheet: (options: WorksheetOptions) => void;
+        createWorksheet: (options: WorksheetOptions, position?: number) => void;
 
         /**
          * Remove columns.
@@ -2298,6 +2316,25 @@ declare namespace jspreadsheet {
          * @param position - Worksheet index.
          */
         openWorksheet: (position: number) => void;
+
+        /**
+         * Move a worksheet and its tab to another position. The open worksheet stays open, and the focus stays where it is.
+         * The method writes no history entry.
+         * @param from - Index of the worksheet.
+         * @param to - New index of the worksheet.
+         * @returns False when an index is outside the worksheets.
+         */
+        moveWorksheet: (from: number, to: number) => false | undefined;
+
+        /**
+         * Rename a worksheet, its tab and the accessible name of its table. Formulas that refer to the old name keep it.
+         * The method writes no history entry.
+         * @param position - Index of the worksheet.
+         * @param name - New name. It must have a character that is not a space, and must not be the name of another
+         * worksheet of the spreadsheet. The names are compared with their letter case, as `getWorksheetInstanceByName` does.
+         * @returns False when the position is outside the worksheets or the name is not valid.
+         */
+        renameWorksheet: (position: number, name: string) => false | undefined;
 
         /**
          * Spreadsheet settings.
