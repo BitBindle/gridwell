@@ -370,7 +370,7 @@ export class Columns {
             });
 
             // Remove table references
-            worksheet.formulas.updateTableReferences();
+            worksheet.formulas.updateTableReferences({ column: Number(columnNumber) });
 
             // The frozen columns can be other columns now
             this.updateFrozenColumns();
@@ -461,7 +461,7 @@ export class Columns {
         });
 
         // Update table references
-        worksheet.formulas.updateTableReferences();
+        worksheet.formulas.updateTableReferences({ column: Math.min(Number(o), Number(d)) });
 
         // The frozen columns can be other columns now
         this.updateFrozenColumns();
@@ -616,7 +616,7 @@ export class Columns {
                     });
 
                     // Update table references
-                    worksheet.formulas.updateTableReferences();
+                    worksheet.formulas.updateTableReferences({ column: Number(columnNumber) });
 
                     // The frozen columns can be other columns now
                     this.updateFrozenColumns();

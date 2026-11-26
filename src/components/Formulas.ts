@@ -372,6 +372,20 @@ export class Formulas {
     /**
      * Update formulas
      */
+    /**
+     * Whether a cell of the worksheet holds a formula.
+     */
+    private hasFormulas() {
+        for (const row of this.worksheet.options.data) {
+            for (const value of row) {
+                if (typeof value === 'string' && value.charCodeAt(0) === 61) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private updateFormulas(referencesToUpdate: Record<string, string>) {
         const worksheet = this.worksheet;
 
@@ -395,16 +409,25 @@ export class Formulas {
     }
 
     /**
-     * Update the references of the formulas after rows or columns move.
+     * Update the positions of the rows, the columns and the cells, and the references of the formulas, after rows or
+     * columns move.
+     * @param from - The first row or column that moved. The rows or columns before it keep their positions, so the update
+     * starts there. Without it, the update reads each row and each column.
      */
-    updateTableReferences() {
+    updateTableReferences(from: { row?: number; column?: number } = {}) {
         const worksheet = this.worksheet;
         if (worksheet.skipUpdateTableReferences) {
             return;
         }
 
+        const firstRow = Number.isInteger(from.row) ? Math.max(0, from.row!) : 0;
+        const firstColumn = Number.isInteger(from.column) ? Math.max(0, from.column!) : 0;
+
+        // The new names of the moved cells are only for the formulas and the meta information
+        const references = this.hasFormulas() || Object.keys(worksheet.options.meta || {}).length > 0;
+
         // Update headers
-        for (let i = 0; i < worksheet.headers.length; i++) {
+        for (let i = firstColumn; i < worksheet.headers.length; i++) {
             const x = parseInt(worksheet.headers[i].getAttribute('data-x'));
 
             if (x !== i) {
@@ -419,7 +442,7 @@ export class Formulas {
         }
 
         // Update all rows
-        for (let j = 0; j < worksheet.rows.length; j++) {
+        for (let j = firstRow; j < worksheet.rows.length; j++) {
             if (worksheet.rows[j]) {
                 const y = parseInt(worksheet.rows[j].element.getAttribute('data-y'));
 
@@ -450,15 +473,15 @@ export class Formulas {
             }
 
             // Other updates
-            if (x !== i || y !== j) {
+            if (references && (x !== i || y !== j)) {
                 const columnIdFrom = getColumnNameFromId([x, y]);
                 const columnIdTo = getColumnNameFromId([i, j]);
                 affectedTokens[columnIdFrom] = columnIdTo;
             }
         }
 
-        for (let j = 0; j < worksheet.records.length; j++) {
-            for (let i = 0; i < worksheet.records[0].length; i++) {
+        for (let j = firstRow; j < worksheet.records.length; j++) {
+            for (let i = firstColumn; i < worksheet.records[0].length; i++) {
                 if (worksheet.records[j][i]) {
                     // Current values
                     const x = parseInt(worksheet.records[j][i].element.getAttribute('data-x'));
@@ -511,11 +534,13 @@ export class Formulas {
             }
         }
 
-        // Update formulas
-        this.updateFormulas(affectedTokens);
+        if (references) {
+            // Update formulas
+            this.updateFormulas(affectedTokens);
 
-        // Update meta data
-        worksheet.meta.update(affectedTokens);
+            // Update meta data
+            worksheet.meta.update(affectedTokens);
+        }
 
         // Update the size of the grid
         worksheet.accessibility.updateGridSize();

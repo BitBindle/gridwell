@@ -273,7 +273,7 @@ export class Rows {
             });
 
             // Remove table references
-            worksheet.formulas.updateTableReferences();
+            worksheet.formulas.updateTableReferences({ row: Number(rowNumber) });
 
             // Events
             worksheet.dispatch('oninsertrow', worksheet, onbeforeinsertrowRecords);
@@ -362,7 +362,7 @@ export class Rows {
         });
 
         // Update table references
-        worksheet.formulas.updateTableReferences();
+        worksheet.formulas.updateTableReferences({ row: Math.min(Number(o), Number(d)) });
 
         // Events
         worksheet.dispatch('onmoverow', worksheet, parseInt(o), parseInt(d), 1);
@@ -498,7 +498,7 @@ export class Rows {
                     });
 
                     // Remove table references
-                    worksheet.formulas.updateTableReferences();
+                    worksheet.formulas.updateTableReferences({ row: Number(rowNumber) });
 
                     // Events
                     worksheet.dispatch('ondeleterow', worksheet, onbeforedeleterowRecords);
