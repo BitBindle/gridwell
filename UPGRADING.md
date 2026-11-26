@@ -563,6 +563,20 @@ such as those of the toolbar, the calendar, the filters and the image editor. An
 reads the English texts instead. The `Copy`, `Paste` and `Save as` items add the dots after the translation, so their
 translations have none.
 
+## The borders of the toolbar open a dialog
+
+The Borders item of the toolbar is a button that opens a dialog, where it was a select item with a picker (issue #146).
+The dialog has the types of borders, then the border color, the border thickness and the border style, and the keyboard
+reaches each of them: the arrows move between the types, Tab moves between the types, the color, the thickness and the
+style, and Escape closes the dialog. The types are buttons with names, such as "Outer borders", which are new texts for
+`jspreadsheet.setDictionary`.
+
+- In the items that the `toolbar` option gets, the borders are an icon item (`content: 'border_all'`), not an item of
+  type `select` with `options`, `columns` and `onchange`.
+- The element of the item has no `picker` property. The dialog is the element after it, with the class `jss_borders`,
+  and it is added the first time the dialog opens.
+- Choosing a type of borders still closes the dialog, and the button shows the icon of the type chosen last.
+
 ## The short names of the months and the days have their own translations
 
 The short names of the months and the days, which the tokens `MMM`, `MON`, `DDD` and `DY` show and the calendar shows,

@@ -1,13 +1,10 @@
 import { translate } from './dictionary.js';
 import { getCellNameFromCoords } from './helpers.js';
 import { ColorPicker, type ColorElement } from './color.js';
-import { Picker } from './picker.js';
+import { BordersDialog, type BorderOptions } from './borders.js';
 import { ToolbarControl } from './toolbarControl.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Spreadsheet, Worksheet } from '../types/internal';
-
-/** The picker of the borders, which keeps the thickness, the color and the style that the user chose. */
-type BorderPicker = jspreadsheet.PickerInstance & { thickness?: number; color?: string; style?: string };
 
 function setItemStatus(toolbarItem: HTMLElement, worksheet: Worksheet) {
     const disabled = worksheet.options.editable === false;
@@ -220,17 +217,17 @@ function getMergeItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
 
 /**
  * Set the borders of the selected cells.
- * @param picker - The picker of the borders, with the thickness, the color and the style that the user chose.
- * @param type - The option of the picker, such as 'border_outer'.
+ * @param borders - The thickness, the color and the style that the user chose.
+ * @param type - The type of borders, such as 'border_outer'.
  */
-function setBorders(worksheet: Worksheet, picker: BorderPicker, type: string) {
+function setBorders(worksheet: Worksheet, borders: BorderOptions, type: string) {
     if (worksheet.selection.range) {
         const selectedRange = getSelectedRange(worksheet.selection.range);
 
         // Default options
-        let thickness = picker.thickness || 1;
-        const color = picker.color || 'black';
-        const borderStyle = picker.style || 'solid';
+        let thickness = borders.thickness || 1;
+        const color = borders.color || 'black';
+        const borderStyle = borders.style || 'solid';
 
         if (borderStyle === 'double') {
             thickness += 2;
@@ -301,106 +298,17 @@ function setBorders(worksheet: Worksheet, picker: BorderPicker, type: string) {
 }
 
 /**
- * Add the controls for the color, the thickness and the style of the borders to the picker of the borders.
- * @param a - The element of the picker.
- * @param b - The picker, which keeps what the user chooses.
- */
-function addBorderControls(a: HTMLElement, b: BorderPicker) {
-    // Border color
-    const container = document.createElement('div');
-    let div = document.createElement('div');
-    container.appendChild(div);
-
-    const colorPicker = new ColorPicker(div, {
-        closeOnChange: false,
-        onchange(o: HTMLElement, v: string) {
-            (o.parentNode!.children[1] as HTMLElement).style.color = v;
-            b.color = v;
-        },
-    });
-
-    const i = document.createElement('i');
-    i.classList.add('material-icons');
-    i.textContent = 'color_lens';
-    i.setAttribute('role', 'button');
-    i.setAttribute('tabindex', '0');
-    i.setAttribute('aria-label', translate('Border color'));
-    i.onclick = () => {
-        colorPicker.open();
-    };
-    i.onkeydown = (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            colorPicker.open();
-        }
-    };
-    container.appendChild(i);
-    a.children[1].appendChild(container);
-
-    div = document.createElement('div');
-    div.setAttribute('aria-label', translate('Border thickness'));
-    new Picker<number>(div, {
-        data: [1, 2, 3, 4, 5],
-        render(e: number) {
-            return `<div style="height: ${e}px; width: 30px; background-color: black;"></div>`;
-        },
-        onchange(a: HTMLElement, k: object, c: number, d: number) {
-            b.thickness = d;
-        },
-        width: '50px',
-    });
-    a.children[1].appendChild(div);
-
-    const borderStylePicker = document.createElement('div');
-    borderStylePicker.setAttribute('aria-label', translate('Border style'));
-    new Picker(borderStylePicker, {
-        data: ['solid', 'dotted', 'dashed', 'double'],
-        render(e: string) {
-            if (e === 'double') {
-                return `<div style="width: 30px; border-top: 3px ${e} black;"></div>`;
-            }
-            return `<div style="width: 30px; border-top: 2px ${e} black;"></div>`;
-        },
-        onchange(a: HTMLElement, k: object, c: string, d: string) {
-            b.style = d;
-        },
-        width: '50px',
-    });
-    a.children[1].appendChild(borderStylePicker);
-
-    div = document.createElement('div');
-    div.style.flex = '1';
-    a.children[1].appendChild(div);
-}
-
-/**
- * The borders.
+ * The borders: a button that opens a dialog with the types of borders, and their color, thickness and style.
  */
 function getBordersItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
     return {
-        type: 'select',
+        content: 'border_all',
         tooltip: translate('Borders'),
-        options: [
-            'border_all',
-            'border_outer',
-            'border_inner',
-            'border_horizontal',
-            'border_vertical',
-            'border_left',
-            'border_top',
-            'border_right',
-            'border_bottom',
-            'border_clear',
-        ],
-        columns: 5,
-        render(e: string) {
-            return `<i class="material-icons">${e}</i>`;
+        render(element: HTMLElement) {
+            new BordersDialog(element, (type, borders) => {
+                setBorders(spreadsheet.getWorksheetInstance(), borders, type);
+            });
         },
-        right: true,
-        onchange(a: HTMLElement, b: BorderPicker, c: string, d: string) {
-            setBorders(spreadsheet.getWorksheetInstance(), b, d);
-        },
-        onload: addBorderControls,
         updateState: getUpdateState(spreadsheet),
     };
 }

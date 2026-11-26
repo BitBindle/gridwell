@@ -71,7 +71,7 @@ describe('Toolbar', () => {
                 'format_color_fill',
                 'select',
                 'web',
-                'select',
+                'border_all',
                 'divisor',
                 'fullscreen',
             ]);
@@ -146,15 +146,19 @@ describe('Toolbar', () => {
             const worksheet = instance[0];
             worksheet.updateSelectionFromCoords(0, 0, 1, 1);
 
-            // border_outer
-            choose(4, 1);
+            const borders = root.querySelector<HTMLElement>('.jss_toolbar [aria-label="Borders"]')!;
+            const chooseBorders = (label: string) => {
+                borders.click();
+                document.getElementById(borders.getAttribute('aria-controls')!)!.querySelector<HTMLElement>(`button[aria-label="${label}"]`)!.click();
+            };
+
+            chooseBorders('Outer borders');
             expect(getStyle(worksheet, 'A1')).to.contain('border-top: 1px solid black').and.to.contain('border-left: 1px solid black');
             expect(getStyle(worksheet, 'A1')).not.to.contain('border-right: 1px').and.not.to.contain('border-bottom: 1px');
             expect(getStyle(worksheet, 'B2')).to.contain('border-right: 1px solid black').and.to.contain('border-bottom: 1px solid black');
             expect(getStyle(worksheet, 'B2')).not.to.contain('border-top: 1px').and.not.to.contain('border-left: 1px');
 
-            // border_inner
-            choose(4, 2);
+            chooseBorders('Inner borders');
             expect(getStyle(worksheet, 'B2')).to.contain('border-top: 1px solid black').and.to.contain('border-left: 1px solid black');
             expect(getStyle(worksheet, 'A1')).not.to.contain('border-top: 1px').and.not.to.contain('border-left: 1px');
         });
@@ -380,7 +384,7 @@ describe('Toolbar', () => {
             expect(element.querySelectorAll('.jtoolbar-item').length).to.equal(0);
         });
 
-        it('marks the chosen option of a picker, and lays out the options in columns', async () => {
+        it('marks the chosen option of a picker', async () => {
             await createWithToolbar();
 
             const font = root.querySelector<HTMLElement>('.jss_toolbar .jpicker')!;
@@ -393,11 +397,6 @@ describe('Toolbar', () => {
             expect(fonts[2].getAttribute('aria-selected')).to.equal('true');
             expect(font.querySelector('.jpicker-header')!.textContent).to.equal('Arial');
             expect((font as HTMLElement & { picker: Jspreadsheet.PickerInstance }).picker.getValue()).to.equal('2');
-
-            // The borders have five columns
-            const borders = root.querySelector<HTMLElement>('.jss_toolbar [aria-label="Borders"] > .jpicker-content')!;
-            expect(borders.classList.contains('jpicker-columns')).to.equal(true);
-            expect(borders.style.width).to.equal('180px');
         });
 
         it('closes a picker on a press outside it', async () => {
@@ -513,6 +512,157 @@ describe('Toolbar', () => {
             key(picker, 'ArrowRight', 39);
             expect(document.activeElement).to.equal(picker);
             key(picker, 'Escape', 27);
+        });
+
+        it('opens the borders in a dialog, where the keys reach the types, the color, the thickness and the style (issue #146)', async () => {
+            const instance = await createWithToolbar();
+            const worksheet = instance[0];
+            worksheet.updateSelectionFromCoords(0, 0, 1, 1);
+
+            const borders = root.querySelector<HTMLElement>('.jss_toolbar [aria-label="Borders"]')!;
+            expect(borders.getAttribute('role')).to.equal('button');
+            expect(borders.getAttribute('aria-haspopup')).to.equal('dialog');
+            expect(borders.getAttribute('aria-expanded')).to.equal('false');
+
+            // Enter opens the dialog, and moves the focus to the first type of borders
+            borders.focus();
+            key(borders, 'Enter', 13);
+            expect(borders.getAttribute('aria-expanded')).to.equal('true');
+            const dialog = document.getElementById(borders.getAttribute('aria-controls')!)!;
+            expect(dialog.getAttribute('role')).to.equal('dialog');
+            expect(dialog.getAttribute('aria-label')).to.equal('Borders');
+            expect(dialog.hidden).to.equal(false);
+            // The dialog is not in the button, whose content is not read
+            expect(borders.contains(dialog)).to.equal(false);
+
+            const types = Array.from(dialog.querySelectorAll<HTMLElement>('[role="group"] > button'));
+            expect(types.map((type) => type.getAttribute('aria-label'))).to.eql([
+                'All borders',
+                'Outer borders',
+                'Inner borders',
+                'Horizontal borders',
+                'Vertical borders',
+                'Left border',
+                'Top border',
+                'Right border',
+                'Bottom border',
+                'No borders',
+            ]);
+            expect(document.activeElement).to.equal(types[0]);
+
+            // The arrows move in the grid of five columns, and the types are one tab stop
+            key(types[0], 'ArrowRight', 39);
+            expect(document.activeElement).to.equal(types[1]);
+            key(types[1], 'ArrowDown', 40);
+            expect(document.activeElement).to.equal(types[6]);
+            key(types[6], 'ArrowDown', 40);
+            expect(document.activeElement).to.equal(types[6]);
+            key(types[6], 'ArrowLeft', 37);
+            key(types[5], 'ArrowUp', 38);
+            expect(document.activeElement).to.equal(types[0]);
+            key(types[0], 'End', 35);
+            expect(document.activeElement).to.equal(types[9]);
+            key(types[9], 'Home', 36);
+            expect(document.activeElement).to.equal(types[0]);
+            key(types[0], 'ArrowLeft', 37);
+            expect(document.activeElement).to.equal(types[0]);
+            key(types[0], 'ArrowRight', 39);
+            expect(types.map((type) => type.getAttribute('tabindex'))).to.eql(['-1', '0', ...Array(8).fill('-1')]);
+
+            // Tab goes to the types, the border color, the thickness and the style, and stays in the dialog
+            const color = dialog.querySelector<HTMLElement>('button[aria-label="Border color"]')!;
+            const thickness = dialog.querySelector<HTMLElement>('[aria-label="Border thickness"]')!;
+            const style = dialog.querySelector<HTMLElement>('[aria-label="Border style"]')!;
+            const tabStops = Array.from(dialog.querySelectorAll<HTMLElement>('button, [tabindex]')).filter(
+                (element) => element.getAttribute('tabindex') !== '-1' && !element.closest('.jcolor')
+            );
+            expect(tabStops).to.eql([types[1], color, thickness, style]);
+            expect(thickness.getAttribute('role')).to.equal('combobox');
+            expect(style.getAttribute('role')).to.equal('combobox');
+
+            style.focus();
+            expect(key(style, 'Tab', 9).defaultPrevented).to.equal(true);
+            expect(document.activeElement).to.equal(types[1]);
+            const shiftTab = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+            types[1].dispatchEvent(shiftTab);
+            expect(shiftTab.defaultPrevented).to.equal(true);
+            expect(document.activeElement).to.equal(style);
+            expect(key(thickness, 'Tab', 9).defaultPrevented).to.equal(false);
+
+            // The color picker opens on the color, and Escape closes only the color picker
+            color.focus();
+            color.click();
+            const picker = dialog.querySelector<HTMLElement>('.jcolor')!;
+            expect(picker.classList.contains('jcolor-focus')).to.equal(true);
+            const red = picker.querySelector<HTMLElement>('td[data-value="#f44336"]')!;
+            red.focus();
+            key(red, 'Enter', 13);
+            expect(color.style.color).to.equal('rgb(244, 67, 54)');
+            key(red, 'Escape', 27);
+            expect(picker.classList.contains('jcolor-focus')).to.equal(false);
+            expect(document.activeElement).to.equal(color);
+            expect(dialog.hidden).to.equal(false);
+
+            // The thickness and the style are pickers, and Escape in their lists closes only the list
+            thickness.focus();
+            key(thickness, 'Enter', 13);
+            key(thickness, 'ArrowDown', 40);
+            key(thickness, 'ArrowDown', 40);
+            key(thickness, 'Enter', 13);
+            style.focus();
+            key(style, 'Enter', 13);
+            key(style, 'ArrowDown', 40);
+            key(style, 'Escape', 27);
+            expect(style.getAttribute('aria-expanded')).to.equal('false');
+            expect(dialog.hidden).to.equal(false);
+            key(style, 'Enter', 13);
+            key(style, 'ArrowDown', 40);
+            key(style, 'Enter', 13);
+            expect(dialog.hidden).to.equal(false);
+
+            // A type of borders sets the borders, closes the dialog and gives the focus back to the button
+            types[0].focus();
+            types[0].click();
+            expect(worksheet.getCell('A1').getAttribute('style')).to.contain('border-top: 3px dotted rgb(244, 67, 54)');
+            expect(dialog.hidden).to.equal(true);
+            expect(borders.getAttribute('aria-expanded')).to.equal('false');
+            expect(document.activeElement).to.equal(borders);
+            expect(borders.querySelector('i')!.textContent).to.equal('border_all');
+
+            // The down arrow opens the dialog on the type chosen last, and Escape closes it
+            expect(key(borders, 'ArrowDown', 40).defaultPrevented).to.equal(true);
+            expect(document.activeElement).to.equal(types[0]);
+            key(types[0], 'Escape', 27);
+            expect(dialog.hidden).to.equal(true);
+            expect(document.activeElement).to.equal(borders);
+        });
+
+        it('closes the borders on a press outside them, and does not open them on a worksheet that is not editable (issue #146)', async () => {
+            const instance = await createWithToolbar();
+
+            const borders = root.querySelector<HTMLElement>('.jss_toolbar [aria-label="Borders"]')!;
+            borders.click();
+            const dialog = document.getElementById(borders.getAttribute('aria-controls')!)!;
+            expect(dialog.hidden).to.equal(false);
+
+            // A press in the dialog or on the button keeps it open, and the button closes it
+            dialog.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            borders.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            expect(dialog.hidden).to.equal(false);
+            borders.click();
+            expect(dialog.hidden).to.equal(true);
+
+            borders.click();
+            document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            expect(dialog.hidden).to.equal(true);
+            expect(borders.getAttribute('aria-expanded')).to.equal('false');
+
+            instance[0].options.editable = false;
+            instance[0].parent.toolbarManager.update(instance[0]);
+            expect(borders.getAttribute('aria-disabled')).to.equal('true');
+            borders.click();
+            key(borders, 'ArrowDown', 40);
+            expect(dialog.hidden).to.equal(true);
         });
 
         it('presses a button with Enter and Space (issue #125)', async () => {
