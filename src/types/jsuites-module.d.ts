@@ -10,8 +10,8 @@ import type { CalendarFunctions, MaskFunctions } from './jsuites';
 /** The options of a jsuites component, the second parameter of the function that creates it */
 type ComponentOptions<F> = F extends (el: HTMLElement, options: infer O) => unknown ? O : never;
 
-/** A dropdown, as jSuites.dropdown returns it */
-export type Dropdown = ReturnType<Base['dropdown']>;
+/** A dropdown, as jSuites.dropdown returns it. The typings miss its close method, which ignoreEvents keeps from calling onclose. */
+export type Dropdown = ReturnType<Base['dropdown']> & { close(ignoreEvents?: boolean): void };
 
 /**
  * The options of jSuites.dropdown. jsuites takes any CSS width, the id of an item as the value, a list or null as the

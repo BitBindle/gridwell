@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 
 import jspreadsheet from './support/jspreadsheet';
+import type { Dropdown } from 'jsuites';
 
-// The element of a jSuites dropdown, which keeps the dropdown. The jsuites typings miss its close method.
-type DropdownElement = HTMLElement & { dropdown: { setValue(value: string[]): void; close(): void } };
+// The element of a jSuites dropdown, which keeps the dropdown
+type DropdownElement = HTMLElement & { dropdown: Dropdown };
 
 describe('Use search', () => {
     it('search and resetSearch methods', () => {
