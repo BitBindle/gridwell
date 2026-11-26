@@ -1441,9 +1441,9 @@ declare namespace jspreadsheet {
         filters?: boolean;
 
         /**
-         * Set the initial footer of the spreadsheet
+         * Set the initial footer of the spreadsheet: the rows of the footer, with a text, a number or a formula for each column.
          */
-        footers?: string[][];
+        footers?: (string | number)[][];
 
         /**
          * Number of columns frozen at the top of the spreadsheet.

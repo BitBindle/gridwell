@@ -16,8 +16,7 @@ describe('Use footers', () => {
                     ],
                     footers: [
                         ['a', 'b', 'c'],
-                        // TYPING: footers is typed string[][], but the library also shows numbers
-                        [1, 2, 3] as unknown as string[],
+                        [1, 2, 3],
                     ],
                 },
             ],

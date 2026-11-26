@@ -304,3 +304,6 @@ worksheet.setConfig({ tabs: true }, true);
 // @ts-expect-error -- tabs is an option of the spreadsheet
 worksheet.setConfig({ tabs: true });
 worksheet.parent.setConfig({ toolbar: true });
+
+// A footer can show numbers
+library(document.createElement('div'), { worksheets: [{ footers: [['Total', 3, '=SUM(A1:A2)']] }] });
