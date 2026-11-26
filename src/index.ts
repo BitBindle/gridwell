@@ -1,5 +1,3 @@
-import jSuites from 'jsuites';
-
 import libraryBase from './utils/libraryBase.js';
 import { setDictionary } from './utils/dictionary.js';
 
@@ -69,8 +67,6 @@ libraryBase.jspreadsheet.setFormulaEngine = (engine: jspreadsheet.FormulaEngine 
 // Define dictionary
 libraryBase.jspreadsheet.setDictionary = (o: Record<string, string>) => {
     setDictionary(o);
-    // Jspreadsheet no longer shows jsuites controls, but it still passes the translations on until it drops jsuites
-    jSuites.setDictionary(o);
 };
 
 // destroy empties the spreadsheet property of the element

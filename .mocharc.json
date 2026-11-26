@@ -1,4 +1,4 @@
 {
-    "require": ["test/support/register.cjs", "mocha.config.js"],
+    "require": ["tsx/cjs", "mocha.config.js"],
     "ignore": ["test/typings.ts"]
 }

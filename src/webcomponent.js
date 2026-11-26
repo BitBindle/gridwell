@@ -14,12 +14,6 @@ class Jspreadsheet extends HTMLElement {
         css.href = 'https://cdn.jsdelivr.net/npm/jspreadsheet-ce/dist/jspreadsheet.min.css';
         shadowRoot.appendChild(css);
 
-        const cssJsuites = document.createElement('link');
-        cssJsuites.rel = 'stylesheet';
-        cssJsuites.type = 'text/css';
-        cssJsuites.href = 'https://cdn.jsdelivr.net/npm/jsuites/dist/jsuites.min.css';
-        shadowRoot.appendChild(cssJsuites);
-
         const cssMaterial = document.createElement('link');
         cssMaterial.rel = 'stylesheet';
         cssMaterial.type = 'text/css';

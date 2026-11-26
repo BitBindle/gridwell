@@ -11,11 +11,7 @@ class MyPlugin {
                 // Get the bundled file name
                 const fileName = 'index.js';
 
-                const header = `if (! jSuites && typeof(require) === 'function') {
-    var jSuites = require('jsuites');
-}
-
-;(function (global, factory) {
+                const header = `;(function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
     global.jspreadsheet = factory();
@@ -80,17 +76,6 @@ module.exports = (env, argv) => {
         },
         module: {
             rules: [
-                isProduction
-                    ? {
-                          test: /\.[jt]s$/,
-                          use: [
-                              {
-                                  loader: path.resolve('build.cjs'),
-                                  options: {},
-                              },
-                          ],
-                      }
-                    : null,
                 // Remove the types. TypeScript checks them separately (npm run typecheck).
                 {
                     test: /\.ts$/,

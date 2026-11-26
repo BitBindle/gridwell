@@ -502,39 +502,33 @@ export class Pointer {
 
     /**
      * A press on a cell closes the editor of another cell and selects the cell, or extends the selection to it with Shift.
-     * A press on the close button of an editor closes the editor.
      */
     pressCell(e: TargetEvent<MouseEvent>) {
         const worksheet = this.worksheet;
 
-        // Jclose
-        if (e.target.classList.contains('jclose') && e.target.clientWidth - e.offsetX < 50 && e.offsetY < 50) {
-            worksheet.editor.close(worksheet.editor.cell!, true);
-        } else {
-            const position = getCellPosition(e.target);
-            if (position) {
-                const columnId = position[0];
-                const rowId = position[1];
-                // Close edition
-                if (worksheet.editor.isOpen()) {
-                    if (worksheet.editor.x !== columnId || worksheet.editor.y !== rowId) {
-                        worksheet.editor.close(worksheet.editor.cell, true);
-                    }
+        const position = getCellPosition(e.target);
+        if (position) {
+            const columnId = position[0];
+            const rowId = position[1];
+            // Close edition
+            if (worksheet.editor.isOpen()) {
+                if (worksheet.editor.x !== columnId || worksheet.editor.y !== rowId) {
+                    worksheet.editor.close(worksheet.editor.cell, true);
                 }
-
-                if (!worksheet.editor.isOpen()) {
-                    // Update cell selection
-                    if (e.shiftKey) {
-                        worksheet.selection.updateFromCoords(worksheet.selection.range![0], worksheet.selection.range![1], columnId, rowId, e);
-                    } else {
-                        worksheet.selection.updateFromCoords(columnId, rowId, undefined, undefined, e);
-                    }
-                }
-
-                // No full row selected
-                worksheet.selection.column = null;
-                worksheet.selection.row = null;
             }
+
+            if (!worksheet.editor.isOpen()) {
+                // Update cell selection
+                if (e.shiftKey) {
+                    worksheet.selection.updateFromCoords(worksheet.selection.range![0], worksheet.selection.range![1], columnId, rowId, e);
+                } else {
+                    worksheet.selection.updateFromCoords(columnId, rowId, undefined, undefined, e);
+                }
+            }
+
+            // No full row selected
+            worksheet.selection.column = null;
+            worksheet.selection.row = null;
         }
     }
 

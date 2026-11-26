@@ -47,9 +47,6 @@
         "xls",
         "datasheet"
     ],
-    "dependencies": {
-        "jsuites": "^5.12.0"
-    },
     "peerDependencies": {
         "@jspreadsheet/formula": "^2.0.2"
     },
