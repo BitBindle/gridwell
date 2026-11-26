@@ -699,6 +699,32 @@ export class View {
     }
 
     /**
+     * Put the frozen rows first in the table body, and the other attached rows after them in their order. Lazy loading
+     * needs this after a move or a delete of a frozen row.
+     */
+    attachFrozen() {
+        const worksheet = this.worksheet;
+        const frozen = this.frozenRows();
+        if (worksheet.options.lazyLoading !== true || !frozen) {
+            return;
+        }
+
+        const tbody = worksheet.tbody;
+        function y(row: Element) {
+            return parseInt(row.getAttribute('data-y'));
+        }
+        const others = Array.from(tbody.children)
+            .filter((row) => y(row) >= frozen)
+            .sort((a, b) => y(a) - y(b));
+        const wanted = [...worksheet.rows.slice(0, frozen).map((row) => row.element), ...others];
+        for (let k = 0; k < wanted.length; k++) {
+            if (tbody.children[k] !== wanted[k]) {
+                tbody.insertBefore(wanted[k], tbody.children[k] || null);
+            }
+        }
+    }
+
+    /**
      * The first row of the table body that lazy loading can remove or insert before: the row after the frozen rows.
      */
     firstScrollRow() {

@@ -186,6 +186,39 @@ describe('Frozen rows with lazy loading', () => {
         expect(attached().includes(worksheet.selection.range![3] as number)).to.equal(true);
     });
 
+    it('keeps the frozen rows first and the other rows in order after a delete and a move of a frozen row', () => {
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(300), freezeRows: 2, lazyLoading: true, tableOverflow: true }] });
+        const attached = () => Array.from(worksheet.tbody.children).map((row) => Number(row.getAttribute('data-y')));
+        const ordered = (list: number[]) => list.every((y, k) => k === 0 || y > list[k - 1]);
+        worksheet.updateSelectionFromCoords(0, 298, 0, 298);
+        worksheet.down();
+
+        worksheet.deleteRow(0);
+        expect(attached().slice(0, 2)).to.eql([0, 1]);
+        expect(worksheet.rows[1].element.parentNode).to.equal(worksheet.tbody);
+        expect(ordered(attached())).to.equal(true);
+
+        worksheet.moveRow(0, 250);
+        expect(attached().slice(0, 2)).to.eql([0, 1]);
+        expect(ordered(attached())).to.equal(true);
+
+        // The keyboard loads the rows above in order
+        worksheet.updateSelectionFromCoords(0, 215, 0, 215);
+        for (let k = 0; k < 10; k++) {
+            worksheet.up();
+        }
+        expect(attached().slice(0, 2)).to.eql([0, 1]);
+        expect(ordered(attached())).to.equal(true);
+    });
+
+    it('freezes at most 50 rows with lazy loading, and a whole number of rows', () => {
+        const [lazy] = jspreadsheet(root, { worksheets: [{ data: rows(300), freezeRows: 150, lazyLoading: true, tableOverflow: true }] });
+        expect(frozen(lazy).length).to.equal(50);
+
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(5), freezeRows: 1.5 }] });
+        expect(frozen(worksheet).map(([y]) => y)).to.eql([0]);
+    });
+
     it('keeps the frozen rows first when the content scrolls down', async () => {
         const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(300), freezeRows: 2, lazyLoading: true, tableOverflow: true }] });
 
@@ -234,11 +267,12 @@ describe('The scroll to the active cell below the frozen rows', () => {
         withRowHeight(() => {
             const worksheet = scrolledWorksheet();
 
-            worksheet.records[1][0].element.getBoundingClientRect = rect(50, 40, 100, 20);
-            worksheet.updateSelectionFromCoords(0, 2, 0, 2);
+            // Without frozen rows, the scroll would move this cell below the header row
+            worksheet.records[0][0].element.getBoundingClientRect = rect(50, 15, 100, 20);
+            worksheet.updateSelectionFromCoords(0, 1, 0, 1);
             worksheet.up();
 
-            expect(worksheet.selection.range!.map(Number)).to.eql([0, 1, 0, 1]);
+            expect(worksheet.selection.range!.map(Number)).to.eql([0, 0, 0, 0]);
             expect(worksheet.content.scrollTop).to.equal(500);
         })
     );

@@ -1184,12 +1184,26 @@
     -moz-box-shadow: 2px 4px 4px 0.1px #ccc !important;
 }
 
-/* The frozen rows stick below the header. --jss-frozen-top is the distance from the top of the content. */
+/* The frozen rows stick below the header. --jss-frozen-top is the distance from the top of the content. Their cells
+   have a background, so the rows that scroll under them do not show through. The row numbers keep their own. */
 .jss_worksheet > tbody > tr.jss_frozen_row > td {
     position: sticky;
     top: var(--jss-frozen-top, 0);
     z-index: 1;
-    background-color: #fff;
+}
+
+.jss_worksheet > tbody > tr.jss_frozen_row > td:not(:first-child) {
+    background-color: var(--content_background, #fff);
+}
+
+/* The selection colors are partly transparent, so they go over the background as an image */
+.jss_worksheet > tbody > tr.jss_frozen_row > td.highlight,
+.jss_worksheet > tbody > tr.jss_frozen_row > td.selection {
+    background-image: linear-gradient(var(--selection, rgba(0, 0, 0, 0.05)), var(--selection, rgba(0, 0, 0, 0.05)));
+}
+
+.jss_worksheet > tbody > tr.jss_frozen_row > td.highlight-selected {
+    background-image: linear-gradient(var(--cursor, transparent), var(--cursor, transparent));
 }
 
 /* A cell of a frozen row and a frozen column sticks on both axes, over the other frozen cells */
@@ -1197,8 +1211,14 @@
     z-index: 2;
 }
 
-/* The line under the last frozen row. It is transparent by default, and a forced-colors mode shows it in the text color */
-.jss_worksheet > tbody > tr.jss_frozen_last > td::after {
+/* The list of an editor in a frozen row opens over the other frozen rows and the header */
+.jss_worksheet > tbody > tr.jss_frozen_row > td.editor {
+    z-index: 4;
+}
+
+/* The line under the last frozen row. It is transparent by default, and a forced-colors mode shows it in the text color.
+   The row number gets no line, because its drag handle uses ::after. */
+.jss_worksheet > tbody > tr.jss_frozen_last > td:not(:first-child)::after {
     content: '';
     position: absolute;
     top: 0;

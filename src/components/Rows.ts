@@ -23,11 +23,13 @@ export class Rows {
     }
 
     /**
-     * The number of frozen rows: the freezeRows option, but not more than the rows of the worksheet.
+     * The number of frozen rows: the freezeRows option, but not more than the rows of the worksheet. With lazy loading,
+     * at most 50 rows freeze, so a page of 100 rows has rows that scroll.
      */
     getFreezeCount() {
         const worksheet = this.worksheet;
-        return Math.max(0, Math.min(worksheet.options.freezeRows || 0, worksheet.rows.length));
+        const max = worksheet.options.lazyLoading === true ? Math.min(50, worksheet.rows.length) : worksheet.rows.length;
+        return Math.max(0, Math.min(Math.floor(worksheet.options.freezeRows || 0), max));
     }
 
     /**
@@ -63,10 +65,17 @@ export class Rows {
     updateFreeze() {
         const worksheet = this.worksheet;
 
+        const count = this.getFreezeCount();
+        // A worksheet without frozen rows does no work, also no layout
+        if (!count && !this.frozen.length) {
+            return;
+        }
+
         const frozen: HTMLTableRowElement[] = [];
-        for (let j = 0; j < this.getFreezeCount(); j++) {
+        for (let j = 0; j < count; j++) {
             frozen.push(worksheet.rows[j].element);
         }
+        const changed = frozen.length !== this.frozen.length || frozen.some((row, j) => row !== this.frozen[j]);
 
         // A row that is not in the first rows any more is not frozen
         for (const row of this.frozen) {
@@ -80,12 +89,17 @@ export class Rows {
         }
         this.frozen = frozen;
 
-        this.placeFrozen();
-        this.observeFrozen();
+        // A move or a delete can take a frozen row out of the rows that lazy loading attached
+        worksheet.view.attachFrozen();
 
-        // A cell of a frozen row and a frozen column sticks on both axes
-        if (worksheet.options.freezeColumns) {
-            worksheet.columns.updateFreezePosition();
+        if (changed) {
+            this.placeFrozen();
+            this.observeFrozen();
+
+            // A cell of a frozen row and a frozen column sticks on both axes
+            if (worksheet.options.freezeColumns) {
+                worksheet.columns.updateFreezePosition();
+            }
         }
     }
 
