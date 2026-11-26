@@ -155,6 +155,49 @@ that is hard to read but does not need a new owner. They change no behaviour.
     `createTable` created and did not use, and a loop in `copy` that worked out a value that nothing read. The functions
     are 41 to 121 lines long instead of 150 to 258.
 
+The steps above leave the state in components, but the behaviour is still in `src/utils/`: about 8000 lines of
+functions that get the worksheet as `this` through `fn.call(worksheet, ...)`, and that reach each other the same way. The
+next steps move the behaviour of each feature into a component, so that a feature is one class: its state and the code
+that changes it.
+
+-   **A component gets its worksheet.** The worksheet constructor creates each component with `new Merges(this)`, and the
+    component keeps it as `this.worksheet`. A moved function becomes a method that starts with
+    `const obj = this.worksheet;`, so its code stays the same.
+-   **Components call each other through the worksheet**, as `obj.merges.destroy()`, and import only the modules that
+    stay functions. Only the builders (`utils/worksheets.ts` and `utils/factory.ts`) import `Worksheet.ts` at run
+    time; the other modules tell a spreadsheet from a worksheet with `instanceof Spreadsheet`. So `Worksheet.ts` can
+    import the components, and the components the modules they need, without a cycle.
+-   **The public methods stay on the worksheet.** Each entry of `worksheetPublicMethods` calls the method of its
+    component, for example `getMerge` calls `this.merges.get(cellName)`. The public API does not change.
+-   **The components are internal.** The new components are not in `WorksheetInstance`, and the methods that move into
+    the existing components are not in their public interfaces. Applications keep calling the worksheet methods.
+-   **What stays functions.** Code without state of its own stays in `src/utils/`: the helpers for cell names and CSV
+    (`helpers.ts`, `internalHelpers.ts`), `dispatch`, the rendering of a cell (`render.ts`), `updateTable`, the value
+    that a cell shows (`values.ts`, without the formulas), the builders, `config`, `download`, `fullscreen`, the roles
+    and labels of the grid (`accessibility.ts`, without the selection) and the worksheet that a spreadsheet shows.
+
+18. **The plan and the groundwork.** This section, and the modules that told a worksheet from a spreadsheet with
+    `instanceof Worksheet` (`dispatch`, `config`, `activeWorksheet`) use `instanceof Spreadsheet`.
+    Done.
+19. **The data of the cells.** `Styles` (`style.ts`), `Comments` (`comments.ts`), `Meta` (`meta.ts`) and `Cells`
+    (`cells.ts`: finding a cell, its label, read-only).
+20. **Merges.** `Merges` (`merges.ts`).
+21. **Formulas.** The references (`references.ts`), the footers (`footer.ts`) and the calculation of a formula
+    (`executeFormula` and what only it uses in `values.ts`) move into `Formulas`.
+22. **The view.** Search, the filters, pagination, the order and the lazy loading (`search.ts`, `filter.ts`,
+    `pagination.ts`, `orderBy.ts`, `lazyLoading.ts`) move into `View`.
+23. **The editor.** `editor.ts` moves into `Editor`.
+24. **The clipboard.** `copyPaste.ts` moves into `Clipboard`.
+25. **The selection.** `selection.ts`, the moves of `keys.ts` and the accessibility code that follows the selection move
+    into `Selection`; the fill with the selection corner (`fill.ts`) into `Pointer`.
+26. **Columns.** `Columns` (`columns.ts`, the headers in `headers.ts`, and the frozen columns in `freeze.ts` and
+    `freezePosition.ts`).
+27. **Rows.** `Rows` (`rows.ts`).
+28. **The data.** `Data` (`data.ts`: getting and setting the data and the values).
+29. **History.** Applying a record to undo or redo it (`history.ts`) moves into `History`. It comes last because it calls
+    every other feature.
+30. **The toolbar.** `toolbar.ts` becomes the class `Toolbar` of the spreadsheet, as `Tabs` did.
+
 ## Rules for each step
 
 -   A step moves code; it does not rewrite it. Fix a bug that the move finds in its own commit, with a test.

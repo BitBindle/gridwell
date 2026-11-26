@@ -1,6 +1,6 @@
 import type jspreadsheet from '../jspreadsheet';
-import { Worksheet } from '../Worksheet.js';
-import type { Spreadsheet } from '../types/internal';
+import { Spreadsheet } from '../Spreadsheet.js';
+import type { Worksheet } from '../types/internal';
 /**
  * Get table config information
  */
@@ -32,12 +32,12 @@ export const setConfig = function (
 
     let spreadsheet: Spreadsheet;
 
-    if (obj instanceof Worksheet) {
-        spreadsheet = obj.parent;
-    } else {
+    if (obj instanceof Spreadsheet) {
         spreadsheetLevel = true;
 
         spreadsheet = obj;
+    } else {
+        spreadsheet = obj.parent;
     }
 
     keys.forEach(function (key) {
