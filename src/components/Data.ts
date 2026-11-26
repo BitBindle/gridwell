@@ -347,7 +347,7 @@ export class Data {
      * @return array data
      */
     // The public typings have one overload for each kind of result: rows of values, text with a delimiter, or objects with asJson
-    get(highlighted?: boolean, processed?: boolean, delimiter?: string, asJson?: boolean) {
+    get(highlighted?: boolean, processed?: boolean, delimiter?: string | null, asJson?: boolean) {
         const obj = this.worksheet;
 
         // Control vars

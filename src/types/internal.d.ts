@@ -1,8 +1,7 @@
 /**
  * Types the library code uses internally. They are not published: the public typings are in src/jspreadsheet.d.ts.
  *
- * Import them with `import type { Worksheet } from '../types/internal';` and give a function that uses the worksheet
- * as `this` a `this: Worksheet` parameter.
+ * Import them with `import type { Worksheet } from '../types/internal';`.
  */
 import type jspreadsheet from '../jspreadsheet';
 import type { Tabs } from '../utils/tabs';
@@ -167,17 +166,6 @@ export interface SpreadsheetState extends jspreadsheet.SpreadsheetInstance {
 
 /** A merged range in options.mergeCells: the colspan, the rowspan and, after setMerge, the cells that the range hides. */
 export type MergeInfo = [number, number, HTMLTableCellElement[]?];
-
-/**
- * The type of a function that implements a public worksheet method, with the worksheet as `this`.
- *
- *     export const getData: WorksheetMethod<'getData'> = function (highlighted, processed) { ... };
- *
- * The parameters get their types from WorksheetInstance in src/jspreadsheet.d.ts, so the code and the public typings agree.
- */
-export type WorksheetMethod<K extends keyof jspreadsheet.WorksheetInstance> = jspreadsheet.WorksheetInstance[K] extends (...args: infer A) => infer R
-    ? (this: Worksheet, ...args: A) => R
-    : never;
 
 /** The handlers of the events, by event name (see src/jspreadsheet.d.ts). */
 export type EventHandlers = jspreadsheet.EventHandlers;

@@ -2,7 +2,7 @@ import jSuites from 'jsuites';
 import libraryBase from './utils/libraryBase.js';
 import { parseCSV } from './utils/helpers.js';
 import { getIdFromColumnName } from './utils/internalHelpers.js';
-import { worksheetPublicMethods } from './utils/worksheets.js';
+import { cutControls } from './events/clipboard.js';
 import type jspreadsheet from './jspreadsheet';
 import { Accessibility } from './components/Accessibility.js';
 import { Cells } from './components/Cells.js';
@@ -31,8 +31,7 @@ type ChangeRecord = { x: number; y: number; value?: jspreadsheet.CellValue };
 
 /**
  * The fields of a worksheet and its public methods. The fields are in WorksheetState (src/types/internal.d.ts). The
- * public methods are methods of the class or of its components. worksheetPublicMethods (src/utils/worksheets.ts) lists
- * the methods that call a component, and the end of this module puts them on the prototype.
+ * public methods are methods of the class. Most of them call the method of a component.
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unsafe-declaration-merging
 export interface Worksheet extends WorksheetState {}
@@ -202,6 +201,365 @@ export class Worksheet {
      */
     getWorksheetActive(): number {
         return this.parent.getWorksheetActive();
+    }
+
+    // The public methods that call a component
+
+    selectAll() {
+        return this.selection.selectAll();
+    }
+
+    updateSelectionFromCoords(x1: number | null, y1: number | null, x2?: number | null, y2?: number | null) {
+        return this.selection.updateFromCoords(x1, y1, x2, y2);
+    }
+
+    resetSelection() {
+        return this.selection.reset();
+    }
+
+    getSelection() {
+        return this.selection.get();
+    }
+
+    getSelected(columnNameOnly?: false): { element: HTMLTableCellElement; x: number; y: number }[];
+    getSelected(columnNameOnly: true): string[];
+    getSelected(columnNameOnly?: boolean): { element: HTMLTableCellElement; x: number; y: number }[] | string[];
+    getSelected(columnNameOnly?: boolean) {
+        return this.selection.getSelected(columnNameOnly);
+    }
+
+    getSelectedColumns(visibleOnly?: boolean) {
+        return this.selection.getSelectedColumns(visibleOnly);
+    }
+
+    getSelectedRows(visibleOnly?: boolean) {
+        return this.selection.getSelectedRows(visibleOnly);
+    }
+
+    getData(highlighted?: boolean, processed?: boolean, delimiter?: undefined | null, asJson?: false): jspreadsheet.CellValue[][];
+    getData(highlighted: boolean | undefined, processed: boolean | undefined, delimiter: string, asJson?: boolean): string;
+    getData(
+        highlighted: boolean | undefined,
+        processed: boolean | undefined,
+        delimiter: undefined | null,
+        asJson: true
+    ): Record<number, jspreadsheet.CellValue>[];
+    getData(
+        highlighted?: boolean,
+        processed?: boolean,
+        delimiter?: string | null,
+        asJson?: boolean
+    ): jspreadsheet.CellValue[][] | Record<number, jspreadsheet.CellValue>[] | string;
+    getData(highlighted?: boolean, processed?: boolean, delimiter?: string | null, asJson?: boolean) {
+        return this.data.get(highlighted, processed, delimiter, asJson);
+    }
+
+    setData(data?: jspreadsheet.CellValue[][] | Record<string, jspreadsheet.CellValue>[]) {
+        return this.data.set(data);
+    }
+
+    getValue(cell: string, processedValue?: boolean) {
+        return this.data.getValue(cell, processedValue);
+    }
+
+    getValueFromCoords(x: number, y: number, processedValue?: boolean) {
+        return this.data.getValueFromCoords(x, y, processedValue);
+    }
+
+    setValue(cell: Parameters<jspreadsheet.WorksheetInstance['setValue']>[0], value?: jspreadsheet.CellValue, force?: boolean) {
+        return this.data.setValue(cell, value, force);
+    }
+
+    setValueFromCoords(x: number, y: number, value: jspreadsheet.CellValue, force?: boolean) {
+        return this.data.setValueFromCoords(x, y, value, force);
+    }
+
+    getWidth(column?: number) {
+        return this.columns.getWidth(column);
+    }
+
+    setWidth(column: number, width: number): void;
+    setWidth(column: number[], width: number | number[]): void;
+    setWidth(column: number | number[], width: number | number[]) {
+        return this.columns.setWidth(column, width);
+    }
+
+    insertRow(mixed?: number | jspreadsheet.CellValue[], rowNumber?: number, insertBefore?: boolean | number) {
+        return this.rowManager.insert(mixed, rowNumber, insertBefore);
+    }
+
+    moveRow(rowNumber: number, newPositionNumber: number) {
+        return this.rowManager.move(rowNumber, newPositionNumber);
+    }
+
+    deleteRow(rowNumber?: number, numOfRows?: number) {
+        return this.rowManager.delete(rowNumber, numOfRows);
+    }
+
+    hideRow(rowNumber: number | number[]) {
+        return this.rowManager.hide(rowNumber);
+    }
+
+    showRow(rowNumber: number | number[]) {
+        return this.rowManager.show(rowNumber);
+    }
+
+    getRowData(rowNumber: number, processed?: boolean) {
+        return this.rowManager.getData(rowNumber, processed);
+    }
+
+    setRowData(rowNumber: number, data: (jspreadsheet.CellValue | null)[], force?: boolean) {
+        return this.rowManager.setData(rowNumber, data, force);
+    }
+
+    getHeight(row?: undefined): string[];
+    getHeight(row: number): string;
+    getHeight(row?: number) {
+        return this.rowManager.getHeight(row);
+    }
+
+    setHeight(row: number, height: number) {
+        return this.rowManager.setHeight(row, height);
+    }
+
+    getMerge(cellName?: string) {
+        return this.merges.get(cellName);
+    }
+
+    setMerge(cellName?: string, colspan?: number, rowspan?: number) {
+        return this.merges.set(cellName, colspan, rowspan);
+    }
+
+    destroyMerge() {
+        return this.merges.destroy();
+    }
+
+    removeMerge(cellName: string, data?: jspreadsheet.CellValue[]) {
+        return this.merges.remove(cellName, data);
+    }
+
+    search(query: string) {
+        return this.view.search(query);
+    }
+
+    resetSearch() {
+        return this.view.resetSearch();
+    }
+
+    getHeader(column: number) {
+        return this.columns.getHeader(column);
+    }
+
+    getHeaders(asArray?: boolean) {
+        return this.columns.getHeaders(asArray);
+    }
+
+    setHeader(column: number, newValue?: string) {
+        return this.columns.setHeader(column, newValue);
+    }
+
+    getStyle(cell?: string | number[], key?: string) {
+        return this.styles.get(cell, key);
+    }
+
+    setStyle(o: string, k: string, v: string, force?: boolean, ignoreHistoryAndEvents?: boolean): void;
+    setStyle(o: Record<string, string | string[]>, k?: null | undefined, v?: null | undefined, force?: boolean, ignoreHistoryAndEvents?: boolean): void;
+    setStyle(
+        cell: string | Record<string, string | string[]>,
+        property?: string | null,
+        value?: string | null,
+        forceOverwrite?: boolean,
+        ignoreHistoryAndEvents?: boolean
+    ) {
+        return this.styles.set(cell, property, value, forceOverwrite, ignoreHistoryAndEvents);
+    }
+
+    resetStyle(o: Record<string, string | string[]>, ignoreHistoryAndEvents?: boolean) {
+        return this.styles.reset(o, ignoreHistoryAndEvents);
+    }
+
+    insertColumn(mixed?: number | jspreadsheet.CellValue[], columnNumber?: number, insertBefore?: boolean | number, properties?: jspreadsheet.Column[]) {
+        return this.columns.insert(mixed, columnNumber, insertBefore, properties);
+    }
+
+    moveColumn(o: number, d: number) {
+        return this.columns.move(o, d);
+    }
+
+    deleteColumn(columnNumber?: number, numOfColumns?: number) {
+        return this.columns.delete(columnNumber, numOfColumns);
+    }
+
+    getColumnData(columnNumber: number, processed?: boolean) {
+        return this.columns.getData(columnNumber, processed);
+    }
+
+    setColumnData(colNumber: number, data: (jspreadsheet.CellValue | null)[], force?: boolean) {
+        return this.columns.setData(colNumber, data, force);
+    }
+
+    whichPage(row: number) {
+        return this.view.whichPage(row);
+    }
+
+    page(pageNumber: number) {
+        return this.view.page(pageNumber);
+    }
+
+    download(includeHeaders?: boolean, processed?: boolean) {
+        return this.clipboard.download(includeHeaders, processed);
+    }
+
+    getComments(cell?: string | number[]) {
+        return this.comments.get(cell);
+    }
+
+    setComments(cellId: string, comments: string | null | undefined): void;
+    setComments(cellId: Record<string, string | null | undefined>): void;
+    setComments(cellId: string | Record<string, string | null | undefined>, comments?: string | null) {
+        return this.comments.set(cellId, comments);
+    }
+
+    orderBy(column: number, order?: 0 | 1) {
+        return this.view.orderBy(column, order);
+    }
+
+    undo() {
+        return this.history.undo();
+    }
+
+    redo() {
+        return this.history.redo();
+    }
+
+    getCell(cell: string): HTMLTableCellElement;
+    getCell(x: number, y: number): HTMLTableCellElement;
+    getCell(x: number | string, y?: number) {
+        return this.cells.get(x, y);
+    }
+
+    getCellFromCoords(x: number, y: number) {
+        return this.cells.getFromCoords(x, y);
+    }
+
+    getLabel(cell: string): string;
+    getLabel(x: number, y: number): string;
+    getLabel(x: number | string, y?: number) {
+        return this.cells.getLabel(x, y);
+    }
+
+    getMeta(cell?: undefined): Record<string, jspreadsheet.MetaInformation> | undefined;
+    getMeta(cell: string): jspreadsheet.MetaInformation | null;
+    getMeta(cell?: string) {
+        return this.meta.get(cell);
+    }
+
+    setMeta(o: string, k: string, v: string): void;
+    setMeta(o: Record<string, jspreadsheet.MetaInformation>): void;
+    setMeta(o: string | Record<string, jspreadsheet.MetaInformation>, k?: string, v?: string) {
+        return this.meta.set(o, k, v);
+    }
+
+    showColumn(colNumber: number | number[]) {
+        return this.columns.show(colNumber);
+    }
+
+    hideColumn(colNumber: number | number[]) {
+        return this.columns.hide(colNumber);
+    }
+
+    showIndex() {
+        return this.rowManager.showIndex();
+    }
+
+    hideIndex() {
+        return this.rowManager.hideIndex();
+    }
+
+    openEditor(cell: HTMLTableCellElement, empty?: boolean, e?: KeyboardEvent | MouseEvent | TouchEvent) {
+        return this.editor.open(cell, empty, e);
+    }
+
+    closeEditor(cell: HTMLTableCellElement, save: boolean) {
+        return this.editor.close(cell, save);
+    }
+
+    copy(cut?: boolean) {
+        if (cut) {
+            cutControls();
+        } else {
+            this.clipboard.copy(true);
+        }
+    }
+
+    paste(x: number, y: number, data: string) {
+        return this.clipboard.paste(x, y, data);
+    }
+
+    executeFormula(expression: string, x?: number, y?: number) {
+        return this.formulas.execute(expression, x, y);
+    }
+
+    getDataFromRange(range: string, processed: true) {
+        return this.data.getFromRange(range, processed);
+    }
+
+    quantiyOfPages() {
+        return this.view.countPages();
+    }
+
+    getRange() {
+        return this.selection.getRange();
+    }
+
+    isSelected(x: number, y: number) {
+        return this.selection.isSelected(x, y);
+    }
+
+    setReadOnly(cell: string | HTMLElement, state: boolean) {
+        return this.cells.setReadOnly(cell, state);
+    }
+
+    isReadOnly(x: number, y: number): boolean;
+    isReadOnly(cellName: string): boolean;
+    isReadOnly(x: number | string, y?: number) {
+        return this.cells.isReadOnly(x, y);
+    }
+
+    getHighlighted() {
+        return this.selection.getHighlighted();
+    }
+
+    down(shiftKey?: boolean, ctrlKey?: boolean) {
+        return this.selection.down(shiftKey, ctrlKey);
+    }
+
+    first(shiftKey?: boolean, ctrlKey?: boolean) {
+        return this.selection.first(shiftKey, ctrlKey);
+    }
+
+    last(shiftKey?: boolean, ctrlKey?: boolean) {
+        return this.selection.last(shiftKey, ctrlKey);
+    }
+
+    left(shiftKey?: boolean, ctrlKey?: boolean) {
+        return this.selection.left(shiftKey, ctrlKey);
+    }
+
+    right(shiftKey?: boolean, ctrlKey?: boolean) {
+        return this.selection.right(shiftKey, ctrlKey);
+    }
+
+    up(shiftKey?: boolean, ctrlKey?: boolean) {
+        return this.selection.up(shiftKey, ctrlKey);
+    }
+
+    openFilter(columnId: number) {
+        return this.view.openFilter(columnId);
+    }
+
+    resetFilters() {
+        return this.view.resetFilters();
     }
 
     /**
@@ -760,9 +1118,4 @@ export class Worksheet {
             });
         }
     }
-}
-
-// The public methods are on the prototype, as the methods of a class: not enumerable, and an instance can replace one
-for (const [methodName, method] of worksheetPublicMethods) {
-    Object.defineProperty(Worksheet.prototype, methodName, { value: method, writable: true, configurable: true });
 }

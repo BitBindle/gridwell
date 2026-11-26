@@ -148,7 +148,7 @@ export class Selection {
     reset(blur?: boolean) {
         const obj = this.worksheet;
 
-        let previousStatus;
+        let previousStatus: 0 | 1;
 
         // Remove style
         if (!obj.selection.highlighted || !obj.selection.highlighted.length) {
