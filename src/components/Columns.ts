@@ -1,5 +1,4 @@
 import jSuites from 'jsuites';
-import dispatch from '../utils/dispatch.js';
 import { getColumnName } from '../utils/helpers.js';
 import { getColumnNameFromId, injectArray } from '../utils/internalHelpers.js';
 import { setHeaderRole } from './Accessibility.js';
@@ -312,7 +311,7 @@ export class Columns {
             const columns = this.getInserted(mixed, columnNumber, numOfColumns, insertBefore, properties);
 
             // Onbeforeinsertcolumn
-            if (dispatch.call(obj, 'onbeforeinsertcolumn', obj, columns) === false) {
+            if (obj.dispatch('onbeforeinsertcolumn', obj, columns) === false) {
                 return false;
             }
 
@@ -378,7 +377,7 @@ export class Columns {
             obj.formulas.updateTableReferences();
 
             // Events
-            dispatch.call(obj, 'oninsertcolumn', obj, columns);
+            obj.dispatch('oninsertcolumn', obj, columns);
         }
     }
 
@@ -466,7 +465,7 @@ export class Columns {
         obj.formulas.updateTableReferences();
 
         // Events
-        dispatch.call(obj, 'onmovecolumn', obj, o, d, 1);
+        obj.dispatch('onmovecolumn', obj, o, d, 1);
     }
 
     /**
@@ -520,7 +519,7 @@ export class Columns {
                 }
 
                 // onbeforedeletecolumn
-                if (dispatch.call(obj, 'onbeforedeletecolumn', obj, removedColumns) === false) {
+                if (obj.dispatch('onbeforedeletecolumn', obj, removedColumns) === false) {
                     return false;
                 }
 
@@ -620,7 +619,7 @@ export class Columns {
                     obj.formulas.updateTableReferences();
 
                     // Delete
-                    dispatch.call(obj, 'ondeletecolumn', obj, removedColumns);
+                    obj.dispatch('ondeletecolumn', obj, removedColumns);
                 }
             } else {
                 console.error('Jspreadsheet: It is not possible to delete the last column');
@@ -715,7 +714,7 @@ export class Columns {
             });
 
             // On resize column
-            dispatch.call(obj, 'onresizecolumn', obj, column, width, oldWidth);
+            obj.dispatch('onresizecolumn', obj, column, width, oldWidth);
 
             // Update corner position
             obj.selection.updateCorner();
@@ -897,7 +896,7 @@ export class Columns {
             });
 
             // On onchange header
-            dispatch.call(obj, 'onchangeheader', obj, parseInt(column), newValue, onchangeheaderOldValue);
+            obj.dispatch('onchangeheader', obj, parseInt(column), newValue, onchangeheaderOldValue);
         }
     }
 

@@ -1,7 +1,6 @@
 import { getCoordsFromCellName } from '../utils/helpers.js';
 import { getIdFromColumnName, getColumnNameFromId } from '../utils/internalHelpers.js';
 import jSuites from 'jsuites';
-import dispatch from '../utils/dispatch.js';
 import { getMask, isFormula } from '../utils/values.js';
 import type { Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
@@ -404,7 +403,7 @@ export class Cells {
 
         // A cell whose content is rendered again keeps its element, so the event is not sent again
         if (!silent) {
-            dispatch.call(obj, 'oncreatecell', obj, td, i, j, value);
+            obj.dispatch('oncreatecell', obj, td, i, j, value);
         }
 
         return td;
@@ -449,7 +448,7 @@ export class Cells {
             }
 
             // On change
-            const val = dispatch.call(obj, 'onbeforechange', obj, obj.records[y][x].element, x, y, value);
+            const val = obj.dispatch('onbeforechange', obj, obj.records[y][x].element, x, y, value);
 
             // If you return something this will overwrite the value
             if (val != undefined) {
@@ -593,8 +592,7 @@ export class Cells {
             }
 
             // On change. updateCell has read obj.records[y][x] already, so the cell is there.
-            dispatch.call(
-                obj,
+            obj.dispatch(
                 'onchange',
                 obj,
                 (obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : null) as HTMLTableCellElement,

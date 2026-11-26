@@ -1,4 +1,3 @@
-import dispatch from '../utils/dispatch.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
 
@@ -76,7 +75,7 @@ export class Meta {
             }
             obj.options.meta[o as string][k] = v;
 
-            dispatch.call(obj, 'onchangemeta', obj, { [o as string]: { [k]: v } });
+            obj.dispatch('onchangemeta', obj, { [o as string]: { [k]: v } });
         } else {
             // Apply that for all cells
             const keys = Object.keys(o);
@@ -92,7 +91,7 @@ export class Meta {
                 }
             }
 
-            dispatch.call(obj, 'onchangemeta', obj, o as Record<string, jspreadsheet.MetaInformation>);
+            obj.dispatch('onchangemeta', obj, o as Record<string, jspreadsheet.MetaInformation>);
         }
     }
 }

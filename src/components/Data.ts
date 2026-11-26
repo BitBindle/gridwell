@@ -1,5 +1,4 @@
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
-import dispatch from '../utils/dispatch.js';
 import { getCoordsFromRange } from '../utils/helpers.js';
 import type { Worksheet } from '../types/internal';
 import type { CellChange, CellValue } from '../jspreadsheet';
@@ -297,7 +296,7 @@ export class Data {
         });
 
         // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-        dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
+        obj.dispatch('onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
     }
 
     /**
@@ -338,7 +337,7 @@ export class Data {
         });
 
         // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-        dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
+        obj.dispatch('onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
     }
 
     /**

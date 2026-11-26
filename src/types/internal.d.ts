@@ -186,18 +186,6 @@ export type EventHandlers = jspreadsheet.EventHandlers;
 export type EventName = jspreadsheet.EventName;
 
 /**
- * dispatch, typed by event: the arguments are those of the handler that SpreadsheetOptions declares for the event, and
- * the result is what that handler returns. null means that no handler ran. onevent and the onevent of plugins can also
- * return any value, so a caller still checks what it gets.
- *
- * The code calls it as dispatch.call(worksheet, 'onchange', ...), so call is typed too.
- */
-export interface Dispatch {
-    <E extends EventName>(this: Worksheet | Spreadsheet, event: E, ...args: Parameters<EventHandlers[E]>): ReturnType<EventHandlers[E]> | null;
-    call<E extends EventName>(thisArg: Worksheet | Spreadsheet, event: E, ...args: Parameters<EventHandlers[E]>): ReturnType<EventHandlers[E]> | null;
-}
-
-/**
  * The jspreadsheet function, with the state the library keeps on it.
  */
 export interface Library extends jspreadsheet.JSpreadsheet {

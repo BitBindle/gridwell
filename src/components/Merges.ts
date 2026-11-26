@@ -1,6 +1,5 @@
 import jSuites from 'jsuites';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
-import dispatch from '../utils/dispatch.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { MergeInfo, Worksheet } from '../types/internal';
 
@@ -287,7 +286,7 @@ export class Merges {
                     data: data,
                 });
 
-                dispatch.call(obj, 'onmerge', obj, { [cellName]: [colspan!, rowspan!] });
+                obj.dispatch('onmerge', obj, { [cellName]: [colspan!, rowspan!] });
             }
         }
     }
@@ -339,7 +338,7 @@ export class Merges {
                 obj.cells.render(cell[0], cell[1]);
             }
 
-            dispatch.call(obj, 'onunmerge', obj, cellName, beforeMerges);
+            obj.dispatch('onunmerge', obj, cellName, beforeMerges);
         }
     }
 

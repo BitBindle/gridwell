@@ -1,6 +1,5 @@
 import jSuites from 'jsuites';
 import { parseCSV } from '../utils/helpers.js';
-import dispatch from '../utils/dispatch.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
@@ -309,7 +308,7 @@ export class Clipboard {
                 Math.max(obj.selection.range[1], obj.selection.range[3]),
             ];
 
-            const result = dispatch.call(obj, 'oncopy', obj, selectedRange, strLabel, isCut);
+            const result = obj.dispatch('oncopy', obj, selectedRange, strLabel, isCut);
 
             if (result) {
                 strLabel = result;
@@ -485,8 +484,7 @@ export class Clipboard {
         ({ rows, style } = repeatToSelection(rows, style, w, h));
 
         // Paste filter
-        const ret = dispatch.call(
-            obj,
+        const ret = obj.dispatch(
             'onbeforepaste',
             obj,
             rows.map(function (row) {
@@ -546,7 +544,7 @@ export class Clipboard {
                 }
             }
 
-            dispatch.call(obj, 'onpaste', obj, eventRecords);
+            obj.dispatch('onpaste', obj, eventRecords);
 
             // On after changes
             const onafterchangesRecords = records.map(function (record) {
@@ -559,7 +557,7 @@ export class Clipboard {
             });
 
             // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-            dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords as unknown as jspreadsheet.CellChange[]);
+            obj.dispatch('onafterchanges', obj, onafterchangesRecords as unknown as jspreadsheet.CellChange[]);
         }
 
         obj.clipboard.clearBorder();

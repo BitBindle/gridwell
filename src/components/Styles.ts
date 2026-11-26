@@ -1,4 +1,3 @@
-import dispatch from '../utils/dispatch.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import type { Worksheet } from '../types/internal';
 
@@ -160,7 +159,7 @@ export class Styles {
             });
         }
 
-        dispatch.call(obj, 'onchangestyle', obj, newValue as unknown as Record<string, string>);
+        obj.dispatch('onchangestyle', obj, newValue as unknown as Record<string, string>);
     }
 
     /**

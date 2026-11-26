@@ -1,4 +1,3 @@
-import dispatch from '../utils/dispatch.js';
 import { getCellNameFromCoords } from '../utils/helpers.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import libraryBase from '../utils/libraryBase.js';
@@ -214,7 +213,7 @@ export class Selection {
         obj.corner.style.left = '-2000px';
 
         if (blur == true && previousStatus == 1) {
-            dispatch.call(obj, 'onblur', obj);
+            obj.dispatch('onblur', obj);
         }
 
         return previousStatus;
@@ -376,7 +375,7 @@ export class Selection {
         }
 
         // The top and bottom are null when every selected row is hidden (issue #59)
-        const ret = dispatch.call(obj, 'onbeforeselection', obj, borderLeft, borderTop!, borderRight, borderBottom!, origin);
+        const ret = obj.dispatch('onbeforeselection', obj, borderLeft, borderTop!, borderRight, borderBottom!, origin);
         if (ret === false) {
             return false;
         }
@@ -440,13 +439,13 @@ export class Selection {
 
         // Handle events
         if (previousState == 0) {
-            dispatch.call(obj, 'onfocus', obj);
+            obj.dispatch('onfocus', obj);
 
             obj.clipboard.clearBorder();
         }
 
         // The top and bottom are null when every selected row is hidden (issue #59)
-        dispatch.call(obj, 'onselection', obj, borderLeft, borderTop!, borderRight, borderBottom!, origin);
+        obj.dispatch('onselection', obj, borderLeft, borderTop!, borderRight, borderBottom!, origin);
 
         // Find corner cell
         this.updateCorner();

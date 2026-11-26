@@ -6,7 +6,6 @@ import Factory from './utils/factory.js';
 import { destroyEvents } from './events/index.js';
 
 import * as helpers from './utils/helpers.js';
-import dispatch from './utils/dispatch.js';
 import version from './utils/version.js';
 import type { Library, Spreadsheet, Worksheet } from './types/internal';
 
@@ -19,7 +18,7 @@ libraryBase.jspreadsheet = function (el: HTMLDivElement | HTMLTableElement, opti
             libraryBase.jspreadsheet.spreadsheet.push(spreadsheet);
 
             // Global onload event
-            dispatch.call(spreadsheet, 'onload', spreadsheet);
+            spreadsheet.dispatch('onload', spreadsheet);
         });
 
         return worksheets;

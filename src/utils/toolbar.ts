@@ -1,6 +1,5 @@
 import jSuites from 'jsuites';
 import { getCellNameFromCoords } from './helpers.js';
-import { getWorksheetInstance } from './activeWorksheet.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Spreadsheet, Worksheet } from '../types/internal';
 import type { Color } from 'jsuites';
@@ -22,7 +21,7 @@ const setItemStatus = function (toolbarItem: HTMLElement, worksheet: Worksheet) 
  */
 const getUpdateState = function (spreadsheet: Spreadsheet) {
     return function (a: HTMLElement, b: object, toolbarItem: HTMLElement) {
-        setItemStatus(toolbarItem, getWorksheetInstance.call(spreadsheet));
+        setItemStatus(toolbarItem, spreadsheet.getWorksheetInstance());
     };
 };
 
@@ -58,7 +57,7 @@ const getHistoryItems = function (spreadsheet: Spreadsheet): jspreadsheet.Toolba
         {
             content: 'undo',
             onclick: function () {
-                const worksheet = getWorksheetInstance.call(spreadsheet);
+                const worksheet = spreadsheet.getWorksheetInstance();
 
                 worksheet.undo();
             },
@@ -66,7 +65,7 @@ const getHistoryItems = function (spreadsheet: Spreadsheet): jspreadsheet.Toolba
         {
             content: 'redo',
             onclick: function () {
-                const worksheet = getWorksheetInstance.call(spreadsheet);
+                const worksheet = spreadsheet.getWorksheetInstance();
 
                 worksheet.redo();
             },
@@ -74,7 +73,7 @@ const getHistoryItems = function (spreadsheet: Spreadsheet): jspreadsheet.Toolba
         {
             content: 'save',
             onclick: function () {
-                const worksheet = getWorksheetInstance.call(spreadsheet);
+                const worksheet = spreadsheet.getWorksheetInstance();
 
                 if (worksheet) {
                     worksheet.download();
@@ -100,7 +99,7 @@ const getFontItems = function (spreadsheet: Spreadsheet): jspreadsheet.ToolbarIt
                 // e is the key of the option as text, and the first option is Default
                 const value = e === '0' ? '' : d;
 
-                setSelectedStyle(getWorksheetInstance.call(spreadsheet), 'font-family: ' + value);
+                setSelectedStyle(spreadsheet.getWorksheetInstance(), 'font-family: ' + value);
             },
             updateState: getUpdateState(spreadsheet),
         },
@@ -113,7 +112,7 @@ const getFontItems = function (spreadsheet: Spreadsheet): jspreadsheet.ToolbarIt
                 return '<span style="font-size:' + e + '">' + e + '</span>';
             },
             onchange: function (a: HTMLElement, b: object, c: string, value: string) {
-                setSelectedStyle(getWorksheetInstance.call(spreadsheet), 'font-size: ' + value);
+                setSelectedStyle(spreadsheet.getWorksheetInstance(), 'font-size: ' + value);
             },
             updateState: getUpdateState(spreadsheet),
         },
@@ -124,14 +123,14 @@ const getFontItems = function (spreadsheet: Spreadsheet): jspreadsheet.ToolbarIt
                 return '<i class="material-icons">format_align_' + e + '</i>';
             },
             onchange: function (a: HTMLElement, b: object, c: string, value: string) {
-                setSelectedStyle(getWorksheetInstance.call(spreadsheet), 'text-align: ' + value);
+                setSelectedStyle(spreadsheet.getWorksheetInstance(), 'text-align: ' + value);
             },
             updateState: getUpdateState(spreadsheet),
         },
         {
             content: 'format_bold',
             onclick: function () {
-                setSelectedStyle(getWorksheetInstance.call(spreadsheet), 'font-weight:bold');
+                setSelectedStyle(spreadsheet.getWorksheetInstance(), 'font-weight:bold');
             },
             updateState: getUpdateState(spreadsheet),
         },
@@ -165,7 +164,7 @@ const getVerticalAlignItem = function (spreadsheet: Spreadsheet): jspreadsheet.T
         value: 1,
         onchange: function (a: HTMLElement, b: object, c: string, d: string, value: string) {
             // The key is the index of the option as text
-            setSelectedStyle(getWorksheetInstance.call(spreadsheet), 'vertical-align: ' + (verticalAlign as unknown as Record<string, string>)[value]);
+            setSelectedStyle(spreadsheet.getWorksheetInstance(), 'vertical-align: ' + (verticalAlign as unknown as Record<string, string>)[value]);
         },
         updateState: getUpdateState(spreadsheet),
     };
@@ -179,7 +178,7 @@ const getMergeItem = function (spreadsheet: Spreadsheet): jspreadsheet.ToolbarIt
         content: 'web',
         tooltip: jSuites.translate('Merge the selected cells'),
         onclick: function () {
-            const worksheet = getWorksheetInstance.call(spreadsheet);
+            const worksheet = spreadsheet.getWorksheetInstance();
 
             if (worksheet.selection.range && confirm(jSuites.translate('The merged cells will retain the value of the top-left cell only. Are you sure?'))) {
                 const selectedRange = getSelectedRange(worksheet.selection.range);
@@ -369,7 +368,7 @@ const getBordersItem = function (spreadsheet: Spreadsheet): jspreadsheet.Toolbar
         },
         right: true,
         onchange: function (a: HTMLElement, b: BorderPicker, c: string, d: string) {
-            setBorders(getWorksheetInstance.call(spreadsheet), b, d);
+            setBorders(spreadsheet.getWorksheetInstance(), b, d);
         },
         onload: addBorderControls,
         updateState: getUpdateState(spreadsheet),
@@ -458,7 +457,7 @@ export class Toolbar {
 
                     if (items[i].k && !items[i].onchange) {
                         items[i].onchange = function (el: HTMLElement, config: object, value: string) {
-                            const worksheet = getWorksheetInstance.call(spreadsheet);
+                            const worksheet = spreadsheet.getWorksheetInstance();
 
                             const cells = worksheet.getSelected(true);
 
@@ -479,7 +478,7 @@ export class Toolbar {
                     if (!c.color) {
                         jSuites.color(c, {
                             onchange: function (o: HTMLElement, v: string) {
-                                const worksheet = getWorksheetInstance.call(spreadsheet);
+                                const worksheet = spreadsheet.getWorksheetInstance();
 
                                 const cells = worksheet.getSelected(true);
 

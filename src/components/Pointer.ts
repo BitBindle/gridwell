@@ -1,4 +1,3 @@
-import dispatch from '../utils/dispatch.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import libraryBase from '../utils/libraryBase.js';
 import { getIndex } from '../events/helpers.js';
@@ -232,7 +231,7 @@ export class Pointer {
         });
 
         // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-        dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
+        obj.dispatch('onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
     }
 
     /**

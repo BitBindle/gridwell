@@ -1,5 +1,4 @@
 import jSuites from 'jsuites';
-import dispatch from '../utils/dispatch.js';
 import { getMask, isFormula } from '../utils/values.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type { Worksheet } from '../types/internal';
@@ -121,7 +120,7 @@ export class Editor {
             column.type.openEditor(cell, obj.options.data[y][x], x, y, obj, column, e);
 
             // On edition start
-            dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+            obj.dispatch('oncreateeditor', obj, cell, x, y, null, column);
         } else {
             // A custom type without openEditor has no editor: do not keep edition open
             obj.editor.end();
@@ -177,7 +176,7 @@ export class Editor {
         const editor = createEditor(cell, 'div', label);
 
         // On edition start
-        dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+        obj.dispatch('oncreateeditor', obj, cell, x, y, null, column);
 
         const options: DropdownOptions = {
             data: data,
@@ -215,7 +214,7 @@ export class Editor {
         // Create editor
         const editor = createEditor(cell, 'input', label);
 
-        dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+        obj.dispatch('oncreateeditor', obj, cell, x, y, null, column);
 
         // The input converts the value to text
         editor.value = value as string;
@@ -265,7 +264,7 @@ export class Editor {
         // Create editor
         const editor = createEditor(cell, 'div', label);
 
-        dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+        obj.dispatch('oncreateeditor', obj, cell, x, y, null, column);
 
         editor.style.position = 'relative';
         const div = document.createElement('div');
@@ -308,7 +307,7 @@ export class Editor {
         // Create editor
         const editor = createEditor(cell, 'div', label);
 
-        dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+        obj.dispatch('oncreateeditor', obj, cell, x, y, null, column);
 
         editor.style.position = 'relative';
         const div = document.createElement('div');
@@ -356,7 +355,7 @@ export class Editor {
             editor = createEditor(cell, 'input', label);
         }
 
-        dispatch.call(obj, 'oncreateeditor', obj, cell, x, y, null, column);
+        obj.dispatch('oncreateeditor', obj, cell, x, y, null, column);
 
         editor.focus();
         // The input converts the value to text
@@ -418,7 +417,7 @@ export class Editor {
         const column = obj.options.columns && obj.options.columns[obj.cells.getColumnIndex(x, y)];
 
         // On edition start
-        dispatch.call(obj, 'oneditionstart', obj, cell, x, y);
+        obj.dispatch('oneditionstart', obj, cell, x, y);
 
         // Accessible name of the editor
         const label = obj.accessibility.getLabelText('editCell', getColumnNameFromId([x, y]));
@@ -575,7 +574,7 @@ export class Editor {
         }
 
         // On edition end
-        dispatch.call(obj, 'oneditionend', obj, cell, x, y, value, save);
+        obj.dispatch('oneditionend', obj, cell, x, y, value, save);
 
         // Remove editor class
         cell.classList.remove('editor');
@@ -625,7 +624,7 @@ export class Editor {
             });
 
             // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-            dispatch.call(obj, 'onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
+            obj.dispatch('onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
         }
     }
 }
