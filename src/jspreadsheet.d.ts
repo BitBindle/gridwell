@@ -1579,7 +1579,8 @@ declare namespace jspreadsheet {
          * scrolls. Lazy loading keeps them in the table, and freezes at most 40 rows. With pagination, a search or the
          * filters, a frozen row stays at the top only while it is in the rows that show. A merged cell that starts in a
          * frozen row and ends below the frozen rows sticks with its full height. With lazy loading, a change that takes the
-         * row of an open editor out of the frozen rows and out of the table saves and closes the editor during the change.
+         * row of an open editor out of the frozen rows and out of the table detaches the editor during the change, as
+         * `oneditordetach` describes.
          */
         freezeRows?: number;
 
