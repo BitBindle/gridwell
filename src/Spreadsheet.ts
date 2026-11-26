@@ -266,8 +266,10 @@ export class Spreadsheet {
 
         // Dispatch events. The persistence still saves while the events are ignored, for example the changes of an undo,
         // so its events, and the event of its request, occur too. The application can take the edit of an editor whose cell
-        // leaves the table, also during an undo, so oneditordetach occurs too.
-        if (!this.ignoreEvents || event === 'onbeforerequest' || event === 'onbeforesave' || event === 'onsave' || event === 'oneditordetach') {
+        // leaves the table, also during an undo, so oneditordetach occurs too. The rows that lazy loading puts in the table,
+        // for example during the undo of a sort, need the work of the application, so onrowsattached occurs too.
+        const always = ['onbeforerequest', 'onbeforesave', 'onsave', 'oneditordetach', 'onrowsattached'];
+        if (!this.ignoreEvents || always.includes(event)) {
             // Call global event
             if (typeof this.config.onevent === 'function') {
                 // The arguments match the handler of the event, as the type of dispatch says

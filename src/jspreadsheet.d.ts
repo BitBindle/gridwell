@@ -1361,8 +1361,10 @@ declare namespace jspreadsheet {
         onsort?: (instance: WorksheetInstance, colIndex: number, order: 0 | 1, newOrderValues: number[]) => void;
 
         /**
-         * Occurs when lazy loading puts rows in the table that were not in it: a scroll, a page that loads for the
-         * selection, or `loadRow`. The application can, for example, measure the new rows.
+         * Occurs when lazy loading puts rows in the table that were not in it before: a scroll, a page that loads for the
+         * selection or a sort, the results of a search or the filters and their reset, and `loadRow`. It occurs also while
+         * `ignoreEvents` is true, for example during an undo. An insert of rows and the first build give no event. The
+         * application can, for example, measure the new rows.
          * @param instance - Instance of the worksheet.
          * @param ranges - The new rows, as `[from, to]` pairs of row indexes, in order.
          */
@@ -1951,7 +1953,8 @@ declare namespace jspreadsheet {
         /**
          * If true, the spreadsheet does not emit events, except onbeforerequest, onbeforesave and onsave: the persistence
          * still saves the changes, for example of an undo or a redo. oneditordetach also occurs, so the application can take
-         * the edit of an editor whose row lazy loading removes.
+         * the edit of an editor whose row lazy loading removes, and onrowsattached, so it can prepare the rows that lazy
+         * loading puts in the table.
          */
         ignoreEvents?: boolean;
 
@@ -2336,9 +2339,11 @@ declare namespace jspreadsheet {
 
         /**
          * With lazy loading, fill the table with the frozen rows and the rows from 10 rows above a row, up to 100 rows, or
-         * with the last rows. With a search or the filters, the rows are rows of the results. The scroll position does not
-         * change, so the application can set it, for example to show the same rows after it builds the worksheet again.
-         * `onrowsattached` occurs for the new rows. Without lazy loading, nothing occurs.
+         * with the last rows. With a search or the filters, the rows are rows of the results. If a row with an open editor
+         * leaves the table, the editor saves and closes, and `oneditordetach` can stop the save. The scroll position does
+         * not change, so the application can set it, for example to show the same rows after it builds the worksheet
+         * again. `onrowsattached` occurs for the new rows. Without lazy loading, or with a row index that is not a number,
+         * nothing occurs.
          * @param y - Row index.
          */
         loadRow: (y: number) => void;

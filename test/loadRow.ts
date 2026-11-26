@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Worksheet } from './support/jspreadsheet';
+import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
 
 function rows(count: number) {
     return Array.from({ length: count }, (row, y) => [`${y}`, `b${y}`]);
@@ -80,6 +80,20 @@ describe('loadRow', () => {
         expect(worksheet.getValue('A2')).to.equal('new');
     });
 
+    it('places the selection corner again, and does nothing for a row index that is not a number', () => {
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(1000), lazyLoading: true, tableOverflow: true }] });
+        worksheet.updateSelectionFromCoords(0, 2, 0, 2);
+        worksheet.corner.style.top = '1234px';
+
+        worksheet.loadRow(500);
+        expect(worksheet.corner.style.top).to.not.equal('1234px');
+
+        for (const value of [null, '200', NaN, Infinity]) {
+            worksheet.loadRow(value as unknown as number);
+            expect(attached(worksheet)[0]).to.equal(490);
+        }
+    });
+
     it('does nothing without lazy loading', () => {
         let events = 0;
         const [worksheet] = jspreadsheet(root, {
@@ -97,34 +111,73 @@ describe('loadRow', () => {
 });
 
 describe('onrowsattached', () => {
-    it('gives the rows that a scroll down and a scroll up attach', () => {
+    function build(options: Partial<Jspreadsheet.WorksheetOptions> = {}) {
         const events: [number, number][][] = [];
         const [worksheet] = jspreadsheet(root, {
-            worksheets: [{ data: rows(1000), lazyLoading: true, tableOverflow: true }],
+            worksheets: [{ data: rows(1000), lazyLoading: true, tableOverflow: true, ...options }],
             onrowsattached: (instance, ranges) => {
                 events.push(ranges);
             },
         });
+        return { worksheet, events };
+    }
 
-        worksheet.view.loadDown();
+    it('gives the rows that a scroll down attaches', async () => {
+        // The grid loads rows 100 ms after a scroll, one load at a time. Let the loads of the tests before end.
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        const { worksheet, events } = build();
+
+        worksheet.content.dispatchEvent(new window.WheelEvent('wheel', { deltaY: 100 }));
+        await new Promise((resolve) => setTimeout(resolve, 150));
+
         expect(events).to.eql([[[100, 129]]]);
         expect(attached(worksheet)).to.eql(range(30, 129));
-
-        worksheet.view.loadUp();
-        expect(events[1]).to.eql([[0, 29]]);
     });
 
-    it('gives the rows of a page that loads for the selection', () => {
-        const events: [number, number][][] = [];
-        const [worksheet] = jspreadsheet(root, {
-            worksheets: [{ data: rows(1000), lazyLoading: true, tableOverflow: true }],
-            onrowsattached: (instance, ranges) => {
-                events.push(ranges);
-            },
-        });
+    it('gives the rows of the results of a search and of its reset', () => {
+        const data = rows(1000).map(([a, b], y) => [y % 2 ? 'odd' : a, b]);
+        const { worksheet, events } = build({ data, search: true });
 
-        worksheet.view.loadPage(4);
+        worksheet.search('odd');
+        expect(events).to.eql([
+            [
+                [101, 101],
+                [103, 103],
+            ].concat(range(52, 99).map((k) => [2 * k + 1, 2 * k + 1])),
+        ]);
 
-        expect(events).to.eql([[[400, 499]]]);
+        events.length = 0;
+        worksheet.resetSearch();
+        expect(events).to.eql([
+            [
+                [0, 0],
+                [2, 2],
+            ].concat(range(2, 49).map((k) => [2 * k, 2 * k])),
+        ]);
+    });
+
+    it('gives the rows that a sort and its undo attach, also while the events are ignored', () => {
+        const { worksheet, events } = build();
+
+        worksheet.orderBy(0, 1);
+        expect(events.length).to.equal(1);
+
+        events.length = 0;
+        worksheet.undo();
+        // The descending sort of the texts showed the rows "99" to "91" also, so they were in the table
+        expect(attached(worksheet)).to.eql(range(0, 99));
+        expect(events).to.eql([[[0, 90]]]);
+    });
+
+    it('gives no rows that were in the table before the load', () => {
+        const { worksheet, events } = build();
+        worksheet.loadRow(150);
+        events.length = 0;
+
+        // The selection of a row outside the table loads its page
+        worksheet.updateSelectionFromCoords(0, 120, 0, 120);
+        worksheet.loadRow(120);
+
+        expect(events).to.eql([[[110, 139]]]);
     });
 });
