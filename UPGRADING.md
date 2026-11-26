@@ -626,6 +626,14 @@ The header of the days in the calendar shows their short names, such as `Mon`, w
 full names are still their accessible names. The language files in `resources/lang` translate the names of the months
 and the days, full and short.
 
+## The merged ranges of the options select no cell
+
+The build of a worksheet with `mergeCells`, and `setData` on such a worksheet, select no cell and dispatch no
+`onbeforeselection`, `onselection` or `onfocus`. Version 5 selected the first cell of each range in turn, so the last
+range stayed selected and was the tab stop. The worksheet now acts as a worksheet without merged ranges: the selection
+does not change, and the first visible cell is the tab stop. To select a cell after the build, call
+`updateSelectionFromCoords`. `setMerge` still selects the first cell of its range.
+
 ## Lazy loading loads rows in the direction of the scroll
 
 With `lazyLoading`, a load keeps the rows in the view in place, and rows load only in the direction of the scroll. The

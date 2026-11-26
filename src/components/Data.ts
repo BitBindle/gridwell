@@ -126,7 +126,7 @@ export class Data {
         if (worksheet.options.mergeCells) {
             for (const key of Object.keys(worksheet.options.mergeCells)) {
                 const num = worksheet.options.mergeCells[key];
-                worksheet.merges.set(key, num[0], num[1], 1);
+                worksheet.merges.set(key, num[0], num[1], 1, true);
             }
         }
 

@@ -333,6 +333,17 @@ describe('The options of the worksheet table', () => {
         expect(worksheet.content.style.width).to.equal('400px');
     });
 
+    it('stops a text selection on the corner without an inline event handler', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [2, 2] }] })[0];
+
+        // A Content Security Policy without 'unsafe-inline' blocks an inline handler and logs an error
+        expect(worksheet.corner.hasAttribute('onselectstart')).to.equal(false);
+
+        const event = new Event('selectstart', { bubbles: true, cancelable: true });
+        worksheet.corner.dispatchEvent(event);
+        expect(event.defaultPrevented).to.equal(true);
+    });
+
     it('set the classes of the text overflow, the corner, the drag and the resize', () => {
         let worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [2, 2] }] })[0];
 
@@ -379,6 +390,73 @@ describe('The options of the worksheet table', () => {
         expect(worksheet.options.style).to.eql(worksheet.getStyle());
         expect(worksheet.getComments('B1')).to.equal('A note');
         expect(worksheet.getCell('A2').classList.contains('marked')).to.equal(true);
+    });
+});
+
+describe('Destroy a spreadsheet', () => {
+    it('clears the active worksheet when it belongs to the destroyed spreadsheet, and keeps it otherwise', async () => {
+        const elements = [0, 1].map(() => document.body.appendChild(document.createElement('div') as Jspreadsheet.JspreadsheetInstanceElement));
+
+        try {
+            jspreadsheet(elements[0], { worksheets: [{ minDimensions: [1, 1] }] });
+            await new Promise((resolve) => setTimeout(resolve));
+            const [second] = jspreadsheet(elements[1], { worksheets: [{ minDimensions: [1, 1] }] });
+            await new Promise((resolve) => setTimeout(resolve));
+
+            // The active worksheet keeps the destroyed spreadsheet in memory
+            expect(jspreadsheet.current).to.equal(second);
+            jspreadsheet.destroy(elements[0]);
+            expect(jspreadsheet.current).to.equal(second);
+
+            jspreadsheet.destroy(elements[1]);
+            expect(jspreadsheet.current).to.equal(null);
+        } finally {
+            for (const element of elements) {
+                element.remove();
+            }
+        }
+    });
+
+    it('clears the active worksheet when deleteWorksheet removed it from the destroyed spreadsheet', async () => {
+        const element = document.body.appendChild(document.createElement('div') as Jspreadsheet.JspreadsheetInstanceElement);
+
+        try {
+            jspreadsheet(element, { worksheets: [{ minDimensions: [1, 1] }, { minDimensions: [1, 1] }] });
+            await new Promise((resolve) => setTimeout(resolve));
+            element.spreadsheet.worksheets[1].openWorksheet(1);
+            const removed = element.spreadsheet.worksheets[1];
+            expect(jspreadsheet.current).to.equal(removed);
+            removed.deleteWorksheet(1);
+            await new Promise((resolve) => setTimeout(resolve));
+
+            // The removed worksheet is not in the list, but it keeps the spreadsheet as its parent
+            expect(element.spreadsheet.worksheets).to.not.include(removed);
+            jspreadsheet.destroy(element);
+            expect(jspreadsheet.current).to.equal(null);
+        } finally {
+            element.remove();
+        }
+    });
+
+    it('stops the timer of a search when it destroys the spreadsheet of the active worksheet', async () => {
+        const element = document.body.appendChild(document.createElement('div') as Jspreadsheet.JspreadsheetInstanceElement);
+
+        try {
+            const [worksheet] = jspreadsheet(element, { worksheets: [{ minDimensions: [1, 1], search: true }] });
+            await new Promise((resolve) => setTimeout(resolve));
+            const input = element.querySelector('.jss_search') as HTMLInputElement;
+            input.value = 'a';
+            input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'a' }));
+            expect(jspreadsheet.current).to.equal(worksheet);
+
+            jspreadsheet.destroy(element);
+
+            // The search timer runs 200 ms after the key
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            expect(jspreadsheet.current).to.equal(null);
+        } finally {
+            element.remove();
+        }
     });
 });
 

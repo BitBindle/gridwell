@@ -740,7 +740,8 @@ export class Worksheet {
         this.corner = document.createElement('div');
         this.corner.className = 'jss_corner';
         this.corner.setAttribute('unselectable', 'on');
-        this.corner.setAttribute('onselectstart', 'return false');
+        // A listener, not an inline handler, which a Content Security Policy without 'unsafe-inline' blocks
+        this.corner.addEventListener('selectstart', (event) => event.preventDefault());
 
         if (this.options.selectionCopy === false) {
             this.corner.style.display = 'none';
