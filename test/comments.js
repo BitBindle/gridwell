@@ -83,4 +83,20 @@ describe('Comment tests', () => {
 
         expect(rows[1].children[3].getAttribute('title')).to.equal('Test');
     });
+
+    it('loads the comments option without a history entry or oncomments (issue #87)', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [2, 2], comments: { B1: 'A note' } }],
+            oncomments: () => calls.push('oncomments'),
+        })[0];
+
+        expect(worksheet.history.records.length).to.equal(0);
+        expect(calls).to.eql([]);
+
+        worksheet.undo();
+
+        expect(worksheet.getComments('B1')).to.equal('A note');
+        expect(worksheet.getCell('B1').classList.contains('jss_comments')).to.equal(true);
+    });
 });

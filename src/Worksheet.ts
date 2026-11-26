@@ -840,7 +840,7 @@ export class Worksheet {
         });
 
         if (this.options.comments) {
-            this.setComments(this.options.comments);
+            this.comments.load(this.options.comments);
         }
 
         // Classes

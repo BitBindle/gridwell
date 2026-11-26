@@ -277,3 +277,9 @@ and `CellChange.value` can be `undefined`, as the new value of `onchange` can.
 With `persistence`, an undo or a redo posts the cells it changed. Version 5 posted them without `onbeforesave` and
 `onsave`, because undo and redo set `ignoreEvents` (#57). `onbeforesave` and `onsave` now occur while `ignoreEvents` is
 set, so `onbeforesave` can change or cancel every post.
+
+## Loading the comments option is not a change
+
+The `comments` option of a worksheet is loaded without an entry in the undo history and without `oncomments`, as the
+`style` option is. Version 5 added a `setComments` entry while it built the worksheet, so an undo right after loading
+removed the comments, and it called `oncomments` for them (#87).
