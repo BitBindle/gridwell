@@ -3,7 +3,6 @@ import jSuites from 'jsuites';
 import { parseCSV } from './helpers.js';
 import dispatch from './dispatch.js';
 import { updateCell } from './render.js';
-import { updateFormulaChain, updateTableReferences } from './references.js';
 import { updateTable } from './table.js';
 import { downGet, rightGet } from './keys.js';
 import { updateSelectionFromCoords } from './selection.js';
@@ -293,7 +292,7 @@ const insertSpaceForPaste = function (this: Worksheet, colIndex: number, rowInde
 
     if (obj.skipUpdateTableReferences) {
         obj.skipUpdateTableReferences = false;
-        updateTableReferences.call(obj);
+        obj.formulas.updateTableReferences();
     }
 };
 
@@ -338,7 +337,7 @@ const pasteRows = function (this: Worksheet, x: number, y: number, rows: jspread
             // Keep history
             records.push(record);
             // Update all formulas in the chain
-            updateFormulaChain.call(obj, colIndex, rowIndex, records);
+            obj.formulas.updateChain(colIndex, rowIndex, records);
             // Style
             if (style && style[styleIndex]) {
                 const columnName = getColumnNameFromId([colIndex, rowIndex]);

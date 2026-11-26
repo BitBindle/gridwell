@@ -1,6 +1,5 @@
 import { createRow } from './rows.js';
 import { updateCell } from './render.js';
-import { updateFormulaChain } from './references.js';
 import { updateTable } from './table.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import dispatch from './dispatch.js';
@@ -216,7 +215,7 @@ export const setValue: WorksheetMethod<'setValue'> = function (cell: any, value,
         records.push(updateCell.call(obj, x, y, value, force));
 
         // Update all formulas in the chain
-        updateFormulaChain.call(obj, x, y, records);
+        obj.formulas.updateChain(x, y, records);
     } else {
         let x = null;
         let y = null;
@@ -230,7 +229,7 @@ export const setValue: WorksheetMethod<'setValue'> = function (cell: any, value,
             records.push(updateCell.call(obj, x, y, value, force));
 
             // Update all formulas in the chain
-            updateFormulaChain.call(obj, x, y, records);
+            obj.formulas.updateChain(x, y, records);
         } else {
             const keys = Object.keys(cell);
             if (keys.length > 0) {
@@ -262,7 +261,7 @@ export const setValue: WorksheetMethod<'setValue'> = function (cell: any, value,
                         records.push(updateCell.call(obj, x, y, cellValue, force));
 
                         // Update all formulas in the chain
-                        updateFormulaChain.call(obj, x, y, records);
+                        obj.formulas.updateChain(x, y, records);
                     }
                 }
             }
@@ -308,7 +307,7 @@ export const setValueFromCoords: WorksheetMethod<'setValueFromCoords'> = functio
     records.push(updateCell.call(obj, x, y, value, force));
 
     // Update all formulas in the chain
-    updateFormulaChain.call(obj, x, y, records);
+    obj.formulas.updateChain(x, y, records);
 
     // Update history
     obj.history.add({
