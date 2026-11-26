@@ -2,19 +2,20 @@ import jSuites from 'jsuites';
 import { getMask, isFormula } from '../utils/values.js';
 import { extract, toEditor } from '../utils/mask.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
+import { ColorPicker, type ColorPickerOptions } from '../utils/color.js';
 import type { Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
-import type { CalendarOptions, ColorOptions, DropdownOptions } from '../types/jsuites-module';
+import type { CalendarOptions, DropdownOptions } from '../types/jsuites-module';
 
 /**
  * The editor in a cell that is being edited, read as an input because the text editors are inputs or text areas.
- * jsuites keeps its control on the element.
- * The typings of the calendar and the color picker say that close returns nothing, but it returns the value.
+ * jsuites keeps its control on the element, and so does the color picker.
+ * The typings of the calendar say that close returns nothing, but it returns the value.
  */
 type EditorElement = HTMLInputElement & {
     dropdown: { close(ignoreEvents: boolean): void; getValue(asArray: true): string[]; getValue(): string };
     calendar: { close(ignoreEvents: boolean): string };
-    color: { close(ignoreEvents: boolean): string };
+    color: ColorPicker;
 };
 
 /** The options of a column, as the worksheet keeps them. */
@@ -202,7 +203,7 @@ export class Editor {
     }
 
     /**
-     * The editor of a calendar or a color column: an input with an open jSuites calendar or color picker.
+     * The editor of a calendar or a color column: an input with an open jSuites calendar, or a color picker.
      */
     private openPicker(cell: HTMLTableCellElement, x: number, y: number, column: ColumnOptions, label: string) {
         const worksheet = this.worksheet;
@@ -217,37 +218,47 @@ export class Editor {
         // The input converts the value to text
         editor.value = value as string;
 
-        // The options of the calendar or the color picker
-        const options: CalendarOptions & ColorOptions = column.options ? { ...column.options } : {};
+        const fixed = worksheet.options.tableOverflow === true || worksheet.parent.config.fullscreen === true;
 
-        if (worksheet.options.tableOverflow === true || worksheet.parent.config.fullscreen === true) {
+        if (column.type === 'color') {
+            // The value of a color cell is text. Closing the picker, also with a color, saves it.
+            const picker = new ColorPicker(editor, {
+                ...(column.options as ColorPickerOptions | undefined),
+                ...(fixed ? { position: true } : {}),
+                value: worksheet.options.data[y][x] as string,
+                onclose: () => {
+                    worksheet.editor.close(cell, true);
+                },
+            });
+
+            if (fixed) {
+                const rect = cell.getBoundingClientRect();
+                picker.content.style.top = `${rect.top + rect.height}px`;
+                picker.content.style.left = `${rect.left}px`;
+            }
+
+            // The picker takes the focus
+            picker.open();
+            return;
+        }
+
+        // The options of the calendar
+        const options: CalendarOptions = column.options ? { ...column.options } : {};
+
+        if (fixed) {
             options.position = true;
         }
-        // The value of a calendar or a color cell is text
+        // The value of a calendar cell is text
         options.value = worksheet.options.data[y][x] as string;
         options.opened = true;
-        // The color picker gives its instance as the second argument, and the calendar nothing
-        options.onclose = (el: HTMLElement, value?: unknown) => {
+        options.onclose = () => {
             worksheet.editor.close(cell, true);
         };
-        // Current value
-        if (column.type === 'color') {
-            jSuites.color(editor, options);
-
-            const rect = cell.getBoundingClientRect();
-
-            if (options.position) {
-                // The color picker adds its container after the input
-                ((editor.nextSibling as HTMLElement).children[1] as HTMLElement).style.top = `${rect.top + rect.height}px`;
-                ((editor.nextSibling as HTMLElement).children[1] as HTMLElement).style.left = `${rect.left}px`;
-            }
-        } else {
-            if (!options.format) {
-                options.format = 'YYYY-MM-DD';
-            }
-
-            jSuites.calendar(editor, options);
+        if (!options.format) {
+            options.format = 'YYYY-MM-DD';
         }
+
+        jSuites.calendar(editor, options);
         // Focus on editor
         editor.focus();
     }

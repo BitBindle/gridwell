@@ -264,7 +264,7 @@ const worksheetOptions: jspreadsheet.SpreadsheetOptions = { worksheets: [], onev
 void worksheetOptions;
 
 // A context menu item gets the element of the item and the release of the mouse or the key, and the toolbar items get
-// the jSuites instances
+// the toolbar and the picker
 type ContextMenuClick = Parameters<NonNullable<jspreadsheet.ContextMenuOption['onclick']>>;
 assertType<Equals<ContextMenuClick, [element: HTMLDivElement, e: MouseEvent | KeyboardEvent]>>();
 // A handler that an application wrote for a mouse event still fits
@@ -273,9 +273,12 @@ void mouseItem;
 type ToolbarClick = Parameters<NonNullable<jspreadsheet.ToolbarIconItem['onclick']>>[1];
 assertType<Equals<ToolbarClick, jspreadsheet.ToolbarInstance>>();
 declare const toolbarInstance: jspreadsheet.ToolbarInstance;
+toolbarInstance.update();
+// @ts-expect-error The toolbar does not move the items that do not fit into a menu
 toolbarInstance.refresh();
 declare const pickerInstance: jspreadsheet.PickerInstance;
 pickerInstance.close();
+assertType<Equals<ReturnType<typeof pickerInstance.isOpened>, boolean>>();
 
 // The library has the static methods that it declares, and no others
 // @ts-expect-error The library has no index signature

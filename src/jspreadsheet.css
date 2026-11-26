@@ -720,6 +720,303 @@
     outline-offset: -2px;
 }
 
+/* The toolbar, its pickers and the color picker, with the classes of jSuites */
+.jtoolbar {
+    cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    padding: 4px;
+    user-select: none;
+    font-size: 13px;
+}
+
+.jtoolbar-disabled {
+    pointer-events: none;
+    opacity: 0.4;
+}
+
+.jtoolbar > div {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    vertical-align: middle;
+    justify-content: space-evenly;
+}
+
+.jtoolbar .jtoolbar-item {
+    text-align: center;
+    margin: auto;
+    padding: 2px 4px;
+    user-select: none;
+}
+
+.jtoolbar .jtoolbar-divisor {
+    width: 2px;
+    height: 18px;
+    padding: 0px;
+    margin-left: 4px;
+    margin-right: 4px;
+    background-color: #ddd;
+}
+
+.jtoolbar .jtoolbar-label {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.jtoolbar-item i {
+    display: block;
+    color: #333;
+}
+
+.jtoolbar-item:hover {
+    background-color: #f2f2f2;
+}
+
+.jtoolbar-active {
+    background-color: #eee;
+}
+
+.jtoolbar .fa {
+    width: 18px;
+    height: 18px;
+    display: block;
+    line-height: 18px;
+    font-size: 14px;
+}
+
+.jtoolbar .material-icons {
+    font-size: 18px;
+    width: 24px;
+    height: 24px;
+    display: block;
+    line-height: 24px;
+    transform: rotate(0.03deg);
+    text-align: center;
+}
+
+.jtoolbar .jtoolbar-item[role='button']:focus-visible {
+    outline: 2px solid var(--jss-border-color);
+    outline-offset: -2px;
+}
+
+.jpicker {
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    user-select: none;
+    outline: none;
+    position: relative;
+    min-height: 26px;
+}
+
+.jpicker-header {
+    background-repeat: no-repeat;
+    background-position: top 50% right 5px;
+    background-image: url('data:image/svg+xml,%0A%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27none%27 d=%27M0 0h24v24H0V0z%27/%3E%3Cpath d=%27M7 10l5 5 5-5H7z%27 fill=%27gray%27/%3E%3C/svg%3E');
+    text-overflow: ellipsis;
+    cursor: pointer;
+    box-sizing: border-box;
+    text-align: left;
+    outline: none;
+    line-height: 24px;
+    padding: 2px 35px 2px 12px;
+    border-radius: 4px;
+}
+
+.jpicker-header:hover {
+    background-color: #f2f2f2;
+}
+
+.jpicker-header > i,
+.jpicker-header > div {
+    display: block;
+}
+
+.jpicker-content {
+    position: absolute;
+    top: 0;
+    display: none;
+    box-shadow:
+        0 4px 5px 0 rgba(0, 0, 0, 0.14),
+        0 1px 10px 0 rgba(0, 0, 0, 0.12),
+        0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    background-color: #fff;
+    padding: 4px;
+    z-index: 50;
+    text-align: left;
+    max-height: 250px;
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
+}
+
+.jpicker-content > div {
+    padding: 6px 15px;
+}
+
+.jpicker-focus > .jpicker-content {
+    display: block;
+}
+
+.jpicker-content > div:hover {
+    background-color: #efefef;
+}
+
+.jpicker-content > div:empty {
+    opacity: 0;
+}
+
+.jpicker-focus > .jpicker-content.jpicker-columns {
+    display: flex !important;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.jtoolbar .jpicker {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.jtoolbar .jpicker-header {
+    padding: 0 20px 0 8px;
+    background-position: top 50% right 0;
+    display: flex;
+    align-items: center;
+}
+
+.jtoolbar .jpicker-content > div {
+    padding: 6px;
+}
+
+.jcolor {
+    display: none;
+    outline: none;
+    position: absolute;
+}
+
+.jcolor-focus {
+    display: block;
+}
+
+.jcolor-input {
+    padding-right: 24px !important;
+    background:
+        url('data:image/svg+xml,%0A%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27black%27 width=%2718px%27 height=%2718px%27%3E%3Cpath d=%27M0 0h24v24H0z%27 fill=%27none%27/%3E%3Cpath d=%27M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z%27/%3E%3C/svg%3E')
+            top 50% right 4px no-repeat,
+        content-box;
+    box-sizing: border-box;
+}
+
+.jcolor-content {
+    position: absolute;
+    z-index: 9000;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+    font-size: 0.875rem;
+    letter-spacing: 0.2px;
+    border-radius: 4px;
+    box-shadow:
+        0 8px 10px 1px rgba(0, 0, 0, 0.14),
+        0 3px 14px 2px rgba(0, 0, 0, 0.12),
+        0 5px 5px -3px rgba(0, 0, 0, 0.2);
+    background-color: #fff;
+    box-sizing: border-box;
+    min-width: 260px;
+    cursor: default;
+}
+
+.jcolor-controls {
+    display: flex;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 5px;
+}
+
+.jcolor-controls button {
+    flex: 1;
+    font: inherit;
+    font-size: 1em;
+    color: var(--jactive-color, #007aff);
+    text-transform: uppercase;
+    font-weight: bold;
+    box-sizing: border-box;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+
+.jcolor-reset {
+    text-align: left;
+}
+
+.jcolor-close {
+    text-align: right;
+}
+
+.jcolor-grid {
+    padding: 7px;
+}
+
+.jcolor-grid table {
+    width: 100%;
+    min-height: 160px;
+    border-collapse: collapse;
+    box-sizing: border-box;
+}
+
+.jcolor-grid td {
+    padding: 7px;
+    cursor: pointer;
+}
+
+.jcolor-grid td:focus-visible {
+    outline: 2px solid #000;
+    outline-offset: -1px;
+    box-shadow: inset 0 0 0 3px #fff;
+}
+
+.jcolor-grid tr:first-child > td:first-child {
+    border-top-left-radius: 3px;
+}
+
+.jcolor-grid tr:first-child > td:last-child {
+    border-top-right-radius: 3px;
+}
+
+.jcolor-grid tr:last-child > td:first-child {
+    border-bottom-left-radius: 3px;
+}
+
+.jcolor-grid tr:last-child > td:last-child {
+    border-bottom-right-radius: 3px;
+}
+
+.jcolor-selected {
+    background-repeat: no-repeat;
+    background-size: 16px;
+    background-position: center;
+    background-image: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M0 0h24v24H0z%27 fill=%27none%27/%3E%3Cpath d=%27M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z%27 fill=%27white%27/%3E%3C/svg%3E');
+}
+
+.jcolor-custom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 7px 7px;
+    color: #555;
+}
+
+.jcolor-custom input {
+    width: 40px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid #ccc;
+    background: none;
+    cursor: pointer;
+}
+
 .jss_worksheet .dragging-left {
     background-repeat: no-repeat;
     background-position: top 50% left 0px;

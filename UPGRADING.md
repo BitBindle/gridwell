@@ -429,3 +429,32 @@ element still keeps the menu as `contextmenu`, with `open(e, items)`, `create(it
 - The `onclick` of an item gets the release of the mouse, or the `KeyboardEvent` of the key that chose it. Its type is
   `(element: HTMLDivElement, e: MouseEvent | KeyboardEvent) => void`. The menu closes before `onclick` runs.
 - The menu has no `options.onclick`, which jSuites called after each chosen item.
+
+## The toolbar and the color picker work without jSuites
+
+The toolbar, the pickers of its select items and the color picker are shown by Jspreadsheet, not by `jSuites.toolbar`,
+`jSuites.picker` and `jSuites.color`. They keep the class names of jSuites (`jtoolbar`, `jtoolbar-item`, `jpicker`,
+`jpicker-focus`, `jcolor`, `jcolor-focus`, …) and their look, and the elements still keep them as `toolbar`, `picker`
+and `color`. These change:
+
+- The toolbar has the methods `create`, `update`, `selectItem`, `setReadonly`, `get`, `show`, `hide` and `destroy`. It
+  no longer moves the items that do not fit into a menu, so `refresh`, `open` and `close` are gone, and so are
+  `setBadge` and the options `responsive`, `badge`, `title`, `app` and `container`. `hide` and `show` no longer slide
+  the toolbar.
+- The content of a `label` item, and the icon name of an item, are shown as text. jSuites wrote them with `innerHTML`.
+- An option of a select item without `render` is shown as text. `render` still gives HTML, or an element.
+- The options of a picker have `aria-selected`, and the picker has `isOpened()`. The pickers no longer have the
+  options `header`, `grid`, `height`, `onmouseover` and `onselect`, nor `setOptions`, `getLabel` and `setLabel`, nor
+  the `val` and `change` properties on their element.
+- The color picker has a grid of colors with the ARIA grid pattern (the arrows, Home and End move between the colors,
+  and Enter and Space choose one), an input for any other color, and Reset and Done buttons. The Spectrum and Sliders
+  tabs are replaced by that input, which opens the color dialog of the browser. The picker no longer fills the bottom
+  of the screen on a small screen, and has no `fullscreen` option, no `setOptions` and `toHex` methods, and no `val`
+  and `change` properties on its element.
+- When the color picker opens, the focus moves to the chosen color, or to the first; when it closes, the focus goes
+  back to its element. The focus leaving the picker closes it.
+- The color items of the toolbar open their picker with Enter and Space each time; jSuites opened it from the keyboard
+  only the first time.
+- In the editor of a color column, Escape on the picker closes the editor without saving, as on the input. The options
+  of the column (`palette`, `placeholder`, `closeOnChange`, `doneLabel`, `resetLabel`, `onopen`, `onchange`) are still
+  given to the picker. The texts of the buttons are translated with `jspreadsheet.setDictionary` (`Reset`, `Done`).

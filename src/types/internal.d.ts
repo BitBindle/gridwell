@@ -6,6 +6,7 @@
 import type jspreadsheet from '../jspreadsheet';
 import type { Tabs } from '../utils/tabs';
 import type { Toolbar } from '../utils/toolbar';
+import type { ToolbarControl } from '../utils/toolbarControl';
 import type { ContextMenu } from '../utils/contextMenu';
 import type { Spreadsheet } from '../Spreadsheet';
 import type { Worksheet } from '../Worksheet';
@@ -149,8 +150,8 @@ export interface SpreadsheetState extends jspreadsheet.SpreadsheetInstance {
     /** The context menu, which keeps its ContextMenu on its element. */
     contextMenu: HTMLDivElement & { contextmenu: ContextMenu };
 
-    /** The jsuites toolbar, which jsuites keeps on its element. update calls updateState of each item with the worksheet. */
-    toolbar: HTMLDivElement & { toolbar: { update(worksheet: Worksheet): void } };
+    /** The element of the toolbar, which keeps its ToolbarControl. update calls updateState of each item with the worksheet. */
+    toolbar: HTMLDivElement & { toolbar: ToolbarControl };
 
     /** Creates, shows, hides and updates the toolbar. It is not called toolbar, because toolbar is the element. */
     toolbarManager: Toolbar;
