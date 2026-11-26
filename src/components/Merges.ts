@@ -179,8 +179,9 @@ export class Merges {
      * @param colspan - The number of columns.
      * @param rowspan - The number of rows.
      * @param ignoreHistoryAndEvents - Add no history and trigger no event.
+     * @param keepSelection - Do not select the first cell of the range, as for the ranges of the options.
      */
-    set(cellName?: string, colspan?: number, rowspan?: number, ignoreHistoryAndEvents?: boolean | 1): null | undefined {
+    set(cellName?: string, colspan?: number, rowspan?: number, ignoreHistoryAndEvents?: boolean | 1, keepSelection?: boolean): null | undefined {
         const worksheet = this.worksheet;
 
         let test: string | false = false;
@@ -265,8 +266,10 @@ export class Merges {
             }
             // A column of the range can be hidden
             this.updateFirstCell(cellName);
-            // In the initialization is not necessary keep the history
-            worksheet.selection.update(worksheet.records[cell[1]][cell[0]].element);
+            // The build of a worksheet with many merged ranges would select each range and dispatch onselection for it
+            if (!keepSelection) {
+                worksheet.selection.update(worksheet.records[cell[1]][cell[0]].element);
+            }
 
             if (!ignoreHistoryAndEvents) {
                 worksheet.history.add({
