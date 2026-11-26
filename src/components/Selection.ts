@@ -920,7 +920,7 @@ export class Selection {
                 if (worksheet.view.loadValidation()) {
                     worksheet.updateSelectionFromCoords(...range);
                 } else {
-                    const item = parseInt((worksheet.tbody.firstChild as HTMLElement).getAttribute('data-y'));
+                    const item = parseInt(worksheet.view.firstScrollRow().getAttribute('data-y'));
                     if (range[1] - item < 30) {
                         worksheet.view.loadUp();
                         worksheet.updateSelectionFromCoords(...range);
@@ -1332,19 +1332,19 @@ export class Selection {
             y = y2 - y1 + worksheet.content.scrollTop + h2;
         }
 
-        // Each header row sticks at the top of the content, so the header covers the height of its highest row
-        let above = 0;
-        for (const row of Array.from(worksheet.thead.children) as HTMLElement[]) {
-            above = Math.max(above, row.offsetHeight);
-        }
+        // The header and the frozen rows stick at the top of the content, so a cell shows only below them
+        const frozenHeight = worksheet.rowManager.getFreezeHeight();
+        const above = worksheet.rowManager.getHeaderHeight() + frozenHeight;
         const top = y2 - y1 + worksheet.content.scrollTop;
 
         // Top position check
-        if (top >= worksheet.content.scrollTop + above && y < worksheet.content.scrollTop + h1) {
+        if (worksheet.selection.range![3] < worksheet.rowManager.getFreezeCount()) {
+            // A frozen row is always in the viewport
+        } else if (top >= worksheet.content.scrollTop + above && y < worksheet.content.scrollTop + h1) {
             // In the viewport
         } else if (top < worksheet.content.scrollTop + above) {
-            // A cell of the first row scrolls the content to the top, so all the header rows show
-            const first = top <= worksheet.tbody.getBoundingClientRect().top - y1 + worksheet.content.scrollTop;
+            // A cell of the first row after the frozen rows scrolls the content to the top, so all the header rows show
+            const first = top <= worksheet.tbody.getBoundingClientRect().top - y1 + worksheet.content.scrollTop + frozenHeight;
             worksheet.content.scrollTop = first ? 0 : top - above;
         } else {
             worksheet.content.scrollTop = y - (h1 - 2);

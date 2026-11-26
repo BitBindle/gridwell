@@ -585,6 +585,9 @@ export class Worksheet {
 
         const removedWorksheet = this.parent.worksheets.splice(position, 1)[0];
 
+        // The size observer of the frozen rows holds the worksheet
+        removedWorksheet?.rowManager.stopFreeze();
+
         this.parent.dispatch('ondeleteworksheet', removedWorksheet, position);
     }
 
