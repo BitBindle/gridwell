@@ -4,7 +4,18 @@ import { translate } from './dictionary.js';
 // "YYYY-MM-DD HH:MI:SS", or as a number of days since 1899-12-30, as in Excel, whose decimal part is the time.
 
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const shortWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/**
+ * Translate the short name of a month. The short name of May is also its full name in English, so the dictionary has it
+ * as "May (short)".
+ * @param name - The short name in English, such as "Jan".
+ */
+function translateShortMonth(name: string) {
+    return translate(name, name === 'May' ? 'short' : undefined);
+}
 
 // The tokens of a format, the longest first, so that "MMMM" is not read as "MM" twice
 const tokens = [
@@ -162,22 +173,24 @@ export function formatDate(value: unknown, format?: string) {
     const weekday = new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay();
     const hours12 = parts.hours % 12 || 12;
     const month = translate(months[parts.month - 1]);
+    const shortMonth = translateShortMonth(shortMonths[parts.month - 1]);
     const day = translate(weekdays[weekday]);
+    const shortDay = translate(shortWeekdays[weekday]);
 
     const values: Record<string, string> = {
         YYYY: `${parts.year}`,
         YY: pad(parts.year % 100),
         MONTH: month.toUpperCase(),
         MMMM: month,
-        MMM: month.substring(0, 3),
-        MON: month.substring(0, 3).toUpperCase(),
+        MMM: shortMonth,
+        MON: shortMonth.toUpperCase(),
         MM: pad(parts.month),
         M: `${parts.month}`,
         DDDD: day,
         DAY: day.toUpperCase(),
         WD: day,
-        DDD: day.substring(0, 3),
-        DY: day.substring(0, 3),
+        DDD: shortDay,
+        DY: shortDay,
         DD: pad(parts.day),
         D: `${parts.day}`,
         HH24: pad(parts.hours),
@@ -210,20 +223,27 @@ function escapeRegExp(text: string) {
  * @returns The date as the text "YYYY-MM-DD HH:MI:SS", or an empty text when the text is not a date in the format.
  */
 export function parseDate(text: unknown, format: string) {
-    // The names in English and as the dictionary translates them, in pairs, cut to a length for the short names
-    function names(list: string[], length?: number) {
-        return list.flatMap((name) => [name, translate(name)]).map((name) => (length ? name.substring(0, length) : name));
+    // The names in English and as the dictionary translates them, in pairs
+    function names(list: string[], translator: (name: string) => string = translate) {
+        return list.flatMap((name) => [name, translator(name)]);
     }
-    const longMonths = names(months);
-    const shortMonths = names(months, 3);
-    const days = [...names(weekdays), ...names(weekdays, 3)].map(escapeRegExp).join('|');
+    // A pattern that matches one of the names, the longest first, so that "Thg 1" does not match the start of "Thg 12"
+    function anyOf(list: string[]) {
+        return [...list]
+            .sort((a, b) => b.length - a.length)
+            .map(escapeRegExp)
+            .join('|');
+    }
+    const longMonthNames = names(months);
+    const shortMonthNames = names(shortMonths, translateShortMonth);
+    const days = anyOf([...names(weekdays), ...names(shortWeekdays)]);
 
     const parts: DateParts = { year: new Date().getFullYear(), month: 1, day: 1, hours: 0, minutes: 0, seconds: 0 };
     let pm: boolean | null = null;
 
     // The month of a name, which is in a pair of the list
     function month(list: string[]): [string, (match: string) => void] {
-        return [list.map(escapeRegExp).join('|'), (m) => (parts.month = (list.findIndex((name) => name.toLowerCase() === m.toLowerCase()) >> 1) + 1)];
+        return [anyOf(list), (m) => (parts.month = (list.findIndex((name) => name.toLowerCase() === m.toLowerCase()) >> 1) + 1)];
     }
 
     // A number of one or two digits, or of the given pattern, that sets a part of the date
@@ -238,10 +258,10 @@ export function parseDate(text: unknown, format: string) {
         YYYY: digits('year', '\\d{4}'),
         // Two digits are a year of this century up to 29, as in Excel, and of the last century from 30
         YY: ['\\d{2}', (m) => (parts.year = Number(m) + (Number(m) < 30 ? 2000 : 1900))],
-        MONTH: month(longMonths),
-        MMMM: month(longMonths),
-        MMM: month(shortMonths),
-        MON: month(shortMonths),
+        MONTH: month(longMonthNames),
+        MMMM: month(longMonthNames),
+        MMM: month(shortMonthNames),
+        MON: month(shortMonthNames),
         MM: digits('month'),
         M: digits('month'),
         DD: digits('day'),

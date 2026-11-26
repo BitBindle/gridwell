@@ -270,6 +270,50 @@ describe('Date formats', () => {
         expect(worksheet.getValue('B1')).to.equal('2024-03-05 00:00:00');
     });
 
+    it('shows and reads the short names of the months and the days with their own translations (issue #155)', () => {
+        const translations = {
+            May: 'Tháng Năm',
+            'May (short)': 'Thg 5',
+            June: 'Tháng Sáu',
+            Jun: 'Thg 6',
+            July: 'Tháng Bảy',
+            Jul: 'Thg 7',
+            Dec: 'Thg 12',
+            Saturday: 'Thứ Bảy',
+            Sat: 'T7',
+            Mon: 'T2',
+        };
+        jspreadsheet.setDictionary(translations);
+        try {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [
+                    {
+                        data: [['2024-06-01', '2024-07-01', '2024-05-04', '2024-05-04', '', '', '']],
+                        columns: Array.from({ length: 7 }, (v, i) => ({
+                            type: 'calendar' as const,
+                            options: { format: i === 3 ? 'DDDD D MMMM YYYY' : 'DDD, DD MMM YYYY' },
+                        })),
+                    },
+                ],
+            })[0];
+
+            // The months have short names of their own, and the short name of May is not its full name
+            expect(worksheet.records[0].slice(0, 4).map((record) => record.element.textContent)).to.eql([
+                'T7, 01 Thg 6 2024',
+                'T2, 01 Thg 7 2024',
+                'T7, 04 Thg 5 2024',
+                'Thứ Bảy 4 Tháng Năm 2024',
+            ]);
+
+            worksheet.paste(4, 0, 'T2, 01 Thg 7 2024\tt7, 04 THG 5 2024\tT2, 02 Thg 12 2024');
+            expect(worksheet.getValueFromCoords(4, 0)).to.equal('2024-07-01 00:00:00');
+            expect(worksheet.getValueFromCoords(5, 0)).to.equal('2024-05-04 00:00:00');
+            expect(worksheet.getValueFromCoords(6, 0)).to.equal('2024-12-02 00:00:00');
+        } finally {
+            jspreadsheet.setDictionary(Object.fromEntries(Object.keys(translations).map((text) => [text, ''])));
+        }
+    });
+
     it('keeps a pasted date in the ISO format, reads a date in the format of the column and empties a text that is not a date', () => {
         const worksheet = jspreadsheet(root, {
             worksheets: [

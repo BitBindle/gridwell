@@ -15,7 +15,9 @@ export function setDictionary(translations: Record<string, string>) {
 /**
  * Translate a text with the dictionary. A text without a translation stays as it is.
  * @param text - The English text.
+ * @param context - Tells apart two texts that are the same in English, such as the month May and its short name. The
+ * dictionary has the translation of the text by "text (context)", such as "May (short)".
  */
-export function translate(text: string) {
-    return dictionary.get(text) || text;
+export function translate(text: string, context?: string) {
+    return dictionary.get(context ? `${text} (${context})` : text) || text;
 }

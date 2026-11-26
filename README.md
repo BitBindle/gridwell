@@ -71,7 +71,8 @@ With the scripts of a CDN, the engine is the global `formula`:
 `jspreadsheet.setDictionary` translates the texts of the spreadsheet: the context menu, the toolbar, the editors, the
 search and the pagination. It takes the translations by English text. The package has translations in
 `resources/lang` (German, Danish, French, Italian, Polish, Portuguese, Vietnamese and Chinese), and `en_GB.json` lists
-all the texts.
+all the texts. The names of the months and the days are texts too, full (`January`, `Sunday`) and short (`Jan`,
+`Sun`). The short name of May is `May (short)`, because it is the same as the full name in English.
 
 ```javascript
 import jspreadsheet from 'jspreadsheet-ce';

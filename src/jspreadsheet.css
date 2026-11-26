@@ -1546,7 +1546,9 @@
 .jcalendar-weekday {
     font-weight: 600;
     background-color: #fcfcfc;
-    padding: 14px;
+    padding: 14px 2px;
+    /* The columns of the days have the same width, whatever the length of the short names */
+    width: calc(100% / 7);
 }
 
 .jcalendar-table {

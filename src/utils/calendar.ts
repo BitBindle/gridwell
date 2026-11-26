@@ -558,17 +558,17 @@ export class Calendar {
         if (this.view === 'days') {
             this.grid.setAttribute('aria-label', formatDate(firstOfMonth, 'MMMM YYYY'));
 
-            // The first letters of the days of the week
+            // The short names of the days of the week, named by their full names
             const weekdays = document.createElement('tr');
             weekdays.setAttribute('align', 'center');
             for (let i = 0; i < 7; i++) {
                 // 2023-01-01 is a Sunday
-                const name = formatDate(`2023-01-${pad(1 + ((i + (this.options.startingDay || 0)) % 7))}`, 'DDDD');
+                const date = `2023-01-${pad(1 + ((i + (this.options.startingDay || 0)) % 7))}`;
                 const th = document.createElement('td');
                 th.className = 'jcalendar-weekday';
                 th.setAttribute('role', 'columnheader');
-                th.setAttribute('aria-label', name);
-                th.textContent = name.substring(0, 1);
+                th.setAttribute('aria-label', formatDate(date, 'DDDD'));
+                th.textContent = formatDate(date, 'DDD');
                 weekdays.appendChild(th);
             }
             this.body.appendChild(weekdays);

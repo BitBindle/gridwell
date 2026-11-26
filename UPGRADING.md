@@ -562,3 +562,17 @@ The files in `resources/lang` have the English texts as their keys, as `jspreads
 such as those of the toolbar, the calendar, the filters and the image editor. An application that read the old keys
 reads the English texts instead. The `Copy`, `Paste` and `Save as` items add the dots after the translation, so their
 translations have none.
+
+## The short names of the months and the days have their own translations
+
+The short names of the months and the days, which the tokens `MMM`, `MON`, `DDD` and `DY` show and the calendar shows,
+are texts of their own: `Jan` to `Dec` and `Sun` to `Sat`. Jspreadsheet cut the first three letters of the full names,
+so a language whose short names are not those letters showed wrong names, such as `Thá` for `Thg 6` in Vietnamese,
+and could not read its own short names in a pasted date (issue #155). A dictionary that translated only the full names
+shows the English short names now: add the translations of the short names. The short name of May is the same text as
+its full name in English, so the dictionary has it as `May (short)`. A date is read with the full and the short names,
+in English and as the dictionary translates them.
+
+The header of the days in the calendar shows their short names, such as `Mon`, where it showed their first letters. The
+full names are still their accessible names. The language files in `resources/lang` translate the names of the months
+and the days, full and short.
