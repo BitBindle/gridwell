@@ -74,6 +74,9 @@ export class Editor {
     /** The row of the cell, or -1 when no editor is open. */
     y = -1;
 
+    /** The text of the editValue hook that the text editor opened with, or null. */
+    text: string | null = null;
+
     constructor(worksheet: Worksheet) {
         this.worksheet = worksheet;
     }
@@ -89,6 +92,7 @@ export class Editor {
         this.html = cell.innerHTML;
         this.x = x;
         this.y = y;
+        this.text = null;
     }
 
     /** Forget the cell when its editor closes, or when the column type has no editor to keep open. */
@@ -97,6 +101,7 @@ export class Editor {
         this.html = '';
         this.x = -1;
         this.y = -1;
+        this.text = null;
     }
 
     /**
@@ -334,6 +339,8 @@ export class Editor {
 
         // Value
         const value = empty === true ? '' : worksheet.options.data[y][x];
+        const editValue = worksheet.parent.config.editValue;
+        const text = empty !== true && typeof editValue === 'function' ? editValue(worksheet, x, y, value) : undefined;
 
         // Basic editor
         let editor;
@@ -349,8 +356,15 @@ export class Editor {
         editor.focus();
         // A value with a mask shows as a plain number, such as 1234.5 for "$ 1,234.50", or as a date in the format of the
         // mask. The input converts the value to text.
+        // The text of the editValue hook shows as it is.
         const mask = column && !isFormula(value) ? getMask(column) : null;
-        editor.value = mask ? toEditor(value, mask) : (value as string);
+        if (text !== undefined) {
+            // A hook in JavaScript can return null
+            editor.value = text == null ? '' : `${text}`;
+            this.text = editor.value;
+        } else {
+            editor.value = mask ? toEditor(value, mask) : (value as string);
+        }
 
         editor.onblur = () => {
             worksheet.editor.close(cell, true);
@@ -474,15 +488,20 @@ export class Editor {
                     value = (cell.children[0] as EditorElement).value;
                     (cell.children[0] as EditorElement).onblur = null;
 
-                    // A number that is typed with the symbols of the mask, such as "$ 1,234.50", is kept as a number. A
-                    // text that is not a number is kept as it is typed.
-                    const mask = column ? getMask(column) : null;
-                    if (mask && value !== '' && !isFormula(value)) {
-                        value = extract(value, mask);
-                    }
+                    if (worksheet.editor.text !== null && value === worksheet.editor.text) {
+                        // The text of the editValue hook that the user did not change keeps the value of the cell
+                        value = worksheet.options.data[y][x];
+                    } else {
+                        // A number that is typed with the symbols of the mask, such as "$ 1,234.50", is kept as a number.
+                        // A text that is not a number is kept as it is typed.
+                        const mask = column ? getMask(column) : null;
+                        if (mask && value !== '' && !isFormula(value)) {
+                            value = extract(value, mask);
+                        }
 
-                    if (column?.type === 'numeric' && value === '') {
-                        value = column.allowEmpty ? '' : 0;
+                        if (column?.type === 'numeric' && value === '') {
+                            value = column.allowEmpty ? '' : 0;
+                        }
                     }
                 }
             }

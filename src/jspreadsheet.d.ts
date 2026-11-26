@@ -703,6 +703,17 @@ declare namespace jspreadsheet {
         autoIncrement?: boolean;
 
         /**
+         * Give a note that the accessible name of the active cell adds after the address and the text of the cell, for
+         * example "cached, not recalculated". The name of A5 is then "A5 12, cached, not recalculated". Call
+         * `worksheet.labelCell` after the note of a cell changes.
+         * @param instance - Worksheet of the cell.
+         * @param x - Column index of the cell.
+         * @param y - Row index of the cell.
+         * @returns Text of the note. An empty text, null or undefined adds nothing.
+         */
+        cellNote?: (instance: WorksheetInstance, x: number, y: number) => string | null | undefined;
+
+        /**
          * Creates context menu when user clicks with secondary mouse button.
          * @param instance - Instance of the worksheet on which the click was made.
          * @param colIndex - Horizontal index of the element that was clicked. The meaning of this value depends on the {@link role} argument.
@@ -730,6 +741,41 @@ declare namespace jspreadsheet {
          * @default false
          */
         debugFormulas?: boolean;
+
+        /**
+         * Give the text that the text editor shows when it opens on a cell, in place of the value of the cell. For example, show
+         * a date serial number as a date. The hook does not run when the editor opens empty, for example on a typed character.
+         * If the user leaves the text as it is, the cell keeps its value. A changed text goes through the mask of the column
+         * and `onbeforechange`, where the application can convert it back to a value.
+         * @param instance - Worksheet of the cell.
+         * @param x - Column index of the cell.
+         * @param y - Row index of the cell.
+         * @param value - Value of the cell. For a formula cell, the formula.
+         * @returns Text of the editor, or undefined to show the value as the column shows it.
+         */
+        editValue?: (instance: WorksheetInstance, x: number, y: number, value: CellValue) => CellValue | undefined;
+
+        /**
+         * Give the text that a cell shows, for example a value in a number format of the application. It runs for the columns
+         * that show their value as text: the columns of the types text, numeric and html, and the columns without a type.
+         * The sort, the search, the filters, the processed values of `getValue` and `getData`, and the copy use the shown text.
+         * The footers do not use the hook. In an html column, and with `parseHTML`, the text is HTML: escape the text of users.
+         * @param instance - Worksheet of the cell.
+         * @param x - Column index of the cell.
+         * @param y - Row index of the cell.
+         * @param value - Value of the cell, or the result of its formula: an array for a range, and undefined for a cell
+         * without a value.
+         * @param cell - Element of the cell, when the value shows in a cell. The hook can change its style, for example its
+         * `textAlign`. The column `align` applies first. A new value of the cell does not reset a style that the hook set.
+         * @returns Text of the cell, or undefined to show the value with the mask of the column.
+         */
+        formatValue?: (
+            instance: WorksheetInstance,
+            x: number,
+            y: number,
+            value: CellValue | CellValue[] | undefined,
+            cell?: HTMLElement
+        ) => CellValue | undefined;
 
         /**
          * Calculate formulas with an engine of the application in place of the engine of `jspreadsheet.setFormulaEngine`.
@@ -1787,6 +1833,15 @@ declare namespace jspreadsheet {
      */
     interface SpreadsheetInstance {
         /**
+         * Read a text to the user of assistive technology, for example "B4 changed by another user". The spreadsheet has a
+         * polite live region, so the text does not stop what the screen reader reads. The region is hidden on the screen.
+         * The spreadsheet adds the region when it is built, so call `announce` after `onload`. Each call adds the text as a
+         * new element, so the same text two times is read two times.
+         * @param text - Text to read.
+         */
+        announce: (text: string) => void;
+
+        /**
          * Spreadsheet settings.
          */
         config: SpreadsheetOptions;
@@ -2244,6 +2299,14 @@ declare namespace jspreadsheet {
          * @param cellName - Cell name.
          */
         isReadOnly(cellName: string): boolean;
+
+        /**
+         * Set the accessible name of a cell again, from its address, its text and the `cellNote` option. Call it after the
+         * note of a cell changes. Only the active cell has a name, so the call does nothing for another cell.
+         * @param x - Column index of the cell.
+         * @param y - Row index of the cell.
+         */
+        labelCell: (x: number, y: number) => void;
 
         /**
          * Simulates the action of the End key. Does nothing when no cell is selected.

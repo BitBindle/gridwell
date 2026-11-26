@@ -390,6 +390,89 @@ describe('Accessible names', () => {
     });
 });
 
+describe('Notes and announcements', () => {
+    it('adds the note of the cellNote option to the name of the active cell', () => {
+        const calls: [Jspreadsheet.WorksheetInstance, number, number][] = [];
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: [['12', 'a']] }],
+            cellNote: (instance, x, y) => {
+                calls.push([instance, x, y]);
+                return x === 0 ? 'cached, not recalculated' : '';
+            },
+        });
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        expect(worksheet.records[0][0].element.getAttribute('aria-label')).to.equal('A1 12, cached, not recalculated');
+        expect(calls[calls.length - 1]).to.eql([worksheet, 0, 0]);
+
+        // An empty note adds nothing
+        worksheet.updateSelectionFromCoords(1, 0, 1, 0);
+        expect(worksheet.records[0][1].element.getAttribute('aria-label')).to.equal('B1 a');
+    });
+
+    it('sets the name of the active cell again with labelCell after the note changes', () => {
+        let note = '';
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: [['12', 'a']] }],
+            cellNote: () => note,
+        });
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        expect(worksheet.records[0][0].element.getAttribute('aria-label')).to.equal('A1 12');
+
+        note = 'not recalculated';
+        worksheet.labelCell(0, 0);
+        expect(worksheet.records[0][0].element.getAttribute('aria-label')).to.equal('A1 12, not recalculated');
+
+        // Only the active cell has a name
+        worksheet.labelCell(1, 0);
+        expect(worksheet.records[0][1].element.hasAttribute('aria-label')).to.equal(false);
+    });
+
+    it('reads a text of announce through a polite live region of the spreadsheet', async () => {
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ minDimensions: [2, 2] }] });
+        await new Promise((resolve) => setTimeout(resolve));
+
+        const regions = root.querySelectorAll('.jss_live');
+        expect(regions.length).to.equal(1);
+        expect(regions[0].getAttribute('role')).to.equal('status');
+        expect(regions[0].getAttribute('aria-live')).to.equal('polite');
+        expect(regions[0].textContent).to.equal('');
+
+        worksheet.parent.announce('B4 changed by another user');
+        expect(regions[0].textContent).to.equal('B4 changed by another user');
+
+        // The same text again is a new element, so a screen reader reads it again
+        const first = regions[0].firstElementChild;
+        worksheet.parent.announce('B4 changed by another user');
+        expect(regions[0].children.length).to.equal(1);
+        expect(regions[0].firstElementChild).to.not.equal(first);
+    });
+
+    it('gives the note to the name of the first cell of a merged range, and again after the editor closes', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['12', 'b'],
+                        ['c', 'd'],
+                    ],
+                    mergeCells: { A1: [2, 2] },
+                },
+            ],
+            cellNote: (instance, x, y) => `note ${x},${y}`,
+        });
+
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+        const cell = worksheet.records[0][0].element;
+        expect(cell.getAttribute('aria-label')).to.equal('A1 12, note 0,0');
+
+        worksheet.openEditor(cell);
+        expect(cell.hasAttribute('aria-label')).to.equal(false);
+        worksheet.closeEditor(cell, false);
+        expect(cell.getAttribute('aria-label')).to.equal('A1 12, note 0,0');
+    });
+});
+
 describe('Keyboard focus', () => {
     function keydown(target: Element, key: string, keyCode: number) {
         target.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, cancelable: true, composed: true, key, keyCode, which: keyCode }));

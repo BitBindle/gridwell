@@ -519,6 +519,10 @@ export class Worksheet {
         return this.selection.getHighlighted();
     }
 
+    labelCell(x: number, y: number) {
+        return this.accessibility.labelCell(x, y);
+    }
+
     down(shiftKey?: boolean, ctrlKey?: boolean) {
         return this.selection.down(shiftKey, ctrlKey);
     }

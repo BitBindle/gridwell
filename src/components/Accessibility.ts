@@ -174,9 +174,9 @@ export class Accessibility {
     }
 
     /**
-     * Accessible name of the active cell: its address and its text. A cell without text, for example a checkbox or a color
-     * square, gives its value. An image gives no value, because its value is the image data. A cell with an open editor has
-     * no name, because the editor shows other text and has its own name.
+     * Accessible name of the active cell: its address, its text and the note of the cellNote option. A cell without text,
+     * for example a checkbox or a color square, gives its value. An image gives no value, because its value is the image
+     * data. A cell with an open editor has no name, because the editor shows other text and has its own name.
      */
     setCellLabel(td: HTMLTableCellElement) {
         const worksheet = this.worksheet;
@@ -194,6 +194,20 @@ export class Accessibility {
             text = value === null || value === undefined ? '' : `${value}`;
         }
 
-        td.setAttribute('aria-label', getColumnNameFromId([x, y]) + (text ? ` ${text}` : ''));
+        // The cellNote option adds a note of the application, for example "not recalculated"
+        const cellNote = worksheet.parent.config.cellNote;
+        const note = typeof cellNote === 'function' ? cellNote(worksheet, x, y) : null;
+
+        td.setAttribute('aria-label', getColumnNameFromId([x, y]) + (text ? ` ${text}` : '') + (note ? `, ${note}` : ''));
+    }
+
+    /**
+     * Set the accessible name of the active cell again when it is the cell at x and y. Another cell has no name.
+     */
+    labelCell(x: number, y: number) {
+        const td = this.worksheet.selection.activeCell;
+        if (td && parseInt(td.getAttribute('data-x')) === x && parseInt(td.getAttribute('data-y')) === y) {
+            this.setCellLabel(td);
+        }
     }
 }

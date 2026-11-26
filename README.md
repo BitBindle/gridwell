@@ -13,7 +13,8 @@ and issues now, and does not merge changes from upstream.
 - Sorting, search, column filters, pagination and lazy loading.
 - Merged cells, comments, frozen columns, nested headers, a toolbar and a context menu.
 - Several worksheets in tabs.
-- An ARIA grid. The keyboard reaches every control, and the selected cell is the focus.
+- An ARIA grid. The keyboard reaches every control, and the selected cell is the focus. The application can add a note to
+  the name of a cell (`cellNote`) and read a text through a live region (`announce`).
 - Formulas through the optional `@jspreadsheet/formula` engine.
 - Translations for nine languages.
 - TypeScript typings.
@@ -108,6 +109,20 @@ import gridwell from '@bitbindle/gridwell';
 import formula from '@jspreadsheet/formula';
 
 gridwell.setFormulaEngine(formula);
+```
+
+## Number formats of the application
+
+The options `formatValue` and `editValue` let the application show a value in its own format. `formatValue` gives the
+text of a cell, and `editValue` gives the text of the editor. The cell keeps its value. A hook that returns `undefined`
+leaves the value to the mask of the column.
+
+```javascript
+gridwell(element, {
+    worksheets: [{ data: [[45658]] }],
+    formatValue: (worksheet, x, y, value) => (typeof value === 'number' ? toDateText(value) : undefined),
+    editValue: (worksheet, x, y, value) => (typeof value === 'number' ? toDateText(value) : undefined),
+});
 ```
 
 ## Translations

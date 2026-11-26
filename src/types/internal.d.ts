@@ -150,6 +150,9 @@ export interface SpreadsheetState extends jspreadsheet.SpreadsheetInstance {
     /** The context menu, which keeps its ContextMenu on its element. */
     contextMenu: HTMLDivElement & { contextmenu: ContextMenu };
 
+    /** The polite live region that announce writes to. */
+    liveRegion: HTMLDivElement;
+
     /** The element of the toolbar, which keeps its ToolbarControl. update calls updateState of each item with the worksheet. */
     toolbar: HTMLDivElement & { toolbar: ToolbarControl };
 
