@@ -103,4 +103,18 @@ describe('Style', () => {
         expect(worksheet.getStyle('A1', 'background-image')).to.contain('data:image/png;base64,iVBORw0KGgo=');
         expect(worksheet.getStyle('A1', 'color')).to.equal('blue');
     });
+
+    it('applies a value with a space after the colon, and toggles it off as a value without one (issue #67)', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [2, 2], style: { A1: 'color: red', B1: 'color:red' } }] })[0];
+
+        expect(worksheet.getStyle('A1', 'color')).to.equal('red');
+        expect(worksheet.getStyle('B1', 'color')).to.equal('red');
+
+        worksheet.setStyle({ A1: 'color: red', B1: 'color:red' });
+
+        expect(worksheet.getStyle('A1', 'color')).to.equal('');
+        expect(worksheet.getStyle('B1', 'color')).to.equal('');
+        expect(worksheet.history.records[0].newValue).to.eql({ A1: 'color:', B1: 'color:' });
+        expect(worksheet.history.records[0].oldValue).to.eql({ A1: 'color:red', B1: 'color:red' });
+    });
 });

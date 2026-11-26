@@ -167,8 +167,9 @@ export class Styles {
                         property = property.split(/:(.*)/);
                     }
                     // Apply value
+                    // The cell gives its values without spaces around them, so a value is compared without them too
                     if (property[0].trim()) {
-                        applyStyle(cellName, property[0].trim(), property[1]);
+                        applyStyle(cellName, property[0].trim(), property[1]?.trim());
                     }
                 }
             }
