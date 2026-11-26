@@ -631,8 +631,8 @@ declare namespace jspreadsheet {
         icon?: string;
         id?: string;
         disabled?: boolean;
-        /** element is the element of the item in the menu. */
-        onclick?: (element: HTMLDivElement, e: MouseEvent) => void;
+        /** element is the element of the item in the menu, and e the release of the mouse or the key (Enter or Space) that chose it. */
+        onclick?(element: HTMLDivElement, e: MouseEvent | KeyboardEvent): void;
         shortcut?: string;
         tooltip?: string;
         submenu?: Array<ContextMenuItem>;
@@ -1764,7 +1764,7 @@ declare namespace jspreadsheet {
         config: SpreadsheetOptions;
 
         /**
-         * Jsuites contextmenu of this jss instance
+         * The element of the context menu of the spreadsheet.
          */
         contextMenu: HTMLDivElement;
 

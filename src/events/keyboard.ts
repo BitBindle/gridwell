@@ -3,14 +3,15 @@ import { getElement } from './helpers.js';
 import type { TargetEvent } from '../types/internal';
 
 export function keyDownControls(e: TargetEvent<KeyboardEvent>) {
-    // Keys on the worksheet tabs, on the button to add a worksheet and on the toolbar do not go to the grid
+    // Keys on the worksheet tabs, on the button to add a worksheet, on the toolbar and on the context menu do not go to the
+    // grid
     const keyPath = typeof e.composedPath === 'function' ? e.composedPath() : [];
     // The first node of the path can be a node without closest, such as the document. The code checks for closest.
     const keyTarget = (keyPath.length ? keyPath[0] : e.target) as HTMLElement;
     if (
         keyTarget &&
         typeof keyTarget.closest === 'function' &&
-        keyTarget.closest('.jss_spreadsheet > .jtabs-headers-container, .jss_spreadsheet > .jss_toolbar')
+        keyTarget.closest('.jss_spreadsheet > .jtabs-headers-container, .jss_spreadsheet > .jss_toolbar, .jss_spreadsheet > .jss_contextmenu')
     ) {
         return;
     }

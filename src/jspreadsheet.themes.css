@@ -90,11 +90,13 @@
     color: var(--menu_color, #555);
 }
 
-.jss_contextmenu > div:not(.contextmenu-line):hover a {
+.jss_contextmenu > div:not(.contextmenu-line):hover a,
+.jss_contextmenu > div:not(.contextmenu-line):focus a {
     color: var(--menu_color_highlighted, #555);
 }
 
-.jss_contextmenu > div:not(.contextmenu-line):hover {
+.jss_contextmenu > div:not(.contextmenu-line):hover,
+.jss_contextmenu > div:not(.contextmenu-line):focus {
     background: var(--menu_background_highlighted, #ebebeb);
 }
 
