@@ -627,10 +627,10 @@ declare namespace jspreadsheet {
 
     interface SpreadsheetOptions {
         /**
-         * Show or not the "about" item in the context menu.
+         * Show or not the "about" item in the context menu. A text is shown instead of the version when the item is clicked.
          * @default true
          */
-        about?: boolean;
+        about?: boolean | string;
 
         /**
          * Spreadsheet plugins. Each function is called with the spreadsheet, an empty object and the spreadsheet options, and returns the plugin.

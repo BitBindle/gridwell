@@ -79,6 +79,9 @@ library(document.createElement('div'), {
     worksheets: [{ style: { A1: 0, B1: 'font-weight: bold;' } }],
 });
 
+// The about option can be the text that the "About" item shows
+library(document.createElement('div'), { about: 'My application', worksheets: [{}] });
+
 // A context menu line has no title
 const contextMenuItems: jspreadsheet.ContextMenuItem[] = [{ title: 'Copy', onclick: () => {} }, { type: 'line' }];
 
