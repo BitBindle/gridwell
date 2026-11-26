@@ -34,11 +34,11 @@ export class Data {
         if (worksheet.options.data && worksheet.options.data[0]) {
             if (!Array.isArray(worksheet.options.data[0])) {
                 const rows: CellValue[][] = [];
-                for (let j = 0; j < worksheet.options.data.length; j++) {
+                for (const record of worksheet.options.data) {
                     const row: CellValue[] = [];
                     for (let i = 0; i < worksheet.options.columns.length; i++) {
                         // The rows are objects here
-                        row[i] = (worksheet.options.data[j] as unknown as Record<string, CellValue>)[worksheet.options.columns[i].name!];
+                        row[i] = (record as unknown as Record<string, CellValue>)[worksheet.options.columns[i].name!];
                     }
                     rows.push(row);
                 }
@@ -126,10 +126,9 @@ export class Data {
 
         // Merge cells
         if (worksheet.options.mergeCells) {
-            const keys = Object.keys(worksheet.options.mergeCells);
-            for (let i = 0; i < keys.length; i++) {
-                const num = worksheet.options.mergeCells[keys[i]];
-                worksheet.merges.set(keys[i], num[0], num[1], 1);
+            for (const key of Object.keys(worksheet.options.mergeCells)) {
+                const num = worksheet.options.mergeCells[key];
+                worksheet.merges.set(key, num[0], num[1], 1);
             }
         }
 

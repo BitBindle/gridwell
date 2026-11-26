@@ -221,8 +221,8 @@ export class Columns {
             }
 
             // Copy the data back to the main data
-            Array.prototype.push.apply(worksheet.options.data[row], currentData);
-            Array.prototype.push.apply(worksheet.records[row], currentRecord);
+            worksheet.options.data[row].push(...currentData);
+            worksheet.records[row].push(...currentRecord);
         }
 
         return { historyRecords, historyData };
@@ -353,16 +353,16 @@ export class Columns {
             // Adding visual columns
             const { historyRecords, historyData } = this.addCells(columnIndex, numOfColumns, data);
 
-            Array.prototype.push.apply(worksheet.headers, currentHeaders);
-            Array.prototype.push.apply(worksheet.cols, currentColgroup);
+            worksheet.headers.push(...currentHeaders);
+            worksheet.cols.push(...currentColgroup);
 
             for (let i = columnIndex; i < worksheet.cols.length; i++) {
                 worksheet.cols[i].x = i;
             }
 
-            for (let j = 0; j < worksheet.records.length; j++) {
-                for (let i = 0; i < worksheet.records[j].length; i++) {
-                    worksheet.records[j][i].x = i;
+            for (const record of worksheet.records) {
+                for (let i = 0; i < record.length; i++) {
+                    record[i].x = i;
                 }
             }
 
@@ -451,16 +451,16 @@ export class Columns {
             worksheet.cols[i].x = i;
         }
 
-        for (let j = 0; j < worksheet.records.length; j++) {
+        for (const record of worksheet.records) {
             for (let i = firstAffectedIndex; i <= lastAffectedIndex; i++) {
-                worksheet.records[j][i].x = i;
+                record[i].x = i;
             }
         }
 
         // Update footers position
         if (worksheet.options.footers) {
-            for (let j = 0; j < worksheet.options.footers.length; j++) {
-                worksheet.options.footers[j].splice(d, 0, worksheet.options.footers[j].splice(o, 1)[0]);
+            for (const footer of worksheet.options.footers) {
+                footer.splice(d, 0, footer.splice(o, 1)[0]);
             }
         }
 
@@ -586,9 +586,9 @@ export class Columns {
                         worksheet.cols[i].x = i;
                     }
 
-                    for (let j = 0; j < worksheet.records.length; j++) {
-                        for (let i = columnNumber; i < worksheet.records[j].length; i++) {
-                            worksheet.records[j][i].x = i;
+                    for (const record of worksheet.records) {
+                        for (let i = columnNumber; i < record.length; i++) {
+                            record[i].x = i;
                         }
                     }
 
@@ -750,9 +750,7 @@ export class Columns {
             colNumber = [colNumber];
         }
 
-        for (let i = 0; i < colNumber.length; i++) {
-            const columnIndex = colNumber[i];
-
+        for (const columnIndex of colNumber) {
             worksheet.headers[columnIndex].style.display = '';
             worksheet.cols[columnIndex].colElement.style.display = '';
             if (worksheet.filter && worksheet.filter.children.length > columnIndex + 1) {
@@ -788,9 +786,7 @@ export class Columns {
             colNumber = [colNumber];
         }
 
-        for (let i = 0; i < colNumber.length; i++) {
-            const columnIndex = colNumber[i];
-
+        for (const columnIndex of colNumber) {
             worksheet.headers[columnIndex].style.display = 'none';
             worksheet.cols[columnIndex].colElement.style.display = 'none';
             if (worksheet.filter && worksheet.filter.children.length > columnIndex + 1) {
@@ -936,20 +932,20 @@ export class Columns {
         nestedInformation.element = tr;
 
         let headerIndex = 0;
-        for (let i = 0; i < nestedInformation.length; i++) {
+        for (const header of nestedInformation) {
             // Default values
-            if (!nestedInformation[i].colspan) {
-                nestedInformation[i].colspan = 1;
+            if (!header.colspan) {
+                header.colspan = 1;
             }
-            if (!nestedInformation[i].title) {
-                nestedInformation[i].title = '';
+            if (!header.title) {
+                header.title = '';
             }
-            if (!nestedInformation[i].id) {
-                nestedInformation[i].id = '';
+            if (!header.id) {
+                header.id = '';
             }
 
             // Number of columns. colspan, title and id have default values above.
-            let numberOfColumns = nestedInformation[i].colspan!;
+            let numberOfColumns = header.colspan!;
 
             // Classes container
             const column = [];
@@ -965,10 +961,10 @@ export class Columns {
             // Created the nested cell
             const td = document.createElement('td');
             td.setAttribute('data-column', column.join(','));
-            td.setAttribute('colspan', nestedInformation[i].colspan!);
-            td.setAttribute('align', nestedInformation[i].align || 'center');
-            td.setAttribute('id', nestedInformation[i].id!);
-            td.textContent = nestedInformation[i].title!;
+            td.setAttribute('colspan', header.colspan!);
+            td.setAttribute('align', header.align || 'center');
+            td.setAttribute('id', header.id!);
+            td.textContent = header.title!;
             tr.appendChild(td);
         }
 

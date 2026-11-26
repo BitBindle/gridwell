@@ -128,8 +128,8 @@ export class History {
         }
 
         for (let j = rowIndex; j < worksheet.records.length; j++) {
-            for (let i = 0; i < worksheet.records[j].length; i++) {
-                worksheet.records[j][i].y = j;
+            for (const cell of worksheet.records[j]) {
+                cell.y = j;
             }
         }
 
@@ -169,8 +169,8 @@ export class History {
             }
             // Process footers
             if (worksheet.options.footers) {
-                for (let j = 0; j < worksheet.options.footers.length; j++) {
-                    worksheet.options.footers[j].splice(columnIndex, numOfColumns);
+                for (const footer of worksheet.options.footers) {
+                    footer.splice(columnIndex, numOfColumns);
                 }
             }
         } else {
@@ -208,9 +208,9 @@ export class History {
             worksheet.cols[i].x = i;
         }
 
-        for (let j = 0; j < worksheet.records.length; j++) {
-            for (let i = columnIndex; i < worksheet.records[j].length; i++) {
-                worksheet.records[j][i].x = i;
+        for (const record of worksheet.records) {
+            for (let i = columnIndex; i < record.length; i++) {
+                record[i].x = i;
             }
         }
 
@@ -291,11 +291,11 @@ export class History {
                 worksheet.view.updateOrder(rows);
             } else if (historyRecord.action == 'setValue') {
                 // Redo for changes in cells
-                for (let i = 0; i < historyRecord.records.length; i++) {
+                for (const record of historyRecord.records) {
                     records.push({
-                        x: historyRecord.records[i].x,
-                        y: historyRecord.records[i].y,
-                        value: historyRecord.records[i].oldValue,
+                        x: record.x,
+                        y: record.y,
+                        value: record.oldValue,
                     });
 
                     if (historyRecord.oldStyle) {
@@ -370,7 +370,7 @@ export class History {
             } else if (historyRecord.action == 'setValue') {
                 worksheet.setValue(historyRecord.records);
                 // Redo for changes in cells
-                for (let i = 0; i < historyRecord.records.length; i++) {
+                for (const record of historyRecord.records) {
                     if (historyRecord.oldStyle) {
                         worksheet.resetStyle(historyRecord.newStyle!);
                     }

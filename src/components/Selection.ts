@@ -73,12 +73,12 @@ export class Selection {
     /** Remove the fill border from the cells that a drag of the corner was going to fill, and forget them. */
     clearFill() {
         // Remove current selection
-        for (let i = 0; i < this.fill.length; i++) {
-            this.fill[i].classList.remove('selection');
-            this.fill[i].classList.remove('selection-left');
-            this.fill[i].classList.remove('selection-right');
-            this.fill[i].classList.remove('selection-top');
-            this.fill[i].classList.remove('selection-bottom');
+        for (const cell of this.fill) {
+            cell.classList.remove('selection');
+            cell.classList.remove('selection-left');
+            cell.classList.remove('selection-right');
+            cell.classList.remove('selection-top');
+            cell.classList.remove('selection-bottom');
         }
 
         this.fill = [];
@@ -156,24 +156,24 @@ export class Selection {
         } else {
             previousStatus = 1;
 
-            for (let i = 0; i < worksheet.selection.highlighted.length; i++) {
-                worksheet.selection.highlighted[i].element.classList.remove('highlight');
-                worksheet.selection.highlighted[i].element.classList.remove('highlight-left');
-                worksheet.selection.highlighted[i].element.classList.remove('highlight-right');
-                worksheet.selection.highlighted[i].element.classList.remove('highlight-top');
-                worksheet.selection.highlighted[i].element.classList.remove('highlight-bottom');
-                worksheet.selection.highlighted[i].element.classList.remove('highlight-selected');
-                worksheet.selection.highlighted[i].element.removeAttribute('aria-selected');
+            for (const cell of worksheet.selection.highlighted) {
+                cell.element.classList.remove('highlight');
+                cell.element.classList.remove('highlight-left');
+                cell.element.classList.remove('highlight-right');
+                cell.element.classList.remove('highlight-top');
+                cell.element.classList.remove('highlight-bottom');
+                cell.element.classList.remove('highlight-selected');
+                cell.element.removeAttribute('aria-selected');
 
-                const px = parseInt(worksheet.selection.highlighted[i].element.getAttribute('data-x'));
-                const py = parseInt(worksheet.selection.highlighted[i].element.getAttribute('data-y'));
+                const px = parseInt(cell.element.getAttribute('data-x'));
+                const py = parseInt(cell.element.getAttribute('data-y'));
 
                 // Check for merged cells
                 let ux, uy;
 
-                if (worksheet.selection.highlighted[i].element.getAttribute('data-merged')) {
-                    const colspan = this.getMergedColspan(worksheet.selection.highlighted[i].element, px, py);
-                    const rowspan = parseInt(worksheet.selection.highlighted[i].element.getAttribute('rowspan'));
+                if (cell.element.getAttribute('data-merged')) {
+                    const colspan = this.getMergedColspan(cell.element, px, py);
+                    const rowspan = parseInt(cell.element.getAttribute('rowspan'));
                     ux = colspan > 0 ? px + (colspan - 1) : px;
                     uy = rowspan > 0 ? py + (rowspan - 1) : py;
                 } else {
@@ -661,8 +661,8 @@ export class Selection {
     private getFirstVisibleCell() {
         const worksheet = this.worksheet;
 
-        for (let j = 0; j < worksheet.tbody.children.length; j++) {
-            const tr = worksheet.tbody.children[j] as HTMLTableRowElement;
+        for (const child of worksheet.tbody.children) {
+            const tr = child as HTMLTableRowElement;
             if (tr.style.display !== 'none') {
                 // The first child is the row number
                 for (let i = 1; i < tr.children.length; i++) {

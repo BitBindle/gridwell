@@ -81,9 +81,8 @@ libraryBase.jspreadsheet.destroy = (
 };
 
 libraryBase.jspreadsheet.destroyAll = () => {
-    for (let spreadsheetIndex = 0; spreadsheetIndex < libraryBase.jspreadsheet.spreadsheet.length; spreadsheetIndex++) {
-        const spreadsheet = libraryBase.jspreadsheet.spreadsheet[spreadsheetIndex];
-
+    // destroy removes the spreadsheet from the list, so the loop skips every other one (issue #114)
+    for (const spreadsheet of libraryBase.jspreadsheet.spreadsheet) {
         libraryBase.jspreadsheet.destroy(spreadsheet.element);
     }
 };
@@ -96,8 +95,8 @@ libraryBase.jspreadsheet.helpers = {} as jspreadsheet.JssHelpers;
 
 libraryBase.jspreadsheet.version = () => version;
 
-Object.entries(helpers).forEach(([key, value]) => {
+for (const [key, value] of Object.entries(helpers)) {
     (libraryBase.jspreadsheet.helpers as unknown as Record<string, unknown>)[key] = value;
-});
+}
 
 export default libraryBase.jspreadsheet;

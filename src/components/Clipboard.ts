@@ -118,19 +118,19 @@ export class Clipboard {
 
     /** Draw the dashed border around the copied cells, from the borders of their selection. */
     showBorder(cells: { element: HTMLTableCellElement }[]) {
-        for (let i = 0; i < cells.length; i++) {
-            cells[i].element.classList.add('copying');
-            if (cells[i].element.classList.contains('highlight-left')) {
-                cells[i].element.classList.add('copying-left');
+        for (const cell of cells) {
+            cell.element.classList.add('copying');
+            if (cell.element.classList.contains('highlight-left')) {
+                cell.element.classList.add('copying-left');
             }
-            if (cells[i].element.classList.contains('highlight-right')) {
-                cells[i].element.classList.add('copying-right');
+            if (cell.element.classList.contains('highlight-right')) {
+                cell.element.classList.add('copying-right');
             }
-            if (cells[i].element.classList.contains('highlight-top')) {
-                cells[i].element.classList.add('copying-top');
+            if (cell.element.classList.contains('highlight-top')) {
+                cell.element.classList.add('copying-top');
             }
-            if (cells[i].element.classList.contains('highlight-bottom')) {
-                cells[i].element.classList.add('copying-bottom');
+            if (cell.element.classList.contains('highlight-bottom')) {
+                cell.element.classList.add('copying-bottom');
             }
         }
     }
@@ -138,12 +138,12 @@ export class Clipboard {
     /** Remove the dashed border from the cells of every worksheet in the document: there is one system clipboard. */
     clearBorder() {
         const copying = document.querySelectorAll('.jss_worksheet .copying');
-        for (let i = 0; i < copying.length; i++) {
-            copying[i].classList.remove('copying');
-            copying[i].classList.remove('copying-left');
-            copying[i].classList.remove('copying-right');
-            copying[i].classList.remove('copying-top');
-            copying[i].classList.remove('copying-bottom');
+        for (const cell of copying) {
+            cell.classList.remove('copying');
+            cell.classList.remove('copying-left');
+            cell.classList.remove('copying-right');
+            cell.classList.remove('copying-top');
+            cell.classList.remove('copying-bottom');
         }
     }
 
@@ -159,11 +159,11 @@ export class Clipboard {
         if (worksheet.options.nestedHeaders && worksheet.options.nestedHeaders.length > 0) {
             const headerRows = worksheet.options.nestedHeaders;
 
-            for (let j = 0; j < headerRows.length; j++) {
+            for (const headerRow of headerRows) {
                 const nested = [];
-                for (let i = 0; i < headerRows[j].length; i++) {
-                    const colspan = parseInt(headerRows[j][i].colspan);
-                    nested.push(headerRows[j][i].title);
+                for (const header of headerRow) {
+                    const colspan = parseInt(header.colspan);
+                    nested.push(header.title);
                     for (let c = 0; c < colspan - 1; c++) {
                         nested.push('');
                     }

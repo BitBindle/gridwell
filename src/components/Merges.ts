@@ -27,25 +27,23 @@ export class Merges {
         const cols = [];
         // Remove any merged cells
         if (worksheet.options.mergeCells) {
-            const keys = Object.keys(worksheet.options.mergeCells);
-            for (let i = 0; i < keys.length; i++) {
-                const info = getIdFromColumnName(keys[i], true);
-                const colspan = worksheet.options.mergeCells[keys[i]][0];
+            for (const [key, [colspan]] of Object.entries(worksheet.options.mergeCells)) {
+                const info = getIdFromColumnName(key, true);
                 const x1 = info[0];
                 const x2 = info[0] + (colspan > 1 ? colspan - 1 : 0);
 
                 if (insertBefore == null) {
                     if (x1 <= x && x2 >= x) {
-                        cols.push(keys[i]);
+                        cols.push(key);
                     }
                 } else {
                     if (insertBefore) {
                         if (x1 < x && x2 >= x) {
-                            cols.push(keys[i]);
+                            cols.push(key);
                         }
                     } else {
                         if (x1 <= x && x2 > x) {
-                            cols.push(keys[i]);
+                            cols.push(key);
                         }
                     }
                 }
@@ -65,25 +63,23 @@ export class Merges {
         const rows = [];
         // Remove any merged cells
         if (worksheet.options.mergeCells) {
-            const keys = Object.keys(worksheet.options.mergeCells);
-            for (let i = 0; i < keys.length; i++) {
-                const info = getIdFromColumnName(keys[i], true);
-                const rowspan = worksheet.options.mergeCells[keys[i]][1];
+            for (const [key, [, rowspan]] of Object.entries(worksheet.options.mergeCells)) {
+                const info = getIdFromColumnName(key, true);
                 const y1 = info[1];
                 const y2 = info[1] + (rowspan > 1 ? rowspan - 1 : 0);
 
                 if (insertBefore == null) {
                     if (y1 <= y && y2 >= y) {
-                        rows.push(keys[i]);
+                        rows.push(key);
                     }
                 } else {
                     if (insertBefore) {
                         if (y1 < y && y2 >= y) {
-                            rows.push(keys[i]);
+                            rows.push(key);
                         }
                     } else {
                         if (y1 <= y && y2 > y) {
-                            rows.push(keys[i]);
+                            rows.push(key);
                         }
                     }
                 }
@@ -138,15 +134,14 @@ export class Merges {
             return;
         }
 
-        const keys = Object.keys(worksheet.options.mergeCells);
-        for (let i = 0; i < keys.length; i++) {
-            const cell = getIdFromColumnName(keys[i], true);
-            const colspan = worksheet.options.mergeCells[keys[i]][0];
+        for (const key of Object.keys(worksheet.options.mergeCells)) {
+            const cell = getIdFromColumnName(key, true);
+            const colspan = worksheet.options.mergeCells[key][0];
 
-            for (let j = 0; j < columns.length; j++) {
-                const x = parseInt(columns[j]);
+            for (const column of columns) {
+                const x = parseInt(column);
                 if (x >= cell[0] && x < cell[0] + colspan) {
-                    this.updateFirstCell(keys[i]);
+                    this.updateFirstCell(key);
                     break;
                 }
             }
@@ -172,9 +167,8 @@ export class Merges {
             }
         } else {
             if (worksheet.options.mergeCells) {
-                const keys = Object.keys(worksheet.options.mergeCells);
-                for (let i = 0; i < keys.length; i++) {
-                    data[keys[i]] = [worksheet.options.mergeCells[keys[i]][0], worksheet.options.mergeCells[keys[i]][1]];
+                for (const [key, [colspan, rowspan]] of Object.entries(worksheet.options.mergeCells)) {
+                    data[key] = [colspan, rowspan];
                 }
             }
         }
@@ -351,9 +345,8 @@ export class Merges {
 
         // Remove any merged cells
         if (worksheet.options.mergeCells) {
-            const keys = Object.keys(worksheet.options.mergeCells);
-            for (let i = 0; i < keys.length; i++) {
-                this.remove(keys[i], null, keepOptions);
+            for (const key of Object.keys(worksheet.options.mergeCells)) {
+                this.remove(key, null, keepOptions);
             }
         }
     }

@@ -42,12 +42,11 @@ export class Meta {
 
         if (worksheet.options.meta) {
             const newMeta: Record<string, jspreadsheet.MetaInformation> = {};
-            const keys = Object.keys(worksheet.options.meta);
-            for (let i = 0; i < keys.length; i++) {
-                if (affectedCells[keys[i]]) {
-                    newMeta[affectedCells[keys[i]]] = worksheet.options.meta[keys[i]];
+            for (const [key, meta] of Object.entries(worksheet.options.meta)) {
+                if (affectedCells[key]) {
+                    newMeta[affectedCells[key]] = meta;
                 } else {
-                    newMeta[keys[i]] = worksheet.options.meta[keys[i]];
+                    newMeta[key] = meta;
                 }
             }
             // Update meta information
@@ -79,15 +78,14 @@ export class Meta {
         } else {
             // Apply that for all cells
             const keys = Object.keys(o);
-            for (let i = 0; i < keys.length; i++) {
-                if (!worksheet.options.meta[keys[i]]) {
-                    worksheet.options.meta[keys[i]] = {};
+            for (const key of keys) {
+                if (!worksheet.options.meta[key]) {
+                    worksheet.options.meta[key] = {};
                 }
 
                 // o is the information by cell name
-                const prop = Object.keys((o as Record<string, jspreadsheet.MetaInformation>)[keys[i]]);
-                for (let j = 0; j < prop.length; j++) {
-                    worksheet.options.meta[keys[i]][prop[j]] = (o as Record<string, jspreadsheet.MetaInformation>)[keys[i]][prop[j]];
+                for (const [property, value] of Object.entries((o as Record<string, jspreadsheet.MetaInformation>)[key])) {
+                    worksheet.options.meta[key][property] = value;
                 }
             }
 

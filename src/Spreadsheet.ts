@@ -135,14 +135,14 @@ export class Spreadsheet {
 
             let sheetNumber = 1;
 
-            for (let i = 0; i < o.length; i++) {
-                if (!o[i].worksheetName) {
-                    o[i].worksheetName = 'Sheet' + sheetNumber++;
+            for (const worksheetOptions of o) {
+                if (!worksheetOptions.worksheetName) {
+                    worksheetOptions.worksheetName = 'Sheet' + sheetNumber++;
                 }
 
                 tabsOptions.data.push({
                     // Set above
-                    title: o[i].worksheetName!,
+                    title: worksheetOptions.worksheetName!,
                     content: '',
                 });
             }
@@ -157,12 +157,12 @@ export class Spreadsheet {
 
             for (let i = 0; i < o.length; i++) {
                 if (o[i].style) {
-                    Object.entries(o[i].style!).forEach(([cellName, value]) => {
+                    for (const [cellName, value] of Object.entries(o[i].style!)) {
                         if (typeof value === 'number') {
                             // A number is the index of a style in the spreadsheet options, which the application passes with it
                             o[i].style![cellName] = spreadsheetStyles![value];
                         }
-                    });
+                    }
                 }
 
                 this.worksheets.push(new Worksheet(this, o[i], tabs.content.children[i] as HTMLElement));
@@ -242,10 +242,7 @@ export class Spreadsheet {
             }
 
             if (typeof this.plugins === 'object') {
-                const pluginKeys = Object.keys(this.plugins);
-
-                for (let pluginKeyIndex = 0; pluginKeyIndex < pluginKeys.length; pluginKeyIndex++) {
-                    const key = pluginKeys[pluginKeyIndex];
+                for (const key of Object.keys(this.plugins)) {
                     const plugin = this.plugins[key];
 
                     if (typeof plugin.onevent === 'function') {
@@ -321,20 +318,18 @@ export class Spreadsheet {
      * @param config - The options to change.
      */
     setConfig(config: jspreadsheet.SpreadsheetOptions | jspreadsheet.WorksheetOptions) {
-        const keys = Object.keys(config);
-
-        keys.forEach((key) => {
+        for (const [key, value] of Object.entries(config)) {
             // The options are set by name, and SpreadsheetOptions has no index signature
-            (this.config as unknown as Record<string, unknown>)[key] = (config as Record<string, unknown>)[key];
+            (this.config as unknown as Record<string, unknown>)[key] = value;
 
             if (key === 'toolbar') {
-                if ((config as Record<string, unknown>)[key] === true) {
+                if (value === true) {
                     this.showToolbar();
-                } else if ((config as Record<string, unknown>)[key] === false) {
+                } else if (value === false) {
                     this.hideToolbar();
                 }
             }
-        });
+        }
     }
 
     /**
@@ -346,9 +341,9 @@ export class Spreadsheet {
         }
 
         if (typeof newPlugins == 'object') {
-            Object.entries(newPlugins).forEach(([pluginName, plugin]) => {
+            for (const [pluginName, plugin] of Object.entries(newPlugins)) {
                 this.plugins[pluginName] = plugin.call(libraryBase.jspreadsheet, this, {}, this.config);
-            });
+            }
         }
     }
 }

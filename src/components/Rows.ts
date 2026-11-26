@@ -145,11 +145,11 @@ export class Rows {
             const newRow = this.create(row, worksheet.options.data[row]);
             // Append node
             if (currentRows[0]) {
-                if (Array.prototype.indexOf.call(worksheet.tbody.children, currentRows[0].element) >= 0) {
+                if (currentRows[0].element.parentNode === worksheet.tbody) {
                     worksheet.tbody.insertBefore(newRow.element, currentRows[0].element);
                 }
             } else {
-                if (Array.prototype.indexOf.call(worksheet.tbody.children, worksheet.rows[rowNumber].element) >= 0) {
+                if (worksheet.rows[rowNumber].element.parentNode === worksheet.tbody) {
                     worksheet.tbody.appendChild(newRow.element);
                 }
             }
@@ -244,17 +244,17 @@ export class Rows {
             const { rowRecords, rowData, rowNode } = this.add(rowIndex, numOfRows, rowNumber, data, currentRows);
 
             // Copy the data back to the main data
-            Array.prototype.push.apply(worksheet.records, currentRecords);
-            Array.prototype.push.apply(worksheet.options.data, currentData);
-            Array.prototype.push.apply(worksheet.rows, currentRows);
+            worksheet.records.push(...currentRecords);
+            worksheet.options.data.push(...currentData);
+            worksheet.rows.push(...currentRows);
 
             for (let j = rowIndex; j < worksheet.rows.length; j++) {
                 worksheet.rows[j].y = j;
             }
 
             for (let j = rowIndex; j < worksheet.records.length; j++) {
-                for (let i = 0; i < worksheet.records[j].length; i++) {
-                    worksheet.records[j][i].y = j;
+                for (const cell of worksheet.records[j]) {
+                    cell.y = j;
                 }
             }
 
@@ -321,7 +321,7 @@ export class Rows {
         }
 
         if (!ignoreDom) {
-            if (Array.prototype.indexOf.call(worksheet.tbody.children, worksheet.rows[d].element) >= 0) {
+            if (worksheet.rows[d].element.parentNode === worksheet.tbody) {
                 if (o > d) {
                     worksheet.tbody.insertBefore(worksheet.rows[o].element, worksheet.rows[d].element);
                 } else {
@@ -345,8 +345,8 @@ export class Rows {
         }
 
         for (let j = firstAffectedIndex; j <= lastAffectedIndex; j++) {
-            for (let i = 0; i < worksheet.records[j].length; i++) {
-                worksheet.records[j][i].y = j;
+            for (const cell of worksheet.records[j]) {
+                cell.y = j;
             }
         }
 
@@ -460,7 +460,7 @@ export class Rows {
 
                     // Remove node
                     for (let row = rowNumber; row < rowNumber + numOfRows; row++) {
-                        if (Array.prototype.indexOf.call(worksheet.tbody.children, worksheet.rows[row].element) >= 0) {
+                        if (worksheet.rows[row].element.parentNode === worksheet.tbody) {
                             worksheet.rows[row].element.className = '';
                             worksheet.rows[row].element.parentNode!.removeChild(worksheet.rows[row].element);
                         }
@@ -476,8 +476,8 @@ export class Rows {
                     }
 
                     for (let j = rowNumber; j < worksheet.records.length; j++) {
-                        for (let i = 0; i < worksheet.records[j].length; i++) {
-                            worksheet.records[j][i].y = j;
+                        for (const cell of worksheet.records[j]) {
+                            cell.y = j;
                         }
                     }
 

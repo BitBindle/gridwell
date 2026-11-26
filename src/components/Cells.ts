@@ -39,6 +39,8 @@ function secureFormula(oldValue: string) {
     let newValue = '';
     let inside = 0;
 
+    // for...of would read the string by code points, and this loop reads its UTF-16 code units
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < oldValue.length; i++) {
         if (oldValue[i] == '"') {
             if (inside == 0) {
@@ -241,11 +243,11 @@ export class Cells {
             const combo = [];
             const source = worksheet.options.columns[column].source;
 
-            for (let i = 0; i < source.length; i++) {
-                if (typeof source[i] == 'object') {
-                    combo[source[i].id] = source[i].name;
+            for (const option of source) {
+                if (typeof option == 'object') {
+                    combo[option.id] = option.name;
                 } else {
-                    combo[source[i]] = source[i];
+                    combo[option] = option;
                 }
             }
 
@@ -253,12 +255,12 @@ export class Cells {
             const delimiter = worksheet.options.columns[column].delimiter || ';';
             const keys = Array.isArray(key) ? key : ('' + key).split(delimiter);
 
-            for (let i = 0; i < keys.length; i++) {
-                if (typeof keys[i] === 'object') {
-                    value.push(combo[keys[i].id]);
+            for (const optionKey of keys) {
+                if (typeof optionKey === 'object') {
+                    value.push(combo[optionKey.id]);
                 } else {
-                    if (combo[keys[i]]) {
-                        value.push(combo[keys[i]]);
+                    if (combo[optionKey]) {
+                        value.push(combo[optionKey]);
                     }
                 }
             }
@@ -492,8 +494,8 @@ export class Cells {
                 if (column && (column.type == 'checkbox' || column.type == 'radio')) {
                     // Unchecked all options
                     if (column.type == 'radio') {
-                        for (let j = 0; j < worksheet.options.data.length; j++) {
-                            worksheet.options.data[j][c] = false;
+                        for (const dataRow of worksheet.options.data) {
+                            dataRow[c] = false;
                         }
                     }
 

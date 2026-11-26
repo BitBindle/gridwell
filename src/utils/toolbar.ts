@@ -439,24 +439,24 @@ export class Toolbar {
         // The items are changed in place into items of jSuites.toolbar. A divisor has no other properties.
         const items = toolbar.items as jspreadsheet.ToolbarItemBase[];
 
-        for (let i = 0; i < items.length; i++) {
+        for (const item of items) {
             // Tooltip
-            if (items[i].tooltip) {
-                items[i].title = items[i].tooltip;
+            if (item.tooltip) {
+                item.title = item.tooltip;
 
-                delete items[i].tooltip;
+                delete item.tooltip;
             }
 
-            if (items[i].type == 'select') {
-                if (items[i].options) {
-                    items[i].data = items[i].options;
-                    delete items[i].options;
+            if (item.type == 'select') {
+                if (item.options) {
+                    item.data = item.options;
+                    delete item.options;
                 } else {
-                    items[i].data = items[i].v;
-                    delete items[i].v;
+                    item.data = item.v;
+                    delete item.v;
 
-                    if (items[i].k && !items[i].onchange) {
-                        items[i].onchange = (el: HTMLElement, config: object, value: string) => {
+                    if (item.k && !item.onchange) {
+                        item.onchange = (el: HTMLElement, config: object, value: string) => {
                             const worksheet = spreadsheet.getWorksheetInstance();
 
                             const cells = worksheet.getSelected(true);
@@ -464,17 +464,17 @@ export class Toolbar {
                             worksheet.setStyle(
                                 Object.fromEntries(
                                     cells.map((cellName: string) => {
-                                        return [cellName, items[i].k + ': ' + value];
+                                        return [cellName, item.k + ': ' + value];
                                     })
                                 )
                             );
                         };
                     }
                 }
-            } else if (items[i].type == 'color') {
-                items[i].type = 'i';
+            } else if (item.type == 'color') {
+                item.type = 'i';
 
-                items[i].onclick = (a: HTMLElement, b: object, c: HTMLElement & { color?: Color }) => {
+                item.onclick = (a: HTMLElement, b: object, c: HTMLElement & { color?: Color }) => {
                     if (!c.color) {
                         jSuites.color(c, {
                             onchange(o: HTMLElement, v: string) {
@@ -485,7 +485,7 @@ export class Toolbar {
                                 worksheet.setStyle(
                                     Object.fromEntries(
                                         cells.map((cellName: string) => {
-                                            return [cellName, items[i].k + ': ' + v];
+                                            return [cellName, item.k + ': ' + v];
                                         })
                                     )
                                 );
@@ -514,7 +514,7 @@ export class Toolbar {
         this.adjustForJSuites(toolbar);
 
         if (typeof spreadsheet.plugins === 'object') {
-            Object.entries(spreadsheet.plugins).forEach(([, plugin]) => {
+            for (const plugin of Object.values(spreadsheet.plugins)) {
                 if (typeof plugin.toolbar === 'function') {
                     const result = plugin.toolbar(toolbar);
 
@@ -522,7 +522,7 @@ export class Toolbar {
                         toolbar = result;
                     }
                 }
-            });
+            }
         }
 
         jSuites.toolbar(toolbarElement, toolbar);

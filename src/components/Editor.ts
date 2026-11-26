@@ -167,8 +167,8 @@ export class Editor {
         // Do not change the original source
         const data = [];
         if (source) {
-            for (let j = 0; j < source.length; j++) {
-                data.push(source[j]);
+            for (const option of source) {
+                data.push(option);
             }
         }
 
@@ -593,10 +593,9 @@ export class Editor {
         const worksheet = this.worksheet;
 
         const records = [];
-        const keys = Object.keys(worksheet.selection.highlighted);
-        for (let i = 0; i < keys.length; i++) {
-            const x = parseInt(worksheet.selection.highlighted[i].element.getAttribute('data-x'));
-            const y = parseInt(worksheet.selection.highlighted[i].element.getAttribute('data-y'));
+        for (const cell of worksheet.selection.highlighted) {
+            const x = parseInt(cell.element.getAttribute('data-x'));
+            const y = parseInt(cell.element.getAttribute('data-y'));
 
             const column = worksheet.options.columns[worksheet.cells.getColumnIndex(x, y)];
             if (column.type == 'checkbox' || column.type == 'radio') {

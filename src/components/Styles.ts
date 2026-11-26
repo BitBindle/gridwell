@@ -122,21 +122,21 @@ export class Styles {
             }
         } else {
             const keys = Object.keys(o);
-            for (let i = 0; i < keys.length; i++) {
-                let style: string | string[] = (o as Record<string, string | string[]>)[keys[i]];
+            for (const cellName of keys) {
+                let style: string | string[] = (o as Record<string, string | string[]>)[cellName];
                 if (typeof style == 'string') {
                     style = style.split(';');
                 }
-                for (let j = 0; j < style.length; j++) {
+                for (const declaration of style) {
                     // Split into a new variable, so that the styles the application gave stay as they are
-                    let property: string | string[] = style[j];
+                    let property: string | string[] = declaration;
                     if (typeof property == 'string') {
                         // Split at the first colon only, because a value can have colons, for example url(http://...)
                         property = property.split(/:(.*)/);
                     }
                     // Apply value
                     if (property[0].trim()) {
-                        applyStyle(keys[i], property[0].trim(), property[1]);
+                        applyStyle(cellName, property[0].trim(), property[1]);
                     }
                 }
             }
@@ -144,12 +144,12 @@ export class Styles {
 
         // The lists become strings in place
         let keys = Object.keys(oldValue);
-        for (let i = 0; i < keys.length; i++) {
-            (oldValue as Record<string, unknown>)[keys[i]] = oldValue[keys[i]].join(';');
+        for (const cellName of keys) {
+            (oldValue as Record<string, unknown>)[cellName] = oldValue[cellName].join(';');
         }
         keys = Object.keys(newValue);
-        for (let i = 0; i < keys.length; i++) {
-            (newValue as Record<string, unknown>)[keys[i]] = newValue[keys[i]].join(';');
+        for (const cellName of keys) {
+            (newValue as Record<string, unknown>)[cellName] = newValue[cellName].join(';');
         }
 
         if (!ignoreHistoryAndEvents) {
@@ -172,10 +172,9 @@ export class Styles {
     reset(o: Record<string, string | string[]>, ignoreHistoryAndEvents?: boolean) {
         const worksheet = this.worksheet;
 
-        const keys = Object.keys(o);
-        for (let i = 0; i < keys.length; i++) {
+        for (const key of Object.keys(o)) {
             // Position
-            const cell = getIdFromColumnName(keys[i], true);
+            const cell = getIdFromColumnName(key, true);
             if (worksheet.records[cell[1]] && worksheet.records[cell[1]][cell[0]]) {
                 worksheet.records[cell[1]][cell[0]].element.setAttribute('style', '');
             }
