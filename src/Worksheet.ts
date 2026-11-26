@@ -1,4 +1,5 @@
 import jSuites from 'jsuites';
+import { translate } from './utils/dictionary.js';
 import libraryBase from './utils/libraryBase.js';
 import { parseCSV } from './utils/helpers.js';
 import { getIdFromColumnName } from './utils/internalHelpers.js';
@@ -607,7 +608,7 @@ export class Worksheet {
         const searchContainer = document.createElement('div');
 
         const searchLabel = document.createElement('label');
-        searchLabel.innerHTML = `${jSuites.translate('Search')}: `;
+        searchLabel.innerHTML = `${translate('Search')}: `;
         searchContainer.appendChild(searchLabel);
 
         this.searchInput = document.createElement('input');
@@ -639,9 +640,9 @@ export class Worksheet {
             // Set initial pagination value
             this.paginationDropdown.value = String(this.options.pagination);
 
-            paginationUpdateContainer.appendChild(document.createTextNode(jSuites.translate('Show ')));
+            paginationUpdateContainer.appendChild(document.createTextNode(translate('Show ')));
             paginationUpdateContainer.appendChild(this.paginationDropdown);
-            paginationUpdateContainer.appendChild(document.createTextNode(jSuites.translate('entries')));
+            paginationUpdateContainer.appendChild(document.createTextNode(translate('entries')));
         }
 
         // Filter and pagination container

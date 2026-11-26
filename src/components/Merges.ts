@@ -1,4 +1,4 @@
-import jSuites from 'jsuites';
+import { translate } from '../utils/dictionary.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { MergeInfo, Worksheet } from '../types/internal';
@@ -187,7 +187,7 @@ export class Merges {
 
         if (!cellName) {
             if (!worksheet.selection.highlighted.length) {
-                alert(jSuites.translate('No cells selected'));
+                alert(translate('No cells selected'));
                 return null;
             } else {
                 // The highlighted items are cell records, not td elements
@@ -225,7 +225,7 @@ export class Merges {
         }
 
         if (test) {
-            alert(jSuites.translate(test));
+            alert(translate(test));
         } else {
             // Add property. A missing span becomes 1, so from here on the spans are numbers.
             if (colspan! > 1) {

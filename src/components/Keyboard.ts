@@ -1,4 +1,4 @@
-import jSuites from 'jsuites';
+import { translate } from '../utils/dictionary.js';
 import { copyControls, cutControls, pasteControls } from '../events/clipboard.js';
 import { isCtrl } from '../events/helpers.js';
 import type { EditingWorksheet, SelectedWorksheet, TargetEvent, Worksheet } from '../types/internal';
@@ -81,13 +81,13 @@ export class Keyboard {
         if (worksheet.options.editable !== false) {
             if (worksheet.selection.row != null) {
                 if (worksheet.options.allowDeleteRow !== false) {
-                    if (confirm(jSuites.translate('Are you sure to delete the selected rows?'))) {
+                    if (confirm(translate('Are you sure to delete the selected rows?'))) {
                         worksheet.deleteRow();
                     }
                 }
             } else if (worksheet.selection.column != null) {
                 if (worksheet.options.allowDeleteColumn !== false) {
-                    if (confirm(jSuites.translate('Are you sure to delete the selected columns?'))) {
+                    if (confirm(translate('Are you sure to delete the selected columns?'))) {
                         worksheet.deleteColumn();
                     }
                 }

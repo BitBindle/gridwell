@@ -1,4 +1,5 @@
 import jSuites from 'jsuites';
+import { translate } from '../utils/dictionary.js';
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import libraryBase from '../utils/libraryBase.js';
 import type jspreadsheet from '../jspreadsheet';
@@ -280,7 +281,7 @@ export class View {
 
             if (!results) {
                 // No records found
-                worksheet.pagination.children[0].innerHTML = jSuites.translate('No records found');
+                worksheet.pagination.children[0].innerHTML = translate('No records found');
             } else {
                 // Pagination container
                 const quantyOfPages = Math.ceil(results / worksheet.options.pagination);
@@ -338,11 +339,7 @@ export class View {
                     });
                 }
 
-                worksheet.pagination.children[0].innerHTML = format(
-                    jSuites.translate('Showing page {0} of {1} entries'),
-                    worksheet.view.pageNumber + 1,
-                    quantyOfPages
-                );
+                worksheet.pagination.children[0].innerHTML = format(translate('Showing page {0} of {1} entries'), worksheet.view.pageNumber + 1, quantyOfPages);
             }
         }
     }
@@ -566,7 +563,7 @@ export class View {
         if (column >= 0) {
             // Merged cells
             if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
-                if (!confirm(jSuites.translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
                     return false;
                 } else {
                     // Remove merged cells

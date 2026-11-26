@@ -1,4 +1,5 @@
 import jSuites from 'jsuites';
+import { translate } from './dictionary.js';
 import { getCellNameFromCoords } from './helpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Spreadsheet, Worksheet } from '../types/internal';
@@ -65,7 +66,7 @@ function getHistoryItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
     return [
         {
             content: 'undo',
-            tooltip: jSuites.translate('Undo'),
+            tooltip: translate('Undo'),
             onclick() {
                 const worksheet = spreadsheet.getWorksheetInstance();
 
@@ -74,7 +75,7 @@ function getHistoryItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
         },
         {
             content: 'redo',
-            tooltip: jSuites.translate('Redo'),
+            tooltip: translate('Redo'),
             onclick() {
                 const worksheet = spreadsheet.getWorksheetInstance();
 
@@ -83,7 +84,7 @@ function getHistoryItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
         },
         {
             content: 'save',
-            tooltip: jSuites.translate('Save'),
+            tooltip: translate('Save'),
             onclick() {
                 const worksheet = spreadsheet.getWorksheetInstance();
 
@@ -103,7 +104,7 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
         {
             type: 'select',
             width: '120px',
-            tooltip: jSuites.translate('Font'),
+            tooltip: translate('Font'),
             options: ['Default', 'Verdana', 'Arial', 'Courier New'],
             render(e: string) {
                 return `<span style="font-family:${e}">${e}</span>`;
@@ -120,7 +121,7 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
             type: 'select',
             width: '48px',
             content: 'format_size',
-            tooltip: jSuites.translate('Font size'),
+            tooltip: translate('Font size'),
             options: ['x-small', 'small', 'medium', 'large', 'x-large'],
             render(e: string) {
                 return `<span style="font-size:${e}">${e}</span>`;
@@ -132,7 +133,7 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
         },
         {
             type: 'select',
-            tooltip: jSuites.translate('Text alignment'),
+            tooltip: translate('Text alignment'),
             options: ['left', 'center', 'right', 'justify'],
             render(e: string) {
                 return `<i class="material-icons">format_align_${e}</i>`;
@@ -144,7 +145,7 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
         },
         {
             content: 'format_bold',
-            tooltip: jSuites.translate('Bold'),
+            tooltip: translate('Bold'),
             onclick() {
                 setSelectedStyle(spreadsheet.getWorksheetInstance(), 'font-weight', 'bold', true);
             },
@@ -153,14 +154,14 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
         {
             type: 'color',
             content: 'format_color_text',
-            tooltip: jSuites.translate('Text color'),
+            tooltip: translate('Text color'),
             k: 'color',
             updateState: getUpdateState(spreadsheet),
         },
         {
             type: 'color',
             content: 'format_color_fill',
-            tooltip: jSuites.translate('Background color'),
+            tooltip: translate('Background color'),
             k: 'background-color',
             updateState: getUpdateState(spreadsheet),
         },
@@ -175,7 +176,7 @@ function getVerticalAlignItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarIte
 
     return {
         type: 'select',
-        tooltip: jSuites.translate('Vertical alignment'),
+        tooltip: translate('Vertical alignment'),
         options: ['vertical_align_top', 'vertical_align_center', 'vertical_align_bottom'],
         render(e: string) {
             return `<i class="material-icons">${e}</i>`;
@@ -195,11 +196,11 @@ function getVerticalAlignItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarIte
 function getMergeItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
     return {
         content: 'web',
-        tooltip: jSuites.translate('Merge the selected cells'),
+        tooltip: translate('Merge the selected cells'),
         onclick() {
             const worksheet = spreadsheet.getWorksheetInstance();
 
-            if (worksheet.selection.range && confirm(jSuites.translate('The merged cells will retain the value of the top-left cell only. Are you sure?'))) {
+            if (worksheet.selection.range && confirm(translate('The merged cells will retain the value of the top-left cell only. Are you sure?'))) {
                 const selectedRange = getSelectedRange(worksheet.selection.range);
 
                 const cell = getCellNameFromCoords(selectedRange[0], selectedRange[1]);
@@ -369,7 +370,7 @@ function addBorderControls(a: HTMLElement, b: BorderPicker) {
 function getBordersItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
     return {
         type: 'select',
-        tooltip: jSuites.translate('Borders'),
+        tooltip: translate('Borders'),
         options: [
             'border_all',
             'border_outer',
@@ -401,7 +402,7 @@ function getBordersItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
 function getFullscreenItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
     return {
         content: 'fullscreen',
-        tooltip: jSuites.translate('Toggle Fullscreen'),
+        tooltip: translate('Toggle Fullscreen'),
         onclick(a: HTMLElement, b: object, c: HTMLElement) {
             if (c.children[0].textContent === 'fullscreen') {
                 spreadsheet.fullscreen(true);
@@ -545,7 +546,7 @@ export class Toolbar {
      */
     private addToolbarKeys(toolbarElement: HTMLElement) {
         toolbarElement.setAttribute('role', 'toolbar');
-        toolbarElement.setAttribute('aria-label', jSuites.translate('Toolbar'));
+        toolbarElement.setAttribute('aria-label', translate('Toolbar'));
 
         const items = this.getFocusableItems(toolbarElement);
         for (const [i, item] of items.entries()) {
