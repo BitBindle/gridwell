@@ -98,6 +98,8 @@
         "start": "webpack serve --history-api-fallback",
         "build": "cross-env NODE_ENV=production webpack --config webpack.config.js",
         "prepublishOnly": "npm run build",
-        "test": "npm run build && mocha --recursive --require=mocha.config.js"
+        "test": "npm run build && mocha --recursive --require=mocha.config.js",
+        "build:coverage": "cross-env NODE_ENV=production COVERAGE=true webpack --config webpack.config.js",
+        "coverage": "npm run build:coverage && c8 mocha --recursive --require=mocha.config.js"
     }
 }

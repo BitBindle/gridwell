@@ -26,7 +26,7 @@ export class Comments {
                 return this.get();
             }
 
-            cell = getIdFromColumnName(cell, true);
+            cell = getIdFromColumnName(cell);
 
             return worksheet.records[cell[1]][cell[0]].element.getAttribute('title') || '';
         } else {

@@ -134,7 +134,7 @@ export class Cells {
 
         if (typeof x === 'string') {
             // Convert in case name is excel liked ex. A10, BB92
-            const cell = getIdFromColumnName(x, true);
+            const cell = getIdFromColumnName(x);
 
             x = cell[0];
             y = cell[1];
@@ -166,7 +166,7 @@ export class Cells {
 
         if (typeof x === 'string') {
             // Convert in case name is excel liked ex. A10, BB92
-            const cell = getIdFromColumnName(x, true);
+            const cell = getIdFromColumnName(x);
 
             x = cell[0];
             y = cell[1];

@@ -28,7 +28,7 @@ export class Merges {
         // Remove any merged cells
         if (worksheet.options.mergeCells) {
             for (const [key, [colspan]] of Object.entries(worksheet.options.mergeCells)) {
-                const info = getIdFromColumnName(key, true);
+                const info = getIdFromColumnName(key);
                 const x1 = info[0];
                 const x2 = info[0] + (colspan > 1 ? colspan - 1 : 0);
 
@@ -64,7 +64,7 @@ export class Merges {
         // Remove any merged cells
         if (worksheet.options.mergeCells) {
             for (const [key, [, rowspan]] of Object.entries(worksheet.options.mergeCells)) {
-                const info = getIdFromColumnName(key, true);
+                const info = getIdFromColumnName(key);
                 const y1 = info[1];
                 const y2 = info[1] + (rowspan > 1 ? rowspan - 1 : 0);
 
@@ -98,7 +98,7 @@ export class Merges {
     private updateFirstCell(cellName: string) {
         const worksheet = this.worksheet;
 
-        const cell = getIdFromColumnName(cellName, true);
+        const cell = getIdFromColumnName(cellName);
         const colspan = worksheet.options.mergeCells![cellName][0];
 
         let visible = 0;
@@ -135,7 +135,7 @@ export class Merges {
         }
 
         for (const key of Object.keys(worksheet.options.mergeCells)) {
-            const cell = getIdFromColumnName(key, true);
+            const cell = getIdFromColumnName(key);
             const colspan = worksheet.options.mergeCells[key][0];
 
             for (const column of columns) {
@@ -205,7 +205,7 @@ export class Merges {
             return null;
         }
 
-        const cell = getIdFromColumnName(cellName, true);
+        const cell = getIdFromColumnName(cellName);
 
         if (worksheet.options.mergeCells?.[cellName]) {
             if (worksheet.records[cell[1]][cell[0]].element.getAttribute('data-merged')) {
@@ -293,7 +293,7 @@ export class Merges {
 
         if (worksheet.options.mergeCells?.[cellName]) {
             const beforeMerges = { [cellName]: worksheet.options.mergeCells[cellName] };
-            const cell = getIdFromColumnName(cellName, true);
+            const cell = getIdFromColumnName(cellName);
             worksheet.records[cell[1]][cell[0]].element.removeAttribute('colspan');
             worksheet.records[cell[1]][cell[0]].element.removeAttribute('rowspan');
             worksheet.records[cell[1]][cell[0]].element.removeAttribute('data-merged');

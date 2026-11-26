@@ -19,17 +19,20 @@ The source is TypeScript (see [Type checking](#type-checking)). The modules were
 
 No `package-lock.json` is committed, so use `npm install`.
 
-| Task                    | Command                                                            |
-| ----------------------- | ------------------------------------------------------------------ |
-| Dev server (port 8000)  | `npm start` (entry `src/test.js`, page `public/index.html`)        |
-| Build `dist/`           | `npm run build`                                                    |
-| All tests               | `npm test` (builds first, then runs mocha)                         |
-| One test file           | `npx mocha --require=mocha.config.js test/data.js` (build first)   |
-| Lint / format check     | `npm run lint` (also checks for import cycles), `npm run prettier` |
-| Type check              | `npm run typecheck`                                                |
-| Fix lint and formatting | `npm run format`                                                   |
+| Task                    | Command                                                                |
+| ----------------------- | ---------------------------------------------------------------------- |
+| Dev server (port 8000)  | `npm start` (entry `src/test.js`, page `public/index.html`)            |
+| Build `dist/`           | `npm run build`                                                        |
+| All tests               | `npm test` (builds first, then runs mocha)                             |
+| One test file           | `npx mocha --require=mocha.config.js test/data.js` (build first)       |
+| Lint / format check     | `npm run lint` (also checks for import cycles), `npm run prettier`     |
+| Type check              | `npm run typecheck`                                                    |
+| Test coverage           | `npm run coverage` (thresholds in `.c8rc.json`, report in `coverage/`) |
+| Fix lint and formatting | `npm run format`                                                       |
 
 Building and testing do not change the source. CI checks the formatting and lint separately, so run `npm run format` before you commit.
+
+`npm run coverage` builds `dist/index.js` without minifying it and with a source map, so c8 reports the coverage of the files in `src/`. It fails when the coverage of a file is under the thresholds in `.c8rc.json`: 80% of the lines, the statements and the functions, and 70% of the branches. Add tests with your change so that it stays above them. Run `npm run build` again afterwards for a minified bundle.
 
 The tests import the built bundle (`require('../dist/index.js')`), not `src/`. After you change the source, build again before you run a single test file, or the tests run against old code.
 

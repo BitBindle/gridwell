@@ -4,14 +4,15 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 class MyPlugin {
     apply(compiler) {
-        compiler.hooks.emit.tap('MyPlugin', (compilation) => {
-            // Get the bundled file name
-            const fileName = 'index.js';
+        const { Compilation, sources } = compiler.webpack;
 
-            // Get the bundled file content
-            const fileContent = compilation.assets[fileName].source();
+        compiler.hooks.thisCompilation.tap('MyPlugin', (compilation) => {
+            // After the minification, and before the source map of the coverage build, which then includes the header
+            compilation.hooks.processAssets.tap({ name: 'MyPlugin', stage: Compilation.PROCESS_ASSETS_STAGE_DEV_TOOLING - 1 }, () => {
+                // Get the bundled file name
+                const fileName = 'index.js';
 
-            const header = `if (! jSuites && typeof(require) === 'function') {
+                const header = `if (! jSuites && typeof(require) === 'function') {
     var jSuites = require('jsuites');
 }
 
@@ -25,22 +26,20 @@ if (! formula && typeof(require) === 'function') {
     global.jspreadsheet = factory();
 }(this, (function () {`;
 
-            const footer = `    return jspreadsheet;
+                const footer = `    return jspreadsheet;
 })));`;
 
-            // Updated file content with custom content added
-            const updatedFileContent = header + '\n\n' + fileContent + '\n\n' + footer;
-
-            // Replace the bundled file content with updated content
-            compilation.assets[fileName] = {
-                source: () => updatedFileContent,
-                size: () => updatedFileContent.length,
-            };
+                // Add the header and the footer to the bundled file
+                compilation.updateAsset(fileName, (source) => new sources.ConcatSource(header, '\n\n', source, '\n\n', footer));
+            });
         });
     }
 }
 
 let isProduction = process.env.NODE_ENV === 'production';
+
+// npm run coverage builds the bundle without minifying it, with a source map that names the files in src
+const isCoverage = process.env.COVERAGE === 'true';
 
 const webpack = {
     target: ['web', 'es5'],
@@ -52,9 +51,11 @@ const webpack = {
         path: path.resolve(__dirname, 'dist'),
         library: 'jspreadsheet',
         libraryExport: 'default',
+        devtoolModuleFilenameTemplate: isCoverage ? (info) => info.absoluteResourcePath : undefined,
     },
+    devtool: isCoverage ? 'source-map' : false,
     optimization: {
-        minimize: true,
+        minimize: !isCoverage,
     },
     devServer: {
         static: {
