@@ -1,5 +1,7 @@
 .idea
 /package-lock.json
+/pnpm-lock.yaml
+/.devcontainer/devcontainer-lock.json
 node_modules
 /dist
 coverage/

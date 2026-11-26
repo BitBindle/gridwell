@@ -17,7 +17,7 @@ The source is TypeScript (see [Type checking](#type-checking)). The modules were
 
 ## Commands
 
-The tools need Node 22.22 or later (the library itself runs in the browser). No `package-lock.json` is committed, so use `npm install`.
+The tools need Node 22.22 or later (the library itself runs in the browser). No `package-lock.json` is committed, so use `npm install`. In the dev container (`.devcontainer/`), the packages are installed with pnpm: use `pnpm` there instead of `npm` (`pnpm install`, `pnpm test`, …), and do not mix the two in one `node_modules`. `pnpm-workspace.yaml` lets esbuild run its install script.
 
 | Task                    | Command                                                                |
 | ----------------------- | ---------------------------------------------------------------------- |

@@ -1,0 +1,32 @@
+// A container with Node 24, pnpm, the GitHub CLI and Claude Code. See https://containers.dev for the format.
+{
+    "name": "Gridwell",
+    "image": "mcr.microsoft.com/devcontainers/javascript-node:24",
+    "features": {
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        "ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+    },
+    // Keep the logins of Claude Code and the GitHub CLI when the container is rebuilt.
+    "mounts": [
+        "source=gridwell-claude-${devcontainerId},target=/home/node/.claude,type=volume",
+        "source=gridwell-gh-${devcontainerId},target=/home/node/.config/gh,type=volume"
+    ],
+    "containerEnv": {
+        "CLAUDE_CONFIG_DIR": "/home/node/.claude"
+    },
+    // The dev server of `npm start`.
+    "forwardPorts": [8000],
+    "portsAttributes": {
+        "8000": {
+            "label": "Dev server"
+        }
+    },
+    // A new volume belongs to root, so give the mounted folders to the user first. Then install pnpm and the packages.
+    "postCreateCommand": "sudo chown -R node:node /home/node/.claude /home/node/.config/gh && npm install -g pnpm@12 && pnpm install",
+    "remoteUser": "node",
+    "customizations": {
+        "vscode": {
+            "extensions": ["anthropic.claude-code", "dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "github.vscode-github-actions"]
+        }
+    }
+}
