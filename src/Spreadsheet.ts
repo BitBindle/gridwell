@@ -6,10 +6,10 @@ import { ContextMenu } from './utils/contextMenu.js';
 import { Worksheet } from './Worksheet.js';
 import type jspreadsheet from './jspreadsheet';
 import type { EventHandlers, EventName, SpreadsheetState } from './types/internal';
+import type { TabsOptions } from './utils/tabs.js';
 
 /** The events that occur also while the events are ignored. dispatch tells why. */
-const alwaysDispatched: string[] = ['onbeforerequest', 'onbeforesave', 'onsave', 'oneditordetach', 'onrowsattached'];
-import type { TabsOptions } from './utils/tabs.js';
+const alwaysDispatched: readonly EventName[] = ['onbeforerequest', 'onbeforesave', 'onsave', 'oneditordetach', 'onrowsattached'];
 
 /**
  * The fields of a spreadsheet and its public methods. The fields are in SpreadsheetState (src/types/internal.d.ts).

@@ -1364,8 +1364,9 @@ declare namespace jspreadsheet {
          * Occurs when lazy loading puts rows in the table that were not in it before: a scroll, a page that loads for the
          * selection or a sort, the results of a search or the filters and their reset, and `loadRow`. It occurs also while
          * `ignoreEvents` is true, for example during an undo. An insert, a move or a delete of rows, `setData` and the first
-         * build give no event, except for frozen rows that lazy loading puts first in the table again. The application can,
-         * for example, measure the new rows.
+         * build give no event, except for frozen rows that lazy loading puts first in the table again. A search or a filter
+         * with `filters: true`, and the redo of a sort with frozen rows, can give rows that the same call removes or that
+         * were in the table before. The application can, for example, measure the new rows.
          * @param instance - Instance of the worksheet.
          * @param ranges - The new rows, as `[from, to]` pairs of row indexes, in order.
          */
