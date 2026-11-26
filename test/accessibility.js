@@ -370,6 +370,34 @@ describe('Accessible names', () => {
             delete document.dictionary['Edit cell {0}'];
         }
     });
+
+    it('Translate the names of the tabs with setDictionary (issue #32)', () => {
+        jspreadsheet.setDictionary({ Worksheets: 'Arbeitsblätter', 'Tab Panels': 'Tabellenblätter', 'Add a new worksheet': 'Arbeitsblatt hinzufügen' });
+
+        try {
+            jspreadsheet(root, { tabs: true, worksheets: [{}, {}] });
+
+            expect(root.querySelector('.jtabs-headers').getAttribute('aria-label')).to.equal('Arbeitsblätter');
+            expect(root.querySelector('.jtabs-content').getAttribute('aria-label')).to.equal('Tabellenblätter');
+            expect(root.querySelector('.jtabs-add').getAttribute('aria-label')).to.equal('Arbeitsblatt hinzufügen');
+        } finally {
+            delete document.dictionary['Worksheets'];
+            delete document.dictionary['Tab Panels'];
+            delete document.dictionary['Add a new worksheet'];
+        }
+    });
+
+    it('Use the labels option for the names of the tabs', () => {
+        jspreadsheet(root, {
+            tabs: true,
+            labels: { worksheets: 'Arbeitsblätter', tabPanels: 'Tabellenblätter', addWorksheet: 'Arbeitsblatt hinzufügen' },
+            worksheets: [{}, {}],
+        });
+
+        expect(root.querySelector('.jtabs-headers').getAttribute('aria-label')).to.equal('Arbeitsblätter');
+        expect(root.querySelector('.jtabs-content').getAttribute('aria-label')).to.equal('Tabellenblätter');
+        expect(root.querySelector('.jtabs-add').getAttribute('aria-label')).to.equal('Arbeitsblatt hinzufügen');
+    });
 });
 
 describe('Keyboard focus', () => {

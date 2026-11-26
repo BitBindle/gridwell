@@ -742,6 +742,24 @@ declare namespace jspreadsheet {
              * @default 'Clipboard helper'
              */
             clipboardHelper?: string;
+
+            /**
+             * Name of the list of worksheet tabs.
+             * @default 'Worksheets'
+             */
+            worksheets?: string;
+
+            /**
+             * Name of the region that holds the worksheets.
+             * @default 'Tab Panels'
+             */
+            tabPanels?: string;
+
+            /**
+             * Name of the button that adds a worksheet.
+             * @default 'Add a new worksheet'
+             */
+            addWorksheet?: string;
         };
 
         /** Spreadsheet namespace */
