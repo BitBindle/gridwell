@@ -14,7 +14,7 @@ class MyPlugin {
                 const header = `;(function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
-    global.jspreadsheet = factory();
+    global.gridwell = global.jspreadsheet = factory();
 }(this, (function () {`;
 
                 const footer = `    return jspreadsheet;
