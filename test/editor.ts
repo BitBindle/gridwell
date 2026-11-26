@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import type { Dropdown } from 'jsuites';
+import type { Dropdown } from '../src/utils/dropdown';
 
 import jspreadsheet, { type Jspreadsheet } from './support/jspreadsheet';
 

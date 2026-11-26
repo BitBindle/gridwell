@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 
 import jspreadsheet from './support/jspreadsheet';
-import type { Dropdown } from 'jsuites';
+import type { Dropdown } from '../src/utils/dropdown';
 
-// The element of a jSuites dropdown, which keeps the dropdown
+// The element of a dropdown, which keeps the dropdown
 type DropdownElement = HTMLElement & { dropdown: Dropdown };
 
 describe('Use search', () => {

@@ -1,5 +1,5 @@
-import jSuites from 'jsuites';
 import { translate } from '../utils/dictionary.js';
+import { Dropdown } from '../utils/dropdown.js';
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import libraryBase from '../utils/libraryBase.js';
 import type jspreadsheet from '../jspreadsheet';
@@ -154,42 +154,48 @@ export class View {
                 }
                 // Has blank options
                 if (hasBlanks) {
-                    optionsFiltered.push({ value: '', id: '', name: '(Blanks)' });
+                    optionsFiltered.push({ id: '', name: '(Blanks)' });
                 }
             }
 
-            // Create dropdown
-            const div = document.createElement('div');
-            worksheet.filter!.children[columnId + 1].innerHTML = '';
-            worksheet.filter!.children[columnId + 1].appendChild(div);
-            (worksheet.filter!.children[columnId + 1] as HTMLElement).style.paddingLeft = '0px';
-            (worksheet.filter!.children[columnId + 1] as HTMLElement).style.paddingRight = '0px';
-            (worksheet.filter!.children[columnId + 1] as HTMLElement).style.overflow = 'initial';
+            // The cell of the filter, which shows the dropdown while it is open
+            const filterCell = worksheet.filter!.children[columnId + 1] as HTMLElement;
+            const previous = filterCell.textContent;
+            function restore(text: string | null) {
+                filterCell.textContent = text;
+                filterCell.style.paddingLeft = '';
+                filterCell.style.paddingRight = '';
+                filterCell.style.overflow = '';
+            }
 
-            const opt = {
+            const div = document.createElement('div');
+            filterCell.textContent = '';
+            filterCell.appendChild(div);
+            filterCell.style.paddingLeft = '0px';
+            filterCell.style.paddingRight = '0px';
+            filterCell.style.overflow = 'initial';
+
+            const dropdown = new Dropdown(div, {
                 data: optionsFiltered,
                 multiple: true,
                 autocomplete: true,
-                opened: true,
                 value: worksheet.view.filters[columnId] !== undefined ? worksheet.view.filters[columnId] : null,
                 width: '100%',
-                position: worksheet.options.tableOverflow === true || worksheet.parent.config.fullscreen === true ? true : false,
-                // The element of the dropdown, which holds the dropdown
-                onclose(o: HTMLElement & { dropdown: ReturnType<typeof jSuites.dropdown> }) {
+                position: worksheet.options.tableOverflow === true || worksheet.parent.config.fullscreen === true,
+                onclose: () => {
                     worksheet.view.resetFilters();
-                    // A list, because the dropdown has multiple
-                    worksheet.view.filters[columnId] = o.dropdown.getValue(true) as string[];
-                    worksheet.filter!.children[columnId + 1].textContent = o.dropdown.getText() as string;
-                    (worksheet.filter!.children[columnId + 1] as HTMLElement).style.paddingLeft = '';
-                    (worksheet.filter!.children[columnId + 1] as HTMLElement).style.paddingRight = '';
-                    (worksheet.filter!.children[columnId + 1] as HTMLElement).style.overflow = '';
+                    worksheet.view.filters[columnId] = dropdown.getValue(true);
+                    restore(dropdown.getText());
                     worksheet.view.closeFilter(columnId);
                     worksheet.selection.refresh();
                 },
-            };
-
-            // Dynamic dropdown
-            jSuites.dropdown(div, opt);
+                // Escape leaves the filters as they were
+                oncancel: () => {
+                    restore(previous);
+                },
+            });
+            dropdown.header.setAttribute('aria-label', worksheet.accessibility.getLabelText('filterColumn', worksheet.getHeader(columnId)));
+            dropdown.open();
         }
     }
 

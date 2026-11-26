@@ -3,17 +3,18 @@ import { getMask, isFormula } from '../utils/values.js';
 import { extract, toEditor } from '../utils/mask.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import { ColorPicker, type ColorPickerOptions } from '../utils/color.js';
+import { Dropdown } from '../utils/dropdown.js';
 import type { Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
-import type { CalendarOptions, DropdownOptions } from '../types/jsuites-module';
+import type { CalendarOptions } from '../types/jsuites-module';
 
 /**
  * The editor in a cell that is being edited, read as an input because the text editors are inputs or text areas.
- * jsuites keeps its control on the element, and so does the color picker.
+ * The dropdown, jsuites and the color picker keep their control on the element.
  * The typings of the calendar say that close returns nothing, but it returns the value.
  */
 type EditorElement = HTMLInputElement & {
-    dropdown: { close(ignoreEvents: boolean): void; getValue(asArray: true): string[]; getValue(): string };
+    dropdown: Dropdown;
     calendar: { close(ignoreEvents: boolean): string };
     color: ColorPicker;
 };
@@ -141,7 +142,7 @@ export class Editor {
     }
 
     /**
-     * The editor of a dropdown column: an open jSuites dropdown with the items of the source, or of the filter.
+     * The editor of a dropdown column: an open dropdown with the items of the source, or of the filter.
      * xText and yText are data-x and data-y of the cell, which the filter gets as text.
      */
     private openDropdown(cell: HTMLTableCellElement, x: number, y: number, xText: string, yText: string, column: ColumnOptions, label: string) {
@@ -177,29 +178,20 @@ export class Editor {
         // On edition start
         worksheet.dispatch('oncreateeditor', worksheet, cell, x, y, null, column);
 
-        const options: DropdownOptions = {
+        // The dropdown takes the focus. Closing it, also with a choice, saves the value.
+        const dropdown = new Dropdown(editor, {
             data,
-            multiple: column.multiple ? true : false,
-            autocomplete: column.autocomplete ? true : false,
-            opened: true,
+            multiple: !!column.multiple,
+            autocomplete: !!column.autocomplete,
             value,
             width: '100%',
-            position: worksheet.options.tableOverflow === true || worksheet.parent.config.fullscreen === true ? true : false,
-            onclose() {
+            position: worksheet.options.tableOverflow === true || worksheet.parent.config.fullscreen === true,
+            onclose: () => {
                 worksheet.editor.close(cell, true);
             },
-        };
-        if (column.options?.type) {
-            options.type = column.options.type;
-        }
-        const dropdown = jSuites.dropdown(editor, options);
-        if (dropdown?.header) {
-            dropdown.header.setAttribute('aria-label', label);
-            // The editor is the focus target, as the other editors
-            if (!editor.contains(document.activeElement)) {
-                dropdown.header.focus({ preventScroll: true });
-            }
-        }
+        });
+        dropdown.header.setAttribute('aria-label', label);
+        dropdown.open();
     }
 
     /**

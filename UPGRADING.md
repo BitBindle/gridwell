@@ -459,3 +459,34 @@ and `color`. These change:
 - In the editor of a color column, Escape on the picker closes the editor without saving, as on the input. The options
   of the column (`palette`, `placeholder`, `closeOnChange`, `doneLabel`, `resetLabel`, `onopen`, `onchange`) are still
   given to the picker. The texts of the buttons are translated with `jspreadsheet.setDictionary` (`Reset`, `Done`).
+
+## The dropdown works without jSuites
+
+The editor of a dropdown column and the filters of the columns are shown by Jspreadsheet, not by `jSuites.dropdown`.
+They keep the class names of jSuites (`jdropdown`, `jdropdown-header`, `jdropdown-item`, `jdropdown-selected`,
+`jdropdown-cursor`, …) and the look of its default mode, and the element still keeps the dropdown as `dropdown`, with
+`getValue(asArray)`, `getText()`, `setValue(value)`, `open()`, `close(ignoreEvents)`, `isOpened()`, `reset()` and
+`find(text)`. These change:
+
+- The dropdown has the roles of an ARIA combobox: the header is a `combobox` with `aria-expanded` and
+  `aria-activedescendant`, the list is a `listbox` (with `aria-multiselectable` for a column with `multiple`), the
+  items are `option`s with `aria-selected`, and a group is a `group` named by its title. The header of a filter is named
+  "Filter column" and the title of the column, with the new label `labels.filterColumn`.
+- The keys: the arrows move between the items, Page Up and Page Down by seven, Home and End to the first and the last
+  (not with `autocomplete`, where they move in the text), and a letter to the next item that starts with it (not with
+  `autocomplete`, where it types). Enter chooses the item, or with `multiple` adds it or removes it; Space does the same
+  with `multiple`. In the editor, Enter on a single dropdown saves the value and keeps the cell selected, and Tab saves it
+  and selects the next cell. Escape closes the editor without saving, and closes a filter without changing it; jSuites
+  applied the filter.
+- Enter on the chosen item keeps it chosen; jSuites cleared it. A press on the chosen item still clears it.
+- A value that is not the id of an item is shown as itself in the header, and kept.
+- The items have `id`, `name`, `title`, `image` and `group`. `icon`, `color`, `tooltip` and `disabled` are ignored, a
+  press on the title of a group no longer chooses its items, and the groups can no longer be collapsed.
+- With `autocomplete`, the items are filtered as you type, without a delay, by the text that their name, title or group
+  contains; jSuites read the text as a regular expression.
+- The `options.type` of a dropdown column (`picker`, `searchbar`, `list`) is ignored: the list always opens under the
+  cell, also in a window narrower than 800 pixels, where jSuites showed a picker at the bottom of the screen or a search
+  bar over the whole screen.
+- The dropdown has none of the other methods of jSuites (`setData`, `setUrl`, `add`, `getPosition`, `setId`, …), no
+  sorting, no lazy loading and no `newOptions`.
+- A key whose element it removed, such as Tab on the editor of a dropdown, goes to the grid.

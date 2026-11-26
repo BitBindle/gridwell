@@ -11,6 +11,7 @@ const defaultLabels = {
     selectAll: 'Select all',
     editCell: 'Edit cell {0}',
     clipboardHelper: 'Clipboard helper',
+    filterColumn: 'Filter column {0}',
 };
 
 /**

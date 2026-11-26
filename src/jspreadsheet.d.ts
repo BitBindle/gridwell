@@ -762,6 +762,12 @@ declare namespace jspreadsheet {
             clipboardHelper?: string;
 
             /**
+             * Name of the filter of a column. `{0}` is the title of the column.
+             * @default 'Filter column {0}'
+             */
+            filterColumn?: string;
+
+            /**
              * Name of the list of worksheet tabs.
              * @default 'Worksheets'
              */
