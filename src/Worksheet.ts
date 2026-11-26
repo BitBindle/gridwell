@@ -1038,8 +1038,12 @@ export class Worksheet {
 
                         resolve();
                     },
-                    // The worksheet is not built (issue to be opened)
-                    (error) => console.error(error)
+                    // Build the worksheet with its other options
+                    (error) => {
+                        console.error(error);
+                        this.prepareTable();
+                        resolve();
+                    }
                 );
             });
 
@@ -1056,8 +1060,12 @@ export class Worksheet {
 
                         resolve();
                     },
-                    // The worksheet is not built (issue to be opened)
-                    (error) => console.error(error)
+                    // Build the worksheet with its other options
+                    (error) => {
+                        console.error(error);
+                        this.prepareTable();
+                        resolve();
+                    }
                 );
             });
 

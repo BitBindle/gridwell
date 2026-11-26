@@ -55,6 +55,40 @@ describe('Build of a worksheet', () => {
         expect(second.getData()).to.deep.equal([['c', 'd']]);
     });
 
+    it('builds the worksheet with its other options when the request of the csv or url option fails', async () => {
+        const errors: unknown[] = [];
+        const error = console.error;
+        console.error = (message: unknown) => errors.push(message);
+        server.responses['/broken'] = { status: 500 };
+
+        try {
+            // Before the fix, the worksheets were never built and onload never came
+            const loaded = await Promise.race([
+                create({
+                    worksheets: [
+                        { csv: '/missing.csv', minDimensions: [2, 2] },
+                        { url: '/broken', data: [['a']] },
+                    ],
+                }),
+                new Promise<null>((resolve) => setTimeout(() => resolve(null), 200)),
+            ]);
+
+            expect(loaded).to.not.equal(null);
+            const [first, second] = loaded!;
+            expect(first.getData()).to.eql([
+                ['', ''],
+                ['', ''],
+            ]);
+            expect(second.getData()).to.eql([['a']]);
+            expect(errors.map(String)).to.eql([
+                'Error: Jspreadsheet: the GET request to /missing.csv failed with the status 404',
+                'Error: Jspreadsheet: the GET request to /broken failed with the status 500',
+            ]);
+        } finally {
+            console.error = error;
+        }
+    });
+
     it('loads the source of a dropdown column from its url before it creates the table', async () => {
         const options = [
             { id: 1, name: 'One' },
