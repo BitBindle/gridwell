@@ -213,7 +213,7 @@ describe('Dispatch events', () => {
         const calls: unknown[][] = [];
         const worksheet = jspreadsheet(root, {
             worksheets: [{ data: [['a', 'b']] }],
-            // TYPING: onevent takes its arguments as a rest of a union of tuples, so a handler with named parameters does not fit
+            // onevent takes its arguments as a rest of a union of tuples, which a handler with named parameters does not fit (issue #133)
             onevent(...[event, instance, cell, x, y, value]) {
                 if (event === 'onchange') {
                     calls.push(['onevent', instance === worksheet, x, y, value]);
@@ -225,7 +225,7 @@ describe('Dispatch events', () => {
             plugins: {
                 test() {
                     return {
-                        // TYPING: as onevent above
+                        // As onevent above (issue #133)
                         onevent(...[event, instance, cell, x, y, value]) {
                             if (event === 'onchange') {
                                 calls.push(['plugin', instance === worksheet, x, y, value]);
@@ -284,7 +284,7 @@ describe('Dispatch events', () => {
             onbeforeinsertrow: () => false,
             plugins: {
                 logger: () => ({ onevent: () => {} }),
-                // TYPING: onevent takes its arguments as a rest of a union of tuples, so a handler with named parameters does not fit
+                // onevent takes its arguments as a rest of a union of tuples, which a handler with named parameters does not fit (issue #133)
                 other: () => ({ onevent: (...[event]) => (event === 'onbeforeinsertrow' ? true : undefined) }),
             },
         })[0];
@@ -299,7 +299,7 @@ describe('Dispatch events', () => {
             worksheets: [{ data: [['a']] }],
             onevent: () => {},
             onbeforechange: (instance, cell, x, y, value) => `${value}!`,
-            // TYPING: onevent takes its arguments as a rest of a union of tuples, so a handler with named parameters does not fit
+            // onevent takes its arguments as a rest of a union of tuples, which a handler with named parameters does not fit (issue #133)
             plugins: { guard: () => ({ onevent: (...[event]) => (event === 'onbeforedeleterow' ? false : undefined) }) },
         })[0];
 
