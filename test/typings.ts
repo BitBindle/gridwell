@@ -263,9 +263,13 @@ function worksheetOnevent(event: string, instance: jspreadsheet.WorksheetInstanc
 const worksheetOptions: jspreadsheet.SpreadsheetOptions = { worksheets: [], onevent: worksheetOnevent };
 void worksheetOptions;
 
-// A context menu item gets the element of the item, and the toolbar items get the jSuites instances
+// A context menu item gets the element of the item and the release of the mouse or the key, and the toolbar items get
+// the jSuites instances
 type ContextMenuClick = Parameters<NonNullable<jspreadsheet.ContextMenuOption['onclick']>>;
-assertType<Equals<ContextMenuClick, [element: HTMLDivElement, e: MouseEvent]>>();
+assertType<Equals<ContextMenuClick, [element: HTMLDivElement, e: MouseEvent | KeyboardEvent]>>();
+// A handler that an application wrote for a mouse event still fits
+const mouseItem: jspreadsheet.ContextMenuOption = { title: 'Item', onclick: (element: HTMLDivElement, e: MouseEvent) => void [element, e] };
+void mouseItem;
 type ToolbarClick = Parameters<NonNullable<jspreadsheet.ToolbarIconItem['onclick']>>[1];
 assertType<Equals<ToolbarClick, jspreadsheet.ToolbarInstance>>();
 declare const toolbarInstance: jspreadsheet.ToolbarInstance;

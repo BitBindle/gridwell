@@ -1,8 +1,8 @@
-import jSuites from 'jsuites';
 import libraryBase from './utils/libraryBase.js';
 import { setEvents } from './events/index.js';
 import { Toolbar } from './utils/toolbar.js';
 import { Tabs } from './utils/tabs.js';
+import { ContextMenu } from './utils/contextMenu.js';
 import { Worksheet } from './Worksheet.js';
 import type jspreadsheet from './jspreadsheet';
 import type { EventHandlers, EventName, SpreadsheetState } from './types/internal';
@@ -30,9 +30,10 @@ export class Spreadsheet {
         this.element = element as Spreadsheet['element'];
         this.el = this.element;
 
-        // The context menu container. jSuites.contextmenu adds its instance when the spreadsheet is built.
+        // The context menu, which keeps its ContextMenu as its contextmenu property
         this.contextMenu = document.createElement('div') as Spreadsheet['contextMenu'];
         this.contextMenu.className = 'jss_contextmenu';
+        new ContextMenu(this.contextMenu);
 
         this.toolbarManager = new Toolbar(this);
     }
@@ -53,13 +54,6 @@ export class Spreadsheet {
         await this.createWorksheets(options, el);
 
         this.element.appendChild(this.contextMenu);
-
-        // Create element
-        jSuites.contextmenu(this.contextMenu, {
-            onclick: () => {
-                this.contextMenu.contextmenu.close(false);
-            },
-        });
 
         // Fullscreen
         if (this.config.fullscreen === true) {

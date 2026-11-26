@@ -22,11 +22,6 @@ export type DropdownOptions = Omit<ComponentOptions<Base['dropdown']>, 'width' |
     onclose?: (el: HTMLElement & { dropdown: Dropdown }) => void;
 };
 
-/** The options of jSuites.contextmenu. jsuites has defaults for each of them, and onclick is a function. */
-export type ContextmenuOptions = Partial<Omit<ComponentOptions<Base['contextmenu']>, 'onclick'>> & {
-    onclick?: (instance: ReturnType<Base['contextmenu']>, e: MouseEvent) => void;
-};
-
 /**
  * The options of jSuites.calendar. jsuites has defaults for each of them, takes a truthy position for a fixed position,
  * and gives onclose the input.
@@ -64,10 +59,9 @@ export type ToolbarOptions = Omit<ComponentOptions<Base['toolbar']>, 'items'> & 
     items: object[];
 };
 
-export interface JSuites extends Omit<Base, 'calendar' | 'color' | 'contextmenu' | 'dropdown' | 'picker' | 'toolbar'> {
+export interface JSuites extends Omit<Base, 'calendar' | 'color' | 'dropdown' | 'picker' | 'toolbar'> {
     calendar(el: HTMLElement, options: CalendarOptions): ReturnType<Base['calendar']>;
     color(el: HTMLElement, options: ColorOptions): Color;
-    contextmenu(el: HTMLElement, options: ContextmenuOptions): ReturnType<Base['contextmenu']>;
     dropdown(el: HTMLElement, options: DropdownOptions): Dropdown;
     picker<T>(el: HTMLElement, options: PickerOptions<T>): ReturnType<Base['picker']>;
     toolbar(el: HTMLElement, options: ToolbarOptions): ReturnType<Base['toolbar']>;

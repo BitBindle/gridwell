@@ -409,3 +409,23 @@ The dates of the calendar columns, and of the date masks, are written and read w
   read a wrong date from it in a column with another format.
 - `jSuites.calendar.extractDateFromString` and `jSuites.calendar.getDateString` are no longer called, so a change to them
   does not change the cells.
+
+## The context menu works without jSuites
+
+The context menu is shown by Jspreadsheet, not by `jSuites.contextmenu`. It keeps the class names of jSuites
+(`jcontextmenu`, `jcontextmenu-focus`, `jcontextmenu-disabled`, `jcontexthassubmenu`), its place and its look, and the
+element still keeps the menu as `contextmenu`, with `open(e, items)`, `create(items)`, `close()` and `isOpened()`. These change:
+
+- The title of an item is shown as text. jSuites wrote it with `innerHTML`, so a title with HTML now shows the tags.
+- The menu has the roles of an ARIA menu (`menu`, `menuitem`, `separator`), and a disabled item has `aria-disabled`. When
+  the menu opens, the focus moves to its first item; when it closes after an item is chosen, or with Escape, the focus
+  goes back to the element that had it.
+- The keys move in the menu: the arrows, Home and End move between the items, Enter and Space choose an item, the right
+  arrow opens a submenu and the left arrow closes it, Escape closes the menu and Tab closes it and moves the focus on.
+  These keys no longer go to the grid while the menu has the focus.
+- A menu opened with the keyboard (the menu key or Shift+F10) opens under the selected cell, not in the corner of the
+  window.
+- The release of the right button no longer chooses the item under the pointer.
+- The `onclick` of an item gets the release of the mouse, or the `KeyboardEvent` of the key that chose it. Its type is
+  `(element: HTMLDivElement, e: MouseEvent | KeyboardEvent) => void`. The menu closes before `onclick` runs.
+- The menu has no `options.onclick`, which jSuites called after each chosen item.

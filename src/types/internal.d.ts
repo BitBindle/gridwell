@@ -6,6 +6,7 @@
 import type jspreadsheet from '../jspreadsheet';
 import type { Tabs } from '../utils/tabs';
 import type { Toolbar } from '../utils/toolbar';
+import type { ContextMenu } from '../utils/contextMenu';
 import type { Spreadsheet } from '../Spreadsheet';
 import type { Worksheet } from '../Worksheet';
 import type { Accessibility } from '../components/Accessibility';
@@ -145,14 +146,8 @@ export interface SpreadsheetState extends jspreadsheet.SpreadsheetInstance {
     /** The tabs of the worksheets, which the Tabs constructor keeps on the element. */
     element: jspreadsheet.JspreadsheetInstanceElement & { tabs?: Tabs };
 
-    /** The jsuites context menu, which jsuites keeps on its element. */
-    contextMenu: HTMLDivElement & {
-        contextmenu: {
-            open(e: MouseEvent, items: jspreadsheet.ContextMenuItem[]): void;
-            /** jsuites takes no argument. The factory passes false, which jsuites ignores. */
-            close(ignored?: boolean): void;
-        };
-    };
+    /** The context menu, which keeps its ContextMenu on its element. */
+    contextMenu: HTMLDivElement & { contextmenu: ContextMenu };
 
     /** The jsuites toolbar, which jsuites keeps on its element. update calls updateState of each item with the worksheet. */
     toolbar: HTMLDivElement & { toolbar: { update(worksheet: Worksheet): void } };
