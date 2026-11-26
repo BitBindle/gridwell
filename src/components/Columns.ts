@@ -1,4 +1,4 @@
-import jSuites from 'jsuites';
+import { translate } from '../utils/dictionary.js';
 import { getColumnName } from '../utils/helpers.js';
 import { getColumnNameFromId, injectArray } from '../utils/internalHelpers.js';
 import { setHeaderRole } from './Accessibility.js';
@@ -314,7 +314,7 @@ export class Columns {
             // Merged cells
             if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
                 if (worksheet.merges.isColMerged(columnNumber, insertBefore).length) {
-                    if (!confirm(jSuites.translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                    if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
                         return false;
                     } else {
                         worksheet.destroyMerge();
@@ -397,7 +397,7 @@ export class Columns {
             }
 
             if (worksheet.merges.isColMerged(o).length || worksheet.merges.isColMerged(d, insertBefore).length) {
-                if (!confirm(jSuites.translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
                     return false;
                 } else {
                     worksheet.destroyMerge();
@@ -535,7 +535,7 @@ export class Columns {
                         }
                     }
                     if (mergeExists) {
-                        if (!confirm(jSuites.translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                        if (!confirm(translate('This action will destroy any existing merged cells. Are you sure?'))) {
                             return false;
                         } else {
                             worksheet.destroyMerge();
@@ -907,7 +907,7 @@ export class Columns {
     rename(column: number) {
         const worksheet = this.worksheet;
 
-        const newValue = prompt(jSuites.translate('Column name'), worksheet.getHeader(column));
+        const newValue = prompt(translate('Column name'), worksheet.getHeader(column));
 
         if (newValue !== null) {
             worksheet.setHeader(column, newValue);

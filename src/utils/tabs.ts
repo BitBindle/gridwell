@@ -1,4 +1,5 @@
 import jSuites from 'jsuites';
+import { translate } from './dictionary.js';
 import type jspreadsheet from '../jspreadsheet';
 
 /** A tab header. It keeps a reference to its panel. */
@@ -471,7 +472,7 @@ export class Tabs {
     private getLabelText(key: keyof typeof defaultLabels) {
         const text = this.options.labels[key];
 
-        return typeof text === 'string' ? text : jSuites.translate(defaultLabels[key]);
+        return typeof text === 'string' ? text : translate(defaultLabels[key]);
     }
 
     init() {

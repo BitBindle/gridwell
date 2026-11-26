@@ -1,4 +1,4 @@
-import jSuites from 'jsuites';
+import { translate } from '../utils/dictionary.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type { Worksheet } from '../types/internal';
 
@@ -56,7 +56,7 @@ export class Accessibility {
         const spreadsheet = this.worksheet.parent;
 
         const labels = spreadsheet?.config?.labels;
-        const text = labels && typeof labels[key] === 'string' ? labels[key] : jSuites.translate(defaultLabels[key]);
+        const text = labels && typeof labels[key] === 'string' ? labels[key] : translate(defaultLabels[key]);
 
         return value === undefined ? text : text.split('{0}').join(value);
     }

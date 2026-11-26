@@ -1,4 +1,4 @@
-import jSuites from 'jsuites';
+import { translate } from '../utils/dictionary.js';
 import libraryBase from '../utils/libraryBase.js';
 import version from '../utils/version.js';
 import { getCellNameFromCoords } from '../utils/helpers.js';
@@ -12,7 +12,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
         // Insert a new column
         if (worksheet.options.allowInsertColumn !== false) {
             items.push({
-                title: jSuites.translate('Insert a new column before'),
+                title: translate('Insert a new column before'),
                 onclick() {
                     worksheet.insertColumn(1, parseInt(x), 1);
                 },
@@ -21,7 +21,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
 
         if (worksheet.options.allowInsertColumn !== false) {
             items.push({
-                title: jSuites.translate('Insert a new column after'),
+                title: translate('Insert a new column after'),
                 onclick() {
                     worksheet.insertColumn(1, parseInt(x), 0);
                 },
@@ -31,7 +31,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
         // Delete a column
         if (worksheet.options.allowDeleteColumn !== false) {
             items.push({
-                title: jSuites.translate('Delete selected columns'),
+                title: translate('Delete selected columns'),
                 onclick() {
                     worksheet.deleteColumn(worksheet.getSelectedColumns().length ? undefined : parseInt(x));
                 },
@@ -41,7 +41,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
         // Rename column
         if (worksheet.options.allowRenameColumn !== false) {
             items.push({
-                title: jSuites.translate('Rename this column'),
+                title: translate('Rename this column'),
                 onclick() {
                     worksheet.columns.rename(x);
                 },
@@ -54,13 +54,13 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
             items.push({ type: 'line' });
 
             items.push({
-                title: jSuites.translate('Order ascending'),
+                title: translate('Order ascending'),
                 onclick() {
                     worksheet.orderBy(x, 0);
                 },
             });
             items.push({
-                title: jSuites.translate('Order descending'),
+                title: translate('Order descending'),
                 onclick() {
                     worksheet.orderBy(x, 1);
                 },
@@ -72,14 +72,14 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
         // Insert new row
         if (worksheet.options.allowInsertRow !== false) {
             items.push({
-                title: jSuites.translate('Insert a new row before'),
+                title: translate('Insert a new row before'),
                 onclick() {
                     worksheet.insertRow(1, parseInt(y), 1);
                 },
             });
 
             items.push({
-                title: jSuites.translate('Insert a new row after'),
+                title: translate('Insert a new row after'),
                 onclick() {
                     worksheet.insertRow(1, parseInt(y));
                 },
@@ -88,7 +88,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
 
         if (worksheet.options.allowDeleteRow !== false) {
             items.push({
-                title: jSuites.translate('Delete selected rows'),
+                title: translate('Delete selected rows'),
                 onclick() {
                     worksheet.deleteRow(worksheet.getSelectedRows().length ? undefined : parseInt(y));
                 },
@@ -103,9 +103,9 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
             const title = worksheet.records[y][x].element.getAttribute('title') || '';
 
             items.push({
-                title: jSuites.translate(title ? 'Edit comments' : 'Add comments'),
+                title: translate(title ? 'Edit comments' : 'Add comments'),
                 onclick() {
-                    const comment = prompt(jSuites.translate('Comments'), title);
+                    const comment = prompt(translate('Comments'), title);
                     if (comment) {
                         worksheet.setComments(getCellNameFromCoords(x, y), comment);
                     }
@@ -114,7 +114,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
 
             if (title) {
                 items.push({
-                    title: jSuites.translate('Clear comments'),
+                    title: translate('Clear comments'),
                     onclick() {
                         worksheet.setComments(getCellNameFromCoords(x, y), '');
                     },
@@ -131,7 +131,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
     // Copy
     if (role === 'header' || role === 'row' || role === 'cell') {
         items.push({
-            title: `${jSuites.translate('Copy')}...`,
+            title: `${translate('Copy')}...`,
             shortcut: 'Ctrl + C',
             onclick() {
                 worksheet.clipboard.copy(true);
@@ -141,7 +141,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
         // Paste
         if (navigator?.clipboard) {
             items.push({
-                title: `${jSuites.translate('Paste')}...`,
+                title: `${translate('Paste')}...`,
                 shortcut: 'Ctrl + V',
                 onclick() {
                     if (worksheet.selection.range) {
@@ -159,7 +159,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
     // Save
     if (worksheet.parent.config.allowExport !== false) {
         items.push({
-            title: `${jSuites.translate('Save as')}...`,
+            title: `${translate('Save as')}...`,
             shortcut: 'Ctrl + S',
             onclick() {
                 worksheet.download();
@@ -170,7 +170,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
     // About
     if (worksheet.parent.config.about !== false) {
         items.push({
-            title: jSuites.translate('About'),
+            title: translate('About'),
             onclick() {
                 if (typeof worksheet.parent.config.about === 'undefined' || worksheet.parent.config.about === true) {
                     alert(version.print());

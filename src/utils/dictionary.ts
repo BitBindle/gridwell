@@ -1,0 +1,21 @@
+// The translations of jspreadsheet.setDictionary, by English text. A Map, so that a text such as "constructor" is not
+// read from the prototype of an object.
+const dictionary = new Map<string, string>();
+
+/**
+ * Add translations to the dictionary. A text that is already in it gets the new translation.
+ * @param translations - The translations, by English text. An empty translation shows the English text again.
+ */
+export function setDictionary(translations: Record<string, string>) {
+    for (const [text, translation] of Object.entries(translations)) {
+        dictionary.set(text, translation);
+    }
+}
+
+/**
+ * Translate a text with the dictionary. A text without a translation stays as it is.
+ * @param text - The English text.
+ */
+export function translate(text: string) {
+    return dictionary.get(text) || text;
+}

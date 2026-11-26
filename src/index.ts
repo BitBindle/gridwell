@@ -1,6 +1,7 @@
 import jSuites from 'jsuites';
 
 import libraryBase from './utils/libraryBase.js';
+import { setDictionary } from './utils/dictionary.js';
 
 import { createSpreadsheet } from './utils/factory.js';
 import { destroyEvents } from './events/index.js';
@@ -67,6 +68,8 @@ libraryBase.jspreadsheet.setFormulaEngine = (engine: jspreadsheet.FormulaEngine 
 
 // Define dictionary
 libraryBase.jspreadsheet.setDictionary = (o: Record<string, string>) => {
+    setDictionary(o);
+    // The jsuites controls, such as the calendar, translate their own texts
     jSuites.setDictionary(o);
 };
 

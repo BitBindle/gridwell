@@ -347,3 +347,10 @@ With the scripts of a CDN, call `jspreadsheet.setFormulaEngine(formula)` after t
 engine, a formula shows `#ENGINE`, which Excel never shows, and the console says once why. `executeFormula` also returns
 `'#ENGINE'`. The `formulaEngine` option of a spreadsheet still replaces the engine, and needs none to be registered. A
 spreadsheet without formulas no longer needs the 140 KB of the engine.
+
+## Translate with jspreadsheet.setDictionary
+
+Jspreadsheet keeps its own dictionary and no longer reads the dictionary of jSuites. An application that called
+`jSuites.setDictionary`, or set `document.dictionary`, to translate the texts of the spreadsheet calls
+`jspreadsheet.setDictionary` instead. It takes the same object, and still passes it to jSuites for the controls that
+jSuites shows, such as the calendar. An empty translation shows the English text again.

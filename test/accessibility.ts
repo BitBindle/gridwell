@@ -36,9 +36,6 @@ function getExpectedIndexes(rows: number, columns: number, headerRows?: number) 
     return result;
 }
 
-// jSuites keeps the texts of setDictionary in document.dictionary
-type DocumentWithDictionary = Document & { dictionary: Record<string, string> };
-
 describe('Grid roles for assistive technology', () => {
     it('Start the worksheet with the roles of the grid pattern', () => {
         const instance = jspreadsheet(root, {
@@ -370,8 +367,8 @@ describe('Accessible names', () => {
 
             expect(worksheet.editor.cell!.children[0].getAttribute('aria-label')).to.equal('Editar célula B1');
         } finally {
-            delete (document as DocumentWithDictionary).dictionary['Select all'];
-            delete (document as DocumentWithDictionary).dictionary['Edit cell {0}'];
+            // An empty translation shows the English text again
+            jspreadsheet.setDictionary({ 'Select all': '', 'Edit cell {0}': '' });
         }
     });
 
@@ -385,9 +382,8 @@ describe('Accessible names', () => {
             expect(root.querySelector('.jtabs-content')!.getAttribute('aria-label')).to.equal('Tabellenblätter');
             expect(root.querySelector('.jtabs-add')!.getAttribute('aria-label')).to.equal('Arbeitsblatt hinzufügen');
         } finally {
-            delete (document as DocumentWithDictionary).dictionary['Worksheets'];
-            delete (document as DocumentWithDictionary).dictionary['Tab Panels'];
-            delete (document as DocumentWithDictionary).dictionary['Add a new worksheet'];
+            // An empty translation shows the English text again
+            jspreadsheet.setDictionary({ Worksheets: '', 'Tab Panels': '', 'Add a new worksheet': '' });
         }
     });
 
