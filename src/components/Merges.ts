@@ -184,8 +184,6 @@ export class Merges {
     set(cellName?: string, colspan?: number, rowspan?: number, ignoreHistoryAndEvents?: boolean | 1, keepSelection?: boolean): null | undefined {
         const worksheet = this.worksheet;
 
-        let test: string | false = false;
-
         if (!cellName) {
             if (!worksheet.selection.highlighted.length) {
                 alert(translate('No cells selected'));
@@ -206,66 +204,17 @@ export class Merges {
             return null;
         }
 
-        const cell = getIdFromColumnName(cellName);
-
-        if (worksheet.options.mergeCells?.[cellName]) {
-            if (worksheet.records[cell[1]][cell[0]].element.getAttribute('data-merged')) {
-                test = 'Cell already merged';
-            }
-        } else if ((!colspan || colspan < 2) && (!rowspan || rowspan < 2)) {
-            test = 'Invalid merged properties';
-        } else {
-            // A missing span is one cell
-            for (let j = cell[1]; j < cell[1] + (rowspan || 1); j++) {
-                for (let i = cell[0]; i < cell[0] + (colspan || 1); i++) {
-                    if (worksheet.records[j][i].element.getAttribute('data-merged')) {
-                        test = 'There is a conflict with another merged cell';
-                    }
-                }
-            }
-        }
+        const test = this.check(cellName, colspan, rowspan);
 
         if (test) {
             alert(translate(test));
         } else {
-            // Add property. A missing span becomes 1, so from here on the spans are numbers.
-            if (colspan! > 1) {
-                worksheet.records[cell[1]][cell[0]].element.setAttribute('colspan', colspan!);
-            } else {
-                colspan = 1;
-            }
-            if (rowspan! > 1) {
-                worksheet.records[cell[1]][cell[0]].element.setAttribute('rowspan', rowspan!);
-            } else {
-                rowspan = 1;
-            }
-            // Keep links to the existing nodes
-            if (!worksheet.options.mergeCells) {
-                worksheet.options.mergeCells = {};
-            }
+            const cell = getIdFromColumnName(cellName);
+            // A missing span becomes 1
+            colspan = colspan! > 1 ? colspan! : 1;
+            rowspan = rowspan! > 1 ? rowspan! : 1;
+            const data = this.merge(cellName, colspan, rowspan);
 
-            // The public typings have only colspan and rowspan
-            (worksheet.options.mergeCells as Record<string, MergeInfo>)[cellName] = [colspan!, rowspan!, []];
-            // Mark cell as merged
-            worksheet.records[cell[1]][cell[0]].element.setAttribute('data-merged', 'true');
-            // Overflow
-            worksheet.records[cell[1]][cell[0]].element.style.overflow = 'hidden';
-            // History data
-            const data = [];
-            // Adjust the nodes
-            for (let y = cell[1]; y < cell[1] + rowspan!; y++) {
-                for (let x = cell[0]; x < cell[0] + colspan!; x++) {
-                    if (!(cell[0] === x && cell[1] === y)) {
-                        data.push(worksheet.options.data[y][x]);
-                        worksheet.cells.update(x, y, '', true);
-                        (worksheet.options.mergeCells[cellName] as MergeInfo)[2]!.push(worksheet.records[y][x].element);
-                        worksheet.records[y][x].element.style.display = 'none';
-                        worksheet.records[y][x].element = worksheet.records[cell[1]][cell[0]].element;
-                    }
-                }
-            }
-            // A column of the range can be hidden
-            this.updateFirstCell(cellName);
             // The build of a worksheet with many merged ranges would select each range and dispatch onselection for it
             if (!keepSelection) {
                 worksheet.selection.update(worksheet.records[cell[1]][cell[0]].element);
@@ -275,14 +224,90 @@ export class Merges {
                 worksheet.history.add({
                     action: 'setMerge',
                     column: cellName,
-                    colspan: colspan!,
-                    rowspan: rowspan!,
+                    colspan,
+                    rowspan,
                     data,
                 });
 
-                worksheet.dispatch('onmerge', worksheet, { [cellName]: [colspan!, rowspan!] });
+                worksheet.dispatch('onmerge', worksheet, { [cellName]: [colspan, rowspan] });
             }
         }
+    }
+
+    /**
+     * Why a range cannot be merged, or false when it can. The first cell of a range of the options can be merged once.
+     */
+    private check(cellName: string, colspan: number | undefined, rowspan: number | undefined) {
+        const worksheet = this.worksheet;
+
+        const cell = getIdFromColumnName(cellName);
+
+        if (worksheet.options.mergeCells?.[cellName]) {
+            if (worksheet.records[cell[1]][cell[0]].element.getAttribute('data-merged')) {
+                return 'Cell already merged';
+            }
+        } else if ((!colspan || colspan < 2) && (!rowspan || rowspan < 2)) {
+            return 'Invalid merged properties';
+        } else {
+            // A missing span is one cell
+            for (let j = cell[1]; j < cell[1] + (rowspan || 1); j++) {
+                for (let i = cell[0]; i < cell[0] + (colspan || 1); i++) {
+                    if (worksheet.records[j][i].element.getAttribute('data-merged')) {
+                        return 'There is a conflict with another merged cell';
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Merge a range that check accepted, without a history entry, an event or a change of the selection. The other cells
+     * of the range lose their values.
+     * @returns The values of the other cells of the range, for the history.
+     */
+    private merge(cellName: string, colspan: number, rowspan: number) {
+        const worksheet = this.worksheet;
+
+        const cell = getIdFromColumnName(cellName);
+
+        // Add property
+        if (colspan > 1) {
+            worksheet.records[cell[1]][cell[0]].element.setAttribute('colspan', colspan);
+        }
+        if (rowspan > 1) {
+            worksheet.records[cell[1]][cell[0]].element.setAttribute('rowspan', rowspan);
+        }
+        // Keep links to the existing nodes
+        if (!worksheet.options.mergeCells) {
+            worksheet.options.mergeCells = {};
+        }
+
+        // The public typings have only colspan and rowspan
+        (worksheet.options.mergeCells as Record<string, MergeInfo>)[cellName] = [colspan, rowspan, []];
+        // Mark cell as merged
+        worksheet.records[cell[1]][cell[0]].element.setAttribute('data-merged', 'true');
+        // Overflow
+        worksheet.records[cell[1]][cell[0]].element.style.overflow = 'hidden';
+        // History data
+        const data = [];
+        // Adjust the nodes
+        for (let y = cell[1]; y < cell[1] + rowspan; y++) {
+            for (let x = cell[0]; x < cell[0] + colspan; x++) {
+                if (!(cell[0] === x && cell[1] === y)) {
+                    data.push(worksheet.options.data[y][x]);
+                    worksheet.cells.update(x, y, '', true);
+                    (worksheet.options.mergeCells[cellName] as MergeInfo)[2]!.push(worksheet.records[y][x].element);
+                    worksheet.records[y][x].element.style.display = 'none';
+                    worksheet.records[y][x].element = worksheet.records[cell[1]][cell[0]].element;
+                }
+            }
+        }
+        // A column of the range can be hidden
+        this.updateFirstCell(cellName);
+
+        return data;
     }
 
     /**
@@ -297,46 +322,106 @@ export class Merges {
         if (worksheet.options.mergeCells?.[cellName]) {
             const beforeMerges = { [cellName]: worksheet.options.mergeCells[cellName] };
             const cell = getIdFromColumnName(cellName);
-            worksheet.records[cell[1]][cell[0]].element.removeAttribute('colspan');
-            worksheet.records[cell[1]][cell[0]].element.removeAttribute('rowspan');
-            worksheet.records[cell[1]][cell[0]].element.removeAttribute('data-merged');
-            // Each cell is visible when its column is visible
-            worksheet.records[cell[1]][cell[0]].element.style.display = worksheet.headers[cell[0]].style.display === 'none' ? 'none' : '';
-            const info = worksheet.options.mergeCells[cellName] as MergeInfo;
+            const [colspan, rowspan] = worksheet.options.mergeCells[cellName];
 
-            let index = 0;
-
-            let j, i;
-
-            for (j = 0; j < info[1]; j++) {
-                for (i = 0; i < info[0]; i++) {
-                    if (j > 0 || i > 0) {
-                        worksheet.records[cell[1] + j][cell[0] + i].element = info[2]![index];
-                        worksheet.records[cell[1] + j][cell[0] + i].element.style.display =
-                            worksheet.headers[cell[0] + i].style.display === 'none' ? 'none' : '';
-                        // Recover data
-                        if (data?.[index]) {
-                            worksheet.cells.update(cell[0] + i, cell[1] + j, data[index]);
-                        }
-                        index++;
-                    }
-                }
-            }
+            this.unmerge(cellName, data, keepOptions);
 
             // Update selection
-            worksheet.selection.update(worksheet.records[cell[1]][cell[0]].element, worksheet.records[cell[1] + j - 1][cell[0] + i! - 1].element);
-
-            if (!keepOptions) {
-                delete worksheet.options.mergeCells[cellName];
-            }
-
-            // A first cell in a column with the type hidden uses the options of its own column again
-            if (worksheet.options.columns?.[cell[0]]?.type === 'hidden') {
-                worksheet.cells.render(cell[0], cell[1]);
-            }
+            worksheet.selection.update(worksheet.records[cell[1]][cell[0]].element, worksheet.records[cell[1] + rowspan - 1][cell[0] + colspan - 1].element);
 
             worksheet.dispatch('onunmerge', worksheet, cellName, beforeMerges);
         }
+    }
+
+    /**
+     * Split a merged range without an event or a change of the selection.
+     * @param cellName - The first cell of the range.
+     * @param data - The values of the other cells of the range, which the history kept.
+     * @param keepOptions - Keep the range in the options.
+     */
+    private unmerge(cellName: string, data?: jspreadsheet.CellValue[] | null, keepOptions?: boolean) {
+        const worksheet = this.worksheet;
+
+        const cell = getIdFromColumnName(cellName);
+        worksheet.records[cell[1]][cell[0]].element.removeAttribute('colspan');
+        worksheet.records[cell[1]][cell[0]].element.removeAttribute('rowspan');
+        worksheet.records[cell[1]][cell[0]].element.removeAttribute('data-merged');
+        // Each cell is visible when its column is visible
+        worksheet.records[cell[1]][cell[0]].element.style.display = worksheet.headers[cell[0]].style.display === 'none' ? 'none' : '';
+        const info = worksheet.options.mergeCells![cellName] as MergeInfo;
+
+        let index = 0;
+
+        for (let j = 0; j < info[1]; j++) {
+            for (let i = 0; i < info[0]; i++) {
+                if (j > 0 || i > 0) {
+                    worksheet.records[cell[1] + j][cell[0] + i].element = info[2]![index];
+                    worksheet.records[cell[1] + j][cell[0] + i].element.style.display = worksheet.headers[cell[0] + i].style.display === 'none' ? 'none' : '';
+                    // Recover data
+                    if (data?.[index]) {
+                        worksheet.cells.update(cell[0] + i, cell[1] + j, data[index]);
+                    }
+                    index++;
+                }
+            }
+        }
+
+        if (!keepOptions) {
+            delete worksheet.options.mergeCells![cellName];
+        }
+
+        // A first cell in a column with the type hidden uses the options of its own column again
+        if (worksheet.options.columns?.[cell[0]]?.type === 'hidden') {
+            worksheet.cells.render(cell[0], cell[1]);
+        }
+    }
+
+    /**
+     * Make the merged ranges equal to merges. The ranges that do not change stay. No dialog, history entry or change of the
+     * selection.
+     * @returns The first cells of the ranges that cannot be merged.
+     */
+    replace(merges: Record<string, [number, number]>) {
+        const worksheet = this.worksheet;
+
+        const removed: Record<string, Record<string, [number, number]>> = {};
+        for (const [cellName, [colspan, rowspan]] of Object.entries(worksheet.options.mergeCells || {})) {
+            const target = merges[cellName];
+            if (target?.[0] !== colspan || target[1] !== rowspan) {
+                removed[cellName] = { [cellName]: [colspan, rowspan] };
+                this.unmerge(cellName);
+            }
+        }
+
+        const refused: string[] = [];
+        const added: Record<string, [number, number]> = {};
+        for (const [cellName, [colspan, rowspan]] of Object.entries(merges)) {
+            if (worksheet.options.mergeCells?.[cellName]) {
+                continue;
+            }
+            const valid = /^[A-Z]+[0-9]+$/.test(cellName) && Number.isInteger(colspan) && Number.isInteger(rowspan) && colspan > 0 && rowspan > 0;
+            const cell = valid ? getIdFromColumnName(cellName) : null;
+            if (
+                !cell ||
+                cell[1] + rowspan > worksheet.records.length ||
+                cell[0] + colspan > worksheet.headers.length ||
+                this.check(cellName, colspan, rowspan)
+            ) {
+                refused.push(cellName);
+            } else {
+                this.merge(cellName, colspan, rowspan);
+                added[cellName] = [colspan, rowspan];
+            }
+        }
+
+        for (const [cellName, beforeMerges] of Object.entries(removed)) {
+            worksheet.dispatch('onunmerge', worksheet, cellName, beforeMerges);
+        }
+        if (Object.keys(added).length) {
+            worksheet.dispatch('onmerge', worksheet, added);
+        }
+
+        return refused;
     }
 
     /**

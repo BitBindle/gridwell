@@ -2369,6 +2369,17 @@ declare namespace jspreadsheet {
         removeMerge: (cellName: string, data?: CellValue[]) => void;
 
         /**
+         * Make the merged ranges of the worksheet equal to a map from the first cell of each range to its colspan and rowspan.
+         * The ranges that do not change stay. The other cells of a new range lose their values, as with `setMerge`, and the
+         * cells of a removed range show again, empty. The method shows no dialog, writes no history entry and does not change
+         * the selection. `onunmerge` occurs for each removed range, and `onmerge` once with the new ranges.
+         * @param merges - The ranges, for example `{ A1: [2, 1], C3: [1, 3] }`.
+         * @returns The first cells of the ranges that it cannot merge: a range outside the worksheet, a range of one cell,
+         * or a range that crosses another range.
+         */
+        replaceMerges: (merges: Record<string, [number, number]>) => string[];
+
+        /**
          * Reset all filters.
          */
         resetFilters: () => void;

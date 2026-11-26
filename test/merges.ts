@@ -444,3 +444,74 @@ describe('Merge tests', () => {
         });
     });
 });
+
+describe('replaceMerges', () => {
+    function build(events: string[]) {
+        const data: string[][] = [];
+        for (let j = 0; j < 4; j++) {
+            data.push(['a', 'b', 'c', 'd'].map((letter) => `${letter}${j + 1}`));
+        }
+        return jspreadsheet(root, {
+            worksheets: [{ data, mergeCells: { A1: [2, 1], C1: [2, 2] } }],
+            onmerge: (instance, merges) => {
+                events.push(`merge ${JSON.stringify(merges)}`);
+            },
+            onunmerge: (instance, cellName) => {
+                events.push(`unmerge ${cellName}`);
+            },
+        })[0];
+    }
+
+    it('keeps the ranges that do not change, removes the others and adds the new ones', () => {
+        const events: string[] = [];
+        const worksheet = build(events);
+        const first = worksheet.records[0][0].element;
+
+        const refused = worksheet.replaceMerges({ A1: [2, 1], A3: [1, 2] });
+
+        expect(refused).to.eql([]);
+        expect(worksheet.getMerge()).to.eql({ A1: [2, 1], A3: [1, 2] });
+        // The range that stays keeps its cell, and its covered cell stays hidden
+        expect(worksheet.records[0][0].element).to.equal(first);
+        expect(worksheet.records[0][1].element).to.equal(first);
+        // The cells of the removed range C1:D2 show again, empty
+        expect(worksheet.records[1][3].element.style.display).to.equal('');
+        expect(worksheet.records[1][3].element.textContent).to.equal('');
+        expect(worksheet.records[0][2].element.hasAttribute('colspan')).to.equal(false);
+        // The new range A3:A4 hides A4 and clears its value
+        expect(worksheet.records[2][0].element.getAttribute('rowspan')).to.equal('2');
+        expect(worksheet.records[3][0].element).to.equal(worksheet.records[2][0].element);
+        expect(worksheet.getValueFromCoords(0, 3)).to.equal('');
+        expect(events).to.eql(['unmerge C1', 'merge {"A3":[1,2]}']);
+    });
+
+    it('gives the ranges that it cannot merge, and shows no dialog', () => {
+        const alerts: string[] = [];
+        const alert = window.alert;
+        window.alert = (text?: string) => {
+            alerts.push(`${text}`);
+        };
+        try {
+            const worksheet = build([]);
+
+            const refused = worksheet.replaceMerges({ A1: [2, 1], C1: [2, 2], B1: [1, 2], D4: [2, 1], A3: [1, 1], a3: [1, 2], A4: [0, 1] });
+
+            expect(refused).to.eql(['B1', 'D4', 'A3', 'a3', 'A4']);
+            expect(worksheet.getMerge()).to.eql({ A1: [2, 1], C1: [2, 2] });
+            expect(alerts).to.eql([]);
+        } finally {
+            window.alert = alert;
+        }
+    });
+
+    it('writes no history entry and keeps the selection', () => {
+        const worksheet = build([]);
+        worksheet.updateSelectionFromCoords(1, 3, 1, 3);
+        const index = worksheet.history.index;
+
+        worksheet.replaceMerges({ A3: [2, 1] });
+
+        expect(worksheet.history.index).to.equal(index);
+        expect(worksheet.getSelection()).to.eql([1, 3, 1, 3]);
+    });
+});
