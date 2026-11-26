@@ -176,6 +176,13 @@ declare namespace jspreadsheet {
         autocomplete?: boolean;
 
         /**
+         * The text between the ids of the items in the value of a cell with {@link multiple}, and between their names in
+         * the cell. Without it, the value is split on `;`, the editor joins the ids with `;`, and the names are joined
+         * with `; `.
+         */
+        delimiter?: string;
+
+        /**
          * Gives the items that the dropdown of a cell shows, instead of {@link source}.
          * @param element - The element of the spreadsheet.
          * @param cell - The td of the cell being edited.
@@ -753,6 +760,12 @@ declare namespace jspreadsheet {
              * @default 'Clipboard helper'
              */
             clipboardHelper?: string;
+
+            /**
+             * Name of the filter of a column. `{0}` is the title of the column.
+             * @default 'Filter column {0}'
+             */
+            filterColumn?: string;
 
             /**
              * Name of the list of worksheet tabs.

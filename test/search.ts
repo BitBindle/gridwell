@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 
 import jspreadsheet from './support/jspreadsheet';
-import type { Dropdown } from 'jsuites';
+import type { Dropdown } from '../src/utils/dropdown';
 
-// The element of a jSuites dropdown, which keeps the dropdown
+// The element of a dropdown, which keeps the dropdown
 type DropdownElement = HTMLElement & { dropdown: Dropdown };
 
 describe('Use search', () => {
@@ -85,6 +85,22 @@ describe('The view of a worksheet', () => {
 
         expect(worksheet.view.filters[0]).to.equal(null);
         expect(worksheet.view.results).to.equal(null);
+    });
+
+    it('shows the values of a column as text in its filter', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ filters: true, data: [['A & B'], ['<img src=x>']] }] })[0];
+
+        worksheet.openFilter(0);
+        const items = Array.from(worksheet.filter!.children[1].querySelectorAll('.jdropdown-item')).map((item) => item.textContent);
+        expect(items).to.eql(['A & B', '<img src=x>']);
+
+        const dropdown = worksheet.filter!.children[1].querySelector<DropdownElement>('.jdropdown')!.dropdown;
+        dropdown.setValue(['<img src=x>']);
+        dropdown.close();
+
+        expect(worksheet.filter!.children[1].textContent).to.equal('<img src=x>');
+        expect(worksheet.filter!.children[1].querySelector('img')).to.equal(null);
+        expect(worksheet.view.results).to.eql([1]);
     });
 
     it('keeps the page that the worksheet shows', () => {
