@@ -51,6 +51,18 @@ declare namespace jspreadsheet {
 
         /** Today is default. */
         today?: boolean;
+
+        /**
+         * The first and the last day that can be chosen, as the text "YYYY-MM-DD". Either can be empty, for no limit.
+         * The other days are shown disabled.
+         */
+        validRange?: [string | null | undefined, string | null | undefined];
+
+        /**
+         * The first day of the week in the calendar: 0 for Sunday, 1 for Monday, …
+         * @default 0
+         */
+        startingDay?: number;
     }
 
     interface CustomEditor {
