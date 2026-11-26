@@ -154,7 +154,7 @@ export class View {
                 }
                 // Has blank options
                 if (hasBlanks) {
-                    optionsFiltered.push({ id: '', name: '(Blanks)' });
+                    optionsFiltered.push({ id: '', name: translate('(Blanks)') });
                 }
             }
 
