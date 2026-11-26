@@ -333,6 +333,17 @@ describe('The options of the worksheet table', () => {
         expect(worksheet.content.style.width).to.equal('400px');
     });
 
+    it('stops a text selection on the corner without an inline event handler', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [2, 2] }] })[0];
+
+        // A Content Security Policy without 'unsafe-inline' blocks an inline handler and logs an error
+        expect(worksheet.corner.hasAttribute('onselectstart')).to.equal(false);
+
+        const event = new Event('selectstart', { bubbles: true, cancelable: true });
+        worksheet.corner.dispatchEvent(event);
+        expect(event.defaultPrevented).to.equal(true);
+    });
+
     it('set the classes of the text overflow, the corner, the drag and the resize', () => {
         let worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [2, 2] }] })[0];
 
