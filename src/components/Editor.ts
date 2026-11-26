@@ -7,7 +7,7 @@ import { Calendar, type CalendarOptions } from '../utils/calendar.js';
 import { createRichText, getRichText } from '../utils/richText.js';
 import { ImageUpload, type ImageUploadElement } from '../utils/imageUpload.js';
 import type { Worksheet } from '../types/internal';
-import type jspreadsheet from '../jspreadsheet';
+import type gridwell from '../gridwell';
 
 /**
  * The editor in a cell that is being edited, read as an input because the text editors are inputs or text areas.
@@ -106,8 +106,8 @@ export class Editor {
         cell: HTMLTableCellElement,
         x: number,
         y: number,
-        column: ColumnOptions & { type: jspreadsheet.CustomEditor },
-        e: Parameters<jspreadsheet.WorksheetInstance['openEditor']>[2]
+        column: ColumnOptions & { type: gridwell.CustomEditor },
+        e: Parameters<gridwell.WorksheetInstance['openEditor']>[2]
     ) {
         const worksheet = this.worksheet;
 
@@ -398,7 +398,7 @@ export class Editor {
             // If there is a custom editor for it
             if (column && typeof column.type === 'object') {
                 // The test of typeof narrows the type, not the column
-                this.openCustom(cell, x, y, column as ColumnOptions & { type: jspreadsheet.CustomEditor }, e);
+                this.openCustom(cell, x, y, column as ColumnOptions & { type: gridwell.CustomEditor }, e);
             } else {
                 // Native functions
                 if (column?.type === 'hidden') {

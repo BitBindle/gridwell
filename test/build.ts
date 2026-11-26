@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 
 import { stubFetch } from './support/fetch';
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 // Create a spreadsheet and wait until it is built
-function create(options: Jspreadsheet.SpreadsheetOptions) {
+function create(options: Gridwell.SpreadsheetOptions) {
     return new Promise<Worksheet[]>((resolve) => {
-        const worksheets = jspreadsheet(root, {
+        const worksheets = gridwell(root, {
             ...options,
             onload() {
                 resolve(worksheets);
@@ -81,8 +81,8 @@ describe('Build of a worksheet', () => {
             ]);
             expect(second.getData()).to.eql([['a']]);
             expect(errors.map(String)).to.eql([
-                'Error: Jspreadsheet: the GET request to /missing.csv failed with the status 404',
-                'Error: Jspreadsheet: the GET request to /broken failed with the status 500',
+                'Error: Gridwell: the GET request to /missing.csv failed with the status 404',
+                'Error: Gridwell: the GET request to /broken failed with the status 500',
             ]);
         } finally {
             console.error = error;
@@ -190,7 +190,7 @@ describe('Worksheets of a spreadsheet', () => {
     it('removes a worksheet and calls ondeleteworksheet with it and its position', async () => {
         const calls: unknown[][] = [];
         const worksheets = await new Promise<Worksheet[]>((resolve) => {
-            const worksheets = jspreadsheet(root, {
+            const worksheets = gridwell(root, {
                 worksheets: [{ worksheetName: 'A' }, { worksheetName: 'B' }, { worksheetName: 'C' }],
                 onload() {
                     resolve(worksheets);

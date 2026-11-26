@@ -16,7 +16,7 @@ export function keyDownControls(e: TargetEvent<KeyboardEvent>) {
         return;
     }
 
-    const current = libraryBase.jspreadsheet.current;
+    const current = libraryBase.gridwell.current;
 
     if (current) {
         // Keys on an element outside the spreadsheet, for example an input or a button next to the grid that has the focus
@@ -45,13 +45,13 @@ export function keyDownControls(e: TargetEvent<KeyboardEvent>) {
             current.keyboard.gridKeys(e);
         } else {
             if (e.target.classList.contains('jss_search')) {
-                if (libraryBase.jspreadsheet.timeControl) {
-                    clearTimeout(libraryBase.jspreadsheet.timeControl);
+                if (libraryBase.gridwell.timeControl) {
+                    clearTimeout(libraryBase.gridwell.timeControl);
                 }
 
                 // The active worksheet when the timer runs
-                libraryBase.jspreadsheet.timeControl = setTimeout(() => {
-                    libraryBase.jspreadsheet.current!.search((e.target as HTMLInputElement).value);
+                libraryBase.gridwell.timeControl = setTimeout(() => {
+                    libraryBase.gridwell.current!.search((e.target as HTMLInputElement).value);
                 }, 200);
             }
         }

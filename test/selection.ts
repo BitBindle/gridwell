@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 describe('Selection', () => {
     it('isSelected tells whether a cell is in the selected range', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['a', 'b', 'c']] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: [['a', 'b', 'c']] }] })[0];
 
         worksheet.updateSelectionFromCoords(0, 0, 1, 0);
 
@@ -13,12 +13,12 @@ describe('Selection', () => {
     });
 
     it('isSelected returns false when no cell is selected', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['a', 'b']] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: [['a', 'b']] }] })[0];
 
         expect(worksheet.isSelected(0, 0)).to.equal(false);
     });
     it('selectAll does not change the selection that the undo history restores', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -39,7 +39,7 @@ describe('Selection', () => {
     });
 
     it('an arrow key does not change the selection that the undo history restores', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -60,7 +60,7 @@ describe('Selection', () => {
     });
 
     it('selectAll keeps the selection when onbeforeselection cancels it', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -81,9 +81,9 @@ describe('Selection', () => {
 
 describe('Selection with the mouse', () => {
     // The spreadsheet adds its event handlers after a promise
-    const load = (options: Jspreadsheet.SpreadsheetOptions) =>
+    const load = (options: Gridwell.SpreadsheetOptions) =>
         new Promise<Worksheet>((resolve) => {
-            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+            const instance = gridwell(root, { ...options, onload: () => resolve(instance[0]) });
         });
     const press = (element: Element, options?: MouseEventInit) =>
         element.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, buttons: 1, ...options }));
@@ -132,7 +132,7 @@ describe('Selection with the mouse', () => {
 
 describe('The selection of a worksheet', () => {
     const create = () =>
-        jspreadsheet(root, {
+        gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -208,7 +208,7 @@ describe('The selection of a worksheet', () => {
     });
 
     it('is not shared between worksheets', async () => {
-        const worksheets = jspreadsheet(root, { worksheets: [{ data: [['a']] }, { data: [['b']] }] });
+        const worksheets = gridwell(root, { worksheets: [{ data: [['a']] }, { data: [['b']] }] });
         await new Promise((resolve) => setTimeout(resolve));
 
         expect(worksheets[0].selection).to.not.equal(worksheets[1].selection);
@@ -221,9 +221,9 @@ describe('The selection of a worksheet', () => {
 
 describe('The pointer of a worksheet', () => {
     // The spreadsheet adds its event handlers after a promise
-    const load = (options: Jspreadsheet.SpreadsheetOptions) =>
+    const load = (options: Gridwell.SpreadsheetOptions) =>
         new Promise<Worksheet>((resolve) => {
-            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+            const instance = gridwell(root, { ...options, onload: () => resolve(instance[0]) });
         });
     const mouse = (element: EventTarget, type: string, options?: MouseEventInit) =>
         element.dispatchEvent(new window.MouseEvent(type, { bubbles: true, cancelable: true, buttons: 1, ...options }));
@@ -328,7 +328,7 @@ describe('The pointer of a worksheet', () => {
 describe('A selection of hidden rows', () => {
     it('gives onbeforeselection and onselection the selected rows as the top and bottom (issue #59)', () => {
         const calls: (string | number)[][] = [];
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ minDimensions: [3, 3] }],
             // A block, so that the handler returns nothing: onbeforeselection returns false or nothing
             onbeforeselection: (instance, left, top, right, bottom) => {
@@ -361,7 +361,7 @@ describe('A move that onbeforeselection cancels', () => {
     for (const [move, start] of moves) {
         for (const shiftKey of [false, true]) {
             it(`keeps the selected range with ${move}${shiftKey ? ' and Shift' : ''} (issue #71)`, () => {
-                const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 3] }] })[0];
+                const worksheet = gridwell(root, { worksheets: [{ minDimensions: [3, 3] }] })[0];
 
                 worksheet.updateSelectionFromCoords(...start);
                 worksheet.parent.config.onbeforeselection = () => false;
@@ -375,7 +375,7 @@ describe('A move that onbeforeselection cancels', () => {
     }
 
     it('moves from the selected range with the next key', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 3] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ minDimensions: [3, 3] }] })[0];
 
         worksheet.updateSelectionFromCoords(0, 0, 0, 0);
         worksheet.parent.config.onbeforeselection = () => false;

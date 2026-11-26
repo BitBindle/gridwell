@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet from './support/jspreadsheet';
+import gridwell from './support/gridwell';
 
 describe('Comment tests', () => {
     it('Set comment', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -32,7 +32,7 @@ describe('Comment tests', () => {
     });
 
     it('Get comment', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -53,7 +53,7 @@ describe('Comment tests', () => {
     });
 
     it('setComments history', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -86,7 +86,7 @@ describe('Comment tests', () => {
 
     it('loads the comments option without a history entry or oncomments (issue #87)', () => {
         const calls: string[] = [];
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ minDimensions: [2, 2], comments: { B1: 'A note' } }],
             oncomments: () => calls.push('oncomments'),
         })[0];

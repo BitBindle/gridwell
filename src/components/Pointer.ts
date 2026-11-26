@@ -1,7 +1,7 @@
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import libraryBase from '../utils/libraryBase.js';
 import { getIndex } from '../events/helpers.js';
-import type { DragColumnInfo, DragRowInfo, ResizeColumnInfo, ResizeRowInfo, CellValue } from '../jspreadsheet';
+import type { DragColumnInfo, DragRowInfo, ResizeColumnInfo, ResizeRowInfo, CellValue } from '../gridwell';
 import type { Worksheet, TargetEvent } from '../types/internal';
 
 function doubleDigitFormat(v: number | string) {
@@ -384,7 +384,7 @@ export class Pointer {
                 }
             } else if (worksheet.options.columnDrag !== false && info.height - e.offsetY < 6) {
                 if (worksheet.merges.isColMerged(columnId).length) {
-                    console.error('Jspreadsheet: This column is part of a merged cell.');
+                    console.error('Gridwell: This column is part of a merged cell.');
                 } else {
                     // Reset selection
                     worksheet.resetSelection();
@@ -412,8 +412,8 @@ export class Pointer {
                     // Hold the press on the selected header to rename the column. A move or the mouseup stops the timer.
                     if (worksheet.selection.column === columnId && worksheet.options.allowRenameColumn !== false) {
                         // The active worksheet when the timer runs
-                        libraryBase.jspreadsheet.timeControl = setTimeout(() => {
-                            libraryBase.jspreadsheet.current!.columns.rename(columnId);
+                        libraryBase.gridwell.timeControl = setTimeout(() => {
+                            libraryBase.gridwell.current!.columns.rename(columnId);
                         }, 800);
                     }
 
@@ -466,9 +466,9 @@ export class Pointer {
             (e.target.parentNode as HTMLElement).classList.add('resizing');
         } else if (worksheet.options.rowDrag !== false && info.width - e.offsetX < 6) {
             if (worksheet.merges.isRowMerged(rowId).length) {
-                console.error('Jspreadsheet: This row is part of a merged cell');
+                console.error('Gridwell: This row is part of a merged cell');
             } else if (worksheet.options.search === true && worksheet.view.results) {
-                console.error('Jspreadsheet: Please clear your search before perform this action');
+                console.error('Gridwell: Please clear your search before perform this action');
             } else {
                 // Reset selection
                 worksheet.resetSelection();
@@ -585,7 +585,7 @@ export class Pointer {
             const columnId = getIndex(e.target, 'data-x');
             if (columnId != null) {
                 if (worksheet.merges.isColMerged(columnId).length) {
-                    console.error('Jspreadsheet: This column is part of a merged cell.');
+                    console.error('Gridwell: This column is part of a merged cell.');
                 } else {
                     for (const header of worksheet.headers) {
                         header.classList.remove('dragging-left');
@@ -617,7 +617,7 @@ export class Pointer {
             const rowId = getIndex(e.target, 'data-y');
             if (rowId != null) {
                 if (worksheet.merges.isRowMerged(rowId).length) {
-                    console.error('Jspreadsheet: This row is part of a merged cell.');
+                    console.error('Gridwell: This row is part of a merged cell.');
                 } else {
                     const target = e.target.clientHeight / 2 > e.offsetY ? e.target.parentNode!.nextSibling : e.target.parentNode;
                     if (dragging.element !== target) {

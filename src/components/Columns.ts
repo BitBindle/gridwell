@@ -2,7 +2,7 @@ import { translate } from '../utils/dictionary.js';
 import { getColumnName } from '../utils/helpers.js';
 import { getColumnNameFromId, injectArray } from '../utils/internalHelpers.js';
 import { setHeaderRole } from './Accessibility.js';
-import type jspreadsheet from '../jspreadsheet';
+import type gridwell from '../gridwell';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -82,11 +82,11 @@ export class Columns {
      * The columns that insertColumn inserts, with their position, their options and their data, for the events.
      */
     private getInserted(
-        mixed: number | jspreadsheet.CellValue[] | undefined,
+        mixed: number | gridwell.CellValue[] | undefined,
         columnNumber: number,
         numOfColumns: number,
         insertBefore: boolean,
-        properties: jspreadsheet.Column[]
+        properties: gridwell.Column[]
     ) {
         const worksheet = this.worksheet;
 
@@ -165,11 +165,11 @@ export class Columns {
     /**
      * Create the cells of the new columns in each row, with the data or empty.
      */
-    private addCells(columnIndex: number, numOfColumns: number, data: jspreadsheet.CellValue[]) {
+    private addCells(columnIndex: number, numOfColumns: number, data: gridwell.CellValue[]) {
         const worksheet = this.worksheet;
 
         const historyRecords: { element: HTMLTableCellElement; x: number; y: number }[][] = [];
-        const historyData: jspreadsheet.CellValue[][] = [];
+        const historyData: gridwell.CellValue[][] = [];
 
         for (let row = 0; row < worksheet.options.data.length; row++) {
             // Keep the current data
@@ -198,7 +198,7 @@ export class Columns {
 
                 if (worksheet.options.columns?.[col] && typeof worksheet.options.columns[col].render === 'function') {
                     // The test above makes it a function, which TypeScript does not narrow through the index
-                    (worksheet.options.columns[col].render as NonNullable<jspreadsheet.BaseColumn['render']>)(
+                    (worksheet.options.columns[col].render as NonNullable<gridwell.BaseColumn['render']>)(
                         td,
                         value,
                         parseInt(col),
@@ -250,18 +250,13 @@ export class Columns {
      * @param insertBefore - Put the columns before that column instead of after it.
      * @param properties - The options of the new columns.
      */
-    insert(
-        mixed?: number | jspreadsheet.CellValue[],
-        columnNumber?: number,
-        insertBefore?: boolean | number,
-        properties?: jspreadsheet.Column[]
-    ): false | undefined {
+    insert(mixed?: number | gridwell.CellValue[], columnNumber?: number, insertBefore?: boolean | number, properties?: gridwell.Column[]): false | undefined {
         const worksheet = this.worksheet;
 
         // Configuration
         if (worksheet.options.allowInsertColumn !== false) {
             // Data to be insert
-            let data: jspreadsheet.CellValue[] = [];
+            let data: gridwell.CellValue[] = [];
 
             // The insert could be lead by number of rows or the array of data
             let numOfColumns;
@@ -625,7 +620,7 @@ export class Columns {
                     worksheet.dispatch('ondeletecolumn', worksheet, removedColumns);
                 }
             } else {
-                console.error('Jspreadsheet: It is not possible to delete the last column');
+                console.error('Gridwell: It is not possible to delete the last column');
             }
         }
     }
@@ -802,7 +797,7 @@ export class Columns {
     /**
      * Get a column data by columnNumber
      */
-    getData(columnNumber: number, processed?: boolean): jspreadsheet.CellValue[] {
+    getData(columnNumber: number, processed?: boolean): gridwell.CellValue[] {
         const worksheet = this.worksheet;
 
         const dataset = [];
@@ -820,7 +815,7 @@ export class Columns {
     /**
      * Set a column data by colNumber
      */
-    setData(colNumber: number, data: (jspreadsheet.CellValue | null)[], force?: boolean) {
+    setData(colNumber: number, data: (gridwell.CellValue | null)[], force?: boolean) {
         const worksheet = this.worksheet;
 
         for (let j = 0; j < worksheet.rows.length; j++) {
@@ -918,7 +913,7 @@ export class Columns {
      * Create a nested header object
      */
     // The row of nested headers keeps its element
-    createNestedHeader(nestedInformation: jspreadsheet.NestedHeaderCell[] & { element?: HTMLTableRowElement }) {
+    createNestedHeader(nestedInformation: gridwell.NestedHeaderCell[] & { element?: HTMLTableRowElement }) {
         const worksheet = this.worksheet;
 
         const tr = document.createElement('tr');

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import type { Dropdown } from '../src/utils/dropdown';
 
-import jspreadsheet, { type Jspreadsheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell } from './support/gridwell';
 
 function rows(count: number) {
     const data: string[][] = [];
@@ -13,7 +13,7 @@ function rows(count: number) {
 
 describe('Editor', () => {
     it('keeps the text editor open when the grid scrolls', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }],
         });
 
@@ -25,7 +25,7 @@ describe('Editor', () => {
     });
 
     it('closes a dropdown editor when the grid scrolls', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: rows(300),
@@ -44,7 +44,7 @@ describe('Editor', () => {
     });
 
     it('opens a multiple dropdown editor when the value is a number', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: [[1], ['1;2']],
@@ -79,7 +79,7 @@ describe('Editor', () => {
         // The grid loads rows 100 ms after a scroll, one load at a time. Let the loads of the tests before end.
         await new Promise((resolve) => setTimeout(resolve, 150));
 
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }],
         });
 
@@ -97,7 +97,7 @@ describe('Editor', () => {
     describe('closeEditor without an open editor', () => {
         it('does nothing for a cell that is not edited', () => {
             const events: string[] = [];
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [{ data: [['a', 'b']] }],
                 oneditionend: () => events.push('oneditionend'),
             })[0];
@@ -114,7 +114,7 @@ describe('Editor', () => {
         });
 
         it('keeps the editor of another cell open', () => {
-            const worksheet = jspreadsheet(root, { worksheets: [{ data: [['a', 'b']] }] })[0];
+            const worksheet = gridwell(root, { worksheets: [{ data: [['a', 'b']] }] })[0];
             const a1 = worksheet.getCell('A1');
             const b1 = worksheet.getCell('B1');
 
@@ -133,7 +133,7 @@ describe('Editor', () => {
 
     describe('Cells without an editor', () => {
         it('does not edit a cell of type hidden', () => {
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [{ data: [['id-7', '']], columns: [{ type: 'hidden' }, { type: 'text' }] }],
             })[0];
             const cell = worksheet.getCell('A1');
@@ -149,7 +149,7 @@ describe('Editor', () => {
 
         it('does not edit a cell of a custom type without openEditor', () => {
             const events: string[] = [];
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [
                     {
                         data: [['a']],
@@ -178,7 +178,7 @@ describe('Editor', () => {
         });
 
         it('closes the editor of a custom type without closeEditor and keeps the value', () => {
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [
                     {
                         data: [['a'], ['b']],
@@ -219,8 +219,8 @@ describe('Editor', () => {
 });
 
 describe('The editor of a worksheet', () => {
-    const create = (options?: Jspreadsheet.WorksheetOptions) =>
-        jspreadsheet(root, {
+    const create = (options?: Gridwell.WorksheetOptions) =>
+        gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -349,9 +349,9 @@ describe('The editor of a worksheet', () => {
     });
 
     it('dispatches the events of the edition', () => {
-        const events: (Jspreadsheet.CellValue | undefined)[][] = [];
+        const events: (Gridwell.CellValue | undefined)[][] = [];
         // The events are options of the spreadsheet
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [['a', 'b']] }],
             oneditionstart: (instance, cell, x, y) => events.push(['start', x, y]),
             oncreateeditor: (instance, cell, x, y) => events.push(['create', x, y]),

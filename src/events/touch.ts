@@ -6,22 +6,22 @@ export function touchStartControls(e: TargetEvent<TouchEvent>) {
     const jssTable = getElement(e.target);
 
     // A touch on a worksheet makes it the active worksheet. A touch outside the spreadsheets leaves no active worksheet.
-    const previous = libraryBase.jspreadsheet.current;
+    const previous = libraryBase.gridwell.current;
     if (jssTable[0]) {
         if (previous !== jssTable[0].jssWorksheet) {
             if (previous) {
                 previous.resetSelection();
             }
-            libraryBase.jspreadsheet.current = jssTable[0].jssWorksheet;
+            libraryBase.gridwell.current = jssTable[0].jssWorksheet;
         }
     } else {
         if (previous && !e.target.closest('.jss_object')) {
             previous.resetSelection();
-            libraryBase.jspreadsheet.current = null;
+            libraryBase.gridwell.current = null;
         }
     }
 
-    const current = libraryBase.jspreadsheet.current;
+    const current = libraryBase.gridwell.current;
 
     if (current && jssTable[0]) {
         if (!current.editor.isOpen()) {
@@ -36,15 +36,15 @@ export function touchStartControls(e: TargetEvent<TouchEvent>) {
                 }
 
                 // The active worksheet when the timer runs
-                libraryBase.jspreadsheet.timeControl = setTimeout(() => {
+                libraryBase.gridwell.timeControl = setTimeout(() => {
                     // Keep temporary reference to the element
-                    const column = libraryBase.jspreadsheet.current!.options.columns[libraryBase.jspreadsheet.current!.cells.getColumnIndex(columnId, rowId)];
+                    const column = libraryBase.gridwell.current!.options.columns[libraryBase.gridwell.current!.cells.getColumnIndex(columnId, rowId)];
                     if (column.type === 'color') {
-                        libraryBase.jspreadsheet.tmpElement = null;
+                        libraryBase.gridwell.tmpElement = null;
                     } else {
-                        libraryBase.jspreadsheet.tmpElement = e.target;
+                        libraryBase.gridwell.tmpElement = e.target;
                     }
-                    libraryBase.jspreadsheet.current!.editor.open(e.target as HTMLTableCellElement, false, e);
+                    libraryBase.gridwell.current!.editor.open(e.target as HTMLTableCellElement, false, e);
                 }, 500);
             }
         }
@@ -53,14 +53,14 @@ export function touchStartControls(e: TargetEvent<TouchEvent>) {
 
 export function touchEndControls(e: TargetEvent<TouchEvent>) {
     // Clear any time control
-    if (libraryBase.jspreadsheet.timeControl) {
-        clearTimeout(libraryBase.jspreadsheet.timeControl);
-        libraryBase.jspreadsheet.timeControl = null;
+    if (libraryBase.gridwell.timeControl) {
+        clearTimeout(libraryBase.gridwell.timeControl);
+        libraryBase.gridwell.timeControl = null;
         // Element
-        if (libraryBase.jspreadsheet.tmpElement?.children[0].tagName === 'INPUT') {
+        if (libraryBase.gridwell.tmpElement?.children[0].tagName === 'INPUT') {
             // The test of the tag name above
-            (libraryBase.jspreadsheet.tmpElement.children[0] as HTMLInputElement).focus();
+            (libraryBase.gridwell.tmpElement.children[0] as HTMLInputElement).focus();
         }
-        libraryBase.jspreadsheet.tmpElement = null;
+        libraryBase.gridwell.tmpElement = null;
     }
 }

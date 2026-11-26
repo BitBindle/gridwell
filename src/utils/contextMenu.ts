@@ -1,17 +1,17 @@
 import { translate } from './dictionary.js';
-import type jspreadsheet from '../jspreadsheet';
+import type gridwell from '../gridwell';
 
 /** Where a menu opens: the event that opens it, or a point of the window. */
 type MenuPosition = MouseEvent | TouchEvent | { x: number; y: number };
 
 /** An element of an item of a menu, with its item, so that a key or a press finds what to do. */
-type ItemElement = HTMLDivElement & { menuItem?: jspreadsheet.ContextMenuOption };
+type ItemElement = HTMLDivElement & { menuItem?: gridwell.ContextMenuOption };
 
 /**
  * Tell whether an item is a line between the items. The type check does not narrow the union with the two types of a line.
  * @param item - The item.
  */
-function isLine(item: jspreadsheet.ContextMenuItem): item is Exclude<jspreadsheet.ContextMenuItem, jspreadsheet.ContextMenuOption> {
+function isLine(item: gridwell.ContextMenuItem): item is Exclude<gridwell.ContextMenuItem, gridwell.ContextMenuOption> {
     return item.type === 'line' || item.type === 'divisor';
 }
 
@@ -36,7 +36,7 @@ export class ContextMenu {
     element: HTMLDivElement & { contextmenu?: ContextMenu };
 
     /** The items of the menu, as open got them. */
-    options: { items: jspreadsheet.ContextMenuItem[] | null } = { items: null };
+    options: { items: gridwell.ContextMenuItem[] | null } = { items: null };
 
     // The element that had the focus when the menu opened
     private previousFocus: HTMLElement | null = null;
@@ -55,7 +55,7 @@ export class ContextMenu {
      * @param e - The event that opens the menu, or a point of the window.
      * @param items - The items.
      */
-    open(e: MenuPosition, items?: jspreadsheet.ContextMenuItem[]) {
+    open(e: MenuPosition, items?: gridwell.ContextMenuItem[]) {
         if (items) {
             this.options.items = items;
             this.create(items);
@@ -95,7 +95,7 @@ export class ContextMenu {
      * Replace the items of the menu.
      * @param items - The items.
      */
-    create(items: jspreadsheet.ContextMenuItem[]) {
+    create(items: gridwell.ContextMenuItem[]) {
         this.element.textContent = '';
         this.element.setAttribute('aria-label', translate('Menu'));
         this.element.appendChild(this.createHeader());
@@ -190,7 +190,7 @@ export class ContextMenu {
      * The element of an item: a line, or an item with its title, its shortcut and its submenu.
      * @param item - The item.
      */
-    private createItem(item: jspreadsheet.ContextMenuItem): HTMLElement {
+    private createItem(item: gridwell.ContextMenuItem): HTMLElement {
         if (isLine(item)) {
             const line = document.createElement('hr');
             line.setAttribute('role', 'separator');

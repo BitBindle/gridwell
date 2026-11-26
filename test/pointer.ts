@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 describe('Mouse gestures', () => {
     // The spreadsheet adds its event handlers after a promise
-    const load = (options: Jspreadsheet.SpreadsheetOptions) =>
+    const load = (options: Gridwell.SpreadsheetOptions) =>
         new Promise<Worksheet>((resolve) => {
-            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+            const instance = gridwell(root, { ...options, onload: () => resolve(instance[0]) });
         });
 
     // jsdom has no layout: the event gets the offsets and the positions, and the elements get their size with rect
@@ -149,7 +149,7 @@ describe('Mouse gestures', () => {
             mouse(rowNumber(worksheet, 0), 'mousedown', { offsetX: 48 });
 
             expect(worksheet.pointer.dragging).to.equal(null);
-            expect(errors).to.eql(['Jspreadsheet: This row is part of a merged cell']);
+            expect(errors).to.eql(['Gridwell: This row is part of a merged cell']);
         });
 
         it('does not move a row over a merged cell', async () => {
@@ -160,7 +160,7 @@ describe('Mouse gestures', () => {
             mouse(worksheet.records[1][1].element, 'mousemove');
             mouse(worksheet.records[1][1].element, 'mouseup');
 
-            expect(errors).to.eql(['Jspreadsheet: This row is part of a merged cell.']);
+            expect(errors).to.eql(['Gridwell: This row is part of a merged cell.']);
             // The merged cell keeps the value of its first cell
             expect(worksheet.getColumnData(0)).to.eql(['a', 'b', '']);
         });
@@ -173,7 +173,7 @@ describe('Mouse gestures', () => {
             mouse(rowNumber(worksheet, 1), 'mousedown', { offsetX: 48 });
 
             expect(worksheet.pointer.dragging).to.equal(null);
-            expect(errors).to.eql(['Jspreadsheet: Please clear your search before perform this action']);
+            expect(errors).to.eql(['Gridwell: Please clear your search before perform this action']);
         });
 
         it('marks the side of the header where a dragged column goes', async () => {
@@ -212,7 +212,7 @@ describe('Mouse gestures', () => {
             mouse(worksheet.headers[0], 'mousedown', { offsetY: 18 });
 
             expect(worksheet.pointer.dragging).to.equal(null);
-            expect(errors).to.eql(['Jspreadsheet: This column is part of a merged cell.']);
+            expect(errors).to.eql(['Gridwell: This column is part of a merged cell.']);
         });
 
         it('does not move a column over a merged cell', async () => {
@@ -222,7 +222,7 @@ describe('Mouse gestures', () => {
             mouse(worksheet.headers[0], 'mousedown', { offsetY: 18 });
             mouse(worksheet.headers[2], 'mousemove');
 
-            expect(errors).to.eql(['Jspreadsheet: This column is part of a merged cell.']);
+            expect(errors).to.eql(['Gridwell: This column is part of a merged cell.']);
         });
     });
 

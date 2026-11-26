@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell } from './support/gridwell';
 
 describe('Merge tests', () => {
     describe('Get merge', () => {
         it('Worksheet started with a merge', () => {
-            const instance = jspreadsheet(root, {
+            const instance = gridwell(root, {
                 toolbar: true,
                 worksheets: [
                     {
@@ -44,7 +44,7 @@ describe('Merge tests', () => {
         });
 
         it('Worksheet started without merges', () => {
-            const instance = jspreadsheet(root, {
+            const instance = gridwell(root, {
                 toolbar: true,
                 worksheets: [
                     {
@@ -80,7 +80,7 @@ describe('Merge tests', () => {
     });
 
     it('Set merge', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             toolbar: true,
             worksheets: [
                 {
@@ -119,7 +119,7 @@ describe('Merge tests', () => {
     });
 
     it('Remove merge', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             toolbar: true,
             worksheets: [
                 {
@@ -165,7 +165,7 @@ describe('Merge tests', () => {
     });
 
     it('Remove all merge', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             toolbar: true,
             worksheets: [
                 {
@@ -211,7 +211,7 @@ describe('Merge tests', () => {
     });
 
     it('setMerge history', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             toolbar: true,
             worksheets: [
                 {
@@ -262,10 +262,10 @@ describe('Merge tests', () => {
     it('removeMerge event', () => {
         let eventCalled = false;
         let eventCellName = null as string | null;
-        let eventInstance = null as Jspreadsheet.WorksheetInstance | null;
+        let eventInstance = null as Gridwell.WorksheetInstance | null;
         let eventBeforeMerges = null as Record<string, [number, number]> | null;
 
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             toolbar: true,
             worksheets: [
                 {
@@ -318,7 +318,7 @@ describe('Merge tests', () => {
     });
 
     it('setMerge without arguments merges the selected cells', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     minDimensions: [4, 4],
@@ -333,7 +333,7 @@ describe('Merge tests', () => {
     });
 
     it('setMerge with one span finds a conflict with another merge', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     minDimensions: [3, 3],
@@ -368,7 +368,7 @@ describe('Merge tests', () => {
         });
 
         const create = () =>
-            jspreadsheet(root, {
+            gridwell(root, {
                 worksheets: [{ minDimensions: [4, 4], mergeCells: { B2: [2, 2] } }],
             })[0];
 

@@ -2,11 +2,11 @@ import { expect } from 'chai';
 
 import formula from '@jspreadsheet/formula';
 
-import jspreadsheet, { type Jspreadsheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell } from './support/gridwell';
 
 describe('Calculations', () => {
     it('Testing formula chain', () => {
-        const test = jspreadsheet(root, {
+        const test = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -29,7 +29,7 @@ describe('Calculations', () => {
 
     it('keeps the backslashes and line breaks of a referenced text cell', () => {
         const texts = ['temp\\', 'line one\nline two', 'a\\tb'];
-        const test = jspreadsheet(root, {
+        const test = gridwell(root, {
             worksheets: [
                 {
                     data: texts.map((text, i) => [text, `=A${i + 1}`]),
@@ -44,7 +44,7 @@ describe('Calculations', () => {
 
     it('keeps the quotes and backslashes of a referenced text cell', () => {
         const text = 'Say "hi" \\ bye';
-        const test = jspreadsheet(root, {
+        const test = gridwell(root, {
             worksheets: [
                 {
                     data: [[text, '=A1', '=B1']],
@@ -57,7 +57,7 @@ describe('Calculations', () => {
     });
 
     it('Keeps special characters inside string literals', () => {
-        const test = jspreadsheet(root, {
+        const test = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -78,13 +78,13 @@ describe('Calculations', () => {
     });
 
     it('keeps the backslashes of a string literal (issue #21)', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['="a\\tb"', '="path\\data"', '="temp\\"', '="say ""a\\"" now"']] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: [['="a\\tb"', '="path\\data"', '="temp\\"', '="say ""a\\"" now"']] }] })[0];
 
         expect(['A1', 'B1', 'C1', 'D1'].map((name) => worksheet.getValue(name, true))).to.deep.equal(['a\\tb', 'path\\data', 'temp\\', 'say "a\\" now']);
     });
 
     it('does not read a cell name in a string literal as a reference (issue #17)', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -101,7 +101,7 @@ describe('Calculations', () => {
     });
 
     it('keeps a text with a colon after letters (issue #15)', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -126,7 +126,7 @@ describe('Calculations', () => {
 
     describe('Test updating formulas when adding new rows', () => {
         it('1', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [
@@ -148,7 +148,7 @@ describe('Calculations', () => {
         });
 
         it('2', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [
@@ -172,7 +172,7 @@ describe('Calculations', () => {
         });
 
         it('3', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [
@@ -196,7 +196,7 @@ describe('Calculations', () => {
         });
 
         it('4', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [
@@ -220,7 +220,7 @@ describe('Calculations', () => {
         });
 
         it('5', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [
@@ -246,7 +246,7 @@ describe('Calculations', () => {
 
     describe('Test updating formulas when adding new columns', () => {
         it('1', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [
@@ -269,7 +269,7 @@ describe('Calculations', () => {
         });
 
         it('2', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [
@@ -293,7 +293,7 @@ describe('Calculations', () => {
         });
 
         it('3', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [
@@ -317,7 +317,7 @@ describe('Calculations', () => {
         });
 
         it('4', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [
@@ -341,7 +341,7 @@ describe('Calculations', () => {
         });
 
         it('5', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [
@@ -365,7 +365,7 @@ describe('Calculations', () => {
         });
 
         it('6', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], ['=SUM(A1:A4)']],
@@ -382,8 +382,8 @@ describe('Calculations', () => {
 
     describe('formulaEngine', () => {
         it('calculates a formula with the engine of the application', () => {
-            const calls: [Jspreadsheet.WorksheetInstance, string, number | undefined, number | undefined][] = [];
-            const test = jspreadsheet(root, {
+            const calls: [Gridwell.WorksheetInstance, string, number | undefined, number | undefined][] = [];
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [['1', '2', '=A1+B1']],
@@ -403,7 +403,7 @@ describe('Calculations', () => {
 
         it('gives the engine the formula text as typed', () => {
             const expressions: string[] = [];
-            jspreadsheet(root, {
+            gridwell(root, {
                 worksheets: [
                     {
                         data: [['1', '2', '=SUM($A$1:B1)&"$A1:B2"']],
@@ -420,7 +420,7 @@ describe('Calculations', () => {
 
         it('gives the engine the text that onbeforeformula returns', () => {
             const expressions: string[] = [];
-            jspreadsheet(root, {
+            gridwell(root, {
                 worksheets: [
                     {
                         data: [['1', '=A1']],
@@ -437,7 +437,7 @@ describe('Calculations', () => {
         });
 
         it('calculates the dependent cells again when a referenced cell changes', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [['1', '=DOUBLE(A1)']],
@@ -455,7 +455,7 @@ describe('Calculations', () => {
 
         it('does not calculate the referenced cells before it calls the engine', () => {
             const expressions: string[] = [];
-            jspreadsheet(root, {
+            gridwell(root, {
                 worksheets: [
                     {
                         data: [['=1', '=A1']],
@@ -472,7 +472,7 @@ describe('Calculations', () => {
 
         it('gives the engine the coordinates as numbers when a cell element is set', () => {
             const calls: [string, number | undefined, number | undefined][] = [];
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [['1', '2', '']],
@@ -491,7 +491,7 @@ describe('Calculations', () => {
 
         it('gives the engine no coordinates when executeFormula gets none', () => {
             const calls: [string, number | undefined, number | undefined][] = [];
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [['1', '2']],
@@ -509,7 +509,7 @@ describe('Calculations', () => {
         });
 
         it('shows #ERROR when the engine throws', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [['=A2']],
@@ -524,7 +524,7 @@ describe('Calculations', () => {
         });
 
         it('calculates with the formula plugin when the option is not set', () => {
-            const test = jspreadsheet(root, {
+            const test = gridwell(root, {
                 worksheets: [
                     {
                         data: [['1', '2', '=A1+B1']],
@@ -537,7 +537,7 @@ describe('Calculations', () => {
     });
 
     it('reads a formatted number with the decimal separator of its column, also in column 0', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [['1,5', '1,5', '=A1*2', '=B1*2']],
@@ -552,8 +552,8 @@ describe('Calculations', () => {
 });
 
 describe('A referenced text in a formula (issue #129)', () => {
-    const calculate = (text: string, column: Jspreadsheet.Column = {}) => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: [[text, '=A1']], columns: [column, {}] }] })[0];
+    const calculate = (text: string, column: Gridwell.Column = {}) => {
+        const worksheet = gridwell(root, { worksheets: [{ data: [[text, '=A1']], columns: [column, {}] }] })[0];
         return worksheet.getValue('B1', true);
     };
 
@@ -566,7 +566,7 @@ describe('A referenced text in a formula (issue #129)', () => {
     });
 
     it('is a number when it is a formatted number', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -588,7 +588,7 @@ describe('A referenced text in a formula (issue #129)', () => {
 });
 
 describe('The formula chain of a worksheet', () => {
-    const create = (data: Jspreadsheet.CellValue[][]) => jspreadsheet(root, { worksheets: [{ data }] })[0];
+    const create = (data: Gridwell.CellValue[][]) => gridwell(root, { worksheets: [{ data }] })[0];
 
     it('is empty before a formula is calculated', () => {
         const worksheet = create([['1', '2']]);
@@ -637,7 +637,7 @@ describe('The formula chain of a worksheet', () => {
     });
 
     it('is not shared between worksheets', async () => {
-        const worksheets = jspreadsheet(root, { worksheets: [{ data: [['1', '=A1']] }, { data: [['2']] }] });
+        const worksheets = gridwell(root, { worksheets: [{ data: [['1', '=A1']] }, { data: [['2']] }] });
         await new Promise((resolve) => setTimeout(resolve));
 
         expect(worksheets[0].formulas).to.not.equal(worksheets[1].formulas);
@@ -647,7 +647,7 @@ describe('The formula chain of a worksheet', () => {
 
 describe('The formula chain', () => {
     it('keeps no formula of executeFormula without coordinates in the chain, so that setValue still works', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['1', '=A1']] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: [['1', '=A1']] }] })[0];
 
         expect(worksheet.executeFormula('=A1+1')).to.equal(2);
         expect(worksheet.formulas.chain).to.eql({ A1: ['B1'] });
@@ -658,7 +658,7 @@ describe('The formula chain', () => {
     });
 
     it('removes a cell that is no longer a formula from the chain of the cell it referred to (issue #43)', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['1', '=A1*2', '=A1*3']] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: [['1', '=A1*2', '=A1*3']] }] })[0];
 
         expect(worksheet.formulas.chain.A1).to.deep.equal(['B1', 'C1']);
 
@@ -676,22 +676,22 @@ describe('Without a formula engine', () => {
     let warnings: unknown[][] = [];
 
     beforeEach(() => {
-        jspreadsheet.setFormulaEngine(null);
+        gridwell.setFormulaEngine(null);
         warnings = [];
         console.warn = (...args: unknown[]) => warnings.push(args);
     });
 
     afterEach(() => {
         console.warn = warn;
-        jspreadsheet.setFormulaEngine(formula);
+        gridwell.setFormulaEngine(formula);
     });
 
     // The first test, because the console says it once
     it('shows #ENGINE for the formulas, and says once in the console why', () => {
-        const test = jspreadsheet(root, {
+        const test = gridwell(root, {
             worksheets: [{ data: [['1', '=A1+1', '=B1*2']] }],
         });
-        jspreadsheet(root, {
+        gridwell(root, {
             worksheets: [{ data: [['=1+1']] }],
         });
 
@@ -701,11 +701,11 @@ describe('Without a formula engine', () => {
         // The data keeps the formulas
         expect(test[0].getData()).to.eql([['1', '=A1+1', '=B1*2']]);
         expect(warnings.length).to.equal(1);
-        expect(String(warnings[0][0])).to.contain('jspreadsheet.setFormulaEngine');
+        expect(String(warnings[0][0])).to.contain('gridwell.setFormulaEngine');
     });
 
     it('gives #ENGINE from executeFormula', () => {
-        const test = jspreadsheet(root, {
+        const test = gridwell(root, {
             worksheets: [{ data: [['1']] }],
         });
 
@@ -713,7 +713,7 @@ describe('Without a formula engine', () => {
     });
 
     it('calculates with the formulaEngine option of the spreadsheet', () => {
-        const test = jspreadsheet(root, {
+        const test = gridwell(root, {
             worksheets: [{ data: [['1', '=A1+1']] }],
             formulaEngine: () => 'calculated',
         });
@@ -722,26 +722,26 @@ describe('Without a formula engine', () => {
     });
 
     it('calculates a formula with an engine that is registered later, when the formula is calculated again', () => {
-        const test = jspreadsheet(root, {
+        const test = gridwell(root, {
             worksheets: [{ data: [['1', '=A1+1']] }],
         });
 
         expect(test[0].getValue('B1', true)).to.equal('#ENGINE');
 
-        jspreadsheet.setFormulaEngine(formula);
+        gridwell.setFormulaEngine(formula);
         test[0].setValue('A1', '5');
 
         expect(test[0].getValue('B1', true)).to.equal('6');
     });
 
     it('gives the engine the formula, the values of its references and the worksheet', () => {
-        const calls: [string, Record<string, unknown>, number | undefined, number | undefined, Jspreadsheet.WorksheetInstance][] = [];
-        jspreadsheet.setFormulaEngine((expression, variables, x, y, instance) => {
+        const calls: [string, Record<string, unknown>, number | undefined, number | undefined, Gridwell.WorksheetInstance][] = [];
+        gridwell.setFormulaEngine((expression, variables, x, y, instance) => {
             calls.push([expression, variables, x, y, instance]);
             return 3;
         });
 
-        const test = jspreadsheet(root, {
+        const test = gridwell(root, {
             worksheets: [{ data: [['1', 'a', '=A1&B1']] }],
         });
 
@@ -753,6 +753,6 @@ describe('Without a formula engine', () => {
 
     it('throws for an engine that is not a function', () => {
         // @ts-expect-error -- an application without the typings can pass the module object
-        expect(() => jspreadsheet.setFormulaEngine({ formula })).to.throw(TypeError);
+        expect(() => gridwell.setFormulaEngine({ formula })).to.throw(TypeError);
     });
 });

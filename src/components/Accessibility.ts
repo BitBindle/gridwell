@@ -4,7 +4,7 @@ import type { Worksheet } from '../types/internal';
 
 /**
  * English texts of the accessible names. The spreadsheet option labels gives other texts, for example in the language
- * of the page. Without the option, jspreadsheet.setDictionary can translate the English texts. {0} in a text stands for
+ * of the page. Without the option, gridwell.setDictionary can translate the English texts. {0} in a text stands for
  * a value, such as the address of a cell.
  */
 const defaultLabels = {

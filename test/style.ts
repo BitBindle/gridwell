@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet from './support/jspreadsheet';
+import gridwell from './support/gridwell';
 
 describe('Style', () => {
     it('Initial worksheet styles are not in the history', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ minDimensions: [2, 2], style: { A1: 'font-weight:bold' } }],
         });
 
@@ -15,7 +15,7 @@ describe('Style', () => {
     });
 
     it('setStyle adds no history when ignoreHistoryAndEvents is true', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ minDimensions: [2, 2] }],
         });
 
@@ -28,7 +28,7 @@ describe('Style', () => {
     });
 
     it('setStyle adds the change to the history by default', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ minDimensions: [2, 2] }],
         });
 
@@ -40,7 +40,7 @@ describe('Style', () => {
     });
 
     it('resetStyle adds no history when ignoreHistoryAndEvents is true', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ minDimensions: [2, 2] }],
         });
 
@@ -53,7 +53,7 @@ describe('Style', () => {
     });
 
     it('setStyle does not change the styles that it gets', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ minDimensions: [2, 2] }],
         });
 
@@ -66,7 +66,7 @@ describe('Style', () => {
     });
 
     it('setStyle keeps a value that has a colon', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ minDimensions: [2, 2] }],
         });
 
@@ -83,7 +83,7 @@ describe('Style', () => {
     });
 
     it('keeps a value that has a semicolon, also after undo and redo (issue #48)', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ minDimensions: [2, 2], style: { B1: 'color:red;background-image:url(data:image/png;base64,AAA=)' } }],
         })[0];
         const url = 'url(data:image/png;base64,iVBORw0KGgo=)';
@@ -105,7 +105,7 @@ describe('Style', () => {
     });
 
     it('applies a value with a space after the colon, and toggles it off as a value without one (issue #67)', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [2, 2], style: { A1: 'color: red', B1: 'color:red' } }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ minDimensions: [2, 2], style: { A1: 'color: red', B1: 'color:red' } }] })[0];
 
         expect(worksheet.getStyle('A1', 'color')).to.equal('red');
         expect(worksheet.getStyle('B1', 'color')).to.equal('red');

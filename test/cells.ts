@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet from './support/jspreadsheet';
+import gridwell from './support/gridwell';
 
 describe('Cells', () => {
     const create = () =>
-        jspreadsheet(root, {
+        gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -52,7 +52,7 @@ describe('Cells', () => {
 
 describe('Render the cells', () => {
     it('hides the overflow of the cell on the left when textOverflow is on', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [['A long text that overflows', 'B', '']],
@@ -68,7 +68,7 @@ describe('Render the cells', () => {
 
     it('calculates the formula in capitals outside the quotes when secureFormulas is on', () => {
         const create = (secureFormulas: boolean) =>
-            jspreadsheet(root, {
+            gridwell(root, {
                 worksheets: [
                     {
                         data: [['ab', '=a1&"cd"']],
@@ -88,7 +88,7 @@ describe('Render the cells', () => {
     });
 
     it('marks a negative number red when the mask asks for it', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [[-5], [5]],
@@ -106,7 +106,7 @@ describe('Render the cells', () => {
     });
 
     it('removes the scripts from the HTML of a cell when parseHTML is on', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             parseHTML: true,
             worksheets: [
                 {
@@ -123,7 +123,7 @@ describe('Render the cells', () => {
     });
 
     it('shows the text of the items of a dropdown column', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [['1;2'], ['3']],
@@ -151,7 +151,7 @@ describe('Render the cells', () => {
     });
 
     it('sets the value of a radio cell when it is clicked', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [[false], [true]],
@@ -170,7 +170,7 @@ describe('Render the cells', () => {
     });
 
     it('shows a square of the color for a color column with the render square', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [['#ff0000']],
@@ -190,7 +190,7 @@ describe('Render the cells', () => {
 
 describe('Update the table after the cells change', () => {
     it('adds the spare rows and columns that minSpareRows and minSpareCols ask for', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [

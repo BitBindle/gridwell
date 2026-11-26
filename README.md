@@ -53,14 +53,14 @@ npm install @bitbindle/gridwell
 
 ```javascript
 import gridwell from '@bitbindle/gridwell';
-import '@bitbindle/gridwell/dist/jspreadsheet.css';
+import '@bitbindle/gridwell/dist/gridwell.css';
 ```
 
 Or load the files from a CDN. The script sets the global `gridwell`:
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@bitbindle/gridwell/dist/index.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@bitbindle/gridwell/dist/jspreadsheet.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@bitbindle/gridwell/dist/gridwell.css" />
 ```
 
 The toolbar and some controls show [Material Icons](https://fonts.google.com/icons):
@@ -127,7 +127,8 @@ The short name of May is `May (short)`, because it is the same as the full name 
 
 ## Upgrading from Jspreadsheet CE
 
-The API keeps the names of Jspreadsheet CE v5, but some of it has changed. [UPGRADING.md](UPGRADING.md) lists each
+The library is called `gridwell` instead of `jspreadsheet`, and its stylesheet is `gridwell.css`. The methods, options and
+events keep the names of Jspreadsheet CE v5, but some of them have changed. [UPGRADING.md](UPGRADING.md) lists each
 breaking change and what to do instead.
 
 ## Development

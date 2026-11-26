@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
-function load(options: Jspreadsheet.SpreadsheetOptions) {
+function load(options: Gridwell.SpreadsheetOptions) {
     return new Promise<Worksheet>((resolve) => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             ...options,
             onload: () => resolve(instance[0]),
         });

@@ -741,7 +741,7 @@ export class Selection {
 
         this.setActiveCell(td);
 
-        if (td && !worksheet.editor.isOpen() && libraryBase.jspreadsheet.current === worksheet) {
+        if (td && !worksheet.editor.isOpen() && libraryBase.gridwell.current === worksheet) {
             const active = this.getActiveElement();
             // The focus was in the grid at the last selection
             const lost = worksheet.selection.focusInGrid === true && isFocusLost();
@@ -784,7 +784,7 @@ export class Selection {
         const pointer = origin?.target && (origin.target as Node).nodeType === 1 && worksheet.table.contains(origin.target as Node);
         const inGrid =
             pointer || (!!active && (active === worksheet.parent.element || active === worksheet.clipboard.textarea || worksheet.table.contains(active)));
-        const dropped = isFocusLost() && libraryBase.jspreadsheet.current === worksheet;
+        const dropped = isFocusLost() && libraryBase.gridwell.current === worksheet;
         // The focus was in the grid at the last selection
         worksheet.selection.focusInGrid = inGrid || (dropped && worksheet.selection.focusInGrid === true);
 
@@ -809,7 +809,7 @@ export class Selection {
         worksheet.accessibility.setCellLabel(cell);
 
         setTimeout(() => {
-            if (isFocusLost() && libraryBase.jspreadsheet.current === worksheet && worksheet.selection.activeCell === cell && !worksheet.editor.isOpen()) {
+            if (isFocusLost() && libraryBase.gridwell.current === worksheet && worksheet.selection.activeCell === cell && !worksheet.editor.isOpen()) {
                 cell.focus({ preventScroll: true });
             }
         });
@@ -1304,7 +1304,7 @@ export class Selection {
     private updateScroll(direction: 0 | 1 | 2 | 3) {
         const worksheet = this.worksheet;
 
-        // Jspreadsheet Container information
+        // Gridwell Container information
         const contentRect = worksheet.content.getBoundingClientRect();
         const x1 = contentRect.left;
         const y1 = contentRect.top;

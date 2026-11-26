@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import type { MergeInfo } from '../src/types/internal';
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 function createData(rows: number, columns: number) {
     const data: string[][] = [];
@@ -38,7 +38,7 @@ function getExpectedIndexes(rows: number, columns: number, headerRows?: number) 
 
 describe('Grid roles for assistive technology', () => {
     it('Start the worksheet with the roles of the grid pattern', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ minDimensions: [3, 2] }],
         });
         const worksheet = instance[0];
@@ -65,7 +65,7 @@ describe('Grid roles for assistive technology', () => {
     });
 
     it('Give the full size of the worksheet with lazy loading', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data: createData(300, 3), lazyLoading: true, tableOverflow: true, tableHeight: '300px' }],
         });
         const worksheet = instance[0];
@@ -86,7 +86,7 @@ describe('Grid roles for assistive technology', () => {
     });
 
     it('Give the full size of the worksheet with pagination', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data: createData(10, 2), pagination: 3 }],
         });
         const worksheet = instance[0];
@@ -102,7 +102,7 @@ describe('Grid roles for assistive technology', () => {
     });
 
     it('Keep the row indexes after insertRow, deleteRow, moveRow and undo', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data: createData(4, 2) }],
         });
         const worksheet = instance[0];
@@ -126,7 +126,7 @@ describe('Grid roles for assistive technology', () => {
     });
 
     it('Keep the column indexes after insertColumn, deleteColumn and moveColumn', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data: createData(2, 3) }],
         });
         const worksheet = instance[0];
@@ -147,7 +147,7 @@ describe('Grid roles for assistive technology', () => {
     });
 
     it('Keep the column indexes of merged cells after insertColumn', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data: createData(2, 3), mergeCells: { B1: [2, 2] } }],
         });
         const worksheet = instance[0];
@@ -162,7 +162,7 @@ describe('Grid roles for assistive technology', () => {
     });
 
     it('Keep the row indexes after orderBy', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data: [['c'], ['a'], ['b']] }],
         });
         const worksheet = instance[0];
@@ -175,7 +175,7 @@ describe('Grid roles for assistive technology', () => {
     });
 
     it('Keep the indexes of hidden rows and columns', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data: createData(3, 3) }],
         });
         const worksheet = instance[0];
@@ -190,7 +190,7 @@ describe('Grid roles for assistive technology', () => {
     });
 
     it('Count the rows of nested headers and footers', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: createData(2, 2),
@@ -219,7 +219,7 @@ describe('Grid roles for assistive technology', () => {
     });
 
     it('Keep the column indexes of nested header, filter and footer cells after hideColumn', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: createData(2, 4),
@@ -258,7 +258,7 @@ describe('Grid roles for assistive technology', () => {
     });
 
     it('Update the size of the grid after setData', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data: createData(2, 2) }],
         });
         const worksheet = instance[0];
@@ -272,7 +272,7 @@ describe('Grid roles for assistive technology', () => {
 
 describe('Accessible names', () => {
     it('Give English names without the labels option', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ worksheetName: 'Cars', minDimensions: [3, 3] }],
         });
         const worksheet = instance[0];
@@ -286,7 +286,7 @@ describe('Accessible names', () => {
     });
 
     it('Use the texts of the labels option', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             labels: { selectAll: 'Alles auswählen', editCell: 'Zelle {0} bearbeiten', clipboardHelper: 'Zwischenablage' },
             worksheets: [
                 {
@@ -323,7 +323,7 @@ describe('Accessible names', () => {
         global.Option = window.Option;
 
         try {
-            const instance = jspreadsheet(root, {
+            const instance = gridwell(root, {
                 labels: { editCell: 'Zelle {0} bearbeiten' },
                 worksheets: [{ data: [['a', '']], columns: [{}, { type: 'html' }] }],
             });
@@ -341,10 +341,10 @@ describe('Accessible names', () => {
     });
 
     it('Translate the English names with setDictionary', () => {
-        jspreadsheet.setDictionary({ 'Select all': 'Selecionar tudo', 'Edit cell {0}': 'Editar célula {0}' });
+        gridwell.setDictionary({ 'Select all': 'Selecionar tudo', 'Edit cell {0}': 'Editar célula {0}' });
 
         try {
-            const instance = jspreadsheet(root, {
+            const instance = gridwell(root, {
                 labels: { clipboardHelper: 'Área de transferência' },
                 worksheets: [{ minDimensions: [3, 3] }],
             });
@@ -358,27 +358,27 @@ describe('Accessible names', () => {
             expect(worksheet.editor.cell!.children[0].getAttribute('aria-label')).to.equal('Editar célula B1');
         } finally {
             // An empty translation shows the English text again
-            jspreadsheet.setDictionary({ 'Select all': '', 'Edit cell {0}': '' });
+            gridwell.setDictionary({ 'Select all': '', 'Edit cell {0}': '' });
         }
     });
 
     it('Translate the names of the tabs with setDictionary (issue #32)', () => {
-        jspreadsheet.setDictionary({ Worksheets: 'Arbeitsblätter', 'Tab Panels': 'Tabellenblätter', 'Add a new worksheet': 'Arbeitsblatt hinzufügen' });
+        gridwell.setDictionary({ Worksheets: 'Arbeitsblätter', 'Tab Panels': 'Tabellenblätter', 'Add a new worksheet': 'Arbeitsblatt hinzufügen' });
 
         try {
-            jspreadsheet(root, { tabs: true, worksheets: [{}, {}] });
+            gridwell(root, { tabs: true, worksheets: [{}, {}] });
 
             expect(root.querySelector('.jtabs-headers')!.getAttribute('aria-label')).to.equal('Arbeitsblätter');
             expect(root.querySelector('.jtabs-content')!.getAttribute('aria-label')).to.equal('Tabellenblätter');
             expect(root.querySelector('.jtabs-add')!.getAttribute('aria-label')).to.equal('Arbeitsblatt hinzufügen');
         } finally {
             // An empty translation shows the English text again
-            jspreadsheet.setDictionary({ Worksheets: '', 'Tab Panels': '', 'Add a new worksheet': '' });
+            gridwell.setDictionary({ Worksheets: '', 'Tab Panels': '', 'Add a new worksheet': '' });
         }
     });
 
     it('Use the labels option for the names of the tabs', () => {
-        jspreadsheet(root, {
+        gridwell(root, {
             tabs: true,
             labels: { worksheets: 'Arbeitsblätter', tabPanels: 'Tabellenblätter', addWorksheet: 'Arbeitsblatt hinzufügen' },
             worksheets: [{}, {}],
@@ -406,14 +406,14 @@ describe('Keyboard focus', () => {
     }
 
     it('Make the first cell the tab stop', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3) }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: createData(3, 3) }] })[0];
 
         expect(getTabStops(worksheet)).to.deep.equal([worksheet.records[0][0].element]);
         expect(worksheet.table.getAttribute('aria-multiselectable')).to.equal('true');
     });
 
     it('Mark the selected cells with aria-selected', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 3] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ minDimensions: [3, 3] }] })[0];
         function getCells(value: string) {
             const cells = worksheet.table.querySelectorAll(`[aria-selected="${value}"]`);
             return Array.prototype.map.call(cells, (td: Element) => `${td.getAttribute('data-x')},${td.getAttribute('data-y')}`);
@@ -449,8 +449,8 @@ describe('Keyboard focus', () => {
             ['0-0', true, '#ff0000', ''],
             ['1-0', false, '#00ff00', 'data:image/png;base64,iVBORw0KGgo='],
         ];
-        const columns: Jspreadsheet.Column[] = [{}, { type: 'checkbox' }, { type: 'color', render: 'square' }, { type: 'image' }];
-        const worksheet = jspreadsheet(root, { worksheets: [{ data, columns }] })[0];
+        const columns: Gridwell.Column[] = [{}, { type: 'checkbox' }, { type: 'color', render: 'square' }, { type: 'image' }];
+        const worksheet = gridwell(root, { worksheets: [{ data, columns }] })[0];
         const a1 = worksheet.records[0][0].element;
         const a2 = worksheet.records[1][0].element;
 
@@ -491,7 +491,7 @@ describe('Keyboard focus', () => {
     it('Keep the focus outside the grid', async () => {
         // The grid never had the focus
         (document.activeElement as HTMLElement).blur();
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3) }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: createData(3, 3) }] })[0];
         const input = document.createElement('input');
         root.appendChild(input);
         // The spreadsheet adds its document listeners after it builds its worksheets
@@ -543,7 +543,7 @@ describe('Keyboard focus', () => {
     });
 
     it('Move the focus to the editor and back', async () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3) }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: createData(3, 3) }] })[0];
         const cell = worksheet.records[1][1].element;
 
         worksheet.updateSelectionFromCoords(1, 1, 1, 1);
@@ -583,7 +583,7 @@ describe('Keyboard focus', () => {
     });
 
     it('Focus the dropdown and custom editors', () => {
-        const editorType: Jspreadsheet.CustomEditor = {
+        const editorType: Gridwell.CustomEditor = {
             createCell(cell, value) {
                 cell.textContent = value as string;
                 return cell;
@@ -603,7 +603,7 @@ describe('Keyboard focus', () => {
                 return (cell.children[0] as HTMLInputElement).value;
             },
         };
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [['a', 'b', 'c']], columns: [{}, { type: 'dropdown', source: ['a', 'b'] }, { type: editorType }] }],
         })[0];
         const dropdownCell = worksheet.records[0][1].element;
@@ -629,7 +629,7 @@ describe('Keyboard focus', () => {
     });
 
     it('Focus a cell after a press', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3) }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: createData(3, 3) }] })[0];
         const cell = worksheet.records[2][1].element;
 
         document.body.focus();
@@ -640,7 +640,7 @@ describe('Keyboard focus', () => {
     });
 
     it('Focus the cell after a focus loss', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3), search: true }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: createData(3, 3), search: true }] })[0];
         const a1 = worksheet.records[0][0].element;
 
         a1.focus();
@@ -685,8 +685,8 @@ describe('Keyboard focus', () => {
         const second = document.createElement('div');
         root.appendChild(first);
         root.appendChild(second);
-        const a = jspreadsheet(first, { worksheets: [{ data: createData(3, 3) }] })[0];
-        const b = jspreadsheet(second, { worksheets: [{ data: createData(3, 3) }] })[0];
+        const a = gridwell(first, { worksheets: [{ data: createData(3, 3) }] })[0];
+        const b = gridwell(second, { worksheets: [{ data: createData(3, 3) }] })[0];
         // The spreadsheets add their document listeners after they build their worksheets
         await wait();
 
@@ -709,7 +709,7 @@ describe('Keyboard focus', () => {
     });
 
     it('Keep the keys of a control outside the grid', async () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3) }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: createData(3, 3) }] })[0];
         // root is the element of the spreadsheet, so the input goes next to it
         const input = document.createElement('input');
         document.body.appendChild(input);
@@ -751,7 +751,7 @@ describe('Keyboard focus', () => {
         shadowRoot.appendChild(container);
 
         try {
-            const worksheet = jspreadsheet(container, { root: shadowRoot, worksheets: [{ data: createData(3, 3) }] })[0];
+            const worksheet = gridwell(container, { root: shadowRoot, worksheets: [{ data: createData(3, 3) }] })[0];
             const a1 = worksheet.records[0][0].element;
             const a2 = worksheet.records[1][0].element;
 
@@ -772,7 +772,7 @@ describe('Keyboard focus', () => {
     });
 
     it('Skip hidden cells', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(3, 3), columns: [{ type: 'hidden' }, {}, {}] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: createData(3, 3), columns: [{ type: 'hidden' }, {}, {}] }] })[0];
 
         expect(getTabStops(worksheet)).to.deep.equal([worksheet.records[0][1].element]);
 
@@ -786,7 +786,7 @@ describe('Keyboard focus', () => {
     });
 
     it('Move the tab stop out of removed cells', async () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: createData(4, 3), pagination: 2, search: true }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: createData(4, 3), pagination: 2, search: true }] })[0];
         const b2 = worksheet.records[1][1].element;
 
         worksheet.updateSelectionFromCoords(1, 1, 1, 1);
@@ -822,7 +822,7 @@ describe('Keyboard focus', () => {
         // Lazy loading removes the row of the tab stop
         const container = document.createElement('div');
         root.appendChild(container);
-        const lazy = jspreadsheet(container, { worksheets: [{ data: createData(300, 2), lazyLoading: true, tableOverflow: true, tableHeight: '300px' }] })[0];
+        const lazy = gridwell(container, { worksheets: [{ data: createData(300, 2), lazyLoading: true, tableOverflow: true, tableHeight: '300px' }] })[0];
         lazy.content.dispatchEvent(new window.WheelEvent('wheel', { bubbles: true }));
         await new Promise((resolve) => {
             setTimeout(resolve, 150);
@@ -840,7 +840,7 @@ describe('Keyboard focus', () => {
 
 describe('Ids', () => {
     it('gives no two elements of a spreadsheet with two worksheets the same id (issue #68)', async () => {
-        jspreadsheet(root, { tabs: true, worksheets: [{ minDimensions: [2, 2] }, { minDimensions: [2, 2] }] });
+        gridwell(root, { tabs: true, worksheets: [{ minDimensions: [2, 2] }, { minDimensions: [2, 2] }] });
         await new Promise((resolve) => setTimeout(resolve));
 
         const ids = Array.from(root.querySelectorAll('[id]')).map((element) => element.id);
@@ -854,8 +854,8 @@ describe('Ids', () => {
         document.body.appendChild(other);
 
         try {
-            jspreadsheet(root, { tabs: true, worksheets: [{}, {}] });
-            jspreadsheet(other, { tabs: true, worksheets: [{}, {}] });
+            gridwell(root, { tabs: true, worksheets: [{}, {}] });
+            gridwell(other, { tabs: true, worksheets: [{}, {}] });
             await new Promise((resolve) => setTimeout(resolve));
 
             const ids = Array.from(document.querySelectorAll('[role=tab], [role=tabpanel]')).map((element) => element.id);
@@ -864,7 +864,7 @@ describe('Ids', () => {
             expect(new Set(ids).size).to.equal(8);
             expect(ids.every((id) => id !== '')).to.equal(true);
         } finally {
-            jspreadsheet.destroy(other as Jspreadsheet.JspreadsheetInstanceElement);
+            gridwell.destroy(other as Gridwell.GridwellInstanceElement);
             other.remove();
         }
     });

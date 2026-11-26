@@ -1,17 +1,17 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 function wait(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // The constructor builds the worksheets after it returns. Resolve when all worksheets are ready.
-function create(options?: Partial<Jspreadsheet.SpreadsheetOptions>) {
+function create(options?: Partial<Gridwell.SpreadsheetOptions>) {
     return new Promise<Worksheet[]>((resolve) => {
-        const worksheets = jspreadsheet(
+        const worksheets = gridwell(
             root,
-            Object.assign<Jspreadsheet.SpreadsheetOptions, typeof options>(
+            Object.assign<Gridwell.SpreadsheetOptions, typeof options>(
                 {
                     worksheets: [
                         { minDimensions: [3, 3], worksheetName: 'First' },
@@ -297,7 +297,7 @@ describe('Worksheet tabs', () => {
     });
 
     it('the context menu of a tab has the role tabs and the index of the tab', async () => {
-        let args = null as [string | number | null, Jspreadsheet.ContextMenuRole] | null;
+        let args = null as [string | number | null, Gridwell.ContextMenuRole] | null;
 
         await create({
             tabs: true,

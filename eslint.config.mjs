@@ -17,7 +17,7 @@ export default defineConfig(
                 ...globals.browser,
                 ...globals.node,
                 ...globals.es2022,
-                jspreadsheet: 'readonly',
+                gridwell: 'readonly',
             },
         },
         rules: {

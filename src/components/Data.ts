@@ -1,7 +1,7 @@
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import { getCoordsFromRange } from '../utils/helpers.js';
 import type { Worksheet } from '../types/internal';
-import type { CellValue, WorksheetInstance } from '../jspreadsheet';
+import type { CellValue, WorksheetInstance } from '../gridwell';
 
 /**
  * The data of a worksheet: it gets and sets all the data, the data of a range, and the value of a cell by its name or
@@ -88,7 +88,7 @@ export class Data {
             if (worksheet.options.pagination) {
                 // pagination is declared as a number, and false turns it off as 0 does
                 (worksheet.options as { pagination?: number | false }).pagination = false;
-                console.error('Jspreadsheet: Pagination will be disable due the lazyLoading');
+                console.error('Gridwell: Pagination will be disable due the lazyLoading');
             }
         } else if (worksheet.options.pagination) {
             // Pagination

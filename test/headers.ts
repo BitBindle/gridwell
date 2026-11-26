@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet from './support/jspreadsheet';
+import gridwell from './support/gridwell';
 
 describe('Use the headers method', () => {
     it('setHeader and header title is changed', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -35,7 +35,7 @@ describe('Use the headers method', () => {
     });
 
     it('getHeader and header title is retrieved', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -60,7 +60,7 @@ describe('Use the headers method', () => {
     });
 
     it('getHeaders and header titles are retrieved', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -90,7 +90,7 @@ describe('Use the headers method', () => {
     });
 
     it('setHeader history', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {

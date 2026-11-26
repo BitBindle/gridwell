@@ -5,8 +5,8 @@ import { getCellNameFromCoords } from '../utils/helpers.js';
 import { getElementIndex, getRole } from './helpers.js';
 import type { TargetEvent, Worksheet } from '../types/internal';
 
-function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: jspreadsheet.ContextMenuRole): jspreadsheet.ContextMenuItem[] {
-    const items: jspreadsheet.ContextMenuItem[] = [];
+function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: gridwell.ContextMenuRole): gridwell.ContextMenuItem[] {
+    const items: gridwell.ContextMenuItem[] = [];
 
     if (role === 'header') {
         // Insert a new column
@@ -187,7 +187,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
 export function contextMenuControls(e: TargetEvent<PointerEvent>) {
     e = e || window.event;
 
-    const current = libraryBase.jspreadsheet.current;
+    const current = libraryBase.gridwell.current;
 
     if (current) {
         const spreadsheet = current.parent;

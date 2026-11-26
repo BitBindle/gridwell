@@ -1,6 +1,6 @@
 import { translate } from '../utils/dictionary.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
-import type jspreadsheet from '../jspreadsheet';
+import type gridwell from '../gridwell';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -19,7 +19,7 @@ export class Rows {
     /**
      * Create row
      */
-    create(j: number, data: jspreadsheet.CellValue[]) {
+    create(j: number, data: gridwell.CellValue[]) {
         const worksheet = this.worksheet;
 
         // Create container
@@ -82,7 +82,7 @@ export class Rows {
 
             if (worksheet.options.columns?.[i] && typeof worksheet.options.columns[i].render === 'function') {
                 // The test above makes it a function, which TypeScript does not narrow through the index
-                (worksheet.options.columns[i].render as NonNullable<jspreadsheet.BaseColumn['render']>)(
+                (worksheet.options.columns[i].render as NonNullable<gridwell.BaseColumn['render']>)(
                     worksheet.records[j][i].element,
                     data[i],
                     parseInt(i),
@@ -103,7 +103,7 @@ export class Rows {
     /**
      * The rows that insertRow inserts, with their position and their data, for the events.
      */
-    private getInserted(numOfRows: number, rowNumber: number, insertBefore: boolean, data: jspreadsheet.CellValue[]) {
+    private getInserted(numOfRows: number, rowNumber: number, insertBefore: boolean, data: gridwell.CellValue[]) {
         const worksheet = this.worksheet;
 
         const onbeforeinsertrowRecords = [];
@@ -128,7 +128,7 @@ export class Rows {
      * Create the new rows with the data or empty, and put them in the table before the rows that follow them.
      * @param currentRows - The rows after the new rows, which insertRow took out of the list of rows.
      */
-    private add(rowIndex: number, numOfRows: number, rowNumber: number, data: jspreadsheet.CellValue[], currentRows: Worksheet['rows']) {
+    private add(rowIndex: number, numOfRows: number, rowNumber: number, data: gridwell.CellValue[], currentRows: Worksheet['rows']) {
         const worksheet = this.worksheet;
 
         const rowRecords = [];
@@ -168,13 +168,13 @@ export class Rows {
      * @param rowNumber - The row next to which the rows go. The last row by default.
      * @param insertBefore - Put the rows before that row instead of after it.
      */
-    insert(mixed?: number | jspreadsheet.CellValue[], rowNumber?: number, insertBefore?: boolean | number): false | undefined {
+    insert(mixed?: number | gridwell.CellValue[], rowNumber?: number, insertBefore?: boolean | number): false | undefined {
         const worksheet = this.worksheet;
 
         // Configuration
         if (worksheet.options.allowInsertRow !== false) {
             // Data to be insert
-            let data: jspreadsheet.CellValue[] = [];
+            let data: gridwell.CellValue[] = [];
 
             // The insert could be lead by number of rows or the array of data
             let numOfRows;
@@ -452,7 +452,7 @@ export class Rows {
                     // If delete all rows, and set allowDeletingAllRows false, will stay one row
                     if (worksheet.options.allowDeletingAllRows !== true && lastRow + 1 === numOfRows) {
                         numOfRows--;
-                        console.error('Jspreadsheet: It is not possible to delete the last row');
+                        console.error('Gridwell: It is not possible to delete the last row');
                     }
 
                     // Remove node
@@ -504,7 +504,7 @@ export class Rows {
                     worksheet.dispatch('ondeleterow', worksheet, onbeforedeleterowRecords);
                 }
             } else {
-                console.error('Jspreadsheet: It is not possible to delete the last row');
+                console.error('Gridwell: It is not possible to delete the last row');
             }
         }
     }
@@ -633,7 +633,7 @@ export class Rows {
     /**
      * Get a row data by rowNumber
      */
-    getData(rowNumber: number, processed?: boolean): jspreadsheet.CellValue[] | undefined {
+    getData(rowNumber: number, processed?: boolean): gridwell.CellValue[] | undefined {
         const worksheet = this.worksheet;
 
         if (processed) {
@@ -648,7 +648,7 @@ export class Rows {
     /**
      * Set a row data by rowNumber
      */
-    setData(rowNumber: number, data: (jspreadsheet.CellValue | null)[], force?: boolean) {
+    setData(rowNumber: number, data: (gridwell.CellValue | null)[], force?: boolean) {
         const worksheet = this.worksheet;
 
         for (let i = 0; i < worksheet.headers.length; i++) {

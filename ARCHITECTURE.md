@@ -8,7 +8,7 @@ version 5. AGENTS.md describes the code as it is today; this file says where it 
 Version 5 builds a worksheet as a plain object that about twenty modules add properties to. About fifty state
 properties have no owner: any module reads and writes any of them. About 140 public methods are bound to each worksheet
 instance. There were 17 import cycles, which only work because no module calls an imported function while it loads. The
-keyboard and clipboard events find their worksheet through one global, `jspreadsheet.current`, which the code reads in
+keyboard and clipboard events find their worksheet through one global, `gridwell.current`, which the code reads in
 more than 300 places.
 
 Version 6 may break the public API (see [UPGRADING.md](UPGRADING.md)). The goal is not classes for their own sake. The
@@ -19,7 +19,7 @@ feature touches one place.
 
 ```
 src/
-  index.ts            jspreadsheet(element, options) and the static helpers
+  index.ts            gridwell(element, options) and the static helpers
   Spreadsheet.ts      class Spreadsheet: the worksheets, the tabs, the toolbar, the context menu, the plugins
   Worksheet.ts        class Worksheet: the DOM of one worksheet, its options, and its components
   components/         one class per feature, each owning its state
@@ -81,7 +81,7 @@ what it changes, and lists its breaking changes in UPGRADING.md.
    The split is done: `src/events/` has one module per input, and `updateFreezePosition`, which places the frozen
    columns, moved to `utils/freezePosition.ts`, so the modules that change columns no longer import the event handlers.
    That removed two import cycles.
-   The second part keeps one active worksheet, `jspreadsheet.current`, and makes it follow the user. A drag goes on
+   The second part keeps one active worksheet, `gridwell.current`, and makes it follow the user. A drag goes on
    while the mouse leaves the worksheet, and a key reaches the document from wherever the focus is, so a handler cannot
    always find the worksheet from the event target; the active worksheet is what they share. Before, only a press set
    it. Now the focus moving into a worksheet sets it too (`events/focus.ts`), and a key on an element outside the
@@ -98,7 +98,7 @@ what it changes, and lists its breaking changes in UPGRADING.md.
 10. **The public typings.** The fields that only the library uses leave `WorksheetInstance`; the typings describe the
     classes.
     Done. `ads`, `cols`, `colgroupContainer`, `corner` and `headerContainer` left `WorksheetInstance`, and
-    `timeControl`, `timeControlLoading` and `isMouseAction` left `JSpreadsheet`: they are in `WorksheetState` and
+    `timeControl`, `timeControlLoading` and `isMouseAction` left `Gridwell`: they are in `WorksheetState` and
     `Library` (`src/types/internal.d.ts`). `WorksheetInstance` and `SpreadsheetInstance`
     say that they are the instances of the classes. Only the typings changed: the fields are still on the worksheet.
 
@@ -113,7 +113,7 @@ that is hard to read but does not need a new owner. They change no behaviour.
     `createNestedHeader` to `headers.ts`.
 12. **The event handlers.** Each handler reads the active worksheet once, and the long handlers (`mouseDownControls`,
     `keyDownControls`) are split into a function for each target or key.
-    Done. Each handler reads `jspreadsheet.current` once, after a press has made its worksheet the active one, and calls
+    Done. Each handler reads `gridwell.current` once, after a press has made its worksheet the active one, and calls
     its functions with that worksheet as `this`. `mouseDownControls` calls a function for a press on a header, a row
     number, a cell and the pagination; `mouseUpControls` and `mouseMoveControls` one for the resize, the move and the
     fill; `keyDownControls` one for the keys of an open editor and one for the keys on the grid, which calls one for
@@ -123,7 +123,7 @@ that is hard to read but does not need a new owner. They change no behaviour.
     prototype.
     Done. `Tabs` in `utils/tabs.ts` is a class: `new Tabs(element, options)` builds the tabs and keeps them on
     `element.tabs`. The variables of the closure are fields, and its inner functions are private methods.
-14. **The anys in the public typings.** The `any` types left in `src/jspreadsheet.d.ts` get real types.
+14. **The anys in the public typings.** The `any` types left in `src/gridwell.d.ts` get real types.
     Done. The values that the application or a formula gives (the meta information, the properties of a history record,
     the data of `onsave` and the result of `executeFormula`) are `unknown`. `onevent` gets the name of
     an event and the arguments of its handler, with one signature for each event (`EventListener`), and `dispatch`
@@ -252,13 +252,13 @@ on the prototypes. The next steps move each of them into a class, so that no fun
   as arguments, such as the helpers for cell names, stays a function.
 - **The public methods are methods of the classes.** `Worksheet` and `Spreadsheet` declare their public methods in the
   class body, and each one calls its component or the code of the class. The two lists go. The public typings stay the
-  source of truth: a method whose type does not match `jspreadsheet.d.ts` fails the type check, because the class
+  source of truth: a method whose type does not match `gridwell.d.ts` fails the type check, because the class
   merges with the public interface.
 - **The classes may import modules.** `Spreadsheet.ts` imports nothing at run time so that `dispatch`, `config` and
   `activeWorksheet` can tell a spreadsheet from a worksheet with `instanceof`. Once those are methods of the classes,
   they need no `instanceof`, and the restriction goes.
 - **What stays.** The document event handlers (`mousedown`, `keydown`, …) get the event, not a worksheet, and stay
-  functions. `jspreadsheet.helpers.getCaretIndex` is a public helper that reads `this` only when an application calls it
+  functions. `gridwell.helpers.getCaretIndex` is a public helper that reads `this` only when an application calls it
   with a spreadsheet; it stays as it is.
 
 31. **The cells.** Creating, rendering and updating a cell (`render.ts`) and the value that a cell shows (`values.ts`)
@@ -310,11 +310,11 @@ on the prototypes. The next steps move each of them into a class, so that no fun
     removed `spreadsheetPublicMethods`).
     Done. The 78 entries of the list are methods of `Worksheet`, each with the parameters of its entry; `worksheets.ts`
     goes. The list typed its functions loosely, so the type check now compares each method with its declaration: the
-    methods with overloads in `jspreadsheet.d.ts` (`getData`, `getSelected`, `getCell`, `getLabel`, `getHeight`,
+    methods with overloads in `gridwell.d.ts` (`getData`, `getSelected`, `getCell`, `getLabel`, `getHeight`,
     `getMeta`, `isReadOnly`, `setStyle`, `setMeta`, `setComments`, `setWidth`) repeat the overloads, and the parameters
     of `copy`, `setMerge` and `updateSelectionFromCoords` became optional or nullable as declared. `cells.get` and
     `cells.getLabel` take a cell name as declared, `data.get` a null delimiter, and `selection.reset` returns `0 | 1`.
-    `WorksheetMethod` goes. Apart from `jspreadsheet.helpers.getCaretIndex`, no function outside a class reads `this`.
+    `WorksheetMethod` goes. Apart from `gridwell.helpers.getCaretIndex`, no function outside a class reads `this`.
 
 After step 36 the code is in classes, but it is still written in the style of 2015 JavaScript: module functions are
 function expressions in constants (`const getCellName = function (...) { ... }`), callbacks are `function` expressions
@@ -334,7 +334,7 @@ behaviour, and turns on the ESLint rule that keeps the new style, so that new co
     `factory` a function. A callback that does not use its own `this` becomes an arrow function, and a function in an
     object literal a method (`onclick() { ... }`). Rules: `func-style`, `prefer-arrow-callback`, `object-shorthand`.
     Done. The 61 module functions and the 11 functions in constants inside methods are declarations. `factory.ts`
-    exports `createSpreadsheet`, and `jspreadsheet` is a function declaration that `index.ts` gives its static helpers,
+    exports `createSpreadsheet`, and `gridwell` is a function declaration that `index.ts` gives its static helpers,
     which are arrow functions. ESLint changed 49 callbacks to arrow functions and 92 properties of object literals to
     shorthand properties and methods, and 11 functions that the code gives to an element or an option became arrow
     functions by hand. Two handlers still read `this`, the element they are on (the checkbox of a cell, the number of

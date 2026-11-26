@@ -30,7 +30,7 @@ export async function request(worksheet: Worksheet, url: string, type: 'json' | 
     try {
         const response = await fetch(url, options);
         if (!response.ok) {
-            throw new Error(`Jspreadsheet: the ${options.method ?? 'GET'} request to ${url} failed with the status ${response.status}`);
+            throw new Error(`Gridwell: the ${options.method ?? 'GET'} request to ${url} failed with the status ${response.status}`);
         }
 
         return { result: type === 'json' ? await response.json() : await response.text() };

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet from './support/jspreadsheet';
+import gridwell from './support/gridwell';
 
 function rows(count: number) {
     const data: string[][] = [];
@@ -12,7 +12,7 @@ function rows(count: number) {
 
 describe('Lazy loading', () => {
     it('loads the page of the selected row when the keyboard moves from a row that is not attached', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }],
         });
 
@@ -33,7 +33,7 @@ describe('Lazy loading', () => {
     });
 
     it('moves up to the first attached row without an error', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }],
         });
 
@@ -58,7 +58,7 @@ describe('Lazy loading', () => {
             data.push([(j % 2 ? 'b' : 'a') + j]);
         }
 
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data, search: true, lazyLoading: true, tableOverflow: true }],
         });
 

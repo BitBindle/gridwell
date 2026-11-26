@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 describe('Use the columns method', () => {
     it('insertColumn and column is inserted in the position 0', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -34,7 +34,7 @@ describe('Use the columns method', () => {
     });
 
     it('insertColumn and column is inserted in the position 1', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -66,7 +66,7 @@ describe('Use the columns method', () => {
     });
 
     it('deleteColumn and column is removed in the given index', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -102,7 +102,7 @@ describe('Use the columns method', () => {
     });
 
     it('deleteColumn and multiple column are removed starting from the given index', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -137,7 +137,7 @@ describe('Use the columns method', () => {
     });
 
     it('hideColumn and showColumn', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -174,7 +174,7 @@ describe('Use the columns method', () => {
     });
 
     it('insertColumn history', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -207,7 +207,7 @@ describe('Use the columns method', () => {
     });
 
     it('deleteColumn history', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -250,7 +250,7 @@ describe('Use the columns method', () => {
     });
 
     it('hideColumn keeps a merged range visible when it covers a column that is not hidden', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -284,7 +284,7 @@ describe('Use the columns method', () => {
     });
 
     it('hideColumn hides a merged range when each column that it covers is hidden', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -304,7 +304,7 @@ describe('Use the columns method', () => {
     });
 
     it('setMerge gives the first cell only the columns that are not hidden', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ minDimensions: [4, 2] }],
         });
 
@@ -322,7 +322,7 @@ describe('Use the columns method', () => {
     });
 
     it('keeps a merged range visible when one of its columns has the type hidden', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: [['Item', 'b', 'c']],
@@ -339,7 +339,7 @@ describe('Use the columns method', () => {
     });
 
     it('removeMerge keeps the cells of a hidden column hidden', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ data: [['Item', '', 'x', 'y']], mergeCells: { A1: [2, 1] } }],
         });
 
@@ -361,7 +361,7 @@ describe('Use the columns method', () => {
     });
 
     it('selects each column of a merged range when one of its columns is hidden', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [{ minDimensions: [4, 2], mergeCells: { A1: [3, 1] } }],
         });
 
@@ -384,7 +384,7 @@ describe('Use the columns method', () => {
         ];
 
         it('shows and edits the first cell with the options of the first visible column', () => {
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [
                     {
                         data: [['1', '', 'x']],
@@ -409,7 +409,7 @@ describe('Use the columns method', () => {
         });
 
         it('saves the text of the editor to the first cell', () => {
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [
                     {
                         data: [['a', '']],
@@ -429,7 +429,7 @@ describe('Use the columns method', () => {
         });
 
         it('renders the first cell again when setMerge, hideColumn, showColumn and removeMerge change the first visible column', () => {
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [
                     {
                         data: [['1', '', 'x']],
@@ -457,7 +457,7 @@ describe('Use the columns method', () => {
         });
 
         it('keeps the readOnly state and the style of the first cell when hideColumn and showColumn change the first visible column', () => {
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [
                     {
                         data: [['1', '', 'x', 'y']],
@@ -481,7 +481,7 @@ describe('Use the columns method', () => {
         });
 
         it('keeps the value of the hidden column when the first visible column is a checkbox column', () => {
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [
                     {
                         data: [['id-7', '', 'x']],
@@ -496,7 +496,7 @@ describe('Use the columns method', () => {
         });
 
         it('adds a new line with Alt+Enter when the first visible column has wordWrap', () => {
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [
                     {
                         data: [['a', '', 'x']],
@@ -519,7 +519,7 @@ describe('Use the columns method', () => {
         });
 
         it('uses the readOnly and align options of the first visible column when setMerge, hideColumn and showColumn change that column', () => {
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [
                     {
                         data: [['v', '', '']],
@@ -544,7 +544,7 @@ describe('Use the columns method', () => {
         });
 
         it('uses the options of the first visible column when deleteColumn and insertColumn move the range before hideColumn', () => {
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [
                     {
                         data: [['a', 'v', '', '']],
@@ -571,7 +571,7 @@ describe('Use the columns method', () => {
 
         it('sends oncreatecell once for the first cell and keeps the changes of the handler', () => {
             const cells: HTMLTableCellElement[] = [];
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [
                     {
                         data: [['1', '', 'x']],
@@ -597,8 +597,8 @@ describe('Use the columns method', () => {
 
 describe('Insert columns', () => {
     it('gives onbeforeinsertcolumn the column that insertColumn inserts without arguments', () => {
-        let columns: Parameters<NonNullable<Jspreadsheet.SpreadsheetOptions['onbeforeinsertcolumn']>>[1] | undefined;
-        const worksheet = jspreadsheet(root, {
+        let columns: Parameters<NonNullable<Gridwell.SpreadsheetOptions['onbeforeinsertcolumn']>>[1] | undefined;
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [['a', 'b']] }],
             onbeforeinsertcolumn(instance, list) {
                 columns = list;
@@ -615,9 +615,9 @@ describe('Insert columns', () => {
 
 describe('Drag a column header', () => {
     // The spreadsheet adds its event handlers after a promise
-    const load = (options: Jspreadsheet.SpreadsheetOptions) =>
+    const load = (options: Gridwell.SpreadsheetOptions) =>
         new Promise<Worksheet>((resolve) => {
-            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+            const instance = gridwell(root, { ...options, onload: () => resolve(instance[0]) });
         });
 
     // jsdom has no layout, so offsetX and offsetY are set: a press at the bottom edge of a header starts a drag
@@ -629,7 +629,7 @@ describe('Drag a column header', () => {
     };
 
     it('moves the column next to a header after column 9', async () => {
-        const columns: Jspreadsheet.Column[] = [];
+        const columns: Gridwell.Column[] = [];
         for (let i = 0; i < 12; i++) {
             columns.push({ title: `C${i}` });
         }
@@ -669,9 +669,9 @@ describe('Drag a column header', () => {
 
 describe('Delete columns with the keyboard', () => {
     // The spreadsheet adds its event handlers after a promise
-    const load = (options: Jspreadsheet.SpreadsheetOptions) =>
+    const load = (options: Gridwell.SpreadsheetOptions) =>
         new Promise<Worksheet>((resolve) => {
-            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+            const instance = gridwell(root, { ...options, onload: () => resolve(instance[0]) });
         });
 
     const mouse = (element: Element, type: string) => {
@@ -723,7 +723,7 @@ describe('Delete columns with the keyboard', () => {
 
 describe('Image columns', () => {
     it('shows a cell whose value is not text, and an image for image data', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -748,7 +748,7 @@ describe('Image columns', () => {
 
 describe('Calendar columns', () => {
     it('shows a cell whose value is a year, and sets a year as the value', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [['2020'], ['2021-05-01']],
@@ -768,7 +768,7 @@ describe('Calendar columns', () => {
 
 describe('Insert a column with nested headers', () => {
     it('widens the last nested header', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ minDimensions: [3, 2], nestedHeaders: [[{ title: 'All', colspan: 3 }]] }],
         })[0];
 
@@ -786,8 +786,8 @@ describe('Insert a column with nested headers', () => {
 describe('Insert columns', () => {
     it('gives the events the new columns, renders them and puts them before or after the column', () => {
         const events: [string, unknown][] = [];
-        const rendered: [Jspreadsheet.CellValue | undefined, number, number][] = [];
-        const worksheet = jspreadsheet(root, {
+        const rendered: [Gridwell.CellValue | undefined, number, number][] = [];
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -844,7 +844,7 @@ describe('Insert columns', () => {
 
 describe('Set the widths of columns with an array', () => {
     it('setWidth keeps the width of a column that the array of widths has no width for (issue #47)', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 2], defaultColWidth: 80 }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ minDimensions: [3, 2], defaultColWidth: 80 }] })[0];
 
         worksheet.setWidth([0, 1, 2], [100, 120]);
 
@@ -868,7 +868,7 @@ describe('Set the widths of columns with an array', () => {
 
 describe('The first cell of a merged range over a hidden column (issue #20)', () => {
     it('gives a formula its number with the decimal point of the first visible column', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [['1,5', '', '=A1+1']],
@@ -882,7 +882,7 @@ describe('The first cell of a merged range over a hidden column (issue #20)', ()
     });
 
     it('reads a pasted date with the format of the first visible column', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [['', '', '']],
@@ -898,7 +898,7 @@ describe('The first cell of a merged range over a hidden column (issue #20)', ()
     });
 
     it('moves the references of a formula that the fill handle copies when the first visible column is a text column', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -919,7 +919,7 @@ describe('The first cell of a merged range over a hidden column (issue #20)', ()
     });
 
     it('fills down from a merged range over a hidden first column with a double click on the corner (issue #127)', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -940,7 +940,7 @@ describe('The first cell of a merged range over a hidden column (issue #20)', ()
 
     it('wraps a long text when hideColumn renders the first cell with the options of another column', () => {
         const long = 'a'.repeat(250);
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [['1', '', 'x']],
@@ -962,8 +962,8 @@ describe('The first cell of a merged range over a hidden column (issue #20)', ()
     });
 
     it('sends oncreatecell when hideColumn and showColumn render the first cell again', () => {
-        const calls: [HTMLTableCellElement, Jspreadsheet.CellValue][] = [];
-        const worksheet = jspreadsheet(root, {
+        const calls: [HTMLTableCellElement, Gridwell.CellValue][] = [];
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [['1', '', 'x']],

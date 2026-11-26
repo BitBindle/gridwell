@@ -159,7 +159,7 @@ function pad(n: number) {
 
 /**
  * Show a date in a format. The names of the months and of the days are translated with the dictionary of
- * jspreadsheet.setDictionary.
+ * gridwell.setDictionary.
  * @param value - The date, as the text "YYYY-MM-DD HH:MI:SS" or as a number of days as Excel counts them.
  * @param format - The format, such as "DD/MM/YYYY". "YYYY-MM-DD" when it is missing.
  * @returns The date in the format, or an empty text when the value is not a date.

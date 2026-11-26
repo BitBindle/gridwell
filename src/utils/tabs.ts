@@ -1,6 +1,6 @@
 import { translate } from './dictionary.js';
 import { createId } from './ids.js';
-import type jspreadsheet from '../jspreadsheet';
+import type gridwell from '../gridwell';
 
 /** A tab header. It keeps a reference to its panel. */
 type TabHeader = HTMLButtonElement & { content?: HTMLElement };
@@ -23,10 +23,10 @@ export interface TabsOptions {
     onbeforecreate: ((el: HTMLElement, title?: string | null) => string | false) | null;
     onchangeposition: ((headers: HTMLDivElement, from: number, to: number) => void) | null;
     /** The labels option of the spreadsheet, with the accessible names of the tabs. */
-    labels: NonNullable<jspreadsheet.SpreadsheetOptions['labels']>;
+    labels: NonNullable<gridwell.SpreadsheetOptions['labels']>;
 }
 
-/** English accessible names of the tabs, which the labels option replaces and jspreadsheet.setDictionary can translate. */
+/** English accessible names of the tabs, which the labels option replaces and gridwell.setDictionary can translate. */
 const defaultLabels = {
     worksheets: 'Worksheets',
     tabPanels: 'Tab Panels',

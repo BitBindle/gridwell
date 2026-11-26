@@ -2,8 +2,8 @@ import { translate } from '../utils/dictionary.js';
 import { Dropdown } from '../utils/dropdown.js';
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import libraryBase from '../utils/libraryBase.js';
-import type jspreadsheet from '../jspreadsheet';
-import type { CellValue } from '../jspreadsheet';
+import type gridwell from '../gridwell';
+import type { CellValue } from '../gridwell';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -123,7 +123,7 @@ export class View {
         const worksheet = this.worksheet;
 
         if (!worksheet.options.filters) {
-            console.log('Jspreadsheet: filters not enabled.');
+            console.log('Gridwell: filters not enabled.');
         } else {
             // Make sure is integer
             columnId = parseInt(columnId);
@@ -587,7 +587,7 @@ export class View {
 
             // Test order
             // The row and the value to sort by
-            let temp: jspreadsheet.SortingItem[] = [];
+            let temp: gridwell.SortingItem[] = [];
             if (
                 worksheet.options.columns?.[column] &&
                 ((worksheet.options.columns[column].type as string) === 'number' ||
@@ -852,8 +852,8 @@ export class View {
         const worksheet = this.worksheet;
 
         if (worksheet.options.lazyLoading === true) {
-            if (libraryBase.jspreadsheet.timeControlLoading == null) {
-                libraryBase.jspreadsheet.timeControlLoading = setTimeout(() => {
+            if (libraryBase.gridwell.timeControlLoading == null) {
+                libraryBase.gridwell.timeControlLoading = setTimeout(() => {
                     if (worksheet.content.scrollTop + worksheet.content.clientHeight >= worksheet.content.scrollHeight - 10) {
                         if (worksheet.view.loadDown()) {
                             if (worksheet.content.scrollTop + worksheet.content.clientHeight > worksheet.content.scrollHeight - 10) {
@@ -870,7 +870,7 @@ export class View {
                         }
                     }
 
-                    libraryBase.jspreadsheet.timeControlLoading = null;
+                    libraryBase.gridwell.timeControlLoading = null;
                 }, 100);
             }
         }

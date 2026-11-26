@@ -1,13 +1,13 @@
 import formula from '@jspreadsheet/formula';
-import jspreadsheet from './index.js';
+import gridwell from './index.js';
 
-import './jspreadsheet.css';
+import './gridwell.css';
 
-window.jss = jspreadsheet;
+window.jss = gridwell;
 
-jspreadsheet.setFormulaEngine(formula);
+gridwell.setFormulaEngine(formula);
 
-window.instance = jspreadsheet(document.getElementById('root'), {
+window.instance = gridwell(document.getElementById('root'), {
     tabs: true,
     toolbar: true,
     worksheets: [

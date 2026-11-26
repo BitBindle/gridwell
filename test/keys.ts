@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 // The spreadsheet adds its event handlers after a promise
-const load = (options: Jspreadsheet.SpreadsheetOptions) =>
+const load = (options: Gridwell.SpreadsheetOptions) =>
     new Promise<Worksheet>((resolve) => {
-        const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+        const instance = gridwell(root, { ...options, onload: () => resolve(instance[0]) });
     });
 
 describe('Keys', () => {
@@ -32,7 +32,7 @@ describe('Keys', () => {
     });
 
     it('moves the selection to the first cell of a merged range, not to a cell that the range hides', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ minDimensions: [4, 6], mergeCells: { A1: [2, 1], C2: [1, 3] } }],
         })[0];
 
@@ -52,7 +52,7 @@ describe('Keys', () => {
     });
 
     it('moves the selection to the first cell of a merged range after End', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ minDimensions: [4, 2], mergeCells: { C1: [2, 1] } }],
         })[0];
 
@@ -62,7 +62,7 @@ describe('Keys', () => {
     });
 
     it('moves the selection to the first cell of a merged range after Right, Down and Home', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ minDimensions: [4, 6], mergeCells: { A1: [1, 3], C2: [1, 3], A5: [2, 1] } }],
         })[0];
 
@@ -110,7 +110,7 @@ describe('Toggle a checkbox with the space key', () => {
 describe('Moving the selection without a selection', () => {
     it('does nothing in up, down, left, right, first and last', () => {
         const events: string[] = [];
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -132,7 +132,7 @@ describe('Moving the selection without a selection', () => {
     });
 
     it('does nothing after resetSelection', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [

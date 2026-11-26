@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 // The key codes, which the keys of the editor and of the grid read
 const codes: Record<string, number> = {
@@ -30,7 +30,7 @@ const press = (element: Element) => {
 
 const waitForListeners = () => new Promise((resolve) => setTimeout(resolve));
 
-const cars: Jspreadsheet.DropdownSourceItem[] = [
+const cars: Gridwell.DropdownSourceItem[] = [
     { id: 1, name: 'Mazda' },
     { id: 2, name: 'Honda' },
     { id: 3, name: 'Peugeot' },
@@ -38,8 +38,8 @@ const cars: Jspreadsheet.DropdownSourceItem[] = [
 ];
 
 /** A worksheet with a dropdown column, with the editor of A1 open. */
-async function open(column: Jspreadsheet.DropdownColumn, value: Jspreadsheet.CellValue = 2, options: Partial<Jspreadsheet.WorksheetOptions> = {}) {
-    const instance = jspreadsheet(root, {
+async function open(column: Gridwell.DropdownColumn, value: Gridwell.CellValue = 2, options: Partial<Gridwell.WorksheetOptions> = {}) {
+    const instance = gridwell(root, {
         worksheets: [
             {
                 data: [
@@ -296,7 +296,7 @@ describe('The dropdown', () => {
         });
 
         it('shows the groups, the images and the titles of the options, as text', async () => {
-            const source: Jspreadsheet.DropdownSourceItem[] = [
+            const source: Gridwell.DropdownSourceItem[] = [
                 'Plain',
                 7,
                 { id: 'a', name: '<b>Bold</b>', title: 'A title', group: 'Group 1' },
@@ -466,7 +466,7 @@ describe('The dropdown', () => {
         };
 
         it('lists the values of the column, has a name and filters the rows with the chosen values', async () => {
-            const worksheet = jspreadsheet(root, { worksheets: [{ filters: true, data, columns: [{ title: 'Car' }, {}] }] })[0];
+            const worksheet = gridwell(root, { worksheets: [{ filters: true, data, columns: [{ title: 'Car' }, {}] }] })[0];
             await waitForListeners();
             const { header, items, list } = await openFilter(worksheet);
 
@@ -489,7 +489,7 @@ describe('The dropdown', () => {
         });
 
         it('keeps the filters as they were after Escape', async () => {
-            const worksheet = jspreadsheet(root, { worksheets: [{ filters: true, data }] })[0];
+            const worksheet = gridwell(root, { worksheets: [{ filters: true, data }] })[0];
             await waitForListeners();
             let filter = await openFilter(worksheet);
             press(filter.items()[1]);

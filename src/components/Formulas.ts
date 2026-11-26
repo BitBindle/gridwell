@@ -262,7 +262,7 @@ export class Formulas {
                         if (!noEngineWarned) {
                             noEngineWarned = true;
                             console.warn(
-                                'Jspreadsheet: no formula engine is registered, so the formulas show #ENGINE. Register one with jspreadsheet.setFormulaEngine(formula), where formula is the default export of @jspreadsheet/formula.'
+                                'Gridwell: no formula engine is registered, so the formulas show #ENGINE. Register one with gridwell.setFormulaEngine(formula), where formula is the default export of @jspreadsheet/formula.'
                             );
                         }
 

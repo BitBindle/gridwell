@@ -3,7 +3,7 @@ import { getElement, getIndex } from './helpers.js';
 import type { TargetEvent } from '../types/internal';
 
 /**
- * The mouse handlers act on the active worksheet, jspreadsheet.current. A press on a worksheet makes it the active
+ * The mouse handlers act on the active worksheet, gridwell.current. A press on a worksheet makes it the active
  * worksheet (mouseDownControls), and the other handlers read it once. Each gesture is a method of worksheet.pointer: a
  * press on a header, a row number or a cell, the resize or the move of a column or a row, and the fill with the
  * selection corner.
@@ -34,7 +34,7 @@ function getCell(element: HTMLElement): HTMLElement | undefined {
 }
 
 export function mouseUpControls(e: TargetEvent<MouseEvent>) {
-    const current = libraryBase.jspreadsheet.current;
+    const current = libraryBase.gridwell.current;
 
     if (current) {
         // Update cell size
@@ -48,13 +48,13 @@ export function mouseUpControls(e: TargetEvent<MouseEvent>) {
     }
 
     // Clear any time control
-    if (libraryBase.jspreadsheet.timeControl) {
-        clearTimeout(libraryBase.jspreadsheet.timeControl);
-        libraryBase.jspreadsheet.timeControl = null;
+    if (libraryBase.gridwell.timeControl) {
+        clearTimeout(libraryBase.gridwell.timeControl);
+        libraryBase.gridwell.timeControl = null;
     }
 
     // Mouse up
-    libraryBase.jspreadsheet.isMouseAction = false;
+    libraryBase.gridwell.isMouseAction = false;
 }
 
 export function mouseDownControls(e: TargetEvent<MouseEvent>) {
@@ -66,7 +66,7 @@ export function mouseDownControls(e: TargetEvent<MouseEvent>) {
     const jssTable = getElement(e.target);
 
     // A press on a worksheet makes it the active worksheet. A press outside the spreadsheets leaves no active worksheet.
-    const previous = libraryBase.jspreadsheet.current;
+    const previous = libraryBase.gridwell.current;
     if (jssTable[0]) {
         if (previous !== jssTable[0].jssWorksheet) {
             if (previous) {
@@ -75,7 +75,7 @@ export function mouseDownControls(e: TargetEvent<MouseEvent>) {
                 }
                 previous.resetSelection();
             }
-            libraryBase.jspreadsheet.current = jssTable[0].jssWorksheet;
+            libraryBase.gridwell.current = jssTable[0].jssWorksheet;
         }
     } else {
         if (previous) {
@@ -85,12 +85,12 @@ export function mouseDownControls(e: TargetEvent<MouseEvent>) {
 
             if (!e.target.closest('.jss_object')) {
                 previous.selection.reset(true);
-                libraryBase.jspreadsheet.current = null;
+                libraryBase.gridwell.current = null;
             }
         }
     }
 
-    const current = libraryBase.jspreadsheet.current;
+    const current = libraryBase.gridwell.current;
 
     if (current && mouseButton === 1) {
         if (e.target.classList.contains('jss_selectall')) {
@@ -125,12 +125,12 @@ export function mouseDownControls(e: TargetEvent<MouseEvent>) {
         }
 
         if (current.editor.isOpen()) {
-            libraryBase.jspreadsheet.isMouseAction = false;
+            libraryBase.gridwell.isMouseAction = false;
         } else {
-            libraryBase.jspreadsheet.isMouseAction = true;
+            libraryBase.gridwell.isMouseAction = true;
         }
     } else {
-        libraryBase.jspreadsheet.isMouseAction = false;
+        libraryBase.gridwell.isMouseAction = false;
     }
 }
 
@@ -139,13 +139,13 @@ export function mouseMoveControls(e: TargetEvent<MouseEvent>) {
     e = e || window.event;
 
     if (!getMouseButton(e)) {
-        libraryBase.jspreadsheet.isMouseAction = false;
+        libraryBase.gridwell.isMouseAction = false;
     }
 
-    const current = libraryBase.jspreadsheet.current;
+    const current = libraryBase.gridwell.current;
 
     if (current) {
-        if (libraryBase.jspreadsheet.isMouseAction === true) {
+        if (libraryBase.gridwell.isMouseAction === true) {
             // Resizing is ongoing
             if (current.pointer.resizing) {
                 current.pointer.moveResize(e);
@@ -162,12 +162,12 @@ export function mouseOverControls(e: TargetEvent<MouseEvent>) {
     e = e || window.event;
 
     if (!getMouseButton(e)) {
-        libraryBase.jspreadsheet.isMouseAction = false;
+        libraryBase.gridwell.isMouseAction = false;
     }
 
-    const current = libraryBase.jspreadsheet.current;
+    const current = libraryBase.gridwell.current;
 
-    if (current && libraryBase.jspreadsheet.isMouseAction === true) {
+    if (current && libraryBase.gridwell.isMouseAction === true) {
         // Get elements
         const jssTable = getElement(e.target);
 
@@ -182,14 +182,14 @@ export function mouseOverControls(e: TargetEvent<MouseEvent>) {
     }
 
     // Clear any time control
-    if (libraryBase.jspreadsheet.timeControl) {
-        clearTimeout(libraryBase.jspreadsheet.timeControl);
-        libraryBase.jspreadsheet.timeControl = null;
+    if (libraryBase.gridwell.timeControl) {
+        clearTimeout(libraryBase.gridwell.timeControl);
+        libraryBase.gridwell.timeControl = null;
     }
 }
 
 export function doubleClickControls(e: TargetEvent<MouseEvent>) {
-    const current = libraryBase.jspreadsheet.current;
+    const current = libraryBase.gridwell.current;
 
     // Jss is selected
     if (current) {
