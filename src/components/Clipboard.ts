@@ -24,7 +24,7 @@ function quote<T>(value: T, div: RegExp): T | string {
  * @param w - The width of the selection.
  * @param h - The height of the selection.
  */
-function repeatToSelection(rows: jspreadsheet.CellValue[][], style: string[] | null, w: number, h: number) {
+function repeatToSelection<T>(rows: T[][], style: string[] | null, w: number, h: number) {
     const srcW = rows[0].length;
     if (w > 1 && Number.isInteger(w / srcW)) {
         const repeats = w / srcW;
@@ -467,8 +467,8 @@ export class Clipboard {
             data = worksheet.clipboard.data;
         }
 
-        // Split new line. The rows and columns of the text, which can grow below to fill the selection, or be replaced by onbeforepaste
-        let rows: jspreadsheet.CellValue[][] = parseCSV(data, '\t');
+        // Split new line. The rows and columns of the text, which can grow below to fill the selection
+        const text = parseCSV(data, '\t');
 
         // The end of the selection, to repeat the data over it. Without a selection, the data is pasted once.
         const ex = worksheet.selection.range ? worksheet.selection.range[2] : x;
@@ -478,13 +478,17 @@ export class Clipboard {
         const h = ey - y + 1;
 
         // Modify data to allow wor extending paste range in multiples of input range
-        ({ rows, style } = repeatToSelection(rows, style, w, h));
+        const repeated = repeatToSelection(text, style, w, h);
+        style = repeated.style;
+
+        // The rows to paste, which onbeforepaste can replace
+        let rows: jspreadsheet.CellValue[][] = repeated.rows;
 
         // Paste filter
         const ret = worksheet.dispatch(
             'onbeforepaste',
             worksheet,
-            rows.map((row) => {
+            repeated.rows.map((row) => {
                 return row.map((item) => {
                     return { value: item };
                 });

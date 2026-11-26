@@ -499,8 +499,7 @@ describe('Paste', () => {
         });
 
         it('pastes the values of the { value } objects that it returns (issue #54)', () => {
-            // TYPING: the values that onbeforepaste gets come from the pasted text, so they are strings, but they are typed CellValue
-            const sheet = pasteWith((instance, cells) => cells.map((row) => row.map((cell) => ({ value: (cell.value as string).toUpperCase() }))));
+            const sheet = pasteWith((instance, cells) => cells.map((row) => row.map((cell) => ({ value: cell.value.toUpperCase() }))));
 
             expect(sheet.getData()).to.eql([
                 ['A', 'B', ''],

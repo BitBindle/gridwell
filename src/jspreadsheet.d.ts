@@ -876,13 +876,13 @@ declare namespace jspreadsheet {
          * If it returns rows, of `{ value }` objects as it got them or of values, they are pasted instead.
          *
          * @param instance - Instance of the worksheet where data will be pasted.
-         * @param copiedText - The rows of the pasted cells.
+         * @param copiedText - The rows of the pasted cells, with the text of each cell.
          * @param colIndex - Column index where it will start the paste.
          * @param rowIndex - Row index where it will start the paste.
          */
         onbeforepaste?: (
             instance: WorksheetInstance,
-            copiedText: { value: CellValue }[][],
+            copiedText: { value: string }[][],
             colIndex: number | string,
             rowIndex: number | string
         ) => undefined | boolean | string | ({ value: CellValue } | CellValue)[][];

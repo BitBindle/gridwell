@@ -316,3 +316,9 @@ assertType<Equals<ReturnType<typeof library.helpers.createFromTable>, jspreadshe
 library.helpers.createFromTable(table);
 // @ts-expect-error -- a div needs the options with the worksheets
 library(document.createElement('div'));
+
+// The cells that onbeforepaste gets have the pasted text
+library(document.createElement('div'), {
+    worksheets: [{}],
+    onbeforepaste: (instance, copiedText) => copiedText.map((row) => row.map((cell) => cell.value.trim())),
+});
