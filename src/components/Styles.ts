@@ -5,6 +5,42 @@ import type { Worksheet } from '../types/internal';
 type StyleProperties = Record<string, string>;
 
 /**
+ * Split a style text into its declarations at the semicolons that are outside quotes and parentheses, so that a value
+ * such as url(data:image/png;base64,...) or "a;b" stays whole.
+ * @param text - The style text, for example "color: red; background: url(...)".
+ */
+function splitDeclarations(text: string) {
+    const declarations: string[] = [];
+    let start = 0;
+    let quote = '';
+    let depth = 0;
+
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (quote) {
+            if (char === '\\') {
+                // The next character is escaped
+                i++;
+            } else if (char === quote) {
+                quote = '';
+            }
+        } else if (char === '"' || char === "'") {
+            quote = char;
+        } else if (char === '(') {
+            depth++;
+        } else if (char === ')' && depth > 0) {
+            depth--;
+        } else if (char === ';' && depth === 0) {
+            declarations.push(text.substring(start, i));
+            start = i + 1;
+        }
+    }
+    declarations.push(text.substring(start));
+
+    return declarations;
+}
+
+/**
  * The styles of the cells of a worksheet, kept in the style attribute of each cell.
  *
  * Each worksheet has one, as worksheet.styles. getStyle, setStyle and resetStyle call it.
@@ -121,7 +157,7 @@ export class Styles {
             for (const cellName of keys) {
                 let style: string | string[] = (o as Record<string, string | string[]>)[cellName];
                 if (typeof style === 'string') {
-                    style = style.split(';');
+                    style = splitDeclarations(style);
                 }
                 for (const declaration of style) {
                     // Split into a new variable, so that the styles the application gave stay as they are
@@ -131,8 +167,9 @@ export class Styles {
                         property = property.split(/:(.*)/);
                     }
                     // Apply value
+                    // The cell gives its values without spaces around them, so a value is compared without them too
                     if (property[0].trim()) {
-                        applyStyle(cellName, property[0].trim(), property[1]);
+                        applyStyle(cellName, property[0].trim(), property[1]?.trim());
                     }
                 }
             }

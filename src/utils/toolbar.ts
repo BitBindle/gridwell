@@ -26,19 +26,25 @@ function getUpdateState(spreadsheet: Spreadsheet) {
 }
 
 /**
- * Give the selected cells of the worksheet a style.
- * @param style - A CSS property and its value, such as 'font-size: large'.
+ * Give the selected cells of the worksheet a style. setStyle toggles off a value that a cell has already, so a select
+ * item, which sets the value the user chose, leaves those cells out, and only a button such as bold toggles.
+ * @param property - A CSS property, such as 'font-size'.
+ * @param value - Its value, such as 'large'.
+ * @param toggle - Toggle the value off in the cells that have it.
  */
-function setSelectedStyle(worksheet: Worksheet, style: string) {
+function setSelectedStyle(worksheet: Worksheet, property: string, value: string, toggle?: boolean) {
     const cells = worksheet.getSelected(true);
     if (cells) {
-        worksheet.setStyle(
-            Object.fromEntries(
-                cells.map((cellName: string) => {
-                    return [cellName, style];
-                })
-            )
-        );
+        const changed = toggle ? cells : cells.filter((cellName: string) => worksheet.getStyle(cellName, property) !== value);
+        if (changed.length) {
+            worksheet.setStyle(
+                Object.fromEntries(
+                    changed.map((cellName: string) => {
+                        return [cellName, `${property}:${value}`];
+                    })
+                )
+            );
+        }
     }
 }
 
@@ -99,7 +105,7 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
                 // e is the key of the option as text, and the first option is Default
                 const value = e === '0' ? '' : d;
 
-                setSelectedStyle(spreadsheet.getWorksheetInstance(), `font-family: ${value}`);
+                setSelectedStyle(spreadsheet.getWorksheetInstance(), 'font-family', value);
             },
             updateState: getUpdateState(spreadsheet),
         },
@@ -112,7 +118,7 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
                 return `<span style="font-size:${e}">${e}</span>`;
             },
             onchange(a: HTMLElement, b: object, c: string, value: string) {
-                setSelectedStyle(spreadsheet.getWorksheetInstance(), `font-size: ${value}`);
+                setSelectedStyle(spreadsheet.getWorksheetInstance(), 'font-size', value);
             },
             updateState: getUpdateState(spreadsheet),
         },
@@ -123,14 +129,14 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
                 return `<i class="material-icons">format_align_${e}</i>`;
             },
             onchange(a: HTMLElement, b: object, c: string, value: string) {
-                setSelectedStyle(spreadsheet.getWorksheetInstance(), `text-align: ${value}`);
+                setSelectedStyle(spreadsheet.getWorksheetInstance(), 'text-align', value);
             },
             updateState: getUpdateState(spreadsheet),
         },
         {
             content: 'format_bold',
             onclick() {
-                setSelectedStyle(spreadsheet.getWorksheetInstance(), 'font-weight:bold');
+                setSelectedStyle(spreadsheet.getWorksheetInstance(), 'font-weight', 'bold', true);
             },
             updateState: getUpdateState(spreadsheet),
         },
@@ -164,7 +170,7 @@ function getVerticalAlignItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarIte
         value: 1,
         onchange(a: HTMLElement, b: object, c: string, d: string, value: string) {
             // The key is the index of the option as text
-            setSelectedStyle(spreadsheet.getWorksheetInstance(), `vertical-align: ${(verticalAlign as unknown as Record<string, string>)[value]}`);
+            setSelectedStyle(spreadsheet.getWorksheetInstance(), 'vertical-align', (verticalAlign as unknown as Record<string, string>)[value]);
         },
         updateState: getUpdateState(spreadsheet),
     };
@@ -457,17 +463,8 @@ export class Toolbar {
 
                     if (item.k && !item.onchange) {
                         item.onchange = (el: HTMLElement, config: object, value: string) => {
-                            const worksheet = spreadsheet.getWorksheetInstance();
-
-                            const cells = worksheet.getSelected(true);
-
-                            worksheet.setStyle(
-                                Object.fromEntries(
-                                    cells.map((cellName: string) => {
-                                        return [cellName, `${item.k}: ${value}`];
-                                    })
-                                )
-                            );
+                            // The CSS property of a select item with v
+                            setSelectedStyle(spreadsheet.getWorksheetInstance(), item.k as string, value);
                         };
                     }
                 }
@@ -478,17 +475,8 @@ export class Toolbar {
                     if (!c.color) {
                         jSuites.color(c, {
                             onchange(o: HTMLElement, v: string) {
-                                const worksheet = spreadsheet.getWorksheetInstance();
-
-                                const cells = worksheet.getSelected(true);
-
-                                worksheet.setStyle(
-                                    Object.fromEntries(
-                                        cells.map((cellName: string) => {
-                                            return [cellName, `${item.k}: ${v}`];
-                                        })
-                                    )
-                                );
+                                // The CSS property of a color item
+                                setSelectedStyle(spreadsheet.getWorksheetInstance(), item.k as string, v);
                             },
                             onopen(o: HTMLElement & { color: Color }) {
                                 o.color.select('');

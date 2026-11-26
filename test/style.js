@@ -81,4 +81,40 @@ describe('Style', () => {
         instance[0].redo();
         expect(instance[0].getStyle('A1', 'background-image')).to.equal('url(http://example.com/a.png)');
     });
+
+    it('keeps a value that has a semicolon, also after undo and redo (issue #48)', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [2, 2], style: { B1: 'color:red;background-image:url(data:image/png;base64,AAA=)' } }],
+        })[0];
+        const url = 'url(data:image/png;base64,iVBORw0KGgo=)';
+
+        expect(worksheet.getStyle('B1', 'background-image')).to.contain('data:image/png;base64,AAA=');
+        expect(worksheet.getStyle('B1', 'color')).to.equal('red');
+
+        worksheet.setStyle({ A1: `background-image:${url};color:blue` });
+
+        expect(worksheet.getStyle('A1', 'background-image')).to.contain('data:image/png;base64,iVBORw0KGgo=');
+        expect(worksheet.getStyle('A1', 'color')).to.equal('blue');
+
+        worksheet.undo();
+        expect(worksheet.getStyle('A1', 'background-image')).to.equal('');
+
+        worksheet.redo();
+        expect(worksheet.getStyle('A1', 'background-image')).to.contain('data:image/png;base64,iVBORw0KGgo=');
+        expect(worksheet.getStyle('A1', 'color')).to.equal('blue');
+    });
+
+    it('applies a value with a space after the colon, and toggles it off as a value without one (issue #67)', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [2, 2], style: { A1: 'color: red', B1: 'color:red' } }] })[0];
+
+        expect(worksheet.getStyle('A1', 'color')).to.equal('red');
+        expect(worksheet.getStyle('B1', 'color')).to.equal('red');
+
+        worksheet.setStyle({ A1: 'color: red', B1: 'color:red' });
+
+        expect(worksheet.getStyle('A1', 'color')).to.equal('');
+        expect(worksheet.getStyle('B1', 'color')).to.equal('');
+        expect(worksheet.history.records[0].newValue).to.eql({ A1: 'color:', B1: 'color:' });
+        expect(worksheet.history.records[0].oldValue).to.eql({ A1: 'color:red', B1: 'color:red' });
+    });
 });

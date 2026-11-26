@@ -290,3 +290,9 @@ A formula in a footer runs as `executeFormula` without coordinates: `onbeforefor
 as `x` and `y`. Version 5 gave them the position of a data cell, the number of rows plus the column, so a footer formula
 that referred to that cell showed `#ERROR`, and the footer was in the formula chain under the name of that cell (#18).
 A footer shows the result of its formula, or its text, without the mask of a column.
+
+## setStyle trims the values
+
+`setStyle` with an object and the `style` option trim the value of each declaration, as they trim the property, so
+`color: red` sets `red`. Version 5 set `' red'`: setting the same style again did not toggle it off (#67). The history
+and `onchangestyle` get the trimmed value, for example `color:red` for `color: red`.
