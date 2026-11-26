@@ -310,3 +310,167 @@ describe('Worksheet tabs', () => {
         expect(root.tabs.getActive()).to.eq(2);
     });
 });
+
+describe('The methods of element.tabs', () => {
+    let prompt;
+    let answers;
+
+    beforeEach(() => {
+        prompt = window.prompt;
+        answers = [];
+        window.prompt = global.prompt = () => answers.shift();
+    });
+
+    afterEach(() => {
+        window.prompt = global.prompt = prompt;
+    });
+
+    const titles = () => getTabs().map((tab) => tab.textContent);
+
+    it('renames a tab with the title or the answer of the prompt', async () => {
+        await create();
+        const tabs = root.tabs;
+
+        tabs.rename(0, 'One');
+        answers.push('Two');
+        tabs.rename(1);
+        answers.push(null);
+        tabs.rename(2);
+        tabs.rename(7, 'None');
+
+        expect(titles()).to.eql(['One', 'Two', 'Third']);
+    });
+
+    it('gives the number after the highest number in the titles', async () => {
+        await create();
+        const tabs = root.tabs;
+
+        expect(tabs.nextNumber()).to.equal(1);
+
+        tabs.rename(1, 'Sheet4');
+        expect(tabs.nextNumber()).to.equal(5);
+    });
+
+    it('adds a tab at a position, and no tab when the prompt for its title is cancelled', async () => {
+        await create();
+        const tabs = root.tabs;
+        const added = [];
+
+        const div = tabs.appendElement('New', (content, header) => added.push([content, header.textContent]), false, 1);
+
+        expect(titles()).to.eql(['First', 'New', 'Second', 'Third']);
+        expect(getPanels()[1]).to.equal(div);
+        expect(added).to.eql([[div, 'New']]);
+        expect(tabs.getActive()).to.equal(0);
+
+        answers.push('');
+        expect(tabs.appendElement()).to.equal(undefined);
+        expect(getTabs()).to.have.length(4);
+    });
+
+    it('replaces the content of a tab with an element or a text', async () => {
+        await create();
+        const tabs = root.tabs;
+        const ids = getPanels().map((panel) => panel.id);
+
+        const element = document.createElement('section');
+        tabs.updateContent(0, element);
+
+        expect(getPanels()[0]).to.equal(element);
+        expect(element.id).to.equal(ids[0]);
+        expect(element.getAttribute('role')).to.equal('tabpanel');
+        expect(element.classList.contains('jtabs-selected')).to.equal(true);
+        expect(getTabs()[0].getAttribute('aria-controls')).to.equal(ids[0]);
+
+        tabs.updateContent(1, '<p>Text</p>');
+        expect(getPanels()[1].innerHTML).to.equal('<p>Text</p>');
+        expect(getPanels()[1].getAttribute('aria-labelledby')).to.equal(getTabs()[1].id);
+
+        tabs.updateContent(9, 'Nothing');
+        expect(getPanels()).to.have.length(3);
+    });
+
+    it('moves a tab and its content', async () => {
+        await create();
+        const tabs = root.tabs;
+        const moves = [];
+        tabs.options.onchangeposition = (headers, from, to) => moves.push([from, to]);
+        const panels = getPanels();
+
+        tabs.move(0, 2);
+        expect(titles()).to.eql(['Second', 'Third', 'First']);
+        expect(getPanels()).to.eql([panels[1], panels[2], panels[0]]);
+        expect(tabs.getActive()).to.equal(2);
+
+        tabs.move(2, 0, true, false);
+        expect(titles()).to.eql(['First', 'Second', 'Third']);
+        expect(getPanels()).to.eql(panels);
+        expect(moves).to.eql([[0, 2]]);
+    });
+
+    it('opens no tab that is not there and removes no tab that is not there', async () => {
+        await create();
+        const tabs = root.tabs;
+
+        tabs.open(5);
+        expect(tabs.getActive()).to.equal(0);
+
+        expect(tabs.deleteElement(5)).to.equal(false);
+        expect(getTabs()).to.have.length(3);
+    });
+
+    it('keeps the focus in the tab list when the focused tab is removed', async () => {
+        await create();
+        const tabs = root.tabs;
+        const deleted = [];
+        tabs.options.ondelete = (element, index) => deleted.push(index);
+
+        tabs.open(1);
+        getTabs()[1].focus();
+        tabs.deleteElement(1);
+
+        expect(document.activeElement).to.equal(getTabs()[0]);
+        expect(deleted).to.eql([1]);
+    });
+
+    it('creates no tab when onbeforecreate returns false', async () => {
+        await create();
+        const tabs = root.tabs;
+        tabs.options.onbeforecreate = () => false;
+
+        expect(tabs.create('Extra')).to.equal(false);
+        expect(getTabs()).to.have.length(3);
+    });
+
+    it('calls onclick with the clicked tab and ignores the arrow keys with a modifier', async () => {
+        await create();
+        const tabs = root.tabs;
+        const clicks = [];
+        tabs.options.onclick = (element, instance, index, header) => clicks.push([index, header.textContent]);
+
+        getTabs()[2].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(clicks).to.eql([[2, 'Third']]);
+
+        tabs.headers.querySelector('.jtabs-border').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(clicks).to.have.length(1);
+
+        getTabs()[2].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', ctrlKey: true, bubbles: true }));
+        expect(tabs.getActive()).to.equal(2);
+    });
+
+    it('scrolls the tab list with the scroll buttons', async () => {
+        await create();
+        const tabs = root.tabs;
+        const prev = root.querySelector('.jtabs-prev');
+        const next = root.querySelector('.jtabs-next');
+
+        next.click();
+        prev.click();
+
+        // jsdom has no layout, so the list is as wide as its tabs and the buttons are hidden
+        expect(prev.style.display).to.equal('none');
+        expect(next.style.display).to.equal('none');
+        expect(prev.classList.contains('disabled')).to.equal(true);
+        expect(tabs.headers.scrollLeft).to.equal(0);
+    });
+});
