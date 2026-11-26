@@ -1,5 +1,4 @@
 import libraryBase from '../utils/libraryBase.js';
-import { setWidth } from '../utils/columns.js';
 import { moveRow, setHeight } from '../utils/rows.js';
 import { getElement, getIndex } from './helpers.js';
 import type { TargetEvent, Worksheet } from '../types/internal';
@@ -69,9 +68,9 @@ const endResize = function (this: Worksheet) {
             // Previous width
             const index = columns.indexOf(parseInt(resizing.column));
             currentWidth[index] = resizing.width;
-            setWidth.call(obj, columns, newWidth, currentWidth);
+            obj.columns.setWidth(columns, newWidth, currentWidth);
         } else {
-            setWidth.call(obj, parseInt(resizing.column), newWidth, resizing.width);
+            obj.columns.setWidth(parseInt(resizing.column), newWidth, resizing.width);
         }
         // Remove border
         obj.headers[resizing.column].classList.remove('resizing');
