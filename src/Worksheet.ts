@@ -556,9 +556,9 @@ export class Worksheet {
     }
 
     /**
-     * Add a worksheet to the spreadsheet, in a new tab.
+     * Add a worksheet to the spreadsheet, in a new tab. The tabs add it at the end, and position moves it.
      */
-    createWorksheet(options: jspreadsheet.WorksheetOptions) {
+    createWorksheet(options: jspreadsheet.WorksheetOptions, position?: number) {
         const spreadsheet = this.parent;
 
         spreadsheet.creationThroughJss = true;
@@ -566,6 +566,56 @@ export class Worksheet {
         spreadsheet.createWorksheetObj(options);
 
         spreadsheet.element.tabs!.create(options.worksheetName);
+
+        const last = spreadsheet.worksheets.length - 1;
+        if (Number.isInteger(position) && position! >= 0 && position! < last) {
+            spreadsheet.placeWorksheet(last, position!);
+        }
+    }
+
+    /**
+     * Move a worksheet and its tab to another position.
+     */
+    moveWorksheet(from: number, to: number) {
+        const spreadsheet = this.parent;
+        const count = spreadsheet.worksheets.length;
+
+        if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to < 0 || from >= count || to >= count) {
+            return false;
+        }
+        if (from === to) {
+            return;
+        }
+
+        const worksheet = spreadsheet.worksheets[from];
+        spreadsheet.placeWorksheet(from, to);
+
+        worksheet.dispatch('onmoveworksheet', worksheet, from, to);
+    }
+
+    /**
+     * Rename a worksheet, its tab and the accessible name of its table.
+     */
+    renameWorksheet(position: number, name: string) {
+        const spreadsheet = this.parent;
+        const worksheet = spreadsheet.worksheets[position];
+
+        // A name of spaces would give the tab and the table no accessible name
+        if (!worksheet || typeof name !== 'string' || !name.trim()) {
+            return false;
+        }
+        if (spreadsheet.worksheets.some((other) => other !== worksheet && other.options.worksheetName === name)) {
+            return false;
+        }
+
+        const oldName = worksheet.options.worksheetName!;
+        if (oldName !== name) {
+            worksheet.options.worksheetName = name;
+            spreadsheet.element.tabs!.rename(position, name);
+            worksheet.accessibility.setGridLabels();
+
+            worksheet.dispatch('onrenameworksheet', worksheet, position, name, oldName);
+        }
     }
 
     /**
