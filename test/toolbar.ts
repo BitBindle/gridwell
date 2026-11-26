@@ -726,4 +726,145 @@ describe('Toolbar', () => {
             expect(picker.getAttribute('aria-expanded')).to.equal('true');
         });
     });
+    describe('Pickers', () => {
+        type PickerElement = HTMLElement & { picker: Jspreadsheet.PickerInstance };
+
+        // A toolbar item may have the other options of a picker, which the typings do not list
+        const createPicker = async (options: Record<string, unknown> = {}) => {
+            const item = { type: 'select', options: ['a', 'b', 'c', 'd'], ...options } as Jspreadsheet.ToolbarItem;
+            jspreadsheet(root, { toolbar: [item], worksheets: [{ minDimensions: [3, 3] }] });
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            const element = root.querySelector<PickerElement>('.jss_toolbar .jpicker')!;
+            const header = element.querySelector<HTMLElement>('.jpicker-header')!;
+            const content = element.querySelector<HTMLElement>('.jpicker-content')!;
+            return { element, header, content, picker: element.picker };
+        };
+
+        const rect = (element: HTMLElement, left: number, width: number, height: number) => {
+            element.getBoundingClientRect = () => ({ left, top: 0, right: left + width, bottom: height, width, height }) as DOMRect;
+        };
+
+        const key = (element: Element, keyName: string) => {
+            const event = new KeyboardEvent('keydown', { key: keyName, bubbles: true, cancelable: true });
+            element.dispatchEvent(event);
+            return event;
+        };
+
+        it('shows the first option when the value is not a number', async () => {
+            const { element, header } = await createPicker({ value: 'x' });
+
+            expect(header.textContent).to.equal('a');
+            expect(element.querySelector('.jpicker-item')!.getAttribute('aria-selected')).to.equal('true');
+        });
+
+        it('shows the options in columns', async () => {
+            const { content } = await createPicker({ columns: 3 });
+
+            expect(content.classList.contains('jpicker-columns')).to.equal(true);
+            expect(content.style.width).to.equal('108px');
+        });
+
+        it('gives the columns the width of the item', async () => {
+            const { content } = await createPicker({ columns: 3, width: '200px' });
+
+            expect(content.style.width).to.equal('200px');
+        });
+
+        it('opens the list above the picker with the bottom option', async () => {
+            const { header, content, picker } = await createPicker({ bottom: true });
+            rect(header, 0, 50, 20);
+            rect(content, 0, 100, 80);
+
+            picker.open();
+
+            expect(content.style.marginTop).to.equal('-84px');
+        });
+
+        it('opens the list below the picker, or above it when there is no room below', async () => {
+            const { header, content, picker } = await createPicker();
+            rect(header, 0, 50, 20);
+            rect(content, 0, 100, 80);
+
+            picker.open();
+            expect(content.style.marginTop).to.equal('24px');
+            picker.close();
+
+            rect(header, 0, 50, window.innerHeight);
+            picker.open();
+            expect(content.style.marginTop).to.equal('-84px');
+        });
+
+        it('aligns the list with the right side of the picker with the right option', async () => {
+            const { header, content, picker } = await createPicker({ right: true });
+            rect(header, 300, 50, 20);
+            rect(content, 300, 200, 80);
+
+            picker.open();
+
+            expect(content.style.marginLeft).to.equal('-150px');
+        });
+
+        it('keeps the list inside the window', async () => {
+            const { header, content, picker } = await createPicker();
+            rect(header, 0, 50, 20);
+
+            rect(content, -20, 200, 80);
+            picker.open();
+            expect(content.style.marginLeft).to.equal('-10px');
+            picker.close();
+
+            rect(content, window.innerWidth - 100, 200, 80);
+            picker.open();
+            expect(content.style.marginLeft).to.equal('-110px');
+        });
+
+        it('does not move an open list when it opens again', async () => {
+            const { content, picker } = await createPicker();
+
+            picker.open();
+            content.style.marginLeft = '5px';
+            picker.open();
+
+            expect(picker.isOpened()).to.equal(true);
+            expect(content.style.marginLeft).to.equal('5px');
+        });
+
+        it('takes only the keys on the picker itself', async () => {
+            const { element, header } = await createPicker();
+
+            key(header, 'Enter');
+
+            expect(element.classList.contains('jpicker-focus')).to.equal(false);
+        });
+
+        it('does not open without options', async () => {
+            const { element } = await createPicker({ options: [] });
+
+            expect(key(element, 'Enter').defaultPrevented).to.equal(false);
+            expect(element.classList.contains('jpicker-focus')).to.equal(false);
+        });
+
+        it('moves back with ArrowUp and ArrowLeft, to the first option with Home, and closes on Tab', async () => {
+            const { element } = await createPicker();
+            const items = element.querySelectorAll('.jpicker-item');
+
+            key(element, 'ArrowDown');
+            key(element, 'End');
+            key(element, 'ArrowUp');
+            expect(element.getAttribute('aria-activedescendant')).to.equal(items[2].id);
+            key(element, 'ArrowLeft');
+            expect(element.getAttribute('aria-activedescendant')).to.equal(items[1].id);
+            key(element, 'Home');
+            expect(element.getAttribute('aria-activedescendant')).to.equal(items[0].id);
+            key(element, 'ArrowUp');
+            expect(element.getAttribute('aria-activedescendant')).to.equal(items[0].id);
+
+            // Other keys do nothing, and Tab moves on without the default prevented
+            expect(key(element, 'a').defaultPrevented).to.equal(false);
+            expect(element.classList.contains('jpicker-focus')).to.equal(true);
+            expect(key(element, 'Tab').defaultPrevented).to.equal(false);
+            expect(element.classList.contains('jpicker-focus')).to.equal(false);
+        });
+    });
 });

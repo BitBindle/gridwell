@@ -32,7 +32,7 @@ The tools need Node 22.22 or later (the library itself runs in the browser). No 
 
 Building and testing do not change the source. CI checks the formatting and lint separately, so run `npm run format` before you commit.
 
-`npm run coverage` builds `dist/index.js` without minifying it and with a source map, so c8 reports the coverage of the files in `src/`. It fails when the coverage of a file is under the thresholds in `.c8rc.json`: 80% of the lines, the statements and the functions, and 70% of the branches. Add tests with your change so that it stays above them. Run `npm run build` again afterwards for a minified bundle.
+`npm run coverage` builds `dist/index.js` without minifying it and with a source map, so c8 reports the coverage of the files in `src/`. It fails when the coverage of a file is under the thresholds in `.c8rc.json`: 85% of the lines, the statements and the functions, and 75% of the branches. Add tests with your change so that it stays above them. Run `npm run build` again afterwards for a minified bundle.
 
 The tests import the built bundle (through `test/support/jspreadsheet.ts`), not `src/`. After you change the source, build again before you run a single test file, or the tests run against old code.
 
@@ -89,6 +89,7 @@ Modules import each other with the `.js` extension, although the files are `.ts`
 
 - A webpack plugin wraps the bundle in a UMD header. The bundle imports no package: do not import `@jspreadsheet/formula` in `src/`, except in the dev page `src/test.js`: the application registers it.
 - The build produces one minified UMD file, `dist/index.js`. There is no ES module build.
+- `jspreadsheet.version()` gives the version in `package.json`: webpack replaces `__VERSION__` in `src/utils/version.ts` with it. The major and minor version are set by hand in `package.json`, and the publish workflow gives the patch (see [Releases](#releases)).
 - The npm package has only `dist/` and `resources/lang/` (`files` in `package.json`), with the README and the license.
 
 ## Things to keep
@@ -119,6 +120,10 @@ Modules import each other with the `.js` extension, although the files are `.ts`
 - Write JSDoc comments as a sentence, then `@param name - text` for each parameter, without types: the types are in the code.
 - Loop over the items with `for (const item of items)`, and over an object with `for (const [key, value] of Object.entries(o))`; keep an index loop when the index is needed. Search a list with `includes`. ESLint checks these (`@typescript-eslint/prefer-for-of`, `@typescript-eslint/prefer-includes`).
 - Follow the style of the code around your change. Keep changes small and focused.
+
+## Releases
+
+`.github/workflows/publish.yml` publishes the package to npm. A maintainer runs it by hand on `master` from the Actions tab; it does not run on a push. It takes the major and minor version from `package.json` and the next patch of that minor version from npm (`.github/scripts/next-version.cjs`, tested in `test/release.ts`), sets the version, runs the checks and the tests, publishes with npm trusted publishing (OIDC, no token) and provenance, and pushes the tag `v<version>`. The patch is not committed: `package.json` keeps `<major>.<minor>.0`. Change `package.json` only for a new major or minor version, in a pull request. [CONTRIBUTING.md](CONTRIBUTING.md#releases) has the setup on npmjs.com.
 
 ## Commits and pull requests
 

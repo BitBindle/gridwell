@@ -142,7 +142,8 @@ npm run lint       # ESLint and the import cycle check
 npm run typecheck
 ```
 
-The 632 tests run in jsdom and cover 95% of the lines.
+The tests run in jsdom and cover 96% of the lines. CI fails when a file has less than 85% of its lines or 75% of its
+branches covered.
 
 [AGENTS.md](AGENTS.md) describes the code and the conventions, and [ARCHITECTURE.md](ARCHITECTURE.md) describes the
 classes.

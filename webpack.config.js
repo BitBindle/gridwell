@@ -1,5 +1,7 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
+const { DefinePlugin } = require('webpack');
+const { version } = require('./package.json');
 
 class MyPlugin {
     apply(compiler) {
@@ -66,7 +68,8 @@ module.exports = (env, argv) => {
             },
             hot: 'only',
         },
-        plugins: [],
+        // The version that jspreadsheet.version() gives. The publish workflow sets it in package.json before the build.
+        plugins: [new DefinePlugin({ __VERSION__: JSON.stringify(version) })],
         resolve: {
             extensions: ['.ts', '.js'],
             // The modules import each other with the .js extension, also when the file is a .ts file

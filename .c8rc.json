@@ -1,11 +1,11 @@
 {
-    "exclude": ["mocha.config.js", "test/**", "node_modules/**", "dist/webpack/**"],
+    "exclude": ["mocha.config.js", "test/**", ".github/**", "node_modules/**", "dist/webpack/**"],
     "excludeAfterRemap": true,
     "reporter": ["text-summary", "text", "lcov"],
     "checkCoverage": true,
     "perFile": true,
-    "lines": 80,
-    "statements": 80,
-    "functions": 80,
-    "branches": 70
+    "lines": 85,
+    "statements": 85,
+    "functions": 85,
+    "branches": 75
 }

@@ -236,6 +236,7 @@ describe('The default context menu', () => {
 
         expect(messages).to.have.length(1);
         expect(messages[0]).to.match(/Gridwell/);
+        expect(String(messages[0])).to.contain(jspreadsheet.version().version);
     });
 
     it('shows the text of the about option with "About"', async () => {
