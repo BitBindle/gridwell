@@ -354,3 +354,26 @@ Jspreadsheet keeps its own dictionary and no longer reads the dictionary of jSui
 `jSuites.setDictionary`, or set `document.dictionary`, to translate the texts of the spreadsheet calls
 `jspreadsheet.setDictionary` instead. It takes the same object, and still passes it to jSuites for the controls that
 jSuites shows, such as the calendar. An empty translation shows the English text again.
+
+## The requests are sent with fetch
+
+The worksheet loads the `csv` and `url` options and the `url` of a dropdown column, and posts the changes of the
+`persistence` option, with `fetch` in place of `jSuites.ajax`. The requests have the same method, body and
+`X-Requested-With` header, but a GET request no longer has the header `Content-Type: text/json`. The `beforeSend`
+handlers of `jSuites.ajax` and `document.ajax` no longer see these requests: to add a header, such as a token, use the
+new `onbeforerequest` event, which gets the worksheet, the url and the options of `fetch`. It can change the options,
+return others, or return `false` to cancel the request.
+
+```javascript
+jspreadsheet(element, {
+    worksheets: [{ url: '/data' }],
+    onbeforerequest(worksheet, url, options) {
+        options.headers.Authorization = `Bearer ${token}`;
+    },
+});
+```
+
+A request that fails, or that the server answers with a status that is not 2xx, is logged with `console.error`. A
+worksheet whose `csv` or `url` request fails is now built with its other options, such as `data` and `minDimensions`;
+before, it was never built. A dropdown column whose `url` fails is now created without its source, where a network error
+left the worksheet without its table before.

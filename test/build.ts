@@ -1,10 +1,7 @@
 import { expect } from 'chai';
-import jSuites from 'jsuites';
 
+import { stubFetch } from './support/fetch';
 import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
-
-// A request of the worksheet, as the stub of jSuites.ajax reads it
-type Request = { url: string; dataType?: string; success: (result: unknown) => void };
 
 // Create a spreadsheet and wait until it is built
 function create(options: Jspreadsheet.SpreadsheetOptions) {
@@ -19,40 +16,24 @@ function create(options: Jspreadsheet.SpreadsheetOptions) {
 }
 
 describe('Build of a worksheet', () => {
-    let ajax: typeof jSuites.ajax;
-    let requests: Request[];
-    // The response of the stubbed ajax, by url
-    let responses: Record<string, unknown>;
+    let server: ReturnType<typeof stubFetch>;
 
     beforeEach(() => {
-        ajax = jSuites.ajax;
-        requests = [];
-        responses = {};
-        jSuites.ajax = function (options: object | object[], complete?: () => void) {
-            // An array of requests, then a callback when all of them are done
-            const list = (Array.isArray(options) ? options : [options]) as Request[];
-            for (const request of list) {
-                requests.push(request);
-                request.success.call(request, responses[request.url]);
-            }
-            if (complete) {
-                complete();
-            }
-        };
+        server = stubFetch();
     });
 
     afterEach(() => {
-        jSuites.ajax = ajax;
+        server.restore();
     });
 
     it('loads the data and the headers of a CSV file', async () => {
-        responses['/data.csv'] = 'Name;Age\nAnn;30\nBob;40';
+        server.responses['/data.csv'] = { body: 'Name;Age\nAnn;30\nBob;40' };
 
         const [worksheet] = await create({
             worksheets: [{ csv: '/data.csv', csvHeaders: true, csvDelimiter: ';', columns: [{}, { title: 'Years' }] }],
         });
 
-        expect(requests[0].dataType).to.equal('text');
+        expect(server.requests[0].init.method).to.equal('GET');
         expect(worksheet.getData()).to.deep.equal([
             ['Ann', '30'],
             ['Bob', '40'],
@@ -63,8 +44,8 @@ describe('Build of a worksheet', () => {
     });
 
     it('loads the data from a url, as an array or in the data property of an object', async () => {
-        responses['/rows'] = [['a', 'b']];
-        responses['/object'] = { data: [['c', 'd']] };
+        server.responses['/rows'] = { body: [['a', 'b']] };
+        server.responses['/object'] = { body: { data: [['c', 'd']] } };
 
         const [first, second] = await create({
             worksheets: [{ url: '/rows' }, { url: '/object' }],
@@ -74,17 +55,86 @@ describe('Build of a worksheet', () => {
         expect(second.getData()).to.deep.equal([['c', 'd']]);
     });
 
+    it('builds the worksheet with its other options when the request of the csv or url option fails', async () => {
+        const errors: unknown[] = [];
+        const error = console.error;
+        console.error = (message: unknown) => errors.push(message);
+        server.responses['/broken'] = { status: 500 };
+
+        try {
+            // Before the fix, the worksheets were never built and onload never came
+            const loaded = await Promise.race([
+                create({
+                    worksheets: [
+                        { csv: '/missing.csv', minDimensions: [2, 2] },
+                        { url: '/broken', data: [['a']] },
+                    ],
+                }),
+                new Promise<null>((resolve) => setTimeout(() => resolve(null), 200)),
+            ]);
+
+            expect(loaded).to.not.equal(null);
+            const [first, second] = loaded!;
+            expect(first.getData()).to.eql([
+                ['', ''],
+                ['', ''],
+            ]);
+            expect(second.getData()).to.eql([['a']]);
+            expect(errors.map(String)).to.eql([
+                'Error: Jspreadsheet: the GET request to /missing.csv failed with the status 404',
+                'Error: Jspreadsheet: the GET request to /broken failed with the status 500',
+            ]);
+        } finally {
+            console.error = error;
+        }
+    });
+
+    it('lets onbeforerequest change the options of a request, replace them or cancel it', async () => {
+        server.responses['/rows'] = { body: [['a']] };
+        server.responses['/options'] = { body: ['x'] };
+        const calls: [string, string][] = [];
+
+        const [first, second, third] = await create({
+            worksheets: [{ url: '/rows' }, { csv: '/data.csv', minDimensions: [1, 1] }, { data: [['x']], columns: [{ type: 'dropdown', url: '/options' }] }],
+            onbeforerequest(instance, url, options) {
+                calls.push([instance.options.worksheetName!, url]);
+                if (url === '/rows') {
+                    (options.headers as Record<string, string>).Authorization = 'Bearer token';
+                } else if (url === '/options') {
+                    return { method: 'GET', headers: { Accept: 'application/json' } };
+                } else {
+                    return false;
+                }
+            },
+        });
+
+        expect(calls.map(([, url]) => url)).to.have.members(['/rows', '/data.csv', '/options']);
+        expect(calls.find(([, url]) => url === '/rows')![0]).to.equal(first.options.worksheetName);
+        // The cancelled request is not sent, and the worksheet is built without its data
+        expect(server.requests.map((request) => request.url)).to.have.members(['/rows', '/options']);
+        expect(server.requests.find((request) => request.url === '/rows')!.init.headers).to.eql({
+            'X-Requested-With': 'XMLHttpRequest',
+            Authorization: 'Bearer token',
+        });
+        expect(server.requests.find((request) => request.url === '/options')!.init).to.eql({ method: 'GET', headers: { Accept: 'application/json' } });
+        expect(first.getData()).to.eql([['a']]);
+        expect(second.getData()).to.eql([['']]);
+        await server.settle();
+        expect(third.options.columns[0].source).to.eql(['x']);
+    });
+
     it('loads the source of a dropdown column from its url before it creates the table', async () => {
-        responses['/options'] = [
+        const options = [
             { id: 1, name: 'One' },
             { id: 2, name: 'Two' },
         ];
+        server.responses['/options'] = { body: options };
 
         const [worksheet] = await create({
             worksheets: [{ data: [[2]], columns: [{ type: 'dropdown', url: '/options' }] }],
         });
 
-        expect(worksheet.options.columns[0].source).to.deep.equal(responses['/options']);
+        expect(worksheet.options.columns[0].source).to.deep.equal(options);
         expect(worksheet.getCell('A1').textContent).to.equal('Two');
     });
 

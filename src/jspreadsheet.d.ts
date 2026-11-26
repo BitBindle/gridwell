@@ -877,6 +877,20 @@ declare namespace jspreadsheet {
         ) => undefined | boolean | string | ({ value: CellValue } | CellValue)[][];
 
         /**
+         * Occurs before the worksheet sends a request to a server: to load its {@link WorksheetOptions.csv} or
+         * {@link WorksheetOptions.url}, the source of a dropdown column, or to post its changes with
+         * {@link WorksheetOptions.persistence}. It occurs while the events are ignored too.
+         *
+         * The handler can change the options of the request, such as its headers, or return other options for fetch.
+         * If it returns false, the request is not sent: the worksheet is built without the data of the request, or the
+         * changes are not posted.
+         * @param instance - Instance of the worksheet that sends the request.
+         * @param url - The address of the request.
+         * @param options - The options of fetch: the method, the headers, the body and the cache.
+         */
+        onbeforerequest?: (instance: WorksheetInstance, url: string, options: RequestInit) => RequestInit | false | undefined | void;
+
+        /**
          * Occurs before persisting any changes to the server.
          *
          * This event is only called when the spreadsheet has the {@link WorksheetOptions.persistence} property set.
@@ -1786,8 +1800,8 @@ declare namespace jspreadsheet {
         hideToolbar: () => void;
 
         /**
-         * If true, the spreadsheet does not emit events, except onbeforesave and onsave: the persistence still saves the
-         * changes, for example of an undo or a redo.
+         * If true, the spreadsheet does not emit events, except onbeforerequest, onbeforesave and onsave: the persistence
+         * still saves the changes, for example of an undo or a redo.
          */
         ignoreEvents?: boolean;
 

@@ -1,5 +1,5 @@
-import jSuites from 'jsuites';
 import { translate } from './utils/dictionary.js';
+import { request } from './utils/request.js';
 import libraryBase from './utils/libraryBase.js';
 import { parseCSV } from './utils/helpers.js';
 import { getIdFromColumnName } from './utils/internalHelpers.js';
@@ -147,16 +147,15 @@ export class Worksheet {
             }
         }
 
-        // Remove update
-        jSuites.ajax({
-            url,
-            method: 'POST',
-            dataType: 'json',
-            data: { data: JSON.stringify(data) },
-            success: (result: unknown) => {
+        // Post the data as JSON in the data field of a form
+        const body = new FormData();
+        body.append('data', JSON.stringify(data));
+        // fetch, as jSuites.ajax did, posts to the address "undefined" when there is no url (issue #140)
+        request(this, String(url), 'json', body).then((response) => {
+            if (response) {
                 // Event
                 this.dispatch('onsave', this.parent, this, data);
-            },
+            }
         });
     }
 
@@ -939,8 +938,8 @@ export class Worksheet {
             size = this.options.minDimensions[0];
         }
 
-        // Requests
-        const multiple = [];
+        // The requests of the sources of the dropdown columns
+        const requests: Promise<void>[] = [];
 
         // Preparations
         for (let i = 0; i < size; i++) {
@@ -956,30 +955,29 @@ export class Worksheet {
             if (this.options.columns[i].type === 'dropdown') {
                 // if remote content
                 if (this.options.columns[i].url) {
-                    multiple.push({
-                        url: this.options.columns[i].url,
-                        index: i,
-                        method: 'GET',
-                        dataType: 'json',
-                        success: (data: unknown[]) => {
-                            if (!this.options.columns[i].source) {
-                                this.options.columns[i].source = [];
-                            }
+                    const column = this.options.columns[i];
+                    requests.push(
+                        request(this, column.url!, 'json').then((response) => {
+                            if (response) {
+                                if (!column.source) {
+                                    column.source = [];
+                                }
 
-                            for (const option of data) {
-                                this.options.columns[i].source.push(option);
+                                for (const option of response.result as NonNullable<typeof column.source>) {
+                                    column.source.push(option);
+                                }
                             }
-                        },
-                    });
+                        })
+                    );
                 }
             }
         }
 
         // Create the table when is ready
-        if (!multiple.length) {
+        if (!requests.length) {
             this.createTable();
         } else {
-            jSuites.ajax(multiple, () => {
+            Promise.all(requests).then(() => {
                 this.createTable();
             });
         }
@@ -1004,15 +1002,11 @@ export class Worksheet {
 
         // Load the table data based on an CSV file
         if (this.options.csv) {
-            const promise = new Promise<void>((resolve) => {
-                // Load CSV file
-                jSuites.ajax({
-                    url: this.options.csv,
-                    method: 'GET',
-                    dataType: 'text',
-                    success: (result: string) => {
+            promises.push(
+                request(this, this.options.csv, 'text').then((response) => {
+                    if (response) {
                         // Convert data
-                        const newData = parseCSV(result, this.options.csvDelimiter);
+                        const newData = parseCSV(response.result as string, this.options.csvDelimiter);
 
                         // Headers
                         if (this.options.csvHeaders === true && newData.length > 0) {
@@ -1036,34 +1030,22 @@ export class Worksheet {
                         }
                         // Data
                         this.options.data = newData;
-                        // Prepare table
-                        this.prepareTable();
-
-                        resolve();
-                    },
-                });
-            });
-
-            promises.push(promise);
+                    }
+                    // Without the file, the worksheet is built with its other options
+                    this.prepareTable();
+                })
+            );
         } else if (this.options.url) {
-            const promise = new Promise<void>((resolve) => {
-                jSuites.ajax({
-                    url: this.options.url,
-                    method: 'GET',
-                    dataType: 'json',
-                    // The data, or an object with the data in its data property. setData changes rows of objects to arrays.
-                    success: (result: { data?: jspreadsheet.CellValue[][] }) => {
-                        // Data
-                        this.options.data = result.data ? result.data : (result as jspreadsheet.CellValue[][]);
-                        // Prepare table
-                        this.prepareTable();
-
-                        resolve();
-                    },
-                });
-            });
-
-            promises.push(promise);
+            promises.push(
+                request(this, this.options.url, 'json').then((response) => {
+                    if (response) {
+                        // The data, or an object with the data in its data property. setData changes rows of objects to arrays.
+                        this.options.data = (response.result as { data?: jspreadsheet.CellValue[][] }).data || (response.result as jspreadsheet.CellValue[][]);
+                    }
+                    // Without the data, the worksheet is built with its other options
+                    this.prepareTable();
+                })
+            );
         } else {
             // Prepare table
             this.prepareTable();

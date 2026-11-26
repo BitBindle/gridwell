@@ -1,5 +1,5 @@
-import jSuites from 'jsuites';
 import { translate } from './dictionary.js';
+import { createId } from './ids.js';
 import type jspreadsheet from '../jspreadsheet';
 
 /** A tab header. It keeps a reference to its panel. */
@@ -353,8 +353,8 @@ export class Tabs {
         }
 
         if (title) {
-            const headerId = jSuites.guid();
-            const contentId = jSuites.guid();
+            const headerId = createId('jss-tab');
+            const contentId = createId('jss-tabpanel');
 
             // Add content
             const div = document.createElement('div');
