@@ -1,7 +1,8 @@
 import { getCoordsFromCellName } from '../utils/helpers.js';
 import { getIdFromColumnName, getColumnNameFromId } from '../utils/internalHelpers.js';
-import jSuites from 'jsuites';
 import { getMask, isFormula } from '../utils/values.js';
+import { formatDate, parseDate } from '../utils/dates.js';
+import { render } from '../utils/mask.js';
 import type { HistoryCellChange, Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
 
@@ -341,17 +342,7 @@ export class Cells {
                 // Make sure the values are correct
                 worksheet.options.data[j][i] = element.checked;
             } else if (column?.type === 'calendar') {
-                // Try formatted date
-                let formatted = null;
-                if (!validDate(value)) {
-                    const tmp = jSuites.calendar.extractDateFromString(value, column.options?.format || 'YYYY-MM-DD');
-                    if (tmp) {
-                        formatted = tmp;
-                    }
-                }
-                // Create calendar cell
-                // textContent converts a number of hours to text
-                td.textContent = jSuites.calendar.getDateString(formatted ? formatted : value, column.options?.format) as string;
+                td.textContent = this.formatCalendarValue(value, column.options?.format);
             } else if (column?.type === 'dropdown') {
                 // Create dropdown cell
                 td.classList.add('jss_dropdown');
@@ -511,21 +502,9 @@ export class Cells {
                     worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
                     worksheet.records[y][x].element.textContent = this.getDropDownValue(c, value);
                 } else if (column?.type === 'calendar') {
-                    // Try formatted date
-                    let formatted = null;
-                    if (!validDate(value)) {
-                        const tmp = jSuites.calendar.extractDateFromString(value, column.options?.format || 'YYYY-MM-DD');
-                        if (tmp) {
-                            formatted = tmp;
-                        }
-                    }
                     // Update data and cell
                     worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
-                    // textContent converts a number of hours to text
-                    worksheet.records[y][x].element.textContent = jSuites.calendar.getDateString(
-                        formatted ? formatted : value,
-                        column.options?.format
-                    ) as string;
+                    worksheet.records[y][x].element.textContent = this.formatCalendarValue(value, column.options?.format);
                 } else if (column?.type === 'color') {
                     // Update color
                     worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
@@ -646,6 +625,18 @@ export class Cells {
     }
 
     /**
+     * The text of a calendar cell: its date in the format of the column. A value that is not a date in the ISO format,
+     * such as "05/03/2024", is read with the format of the column.
+     * @param value - The value of the cell.
+     * @param format - The format of the column, such as "DD/MM/YYYY".
+     */
+    formatCalendarValue(value: jspreadsheet.CellValue | undefined, format: string | undefined) {
+        const date = validDate(value) ? value : parseDate(`${value ?? ''}`, format || 'YYYY-MM-DD');
+        // A value that is not a date shows as it is
+        return formatDate(date || value, format) || `${value ?? ''}`;
+    }
+
+    /**
      * The value that a cell shows: the result of a formula, or the value with the mask of the column. The DOM converts a
      * number, a boolean or undefined to text.
      */
@@ -663,38 +654,15 @@ export class Cells {
             // Mask options
             const opt = getMask(options);
             if (opt) {
-                // eslint-disable-next-line eqeqeq -- a text that is a number equals the number
-                if (value && value == Number(value)) {
-                    value = Number(value);
-                }
-                // Process the decimals to match the mask
-                let masked = jSuites.mask.render(value, opt, true);
-                // Negative indication
+                const masked = render(value, opt);
+                value = masked.text;
+                // The color of the section of the format, such as [Red]
                 if (cell) {
-                    if (opt.mask) {
-                        const t = opt.mask.split(';');
-                        if (t[1]) {
-                            const t1 = t[1].match(new RegExp('\\[Red\\]', 'gi'));
-                            if (t1) {
-                                // A text compares as a number
-                                if ((value as number) < 0) {
-                                    cell.classList.add('red');
-                                } else {
-                                    cell.classList.remove('red');
-                                }
-                            }
-                            const t2 = t[1].match(new RegExp('\\(', 'gi'));
-                            if (t2) {
-                                if ((value as number) < 0) {
-                                    masked = `(${masked})`;
-                                }
-                            }
-                        }
+                    if (masked.color === 'red') {
+                        cell.classList.add('red');
+                    } else {
+                        cell.classList.remove('red');
                     }
-                }
-
-                if (masked) {
-                    value = masked;
                 }
             }
         }

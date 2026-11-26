@@ -1,4 +1,4 @@
-import jSuites from 'jsuites';
+import { parseDate, toDateParts } from '../utils/dates.js';
 import { parseCSV } from '../utils/helpers.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
@@ -394,8 +394,10 @@ export class Clipboard {
                 // the first visible column of the range
                 const column = worksheet.options.columns?.[worksheet.cells.getColumnIndex(colIndex, rowIndex)];
                 if (column?.type === 'calendar') {
-                    // The jsuites typings miss extractDateFromString
-                    value = jSuites.calendar.extractDateFromString(value, column.options?.format || 'YYYY-MM-DD');
+                    // A date in the ISO format is kept, and a date in the format of the column is read as one
+                    if (typeof value !== 'string' || !toDateParts(value)) {
+                        value = parseDate(`${value}`, column.options?.format || 'YYYY-MM-DD');
+                    }
                 }
 
                 // Update and keep history. A cell that did not change, such as a read-only cell, has no record.

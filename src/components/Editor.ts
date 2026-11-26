@@ -1,21 +1,20 @@
 import jSuites from 'jsuites';
 import { getMask, isFormula } from '../utils/values.js';
+import { extract, toEditor } from '../utils/mask.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type { Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
-import type { MaskOptions } from '../types/jsuites';
 import type { CalendarOptions, ColorOptions, DropdownOptions } from '../types/jsuites-module';
 
 /**
  * The editor in a cell that is being edited, read as an input because the text editors are inputs or text areas.
- * jsuites keeps its control on the element, and a masked input keeps its mask options.
+ * jsuites keeps its control on the element.
  * The typings of the calendar and the color picker say that close returns nothing, but it returns the value.
  */
 type EditorElement = HTMLInputElement & {
     dropdown: { close(ignoreEvents: boolean): void; getValue(asArray: true): string[]; getValue(): string };
     calendar: { close(ignoreEvents: boolean): string };
     color: { close(ignoreEvents: boolean): string };
-    mask?: MaskOptions;
 };
 
 /** The options of a column, as the worksheet keeps them. */
@@ -357,38 +356,10 @@ export class Editor {
         worksheet.dispatch('oncreateeditor', worksheet, cell, x, y, null, column);
 
         editor.focus();
-        // The input converts the value to text
-        editor.value = value as string;
-
-        // Column options
-        const options = column;
-
-        // Apply format when is not a formula
-        if (!isFormula(value)) {
-            if (options) {
-                // Format
-                const opt = getMask(options);
-
-                if (opt) {
-                    // Masking
-                    if (!options.disabledMaskOnEdition) {
-                        if (options.mask) {
-                            const m = options.mask.split(';');
-                            editor.setAttribute('data-mask', m[0]);
-                        } else if (options.locale) {
-                            editor.setAttribute('data-locale', options.locale);
-                        }
-                    }
-                    // Input
-                    opt.input = editor;
-                    // Configuration
-                    (editor as EditorElement).mask = opt;
-                    // Do not treat the decimals
-                    // The jsuites typings miss render and extract
-                    jSuites.mask.render(value, opt, false);
-                }
-            }
-        }
+        // A value with a mask shows as a plain number, such as 1234.5 for "$ 1,234.50", or as a date in the format of the
+        // mask. The input converts the value to text.
+        const mask = column && !isFormula(value) ? getMask(column) : null;
+        editor.value = mask ? toEditor(value, mask) : (value as string);
 
         editor.onblur = () => {
             worksheet.editor.close(cell, true);
@@ -511,33 +482,19 @@ export class Editor {
                 } else if (column?.type === 'image') {
                     const img = cell.children[0].children[0].children[0] as HTMLImageElement | undefined;
                     value = img?.tagName === 'IMG' ? img.src : '';
-                } else if (column?.type === 'numeric') {
-                    value = (cell.children[0] as EditorElement).value;
-                    if (`${value}`.substr(0, 1) !== '=') {
-                        if (value === '') {
-                            value = column.allowEmpty ? '' : 0;
-                        }
-                    }
-                    (cell.children[0] as EditorElement).onblur = null;
                 } else {
                     value = (cell.children[0] as EditorElement).value;
                     (cell.children[0] as EditorElement).onblur = null;
 
-                    // Column options
-                    const options = column;
+                    // A number that is typed with the symbols of the mask, such as "$ 1,234.50", is kept as a number. A
+                    // text that is not a number is kept as it is typed.
+                    const mask = column ? getMask(column) : null;
+                    if (mask && value !== '' && !isFormula(value)) {
+                        value = extract(value, mask);
+                    }
 
-                    if (options) {
-                        // Format
-                        const opt = getMask(options);
-                        if (opt) {
-                            // Keep numeric in the raw data
-                            if (value !== '' && !isFormula(value) && typeof value !== 'number') {
-                                const t = jSuites.mask.extract(value, opt, true);
-                                if (t && t.value !== '') {
-                                    value = t.value;
-                                }
-                            }
-                        }
+                    if (column?.type === 'numeric' && value === '') {
+                        value = column.allowEmpty ? '' : 0;
                     }
                 }
             }
