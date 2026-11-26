@@ -732,6 +732,41 @@ declare namespace jspreadsheet {
         debugFormulas?: boolean;
 
         /**
+         * Give the text that the text editor shows when it opens on a cell, in place of the value of the cell. For example, show
+         * a date serial number as a date. The hook does not run when the editor opens empty, for example on a typed character.
+         * If the user leaves the text as it is, the cell keeps its value. A changed text goes through the mask of the column
+         * and `onbeforechange`, where the application can convert it back to a value.
+         * @param instance - Worksheet of the cell.
+         * @param x - Column index of the cell.
+         * @param y - Row index of the cell.
+         * @param value - Value of the cell. For a formula cell, the formula.
+         * @returns Text of the editor, or undefined to show the value as the column shows it.
+         */
+        editValue?: (instance: WorksheetInstance, x: number, y: number, value: CellValue) => CellValue | undefined;
+
+        /**
+         * Give the text that a cell shows, for example a value in a number format of the application. It runs for the columns
+         * that show their value as text: the columns of the types text, numeric and html, and the columns without a type.
+         * The sort, the search, the filters, the processed values of `getValue` and `getData`, and the copy use the shown text.
+         * The footers do not use the hook. In an html column, and with `parseHTML`, the text is HTML: escape the text of users.
+         * @param instance - Worksheet of the cell.
+         * @param x - Column index of the cell.
+         * @param y - Row index of the cell.
+         * @param value - Value of the cell, or the result of its formula: an array for a range, and undefined for a cell
+         * without a value.
+         * @param cell - Element of the cell, when the value shows in a cell. The hook can change its style, for example its
+         * `textAlign`. The column `align` applies first. A new value of the cell does not reset a style that the hook set.
+         * @returns Text of the cell, or undefined to show the value with the mask of the column.
+         */
+        formatValue?: (
+            instance: WorksheetInstance,
+            x: number,
+            y: number,
+            value: CellValue | CellValue[] | undefined,
+            cell?: HTMLElement
+        ) => CellValue | undefined;
+
+        /**
          * Calculate formulas with an engine of the application in place of the engine of `jspreadsheet.setFormulaEngine`.
          * The worksheet does not calculate the referenced cells first. The engine reads their raw values and calculates referenced formulas itself.
          * The worksheet still calculates the dependent cells again when a referenced cell changes.

@@ -307,6 +307,10 @@ export class Cells {
             }
         }
 
+        // Text align, before the content, so that the formatValue hook can change it
+        const colAlign = column?.align || worksheet.options.defaultColAlign || 'center';
+        td.style.textAlign = colAlign;
+
         // Custom column
         if (column && typeof column.type === 'object') {
             if (worksheet.parent.config.parseHTML === true) {
@@ -381,10 +385,6 @@ export class Cells {
         if (column?.readOnly === true) {
             td.className = 'readonly';
         }
-
-        // Text align
-        const colAlign = column?.align || worksheet.options.defaultColAlign || 'center';
-        td.style.textAlign = colAlign;
 
         // Wrap option
         if (column?.wordWrap !== false && (worksheet.options.wordWrap === true || column?.wordWrap === true || td.innerHTML.length > 200)) {
@@ -533,7 +533,7 @@ export class Cells {
                     worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
                     // Label
                     if (column?.type === 'html') {
-                        worksheet.records[y][x].element.innerHTML = stripScript(this.parseValue(x, y, value));
+                        worksheet.records[y][x].element.innerHTML = stripScript(this.parseValue(x, y, value, worksheet.records[y][x].element));
                     } else {
                         if (worksheet.parent.config.parseHTML === true) {
                             worksheet.records[y][x].element.innerHTML = stripScript(this.parseValue(x, y, value, worksheet.records[y][x].element));
@@ -637,8 +637,8 @@ export class Cells {
     }
 
     /**
-     * The value that a cell shows: the result of a formula, or the value with the mask of the column. The DOM converts a
-     * number, a boolean or undefined to text.
+     * The value that a cell shows: the result of a formula, then the text of the formatValue hook, or the value with the mask
+     * of the column. The DOM converts a number, a boolean or undefined to text.
      */
     parseValue(i: number, j: number, value: jspreadsheet.CellValue | undefined, cell?: HTMLElement) {
         const worksheet = this.worksheet;
@@ -650,6 +650,18 @@ export class Cells {
 
         // Column options
         const options = worksheet.options.columns?.[this.getColumnIndex(i, j)];
+
+        // A hidden column shows its value when the cell is created, and the update keeps that
+        const formatValue = worksheet.parent.config.formatValue;
+        if (typeof formatValue === 'function' && options?.type !== 'hidden') {
+            // A caller can give the coordinates as text
+            const text = formatValue(worksheet, Number(i), Number(j), value, cell);
+            if (text !== undefined) {
+                // The color of a section of the mask does not apply to the text of the hook
+                cell?.classList.remove('red');
+                return text;
+            }
+        }
         if (options && !isFormula(value)) {
             // Mask options
             const opt = getMask(options);
