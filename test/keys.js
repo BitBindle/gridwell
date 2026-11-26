@@ -151,3 +151,87 @@ describe('Moving the selection without a selection', () => {
         expect(worksheet.getSelection()).to.equal(null);
     });
 });
+
+describe('Keys on the grid', () => {
+    const keydown = function (target, key, keyCode, options = {}) {
+        const event = new window.KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: key, keyCode: keyCode, which: keyCode, ...options });
+        target.dispatchEvent(event);
+        return event;
+    };
+
+    it('adds a row with Enter on the last row and a column with Tab on the last column', async () => {
+        const worksheet = await load({ worksheets: [{ data: [['a', 'b']] }] });
+
+        worksheet.updateSelectionFromCoords(1, 0, 1, 0);
+        expect(keydown(worksheet.records[0][1].element, 'Tab', 9).defaultPrevented).to.equal(true);
+
+        expect(worksheet.headers.length).to.equal(3);
+        expect(worksheet.getSelection()).to.eql([2, 0, 2, 0]);
+
+        keydown(worksheet.records[0][2].element, 'Enter', 13);
+
+        expect(worksheet.rows.length).to.equal(2);
+        expect(worksheet.getSelection()).to.eql([2, 1, 2, 1]);
+
+        keydown(worksheet.records[1][2].element, 'Enter', 13, { shiftKey: true });
+        keydown(worksheet.records[0][2].element, 'Tab', 9, { shiftKey: true });
+
+        expect(worksheet.getSelection()).to.eql([1, 0, 1, 0]);
+        expect(worksheet.rows.length).to.equal(2);
+        expect(worksheet.headers.length).to.equal(3);
+    });
+
+    it('clears the selected cells with Delete', async () => {
+        const worksheet = await load({ worksheets: [{ data: [['a', 'b', 'c']] }] });
+
+        worksheet.updateSelectionFromCoords(0, 0, 1, 0);
+        keydown(worksheet.records[0][0].element, 'Delete', 46);
+
+        expect(worksheet.getData()).to.eql([['', '', 'c']]);
+    });
+
+    it('selects all with Ctrl+A, and undoes and redoes with Ctrl+Z and Ctrl+Y', async () => {
+        const worksheet = await load({ worksheets: [{ data: [['a', 'b']] }] });
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        keydown(worksheet.records[0][0].element, 'a', 65, { ctrlKey: true });
+
+        expect(worksheet.getSelected(false, true).length).to.equal(2);
+
+        worksheet.setValue('A1', 'x');
+        keydown(worksheet.records[0][0].element, 'z', 90, { ctrlKey: true });
+
+        expect(worksheet.getValue('A1')).to.equal('a');
+
+        keydown(worksheet.records[0][0].element, 'y', 89, { ctrlKey: true });
+
+        expect(worksheet.getValue('A1')).to.equal('x');
+    });
+
+    it('toggles a checkbox with Space and opens the editor with a character', async () => {
+        const worksheet = await load({ worksheets: [{ data: [[false, 'a']], columns: [{ type: 'checkbox' }, {}] }] });
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        keydown(worksheet.records[0][0].element, ' ', 32);
+
+        expect(worksheet.getValue('A1')).to.equal(true);
+        expect(worksheet.editor.isOpen()).to.equal(false);
+
+        worksheet.updateSelectionFromCoords(1, 0, 1, 0);
+        keydown(worksheet.records[0][1].element, 'q', 81);
+
+        expect(worksheet.editor.isOpen()).to.equal(true);
+        expect(worksheet.editor.cell).to.equal(worksheet.records[0][1].element);
+    });
+
+    it('does not edit with the keys when the worksheet is not editable', async () => {
+        const worksheet = await load({ worksheets: [{ data: [['a', 'b']], editable: false }] });
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        keydown(worksheet.records[0][0].element, 'Delete', 46);
+        keydown(worksheet.records[0][0].element, 'q', 81);
+
+        expect(worksheet.getData()).to.eql([['a', 'b']]);
+        expect(worksheet.editor.isOpen()).to.equal(false);
+    });
+});
