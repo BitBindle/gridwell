@@ -212,10 +212,8 @@ export class Spreadsheet {
     }
 
     /**
-     * Build the worksheet at a position again from new options, in its tab. The worksheet object, its tab, the open tab,
-     * the active worksheet and the ignore flag of its history stay. The open editor closes without a save. Without a
-     * name, or with the name of another worksheet, the worksheet keeps its name. The focus in the old table goes to the
-     * tab stop of the new table.
+     * Build the worksheet at a position again from new options, in its tab. The jspreadsheet.d.ts typing of loadWorksheet
+     * tells what stays and what changes.
      * @returns The worksheet when it is built, or undefined for a position without a worksheet.
      */
     async loadWorksheet(position: number, options: jspreadsheet.WorksheetOptions) {

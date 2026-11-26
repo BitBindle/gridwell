@@ -2419,9 +2419,12 @@ declare namespace jspreadsheet {
         /**
          * Build the worksheet at a position again from new options, in its tab, for example to show other data. The
          * worksheet object, its tab, the open tab, the active worksheet (`jspreadsheet.current`) and `history.ignore`
-         * stay. The open editor of the worksheet closes without a save. Without `worksheetName`, or with the name of
-         * another worksheet, the worksheet keeps its name. The new options replace the old options in
-         * `getConfig().worksheets`. The focus in the old table goes to the new table. No history entry.
+         * stay. The history starts again. The open editor of the worksheet closes without a save, and an open filter and
+         * the context menu close. Without `worksheetName`, or with the name of another worksheet, the worksheet keeps its
+         * name; a new name dispatches `onrenameworksheet`. The new options replace the old options in
+         * `getConfig().worksheets`. When the old table has the focus, the tab stop of the new table gets the selection
+         * and the focus. Until the data of `url` or `csv` arrives, the worksheet has no table. A later call replaces a call
+         * whose data has not arrived.
          * @param position - Worksheet index.
          * @param options - The options of the new table.
          * @returns The worksheet when its build ends, or undefined for a position without a worksheet.
