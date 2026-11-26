@@ -99,6 +99,11 @@ export class Selection {
     updateCorner() {
         const worksheet = this.worksheet;
 
+        // A worksheet that loadWorksheet builds again has no corner until its table is created
+        if (!worksheet.corner) {
+            return;
+        }
+
         // If any selected cells
         if (!worksheet.selection.highlighted?.length) {
             worksheet.corner.style.top = '-2000px';

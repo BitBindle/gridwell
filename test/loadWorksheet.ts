@@ -183,4 +183,123 @@ describe('loadWorksheet', () => {
             window.removeEventListener('error', listener);
         }
     });
+
+    describe('while data loads', () => {
+        let server: ReturnType<typeof stubFetch>;
+
+        beforeEach(() => {
+            server = stubFetch();
+        });
+
+        afterEach(() => {
+            server.restore();
+        });
+
+        it('keeps a worksheet active that the user makes active during the load', async () => {
+            const [one, two] = await create({
+                worksheets: [
+                    { worksheetName: 'One', data: [['1']] },
+                    { worksheetName: 'Two', data: [['2']] },
+                    { worksheetName: 'Three', data: [['3']] },
+                ],
+            });
+            jspreadsheet.current = one;
+            server.responses['/rows'] = { body: [['u']] };
+
+            const loading = one.loadWorksheet(1, { url: '/rows' });
+            const three = one.parent.worksheets[2];
+            jspreadsheet.current = three;
+            await loading;
+
+            expect(jspreadsheet.current).to.equal(three);
+            expect(two.getData()).to.eql([['u']]);
+        });
+
+        it('leaves the focus where the user put it during the load', async () => {
+            const [one] = await create();
+            one.updateSelectionFromCoords(0, 0, 0, 0);
+            one.getCell('A1').focus();
+            server.responses['/rows'] = { body: [['u']] };
+            const input = document.createElement('input');
+            root.appendChild(input);
+
+            const loading = one.loadWorksheet(0, { url: '/rows' });
+            input.focus();
+            await loading;
+
+            expect(document.activeElement).to.equal(input);
+        });
+
+        it('waits for the source of a dropdown column, and uses the options of the last of two loads', async () => {
+            const [one, two] = await create();
+            server.responses['/source'] = { body: ['x', 'y'] };
+
+            const first = one.loadWorksheet(1, { data: [['a']], columns: [{ type: 'dropdown', url: '/source' }] });
+            const second = one.loadWorksheet(1, { data: [['b']] });
+            await first;
+            await second;
+            await server.settle();
+
+            expect(two.element.querySelectorAll('table').length).to.equal(1);
+            expect(two.getData()).to.eql([['b']]);
+
+            await one.loadWorksheet(1, { data: [['x']], columns: [{ type: 'dropdown', url: '/source' }] });
+            expect(two.getCell('A1').textContent).to.equal('x');
+        });
+
+        it('stops the timers of the old table', async () => {
+            const errors: unknown[] = [];
+            const listener = (e: ErrorEvent) => errors.push(e.error);
+            window.addEventListener('error', listener);
+            try {
+                const data = Array.from({ length: 300 }, (row, y) => [`${y}`]);
+                const [one] = await create({ worksheets: [{ worksheetName: 'One', data, lazyLoading: true, tableOverflow: true }] });
+                server.responses['/rows'] = { body: [['u']] };
+
+                // The wheel loads rows 100 ms after the event
+                one.content.dispatchEvent(new window.WheelEvent('wheel', { deltaY: 100 }));
+                await one.loadWorksheet(0, { url: '/rows' });
+                await new Promise((resolve) => setTimeout(resolve, 150));
+
+                expect(errors).to.eql([]);
+                expect(one.getData()).to.eql([['u']]);
+            } finally {
+                window.removeEventListener('error', listener);
+            }
+        });
+
+        it('dispatches onrenameworksheet for a load that a later load replaces', async () => {
+            const events: unknown[][] = [];
+            const [one] = await create({
+                onrenameworksheet: (worksheet, index, name, oldName) => {
+                    events.push([index, name, oldName]);
+                },
+            });
+            server.responses['/rows'] = { body: [['u']] };
+
+            const first = one.loadWorksheet(1, { worksheetName: 'New', url: '/rows' });
+            await one.loadWorksheet(1, { data: [['d']] });
+            await first;
+
+            expect(events).to.eql([[1, 'New', 'Two']]);
+        });
+    });
+
+    it('closes an open filter without its events, and removes the class of the toolbar', async () => {
+        const [one] = await create({
+            toolbar: true,
+            worksheets: [
+                { worksheetName: 'One', data: [['a'], ['b']], filters: true },
+                { worksheetName: 'Two', data: [['3', '4']] },
+            ],
+        });
+        one.openFilter(0);
+        expect(one.element.querySelector('.jdropdown-focus')).to.not.equal(null);
+
+        await one.loadWorksheet(0, { data: [['x']], tableOverflow: true });
+
+        expect(root.querySelector('.jdropdown-focus')).to.equal(null);
+        expect(one.view.filters).to.eql([]);
+        expect(one.element.classList.contains('with-toolbar')).to.equal(false);
+    });
 });

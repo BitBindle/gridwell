@@ -2423,8 +2423,9 @@ declare namespace jspreadsheet {
          * the context menu close. Without `worksheetName`, or with the name of another worksheet, the worksheet keeps its
          * name; a new name dispatches `onrenameworksheet`. The new options replace the old options in
          * `getConfig().worksheets`. When the old table has the focus, the tab stop of the new table gets the selection
-         * and the focus. Until the data of `url` or `csv` arrives, the worksheet has no table. A later call replaces a call
-         * whose data has not arrived.
+         * and the focus. Until the data of `url` or `csv`, or the `url` of a dropdown column, arrives, the worksheet has no
+         * table, and when it was the active worksheet, no worksheet is active. A later call replaces a call whose data
+         * has not arrived, and the replaced call resolves with the worksheet before the later call ends.
          * @param position - Worksheet index.
          * @param options - The options of the new table.
          * @returns The worksheet when its build ends, or undefined for a position without a worksheet.

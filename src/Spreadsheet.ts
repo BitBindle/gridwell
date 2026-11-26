@@ -248,8 +248,15 @@ export class Spreadsheet {
             Object.defineProperty(options, 'style', { value: worksheet.getStyle(), writable: true, enumerable: true, configurable: true });
         }
 
-        // The size observer of the frozen rows holds the old rows
+        // The size observer of the frozen rows holds the old rows, and the timers of a scroll, a search, a touch or a
+        // rename of a header act on the old table
         worksheet.rowManager?.stopFreeze();
+        for (const timer of ['timeControl', 'timeControlLoading'] as const) {
+            if (libraryBase.jspreadsheet[timer]) {
+                clearTimeout(libraryBase.jspreadsheet[timer]!);
+                libraryBase.jspreadsheet[timer] = null;
+            }
+        }
 
         const element = worksheet.element;
         const focused = element.contains(document.activeElement);
@@ -274,17 +281,28 @@ export class Spreadsheet {
         worksheet.setup(options);
         worksheet.history.ignore = ignore === true;
 
-        // build makes the worksheet the active worksheet. While the data of a url or a csv file loads, the worksheet has
-        // no table, so the active worksheet stays.
+        // build makes the worksheet the active worksheet. While its data or the sources of its dropdown columns load, the
+        // worksheet has no table, so another worksheet stays active, or no worksheet is active. The user can make another
+        // worksheet active during the load, and that worksheet stays active.
         const building = worksheet.build();
-        libraryBase.jspreadsheet.current = current;
+        if (libraryBase.jspreadsheet.current === worksheet) {
+            libraryBase.jspreadsheet.current = current === worksheet ? null : current;
+        }
         await building;
         if (worksheet.generation !== generation) {
+            if (renamed) {
+                worksheet.dispatch('onrenameworksheet', worksheet, this.worksheets.indexOf(worksheet), name, oldName);
+            }
             return worksheet;
         }
-        libraryBase.jspreadsheet.current = current;
+        const active = libraryBase.jspreadsheet.current;
+        if (active === worksheet || (active == null && current === worksheet)) {
+            libraryBase.jspreadsheet.current = current;
+        }
 
-        if (focused) {
+        // The focus moves only when no other element took it during the load
+        const lost = !document.activeElement || document.activeElement === document.body;
+        if (focused && lost) {
             // The tab stop becomes the selection, so that the keys move it
             const td = element.querySelector<HTMLTableCellElement>('td[tabindex="0"]');
             if (td) {

@@ -978,7 +978,7 @@ export class Worksheet {
     /**
      * Prepare the table of the worksheet.
      */
-    private prepareTable() {
+    private prepareTable(replaced: () => boolean = () => false): Promise<void> | void {
         // Lazy loading
         if (this.options.lazyLoading === true && this.options.tableOverflow !== true && this.parent.config.fullscreen !== true) {
             console.error('Jspreadsheet: The lazyloading only works when tableOverflow = yes or fullscreen = yes');
@@ -1054,14 +1054,16 @@ export class Worksheet {
             }
         }
 
-        // Create the table when is ready
+        // Create the table when is ready. A later load of the worksheet can replace this build while the sources load.
         if (!requests.length) {
             this.createTable();
-        } else {
-            Promise.all(requests).then(() => {
-                this.createTable();
-            });
+            return;
         }
+        return Promise.all(requests).then(() => {
+            if (!replaced()) {
+                this.createTable();
+            }
+        });
     }
 
     async build() {
@@ -1120,7 +1122,7 @@ export class Worksheet {
                         this.options.data = newData;
                     }
                     // Without the file, the worksheet is built with its other options
-                    this.prepareTable();
+                    return this.prepareTable(replaced);
                 })
             );
         } else if (this.options.url) {
@@ -1134,12 +1136,15 @@ export class Worksheet {
                         this.options.data = (response.result as { data?: jspreadsheet.CellValue[][] }).data || (response.result as jspreadsheet.CellValue[][]);
                     }
                     // Without the data, the worksheet is built with its other options
-                    this.prepareTable();
+                    return this.prepareTable(replaced);
                 })
             );
         } else {
-            // Prepare table
-            this.prepareTable();
+            // Prepare table. The sources of the dropdown columns can load before the table is created.
+            const prepared = this.prepareTable(replaced);
+            if (prepared) {
+                promises.push(prepared);
+            }
         }
 
         await Promise.all(promises);
