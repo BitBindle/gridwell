@@ -149,12 +149,10 @@ export class Pointer {
                     let value: CellValue = data[posy][posx];
 
                     if (value && !data[1] && worksheet.parent.config.autoIncrement !== false) {
-                        if (
-                            worksheet.options.columns?.[i] &&
-                            (!worksheet.options.columns[i].type ||
-                                worksheet.options.columns[i].type === 'text' ||
-                                (worksheet.options.columns[i].type as string) === 'number')
-                        ) {
+                        // The options of the column that the cell uses, which for the first cell of a merged range over a hidden
+                        // column are those of the first visible column of the range
+                        const column = worksheet.options.columns?.[worksheet.cells.getColumnIndex(i, j)];
+                        if (column && (!column.type || column.type === 'text' || (column.type as string) === 'number')) {
                             if (`${value}`.substr(0, 1) === '=') {
                                 const tokens = (value as string).match(/([A-Z]+[0-9]+)/g);
 
@@ -185,7 +183,7 @@ export class Pointer {
                                     value = Number(value) + rowNumber;
                                 }
                             }
-                        } else if (worksheet.options.columns?.[i]?.type === 'calendar') {
+                        } else if (column?.type === 'calendar') {
                             // A calendar cell has a date as text
                             const date = new Date(value as string);
                             date.setDate(date.getDate() + rowNumber);
@@ -408,11 +406,11 @@ export class Pointer {
                     o = worksheet.selection.column;
                     d = columnId;
                 } else {
-                    // Press to rename
+                    // Hold the press on the selected header to rename the column. A move or the mouseup stops the timer.
                     if (worksheet.selection.column === columnId && worksheet.options.allowRenameColumn !== false) {
                         // The active worksheet when the timer runs
                         libraryBase.jspreadsheet.timeControl = setTimeout(() => {
-                            libraryBase.jspreadsheet.current!.setHeader(columnId);
+                            libraryBase.jspreadsheet.current!.columns.rename(columnId);
                         }, 800);
                     }
 

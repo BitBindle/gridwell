@@ -2633,6 +2633,12 @@ declare namespace jspreadsheet {
     }
 
     interface JSpreadsheet {
+        /**
+         * Create a spreadsheet in an element. A table is replaced by a div in its parent, so it must have a parent: without
+         * one, this throws. It returns the worksheets, which are added when the spreadsheet is built, after it returns.
+         * @param element - The div, or the table whose data the spreadsheet loads.
+         * @param options - The options of the spreadsheet.
+         */
         (element: HTMLDivElement | HTMLTableElement, options: SpreadsheetOptions): WorksheetInstance[];
 
         /**

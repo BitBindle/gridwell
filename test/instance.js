@@ -87,6 +87,29 @@ describe('Create a jspreadsheet instance', () => {
     });
 });
 
+describe('Create a jspreadsheet instance from a table', () => {
+    const createTable = () => {
+        const table = document.createElement('table');
+        table.innerHTML = '<tbody><tr><td>a</td><td>b</td></tr></tbody>';
+        return table;
+    };
+
+    it('throws when the table has no parent (issue #55)', () => {
+        expect(() => jspreadsheet(createTable(), { worksheets: [] })).to.throw('the table must be in a parent element');
+    });
+
+    it('replaces a table in a parent with the spreadsheet', async () => {
+        const table = root.appendChild(createTable());
+
+        const worksheets = jspreadsheet(table, { worksheets: [] });
+        await new Promise((resolve) => setTimeout(resolve));
+
+        expect(table.parentNode).to.equal(null);
+        expect(worksheets.length).to.equal(1);
+        expect(worksheets[0].getData()).to.eql([['a', 'b']]);
+    });
+});
+
 describe('Use getWorksheetInstanceByName', () => {
     // The spreadsheet joins jspreadsheet.spreadsheet after a promise resolves
     const create = async (namespace) => {
@@ -150,6 +173,26 @@ describe('Use the helpers', () => {
         selection.addRange(range);
 
         expect(jspreadsheet.helpers.getCaretIndex(element)).to.equal(5);
+    });
+
+    it('getCaretIndex reads the selection of the window for a spreadsheet whose root has no getSelection (issue #46)', async () => {
+        const host = document.body.appendChild(document.createElement('div'));
+
+        try {
+            const worksheets = jspreadsheet(root, { root: host, worksheets: [{ data: [['Hello world']] }] });
+            await new Promise((resolve) => setTimeout(resolve));
+
+            const cell = worksheets[0].getCell('A1');
+            const range = document.createRange();
+            range.setStart(cell.firstChild, 5);
+            range.collapse(true);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+
+            expect(jspreadsheet.helpers.getCaretIndex.call(worksheets[0].parent, cell)).to.equal(5);
+        } finally {
+            host.remove();
+        }
     });
 });
 

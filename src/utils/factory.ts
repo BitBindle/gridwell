@@ -24,7 +24,7 @@ export async function createSpreadsheet(el: HTMLElement & { spreadsheet?: Spread
         options.worksheets[0] = tableOptions!;
 
         const div = document.createElement('div');
-        // A table outside the document has no parent, and this throws (issue #55)
+        // jspreadsheet checks that the table has a parent
         el.parentNode!.insertBefore(div, el);
         el.remove();
         el = div;

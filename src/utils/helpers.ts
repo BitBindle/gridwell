@@ -4,17 +4,13 @@ import type { Spreadsheet } from '../types/internal';
  * Get carret position for one element
  */
 export function getCaretIndex(this: Spreadsheet, e: Node) {
-    let d;
-
     // Applications call it as jspreadsheet.helpers.getCaretIndex, so this is a spreadsheet only when the caller sets it.
-    if (this && this.config?.root) {
-        // An element has no getSelection, and a shadow root has it only in some browsers (issue #46)
-        d = this.config.root as unknown as Window;
-    } else {
-        d = window;
-    }
+    // The root option can be a shadow root, which has getSelection only in some browsers, or an element, which never has
+    // it. Without it, the selection of the window has the caret.
+    const root = this?.config?.root as (Node & { getSelection?: () => Selection | null }) | undefined;
+    const s = typeof root?.getSelection === 'function' ? root.getSelection() : window.getSelection();
+
     let pos = 0;
-    const s = d.getSelection();
     if (s) {
         if (s.rangeCount !== 0) {
             const r = s.getRangeAt(0);

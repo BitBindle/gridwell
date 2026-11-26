@@ -863,3 +863,107 @@ describe('Set the widths of columns with an array', () => {
         expect(worksheet.getWidth(1)).to.equal(120);
     });
 });
+
+describe('The first cell of a merged range over a hidden column (issue #20)', () => {
+    it('gives a formula its number with the decimal point of the first visible column', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [['1,5', '', '=A1+1']],
+                    columns: [{ type: 'hidden' }, { type: 'text', decimal: ',' }, { type: 'text' }],
+                    mergeCells: { A1: [2, 1] },
+                },
+            ],
+        })[0];
+
+        expect(worksheet.getValueFromCoords(2, 0, true)).to.equal('2.5');
+    });
+
+    it('reads a pasted date with the format of the first visible column', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [['', '', '']],
+                    columns: [{ type: 'hidden' }, { type: 'calendar', options: { format: 'DD/MM/YYYY' } }, { type: 'text' }],
+                    mergeCells: { A1: [2, 1] },
+                },
+            ],
+        })[0];
+
+        worksheet.paste(0, 0, '25/12/2024');
+
+        expect(worksheet.getValueFromCoords(0, 0)).to.match(/^2024-12-25/);
+    });
+
+    it('moves the references of a formula that the fill handle copies when the first visible column is a text column', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['=C2', '', ''],
+                        ['', '', '7'],
+                    ],
+                    columns: [{ type: 'text' }, { type: 'hidden' }, { type: 'text' }],
+                    mergeCells: { B1: [2, 1] },
+                },
+            ],
+        })[0];
+
+        // Fill the merged range B1:C1 from A1
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.pointer.fill(worksheet.records[0][1].element, worksheet.records[0][1].element);
+
+        expect(worksheet.getValueFromCoords(1, 0)).to.equal('=D2');
+    });
+
+    it('wraps a long text when hideColumn renders the first cell with the options of another column', () => {
+        const long = 'a'.repeat(250);
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [['1', '', 'x']],
+                    columns: [{ type: 'hidden' }, { type: 'dropdown', source: [{ id: '1', name: long }] }, { type: 'text' }],
+                    mergeCells: { A1: [3, 1] },
+                },
+            ],
+        })[0];
+
+        const cell = worksheet.records[0][0].element;
+        expect(cell.style.whiteSpace).to.equal('pre-wrap');
+
+        worksheet.hideColumn(1);
+        expect(cell.textContent).to.equal('1');
+        expect(cell.style.whiteSpace).to.equal('');
+
+        worksheet.showColumn(1);
+        expect(cell.style.whiteSpace).to.equal('pre-wrap');
+    });
+
+    it('sends oncreatecell when hideColumn and showColumn render the first cell again', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [['1', '', 'x']],
+                    columns: [{ type: 'hidden' }, { type: 'text' }, { type: 'text' }],
+                    mergeCells: { A1: [3, 1] },
+                },
+            ],
+            oncreatecell: (instance, td, x, y, value) => {
+                if (x == 0 && y == 0) {
+                    calls.push([td, value]);
+                }
+            },
+        })[0];
+
+        calls.length = 0;
+        worksheet.hideColumn(1);
+        worksheet.showColumn(1);
+
+        const cell = worksheet.records[0][0].element;
+        expect(calls).to.eql([
+            [cell, '1'],
+            [cell, '1'],
+        ]);
+    });
+});
