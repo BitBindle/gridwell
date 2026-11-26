@@ -1,24 +1,13 @@
 import { getColumnName } from './helpers.js';
 
 /**
- * Make a copy of the array with the items of arr inserted at idx. When idx is past the end, the gap is filled with undefined.
+ * Make a copy of the array with the items of arr inserted at idx. The callers insert into the array or at its end.
  * @param o - The array.
  * @param idx - The position.
  * @param arr - The items to insert.
  */
 export function injectArray<T>(o: T[], idx: number, arr: T[]): T[] {
-    if (idx <= o.length) {
-        return o.slice(0, idx).concat(arr).concat(o.slice(idx));
-    }
-
-    const array: (T | undefined)[] = o.slice(0, o.length);
-
-    while (idx > array.length) {
-        array.push(undefined);
-    }
-
-    // A position after the end leaves undefined items between. The callers insert into the array or at its end.
-    return array.concat(arr) as T[];
+    return o.slice(0, idx).concat(arr, o.slice(idx));
 }
 
 /**
