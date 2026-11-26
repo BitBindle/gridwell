@@ -36,7 +36,7 @@ describe('Translate the texts with setDictionary', () => {
         expect(titles()).to.include.members(['Neue Spalte davor einfügen', 'Ausgewählte Spalten löschen']);
     });
 
-    it('translates the texts of the calendar, which jSuites shows', async () => {
+    it('translates the texts of the calendar', async () => {
         const worksheet = await load([{ type: 'calendar' }]);
         jspreadsheet.setDictionary({ Update: 'Übernehmen' });
 

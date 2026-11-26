@@ -4,18 +4,17 @@ import { extract, toEditor } from '../utils/mask.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import { ColorPicker, type ColorPickerOptions } from '../utils/color.js';
 import { Dropdown } from '../utils/dropdown.js';
+import { Calendar, type CalendarOptions } from '../utils/calendar.js';
 import type { Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
-import type { CalendarOptions } from '../types/jsuites-module';
 
 /**
  * The editor in a cell that is being edited, read as an input because the text editors are inputs or text areas.
- * The dropdown, jsuites and the color picker keep their control on the element.
- * The typings of the calendar say that close returns nothing, but it returns the value.
+ * The dropdown, the calendar and the color picker keep their control on the element.
  */
 type EditorElement = HTMLInputElement & {
     dropdown: Dropdown;
-    calendar: { close(ignoreEvents: boolean): string };
+    calendar: Calendar;
     color: ColorPicker;
 };
 
@@ -195,7 +194,7 @@ export class Editor {
     }
 
     /**
-     * The editor of a calendar or a color column: an input with an open jSuites calendar, or a color picker.
+     * The editor of a calendar or a color column: an input with an open calendar, or a color picker.
      */
     private openPicker(cell: HTMLTableCellElement, x: number, y: number, column: ColumnOptions, label: string) {
         const worksheet = this.worksheet;
@@ -234,25 +233,18 @@ export class Editor {
             return;
         }
 
-        // The options of the calendar
-        const options: CalendarOptions = column.options ? { ...column.options } : {};
+        // The value of a calendar cell is text. Closing the calendar, also with a day, saves it.
+        const calendar = new Calendar(editor, {
+            ...(column.options as CalendarOptions | undefined),
+            ...(fixed ? { position: true } : {}),
+            value: worksheet.options.data[y][x] as string,
+            onclose: () => {
+                worksheet.editor.close(cell, true);
+            },
+        });
 
-        if (fixed) {
-            options.position = true;
-        }
-        // The value of a calendar cell is text
-        options.value = worksheet.options.data[y][x] as string;
-        options.opened = true;
-        options.onclose = () => {
-            worksheet.editor.close(cell, true);
-        };
-        if (!options.format) {
-            options.format = 'YYYY-MM-DD';
-        }
-
-        jSuites.calendar(editor, options);
-        // Focus on editor
-        editor.focus();
+        // The input has the focus
+        calendar.open();
     }
 
     /**

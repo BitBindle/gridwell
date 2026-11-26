@@ -302,12 +302,14 @@ assertType<Equals<typeof emptyDelimiterData, jspreadsheet.CellValue[][]>>();
 const emptyDelimiterJson = worksheet.getData(false, false, '', true);
 assertType<Equals<typeof emptyDelimiterJson, Record<number, jspreadsheet.CellValue>[]>>();
 
-// A column can have a format, a locale with the options of Intl.NumberFormat, allowEmpty, and the filter and the delimiter of a dropdown
+// A column can have a format, a locale with the options of Intl.NumberFormat, allowEmpty, the filter and the delimiter of a
+// dropdown, and the valid range and the first day of the week of a calendar
 const columns: jspreadsheet.Column[] = [
     { type: 'numeric', format: '0.0' },
     { type: 'numeric', locale: 'en-US', options: { style: 'currency', currency: 'USD' }, allowEmpty: true },
     { type: 'dropdown', source: ['a'], filter: (element, cell, x, y, source) => source ?? [] },
     { type: 'dropdown', source: ['a', 'b'], multiple: true, delimiter: ', ' },
+    { type: 'calendar', options: { format: 'DD/MM/YYYY', validRange: ['2024-01-01', null], startingDay: 1 } },
 ];
 
 // setConfig takes the options to change: of the worksheet, or of the spreadsheet with spreadsheetLevel

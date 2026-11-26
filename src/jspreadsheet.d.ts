@@ -23,16 +23,11 @@ declare namespace jspreadsheet {
          */
         format?: string;
 
-        /**
-         * Open calendar in full screen mode (this is automatic set for screensize < 800).
-         */
-        fullscreen?: boolean;
-
         /** Placeholder. */
         placeholder?: string;
 
         /**
-         * Allow keyboard date entry.
+         * Do not let the date be typed in the editor. When it is false, the date can be typed in the format.
          * @default true
          */
         readonly?: boolean;
@@ -49,8 +44,20 @@ declare namespace jspreadsheet {
          */
         time?: boolean;
 
-        /** Today is default. */
+        /** Start with today when the cell has no date. */
         today?: boolean;
+
+        /**
+         * The first and the last day that can be chosen, as the text "YYYY-MM-DD". Either can be empty, for no limit.
+         * The other days are shown disabled.
+         */
+        validRange?: [string | null | undefined, string | null | undefined];
+
+        /**
+         * The first day of the week in the calendar: 0 for Sunday, 1 for Monday, …
+         * @default 0
+         */
+        startingDay?: number;
     }
 
     interface CustomEditor {

@@ -13,10 +13,10 @@ export interface PopupSide {
  * @param anchor - The element that the popup opens from.
  * @param popup - The popup, an element with an absolute or a fixed position.
  * @param fixed - The popup has a fixed position, so that no ancestor clips it.
+ * @param height - The height of the popup, when it is not the height of its element.
  */
-export function getPopupSide(anchor: HTMLElement, popup: HTMLElement, fixed: boolean): PopupSide {
+export function getPopupSide(anchor: HTMLElement, popup: HTMLElement, fixed: boolean, height = popup.getBoundingClientRect().height): PopupSide {
     const rect = anchor.getBoundingClientRect();
-    const height = popup.getBoundingClientRect().height;
     let top = 0;
     let bottom = window.innerHeight;
 
