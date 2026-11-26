@@ -718,7 +718,8 @@ export class View {
                 worksheet.tbody.appendChild(worksheet.rows[j].element);
             }
 
-            if (worksheet.tbody.children.length > quantityPerPage) {
+            // More than one page can be attached, for example after an insert next to the attached rows
+            while (worksheet.tbody.children.length > quantityPerPage) {
                 this.removeRow(worksheet.tbody.firstChild!);
             }
         }
