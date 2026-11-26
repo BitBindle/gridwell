@@ -185,20 +185,26 @@ export class Cells {
         const worksheet = this.worksheet;
         let value = worksheet.options.data[y][x];
         // The cell shows the secured formula, as create and update show it
-        if (isFormula(value) && worksheet.options.secureFormulas === true) {
+        if (`${value}`.substr(0, 1) === '=' && worksheet.options.secureFormulas === true) {
             value = secureFormula(value as string);
         }
-        this.display(x, y, value, false);
+        const c = this.getColumnIndex(x, y);
+        this.display(x, y, value, false, c, worksheet.options.columns?.[c]);
     }
 
     /**
-     * Show a value in a cell, as its column type shows it, and call the render of the column. With write, the data of
-     * the cell gets the value too. It returns the value that the cell shows, which an image column changes to text.
+     * Show a value in a cell, as its column type shows it, and call the render of the column. c is the column whose
+     * options the cell uses, and column its options. With write, the data of the cell gets the value too. It returns the value that the cell shows, which an image column changes to text.
      */
-    private display(x: number, y: number, value: jspreadsheet.CellValue | undefined, write: boolean) {
+    private display(
+        x: number,
+        y: number,
+        value: jspreadsheet.CellValue | undefined,
+        write: boolean,
+        c: number,
+        column: Worksheet['options']['columns'][number] | undefined
+    ) {
         const worksheet = this.worksheet;
-        const c = this.getColumnIndex(x, y);
-        const column = worksheet.options.columns?.[c];
 
         // A custom editor can have setValue, which is not in the public typings
         const editor = (column && typeof column.type === 'object' ? column.type : null) as
@@ -619,7 +625,7 @@ export class Cells {
                 oldValue,
             };
 
-            value = this.display(x, y, value, true);
+            value = this.display(x, y, value, true, c, column);
 
             // On change. updateCell has read worksheet.records[y][x] already, so the cell is there.
             worksheet.dispatch(
