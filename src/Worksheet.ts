@@ -509,6 +509,20 @@ export class Worksheet {
         return this.selection.isSelected(x, y);
     }
 
+    /**
+     * Change the number of frozen rows and frozen columns. Undefined keeps a number.
+     */
+    setFreeze(rows?: number, columns?: number) {
+        if (rows !== undefined) {
+            this.options.freezeRows = Math.max(0, Math.floor(Number(rows)) || 0);
+        }
+        if (columns !== undefined) {
+            this.options.freezeColumns = Math.max(0, Math.floor(Number(columns)) || 0);
+        }
+        this.rowManager.updateFreeze();
+        this.columns.updateFreezePosition();
+    }
+
     setReadOnly(cell: string | HTMLElement, state: boolean) {
         return this.cells.setReadOnly(cell, state);
     }
