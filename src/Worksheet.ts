@@ -585,6 +585,12 @@ export class Worksheet {
 
         const removedWorksheet = this.parent.worksheets.splice(position, 1)[0];
 
+        // getConfig gives the options of the worksheets that the spreadsheet has. A position without a worksheet removes none.
+        const index = removedWorksheet ? this.parent.config.worksheets.indexOf(removedWorksheet.options) : -1;
+        if (index >= 0) {
+            this.parent.config.worksheets.splice(index, 1);
+        }
+
         this.parent.dispatch('ondeleteworksheet', removedWorksheet, position);
     }
 

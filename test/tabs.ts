@@ -296,6 +296,19 @@ describe('Worksheet tabs', () => {
         expect(worksheets.length).to.eq(3);
     });
 
+    it('deleteWorksheet removes the options of the worksheet from the options of the spreadsheet', async () => {
+        const worksheets = await create({ tabs: true });
+
+        worksheets[0].deleteWorksheet(1);
+
+        expect(worksheets[0].parent.getConfig().worksheets.map((options) => options.worksheetName)).to.eql(['First', 'Third']);
+        expect(worksheets[0].parent.config.worksheets).to.have.ordered.members(worksheets.map((worksheet) => worksheet.options));
+
+        // A position without a worksheet changes nothing
+        worksheets[0].deleteWorksheet(5);
+        expect(worksheets[0].parent.getConfig().worksheets.map((options) => options.worksheetName)).to.eql(['First', 'Third']);
+    });
+
     it('the context menu of a tab has the role tabs and the index of the tab', async () => {
         let args = null as [string | number | null, Jspreadsheet.ContextMenuRole] | null;
 
