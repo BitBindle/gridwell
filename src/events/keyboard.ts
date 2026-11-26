@@ -1,6 +1,5 @@
 import jSuites from 'jsuites';
 import libraryBase from '../utils/libraryBase.js';
-import { getCellColumnIndex } from '../utils/values.js';
 import { copyControls, cutControls, pasteControls } from './clipboard.js';
 import { getElement, isCtrl } from './helpers.js';
 import type { EditingWorksheet, SelectedWorksheet, TargetEvent } from '../types/internal';
@@ -11,7 +10,7 @@ import type { EditingWorksheet, SelectedWorksheet, TargetEvent } from '../types/
  */
 const editorKeys = function (this: EditingWorksheet, e: TargetEvent<KeyboardEvent>) {
     const obj = this;
-    const column = obj.options.columns && obj.options.columns[getCellColumnIndex.call(obj, obj.editor.x, obj.editor.y)];
+    const column = obj.options.columns && obj.options.columns[obj.cells.getColumnIndex(obj.editor.x, obj.editor.y)];
 
     if (e.which == 27) {
         // Escape
@@ -186,7 +185,7 @@ const typingKeys = function (this: SelectedWorksheet, e: TargetEvent<KeyboardEve
     if (obj.options.editable != false) {
         const rowId = obj.selection.range[1];
         const columnId = obj.selection.range[0];
-        const column = obj.options.columns[getCellColumnIndex.call(obj, columnId, rowId)];
+        const column = obj.options.columns[obj.cells.getColumnIndex(columnId, rowId)];
 
         // Characters able to start a edition
         if (e.keyCode == 32) {

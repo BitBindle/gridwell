@@ -241,6 +241,43 @@ that changes it.
     run time, so the factory creates the `Toolbar` right after the spreadsheet. The functions that build the items stay
     module functions in `toolbar.ts`.
 
+After step 30 about 150 functions outside a class still get a worksheet or a spreadsheet as `this`: the rendering of a
+cell, the roles and labels of the grid, the event handlers for each worksheet, `dispatch`, the build of a worksheet and
+of a spreadsheet, and the public methods themselves, which `worksheetPublicMethods` and `spreadsheetPublicMethods` put
+on the prototypes. The next steps move each of them into a class, so that no function outside a class reads `this`.
+
+-   **A function that reads `this` belongs to a class.** It becomes a method of the component of its feature, or of
+    `Worksheet` or `Spreadsheet` when it is about the whole worksheet or spreadsheet. A function that gets what it needs
+    as arguments, such as the helpers for cell names, stays a function.
+-   **The public methods are methods of the classes.** `Worksheet` and `Spreadsheet` declare their public methods in the
+    class body, and each one calls its component or the code of the class. The two lists go. The public typings stay the
+    source of truth: a method whose type does not match `jspreadsheet.d.ts` fails the type check, because the class
+    merges with the public interface.
+-   **The classes may import modules.** `Spreadsheet.ts` imports nothing at run time so that `dispatch`, `config` and
+    `activeWorksheet` can tell a spreadsheet from a worksheet with `instanceof`. Once those are methods of the classes,
+    they need no `instanceof`, and the restriction goes.
+-   **What stays.** The document event handlers (`mousedown`, `keydown`, …) get the event, not a worksheet, and stay
+    functions. `jspreadsheet.helpers.getCaretIndex` is a public helper that reads `this` only when an application calls it
+    with a spreadsheet; it stays as it is.
+
+31. **The cells.** Creating, rendering and updating a cell (`render.ts`) and the value that a cell shows (`values.ts`)
+    move into `Cells`; `updateTable` (`table.ts`), which runs after the data changes, into `Data`.
+    Done. `worksheet.cells` creates the td of a cell (`create`), renders it again when a merge changes the column whose
+    options it uses (`render`), updates its content (`update`, with the private `getDropDownValue`), and gives the value
+    that a cell shows (`parseValue`) and the column whose options it uses (`getColumnIndex`). `worksheet.data.updateTable`
+    adds the spare rows and columns. `values.ts` keeps `isFormula` and `getMask`, which get what they need as arguments.
+32. **Accessibility.** The roles, the labels and the size of the grid (`accessibility.ts`) become the component
+    `Accessibility`.
+33. **The event handlers of a worksheet.** The mouse gestures (`events/mouse.ts`) move into `Pointer`, the keys of the grid
+    and of the editor (`events/keyboard.ts`) into a new component `Keyboard`, and the scrolling (`events/scroll.ts`) into
+    `View`.
+34. **The spreadsheet.** `dispatch`, the active worksheet (`activeWorksheet.ts`), `fullscreen`, the configuration of a
+    spreadsheet (`config.ts`), `setPlugins` and the build of a spreadsheet (`factory.ts`) become methods of `Spreadsheet`.
+35. **The worksheet.** The build of a worksheet (`worksheets.ts`), its configuration, and creating, opening and deleting
+    worksheets become methods of `Worksheet`; `download` moves into `Clipboard`.
+36. **The public methods.** `Worksheet` and `Spreadsheet` declare their public methods, and `worksheetPublicMethods` and
+    `spreadsheetPublicMethods` go.
+
 ## Rules for each step
 
 -   A step moves code; it does not rewrite it. Fix a bug that the move finds in its own commit, with a test.

@@ -1,7 +1,6 @@
 import jSuites from 'jsuites';
 import dispatch from '../utils/dispatch.js';
-import { updateCell } from '../utils/render.js';
-import { getCellColumnIndex, getMask, isFormula } from '../utils/values.js';
+import { getMask, isFormula } from '../utils/values.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import { getLabelText } from '../utils/accessibility.js';
 import type { Worksheet } from '../types/internal';
@@ -417,7 +416,7 @@ export class Editor {
         const x = parseInt(xText);
 
         // Column options
-        const column = obj.options.columns && obj.options.columns[getCellColumnIndex.call(obj, x, y)];
+        const column = obj.options.columns && obj.options.columns[obj.cells.getColumnIndex(x, y)];
 
         // On edition start
         dispatch.call(obj, 'oneditionstart', obj, cell, x, y);
@@ -482,7 +481,7 @@ export class Editor {
         const y = parseInt(cell.getAttribute('data-y'));
 
         // Column options
-        const column = obj.options.columns && obj.options.columns[getCellColumnIndex.call(obj, x, y)];
+        const column = obj.options.columns && obj.options.columns[obj.cells.getColumnIndex(x, y)];
 
         // The editor element has the jsuites control as a property
         let value;
@@ -601,10 +600,10 @@ export class Editor {
             const x = parseInt(obj.selection.highlighted[i].element.getAttribute('data-x'));
             const y = parseInt(obj.selection.highlighted[i].element.getAttribute('data-y'));
 
-            const column = obj.options.columns[getCellColumnIndex.call(obj, x, y)];
+            const column = obj.options.columns[obj.cells.getColumnIndex(x, y)];
             if (column.type == 'checkbox' || column.type == 'radio') {
                 // Update cell
-                records.push(updateCell.call(obj, x, y, !obj.options.data[y][x]));
+                records.push(obj.cells.update(x, y, !obj.options.data[y][x]));
             }
         }
 

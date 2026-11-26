@@ -1,5 +1,4 @@
 import libraryBase from '../utils/libraryBase.js';
-import { getCellColumnIndex } from '../utils/values.js';
 import { getElement, getIndex } from './helpers.js';
 import type { TargetEvent } from '../types/internal';
 
@@ -39,8 +38,7 @@ export const touchStartControls = function (e: TargetEvent<TouchEvent>) {
                 // The active worksheet when the timer runs
                 libraryBase.jspreadsheet.timeControl = setTimeout(function () {
                     // Keep temporary reference to the element
-                    const column =
-                        libraryBase.jspreadsheet.current!.options.columns[getCellColumnIndex.call(libraryBase.jspreadsheet.current!, columnId, rowId)];
+                    const column = libraryBase.jspreadsheet.current!.options.columns[libraryBase.jspreadsheet.current!.cells.getColumnIndex(columnId, rowId)];
                     if (column.type == 'color') {
                         libraryBase.jspreadsheet.tmpElement = null;
                     } else {

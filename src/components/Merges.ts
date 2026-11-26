@@ -1,6 +1,5 @@
 import jSuites from 'jsuites';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
-import { renderCell, updateCell } from '../utils/render.js';
 import dispatch from '../utils/dispatch.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { MergeInfo, Worksheet } from '../types/internal';
@@ -126,7 +125,7 @@ export class Merges {
 
         // A first cell in a column with the type hidden shows the range with the options of another column
         if (obj.options.columns && obj.options.columns[cell[0]] && obj.options.columns[cell[0]].type == 'hidden') {
-            renderCell.call(obj, cell[0], cell[1]);
+            obj.cells.render(cell[0], cell[1]);
         }
     }
 
@@ -267,7 +266,7 @@ export class Merges {
                 for (let x = cell[0]; x < cell[0] + colspan!; x++) {
                     if (!(cell[0] == x && cell[1] == y)) {
                         data.push(obj.options.data[y][x]);
-                        updateCell.call(obj, x, y, '', true);
+                        obj.cells.update(x, y, '', true);
                         (obj.options.mergeCells[cellName] as MergeInfo)[2]!.push(obj.records[y][x].element);
                         obj.records[y][x].element.style.display = 'none';
                         obj.records[y][x].element = obj.records[cell[1]][cell[0]].element;
@@ -321,7 +320,7 @@ export class Merges {
                         obj.records[cell[1] + j][cell[0] + i].element.style.display = obj.headers[cell[0] + i].style.display == 'none' ? 'none' : '';
                         // Recover data
                         if (data && data[index]) {
-                            updateCell.call(obj, cell[0] + i, cell[1] + j, data[index]);
+                            obj.cells.update(cell[0] + i, cell[1] + j, data[index]);
                         }
                         index++;
                     }
@@ -337,7 +336,7 @@ export class Merges {
 
             // A first cell in a column with the type hidden uses the options of its own column again
             if (obj.options.columns && obj.options.columns[cell[0]] && obj.options.columns[cell[0]].type == 'hidden') {
-                renderCell.call(obj, cell[0], cell[1]);
+                obj.cells.render(cell[0], cell[1]);
             }
 
             dispatch.call(obj, 'onunmerge', obj, cellName, beforeMerges);
