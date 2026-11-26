@@ -748,17 +748,16 @@ export class Worksheet {
     }
 
     /**
-     * The link to Jspreadsheet below the table.
+     * The link to Gridwell below the table.
      */
     private createAbout() {
-        // Powered by Jspreadsheet
         const ads = document.createElement('a');
-        ads.setAttribute('href', 'https://bossanova.uk/jspreadsheet/');
+        ads.setAttribute('href', 'https://github.com/BitBindle/jspreadsheet-ce');
         this.ads = document.createElement('div');
         this.ads.className = 'jss_about';
 
         const span = document.createElement('span');
-        span.innerHTML = 'Jspreadsheet CE';
+        span.textContent = 'Gridwell';
         ads.appendChild(span);
         this.ads.appendChild(ads);
     }

@@ -1,5 +1,5 @@
 import { h, getCurrentInstance, camelize } from 'vue';
-import jss from 'jspreadsheet-ce';
+import jss from '@bitbindle/gridwell';
 
 export const Worksheet = {
     name: 'Worksheet',

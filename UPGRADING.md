@@ -3,6 +3,27 @@
 Version 6 reorganises the code into classes that own their state (see [ARCHITECTURE.md](ARCHITECTURE.md)). This file
 lists the changes that can break an application, and what to do instead. Each step of the reorganisation adds to it.
 
+## The package is @bitbindle/gridwell
+
+The fork is called Gridwell, and its package is `@bitbindle/gridwell`, not `jspreadsheet-ce`. Install it and change the
+imports; the API keeps its names:
+
+```js
+// Version 5
+import jspreadsheet from 'jspreadsheet-ce';
+import 'jspreadsheet-ce/dist/jspreadsheet.css';
+
+// Version 6
+import jspreadsheet from '@bitbindle/gridwell';
+import '@bitbindle/gridwell/dist/jspreadsheet.css';
+```
+
+- The script of the bundle sets the global `gridwell` as well as `jspreadsheet`.
+- The Vue wrapper is `@bitbindle/gridwell-vue`, not `@jspreadsheet-ce/vue`.
+- "About" in the context menu shows `Gridwell`, and the link below the table (`worksheet.ads`) goes to the repository of
+  the fork.
+- The package has only `dist/` and `resources/lang/`, with the README and the license.
+
 ## Worksheets and spreadsheets are class instances
 
 `jspreadsheet()` still returns the array of worksheets, and each worksheet still has `parent`, its spreadsheet. Both
