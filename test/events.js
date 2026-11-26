@@ -212,18 +212,18 @@ describe('Dispatch events', () => {
             worksheets: [{ data: [['a', 'b']] }],
             onevent: function (event, instance, cell, x, y, value) {
                 if (event === 'onchange') {
-                    calls.push(['onevent', instance === worksheet, String(x), String(y), value]);
+                    calls.push(['onevent', instance === worksheet, x, y, value]);
                 }
             },
             onchange: function (instance, cell, x, y, value) {
-                calls.push(['onchange', instance === worksheet, String(x), String(y), value]);
+                calls.push(['onchange', instance === worksheet, x, y, value]);
             },
             plugins: {
                 test: function () {
                     return {
                         onevent: function (event, instance, cell, x, y, value) {
                             if (event === 'onchange') {
-                                calls.push(['plugin', instance === worksheet, String(x), String(y), value]);
+                                calls.push(['plugin', instance === worksheet, x, y, value]);
                             }
                         },
                     };
@@ -234,9 +234,9 @@ describe('Dispatch events', () => {
         worksheet.setValueFromCoords(1, 0, 'c');
 
         expect(calls).to.eql([
-            ['onevent', true, '1', '0', 'c'],
-            ['onchange', true, '1', '0', 'c'],
-            ['plugin', true, '1', '0', 'c'],
+            ['onevent', true, 1, 0, 'c'],
+            ['onchange', true, 1, 0, 'c'],
+            ['plugin', true, 1, 0, 'c'],
         ]);
     });
 
@@ -336,6 +336,43 @@ describe('Dispatch events', () => {
         worksheet.setHeight(0, 50);
 
         expect(calls).to.eql([[0, 50, 40]]);
+    });
+
+    it('gives the change events the column and row as numbers, however the cell changed (issue #52)', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [3, 3] }],
+            onbeforechange: (instance, cell, x, y) => calls.push(['before', x, y]),
+            onchange: (instance, cell, x, y) => calls.push(['change', x, y]),
+            onafterchanges: (instance, records) => calls.push(['after', records[0].x, records[0].y]),
+        })[0];
+        const expected = [
+            ['before', 2, 1],
+            ['change', 2, 1],
+            ['after', 2, 1],
+        ];
+
+        // A typed edit
+        const td = worksheet.records[1][2].element;
+        worksheet.openEditor(td);
+        td.children[0].value = 'v';
+        worksheet.closeEditor(td, true);
+        expect(calls).to.eql(expected);
+        expect(worksheet.history.records[0].records[0]).to.include({ x: 2, y: 1 });
+
+        // A cell element and a list of cell elements
+        calls.length = 0;
+        worksheet.setValue(td, 'w');
+        expect(calls).to.eql(expected);
+
+        calls.length = 0;
+        worksheet.setValue([td], 'x');
+        expect(calls).to.eql(expected);
+
+        // A cell name
+        calls.length = 0;
+        worksheet.setValue('C2', 'y');
+        expect(calls).to.eql(expected);
     });
 
     it('cancels the change when onbeforechange returns false (issue #38)', () => {

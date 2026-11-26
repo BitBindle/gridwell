@@ -552,8 +552,7 @@ export class Clipboard {
                     };
                 });
 
-                // The coordinates can be text (issue #52)
-                worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as jspreadsheet.CellChange[]);
+                worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords);
             }
         }
 

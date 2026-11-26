@@ -3,7 +3,6 @@ import { getMask, isFormula } from '../utils/values.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type { Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
-import type { CellChange } from '../jspreadsheet';
 import type { MaskOptions } from '../types/jsuites';
 import type { CalendarOptions, ColorOptions, DropdownOptions } from '../types/jsuites-module';
 
@@ -628,8 +627,7 @@ export class Editor {
                 };
             });
 
-            // The coordinates can be text (issue #52)
-            worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as CellChange[]);
+            worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords);
         }
     }
 }

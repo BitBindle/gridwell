@@ -227,8 +227,8 @@ export type HistoryCellChange = {
     col: number;
     row: number;
     /** Undefined when setValue was given undefined. */
-    value?: jspreadsheet.CellValue;
-    oldValue?: jspreadsheet.CellValue;
+    value: jspreadsheet.CellValue | undefined;
+    oldValue: jspreadsheet.CellValue;
 };
 
 /**

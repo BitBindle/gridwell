@@ -368,11 +368,15 @@ declare namespace jspreadsheet {
         align?: string;
     }
 
+    /** A cell that changed, in onafterchanges. */
     interface CellChange {
-        value: CellValue;
+        /** The new value. It is undefined when setValue was called without a value. */
+        value: CellValue | undefined;
         oldValue: CellValue;
-        x: string;
-        y: string;
+        /** Column index of the cell. */
+        x: number;
+        /** Row index of the cell. */
+        y: number;
     }
 
     /** A change that undo reverts. The other properties depend on the action. */
@@ -762,8 +766,8 @@ declare namespace jspreadsheet {
         onbeforechange?: (
             instance: WorksheetInstance,
             cell: HTMLTableCellElement,
-            colIndex: string | number,
-            rowIndex: string | number,
+            colIndex: number,
+            rowIndex: number,
             newValue: CellValue | undefined
         ) => undefined | CellValue;
 
@@ -888,8 +892,8 @@ declare namespace jspreadsheet {
         onchange?: (
             instance: WorksheetInstance,
             cell: HTMLTableCellElement,
-            colIndex: string | number,
-            rowIndex: string | number,
+            colIndex: number,
+            rowIndex: number,
             newValue: CellValue | undefined,
             oldValue: CellValue
         ) => void;

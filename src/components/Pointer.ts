@@ -1,7 +1,7 @@
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import libraryBase from '../utils/libraryBase.js';
 import { getIndex } from '../events/helpers.js';
-import type { DragColumnInfo, DragRowInfo, ResizeColumnInfo, ResizeRowInfo, CellChange, CellValue } from '../jspreadsheet';
+import type { DragColumnInfo, DragRowInfo, ResizeColumnInfo, ResizeRowInfo, CellValue } from '../jspreadsheet';
 import type { Worksheet, TargetEvent } from '../types/internal';
 
 function doubleDigitFormat(v: number | string) {
@@ -236,8 +236,7 @@ export class Pointer {
             };
         });
 
-        // The coordinates can be text (issue #52)
-        worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as CellChange[]);
+        worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords);
     }
 
     /**

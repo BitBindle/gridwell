@@ -263,3 +263,11 @@ Returning `false` from `onbeforechange` cancels the change of the cell, as `fals
 Version 5 wrote `false` into the cell instead (#38). Another value that the handler returns is still written instead of
 the new value. A handler that wants the cell to hold `false` returns nothing when the new value is `false`; it cannot
 replace another value with `false`.
+
+## The change events get the column and row as numbers
+
+`onbeforechange`, `onchange`, the records of `onafterchanges` and the records of the history get the column and row of
+the cell as numbers. Version 5 gave them as text after a typed edit, a click on a checkbox, the Delete key, Ctrl+X and
+`setValue` with a cell element, and as numbers after the other changes (#52). An application that compared them with
+text, such as `x === '2'`, compares them with numbers. In the typings, `CellChange.x` and `CellChange.y` are numbers,
+and `CellChange.value` can be `undefined`, as the new value of `onchange` can.

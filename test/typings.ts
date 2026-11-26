@@ -118,6 +118,12 @@ assertType<Equals<Handler<'oneditionend'>[4], jspreadsheet.CellValue | undefined
 assertType<Equals<Handler<'onbeforechange'>[4], jspreadsheet.CellValue | undefined>>();
 assertType<Equals<Handler<'onchange'>[4], jspreadsheet.CellValue | undefined>>();
 
+// The change events get the column and row as numbers
+assertType<Equals<Handler<'onbeforechange'>[2], number>>();
+assertType<Equals<Handler<'onchange'>[3], number>>();
+assertType<Equals<jspreadsheet.CellChange['x'], number>>();
+assertType<Equals<jspreadsheet.CellChange['y'], number>>();
+
 // oncomments gets the comments as setComments got them, where undefined removes a comment
 assertType<Equals<Handler<'oncomments'>[1], Record<string, string | null | undefined>>>();
 
