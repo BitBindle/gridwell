@@ -485,4 +485,33 @@ describe('The calendar', () => {
         expect(parseInt(wrapper.style.left)).to.be.below(0);
         worksheet.closeEditor(cell, false);
     });
+
+    it('opens over the input when the element that scrolls has no room under it, and stops at its edge', async () => {
+        const instance = jspreadsheet(root, { worksheets: [{ data: [['2024-03-05']], columns: [{ type: 'calendar' }] }] });
+        await waitForListeners();
+        const worksheet = instance[0];
+        const cell = worksheet.getCell('A1');
+        root.style.cssText = 'position: relative; overflow: auto';
+        const rect = { top: 250, bottom: 270, left: 10, right: 110, height: 20, width: 100, x: 10, y: 250 } as DOMRect;
+        const content = { top: 0, bottom: 300, left: 0, right: 300, height: 300, width: 300, x: 0, y: 0 } as DOMRect;
+        const scroller = { top: 0, bottom: 300 } as DOMRect;
+        const original = HTMLElement.prototype.getBoundingClientRect;
+        HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+            if (this === root) {
+                return scroller;
+            }
+            return this.classList.contains('jcalendar-content') ? content : this.tagName === 'INPUT' ? rect : original.call(this);
+        };
+        try {
+            worksheet.openEditor(cell);
+        } finally {
+            HTMLElement.prototype.getBoundingClientRect = original;
+            root.removeAttribute('style');
+        }
+        const wrapper = cell.querySelector<HTMLElement>('.jcalendar > .jcalendar-container')!;
+
+        // 250 pixels over the input, where the element that scrolls starts
+        expect(wrapper.style.top).to.equal('-270px');
+        worksheet.closeEditor(cell, false);
+    });
 });

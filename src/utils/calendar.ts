@@ -1,6 +1,7 @@
 import { translate } from './dictionary.js';
 import { formatDate, parseDate, toDateParts } from './dates.js';
 import { createId } from './ids.js';
+import { getPopupSide } from './position.js';
 
 /** The input of a calendar, which keeps its calendar. */
 export type CalendarElement = HTMLInputElement & { calendar?: Calendar };
@@ -290,27 +291,18 @@ export class Calendar {
         document.addEventListener('mousedown', this.pressOutside, true);
         document.addEventListener('touchstart', this.pressOutside, true);
 
-        // The position of jSuites
+        // Under the input, or over it when there is no room under it in the window or in the element that scrolls. The
+        // calendar is two pixels away from the input, and it stops at the edge of the room when it does not fit.
         const rect = this.element.getBoundingClientRect();
         const rectContent = this.content.getBoundingClientRect();
+        const { above, room } = getPopupSide(this.element, this.wrapper, this.options.position === true, rectContent.height + 2);
+        const offset = Math.min(rectContent.height + 2, room);
         if (this.options.position) {
             this.wrapper.style.position = 'fixed';
-            if (window.innerHeight < rect.bottom + rectContent.height) {
-                this.wrapper.style.top = `${rect.top - (rectContent.height + 2)}px`;
-            } else {
-                this.wrapper.style.top = `${rect.top + rect.height + 2}px`;
-            }
+            this.wrapper.style.top = `${above ? rect.top - offset : rect.bottom + 2}px`;
             this.wrapper.style.left = `${rect.left}px`;
         } else {
-            if (window.innerHeight < rect.bottom + rectContent.height) {
-                let d = -1 * (rect.height + rectContent.height + 2);
-                if (d + rect.top < 0) {
-                    d = -1 * (rect.top + rect.height);
-                }
-                this.wrapper.style.top = `${d}px`;
-            } else {
-                this.wrapper.style.top = '2px';
-            }
+            this.wrapper.style.top = above ? `${-(rect.height + offset)}px` : '2px';
 
             if (window.innerWidth < rect.left + rectContent.width) {
                 this.wrapper.style.left = `${window.innerWidth - (rect.left + rectContent.width + 20)}px`;
