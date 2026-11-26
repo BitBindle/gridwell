@@ -633,3 +633,11 @@ The build of a worksheet with `mergeCells`, and `setData` on such a worksheet, s
 range stayed selected and was the tab stop. The worksheet now acts as a worksheet without merged ranges: the selection
 does not change, and the first visible cell is the tab stop. To select a cell after the build, call
 `updateSelectionFromCoords`. `setMerge` still selects the first cell of its range.
+
+## Lazy loading loads rows in the direction of the scroll
+
+With `lazyLoading`, a load keeps the rows in the view in place, and rows load only in the direction of the scroll. The
+direction comes from `deltaY` of the last wheel event, else from the change of `scrollTop`. A wheel event without
+`deltaY`, for example a horizontal scroll, and a scroll event that does not change `scrollTop`, load no rows. Version 5
+loaded rows for such an event when the view was near the bottom. To load rows from code, use the keyboard methods, such
+as `down`.

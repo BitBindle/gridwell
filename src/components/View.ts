@@ -7,6 +7,22 @@ import type { CellValue } from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
 
 /**
+ * The row that a load of the lazy loading keeps in place, and its offsetTop: the last row that shows for a load at the
+ * bottom, the first row that shows for a load at the top. A hidden row has no offsetParent. Without a row that shows,
+ * the result is null.
+ */
+function anchorRow(tbody: HTMLTableSectionElement, last: boolean) {
+    const rows = tbody.children as HTMLCollectionOf<HTMLTableRowElement>;
+    for (let k = 0; k < rows.length; k++) {
+        const row = rows[last ? rows.length - 1 - k : k];
+        if (row.offsetParent !== null) {
+            return { row, top: row.offsetTop };
+        }
+    }
+    return null;
+}
+
+/**
  * Which rows a worksheet shows: the search, the filters, the pagination, the order of the rows, the lazy loading and the scrolling. It
  * keeps the rows that a search or the filters found, the values of the filters and the page.
  *
@@ -24,6 +40,12 @@ export class View {
 
     /** The page that the worksheet shows, from 0, when it has pagination. */
     pageNumber = 0;
+
+    /** The scroll position after the last check or load of the lazy loading. A change of it gives the direction of a scroll. */
+    private lazyScrollTop = 0;
+
+    /** The direction of the last wheel event since the last check of the lazy loading: 1 down, -1 up, 0 none. */
+    private lazyWheel = 0;
 
     constructor(worksheet: Worksheet) {
         this.worksheet = worksheet;
@@ -781,6 +803,7 @@ export class View {
                 item = (results as number[]).indexOf(item);
             }
             if (item > 0) {
+                const anchor = anchorRow(worksheet.tbody, false);
                 for (let j = 0; j < 30; j++) {
                     item = item - 1;
                     if (item > -1) {
@@ -795,6 +818,7 @@ export class View {
                         }
                     }
                 }
+                this.keepAnchor(anchor);
             }
         }
 
@@ -823,6 +847,7 @@ export class View {
                 item = (results as number[]).indexOf(item);
             }
             if (item < worksheet.rows.length - 1) {
+                const anchor = anchorRow(worksheet.tbody, true);
                 for (let j = 0; j <= 30; j++) {
                     if (item < results.length) {
                         if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
@@ -837,6 +862,7 @@ export class View {
                     }
                     item = item + 1;
                 }
+                this.keepAnchor(anchor);
             }
         }
 
@@ -847,26 +873,44 @@ export class View {
     }
 
     /**
-     * Load more rows of the lazy loading when the content is scrolled near its top or its bottom.
+     * Move the view by the distance that the anchor row of a load moved, so the rows in the view stay in place. If the
+     * load removed the anchor row, the view does not move.
+     */
+    private keepAnchor(anchor: ReturnType<typeof anchorRow>) {
+        const content = this.worksheet.content;
+        if (anchor && anchor.row.offsetParent !== null) {
+            content.scrollTop = content.scrollTop + anchor.row.offsetTop - anchor.top;
+        }
+        // The browser can clamp the position, so the next check must see no scroll
+        this.lazyScrollTop = content.scrollTop;
+    }
+
+    /**
+     * Load more rows of the lazy loading when the content is scrolled near its top or its bottom. The rows load only in
+     * the direction of the scroll, so a load at the bottom and a load at the top cannot alternate.
      */
     wheel(e?: WheelEvent) {
         const worksheet = this.worksheet;
 
         if (worksheet.options.lazyLoading === true) {
+            if (e?.type === 'wheel' && e.deltaY) {
+                this.lazyWheel = Math.sign(e.deltaY);
+            }
+
             if (libraryBase.jspreadsheet.timeControlLoading == null) {
                 libraryBase.jspreadsheet.timeControlLoading = setTimeout(() => {
-                    if (worksheet.content.scrollTop + worksheet.content.clientHeight >= worksheet.content.scrollHeight - 10) {
-                        if (worksheet.view.loadDown()) {
-                            if (worksheet.content.scrollTop + worksheet.content.clientHeight > worksheet.content.scrollHeight - 10) {
-                                worksheet.content.scrollTop = worksheet.content.scrollTop - worksheet.content.clientHeight;
-                            }
+                    const content = worksheet.content;
+                    // The last wheel event, else the change of the scroll position since the last check or load
+                    const direction = this.lazyWheel || Math.sign(content.scrollTop - this.lazyScrollTop);
+                    this.lazyWheel = 0;
+                    this.lazyScrollTop = content.scrollTop;
+
+                    if (direction > 0 && content.scrollTop + content.clientHeight >= content.scrollHeight - 10) {
+                        if (this.loadDown()) {
                             worksheet.selection.updateCorner();
                         }
-                    } else if (worksheet.content.scrollTop <= worksheet.content.clientHeight) {
-                        if (worksheet.view.loadUp()) {
-                            if (worksheet.content.scrollTop < 10) {
-                                worksheet.content.scrollTop = worksheet.content.scrollTop + worksheet.content.clientHeight;
-                            }
+                    } else if (direction < 0 && content.scrollTop < 10) {
+                        if (this.loadUp()) {
                             worksheet.selection.updateCorner();
                         }
                     }
