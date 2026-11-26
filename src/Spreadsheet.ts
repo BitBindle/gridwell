@@ -107,7 +107,8 @@ export class Spreadsheet {
                     newWorksheet.build().then(() => {
                         this.toolbarManager.update(newWorksheet);
 
-                        newWorksheet.dispatch('oncreateworksheet', newWorksheet, newWorksheet.options, this.worksheets.length - 1);
+                        // createWorksheet can move the new worksheet before it is built
+                        newWorksheet.dispatch('oncreateworksheet', newWorksheet, newWorksheet.options, this.worksheets.indexOf(newWorksheet));
                     });
                 },
                 onchange: (element: HTMLElement, instance: Tabs, tabIndex: number) => {
