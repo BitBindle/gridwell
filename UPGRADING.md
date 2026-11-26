@@ -353,7 +353,7 @@ spreadsheet without formulas no longer needs the 140 KB of the engine.
 Jspreadsheet keeps its own dictionary and no longer reads the dictionary of jSuites. An application that called
 `jSuites.setDictionary`, or set `document.dictionary`, to translate the texts of the spreadsheet calls
 `jspreadsheet.setDictionary` instead. It takes the same object, and still passes it to jSuites for the controls that
-jSuites shows, such as the calendar. An empty translation shows the English text again.
+jSuites shows, the rich text and the image editors. An empty translation shows the English text again.
 
 ## The requests are sent with fetch
 
@@ -490,3 +490,28 @@ They keep the class names of jSuites (`jdropdown`, `jdropdown-header`, `jdropdow
 - The dropdown has none of the other methods of jSuites (`setData`, `setUrl`, `add`, `getPosition`, `setId`, …), no
   sorting, no lazy loading and no `newOptions`.
 - A key whose element it removed, such as Tab on the editor of a dropdown, goes to the grid.
+
+## The calendar works without jSuites
+
+The editor of a calendar column is shown by Jspreadsheet, not by `jSuites.calendar`. It keeps the class names of jSuites
+(`jcalendar`, `jcalendar-container`, `jcalendar-input`, `jcalendar-selected`, `jcalendar-disabled`, …) and its look,
+and the input still keeps the calendar as `calendar`, with `open()`, `close(ignoreEvents)`, `isOpened()`, `getValue()`,
+`setValue(value)` and `reset()`. These change:
+
+- The input is an ARIA combobox and the days are an ARIA grid: the input has `aria-expanded`, `aria-controls` and
+  `aria-activedescendant`, the days have an accessible name with the weekday and the month, the chosen day has
+  `aria-selected`, and a day out of the `validRange` has `aria-disabled`. The focus stays in the input.
+- The keys: the arrows move the active day by a day or a week, Page Up and Page Down by a month (with Shift by a year),
+  and Home and End to the start and the end of the week. With `readonly: false`, the left and the right arrows, Home and
+  End move in the text. The arrows open the calendar again after it closes.
+- Enter and Tab choose the active day and close the calendar; Enter keeps the cell selected and moves down, and Tab
+  selects the next cell. With `time`, Tab goes through the hour and the minute first. Escape closes the editor without
+  saving. A press outside saves the date without the active day, and no longer changes a date that was not changed.
+- With `readonly: false`, an empty input saves an empty cell.
+- The `fullscreen` option is gone, and so is the full-screen calendar in a window narrower than 800 pixels: the calendar
+  always opens under the cell, or over it when there is no room under it.
+- The calendar no longer has the type `year-month-picker`, the options `months`, `monthsFull`, `weekdays`,
+  `textDone`, `textReset`, `textUpdate`, `controls`, `dataType`, `autoSelect` and `onupdate`, nor the warning class on
+  an input with a date out of the `validRange`. The years view shows 25 years. The swipe between the months is gone.
+- The texts are translated with `jspreadsheet.setDictionary` (`Reset`, `Done`, `Update`, and the new `Previous`, `Next`,
+  `Hour` and `Minute`). The names of the months and the weekdays are translated with it too, as in the cells.
