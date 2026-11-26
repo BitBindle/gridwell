@@ -240,6 +240,8 @@ export class Spreadsheet {
             !this.worksheets.some((other) => other !== worksheet && other.options.worksheetName === name);
         if (renamed) {
             this.element.tabs!.rename(position, name);
+            worksheet.options.worksheetName = name;
+            worksheet.dispatch('onrenameworksheet', worksheet, position, name, oldName);
         } else {
             options.worksheetName = oldName;
         }
@@ -248,20 +250,20 @@ export class Spreadsheet {
             Object.defineProperty(options, 'style', { value: worksheet.getStyle(), writable: true, enumerable: true, configurable: true });
         }
 
-        // The size observer of the frozen rows holds the old rows, and the timers of a scroll, a search, a touch or a
-        // rename of a header act on the old table
+        // The size observer of the frozen rows holds the old rows. The timer of a search, a touch or a rename of a header
+        // belongs to the active worksheet, and acts on the old table. The timer of a lazy load checks its worksheet.
         worksheet.rowManager?.stopFreeze();
-        for (const timer of ['timeControl', 'timeControlLoading'] as const) {
-            if (libraryBase.jspreadsheet[timer]) {
-                clearTimeout(libraryBase.jspreadsheet[timer]!);
-                libraryBase.jspreadsheet[timer] = null;
-            }
+        if (libraryBase.jspreadsheet.current === worksheet && libraryBase.jspreadsheet.timeControl) {
+            clearTimeout(libraryBase.jspreadsheet.timeControl);
+            libraryBase.jspreadsheet.timeControl = null;
         }
 
+        // A load that replaces a load that has not ended keeps the active worksheet and the focus from before the first one
         const element = worksheet.element;
-        const focused = element.contains(document.activeElement);
+        const pending = worksheet.pendingLoad;
+        const focused = pending ? pending.focused : element.contains(document.activeElement);
+        const current = pending ? pending.current : libraryBase.jspreadsheet.current;
         const ignore = worksheet.history?.ignore;
-        const current = libraryBase.jspreadsheet.current;
         const index = this.config.worksheets.indexOf(worksheet.options);
         if (index >= 0) {
             this.config.worksheets[index] = options;
@@ -278,6 +280,7 @@ export class Spreadsheet {
         element.innerHTML = '';
         element.classList.remove('with-toolbar');
         worksheet.generation = generation;
+        worksheet.pendingLoad = { current, focused };
         worksheet.setup(options);
         worksheet.history.ignore = ignore === true;
 
@@ -290,11 +293,9 @@ export class Spreadsheet {
         }
         await building;
         if (worksheet.generation !== generation) {
-            if (renamed) {
-                worksheet.dispatch('onrenameworksheet', worksheet, this.worksheets.indexOf(worksheet), name, oldName);
-            }
             return worksheet;
         }
+        delete worksheet.pendingLoad;
         const active = libraryBase.jspreadsheet.current;
         if (active === worksheet || (active == null && current === worksheet)) {
             libraryBase.jspreadsheet.current = current;
@@ -314,9 +315,6 @@ export class Spreadsheet {
         }
         if (this.worksheets[this.getWorksheetActive()] === worksheet) {
             this.toolbarManager.update(worksheet);
-        }
-        if (renamed) {
-            worksheet.dispatch('onrenameworksheet', worksheet, this.worksheets.indexOf(worksheet), name, oldName);
         }
 
         return worksheet;

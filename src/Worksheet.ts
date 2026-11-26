@@ -1059,11 +1059,16 @@ export class Worksheet {
             this.createTable();
             return;
         }
-        return Promise.all(requests).then(() => {
-            if (!replaced()) {
-                this.createTable();
-            }
-        });
+        // A source that fails does not stop the build of the spreadsheet
+        return Promise.all(requests)
+            .then(() => {
+                if (!replaced()) {
+                    this.createTable();
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+            });
     }
 
     async build() {

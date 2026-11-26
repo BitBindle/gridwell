@@ -2425,7 +2425,8 @@ declare namespace jspreadsheet {
          * `getConfig().worksheets`. When the old table has the focus, the tab stop of the new table gets the selection
          * and the focus. Until the data of `url` or `csv`, or the `url` of a dropdown column, arrives, the worksheet has no
          * table, and when it was the active worksheet, no worksheet is active. A later call replaces a call whose data
-         * has not arrived, and the replaced call resolves with the worksheet before the later call ends.
+         * has not arrived, and keeps the active worksheet and the focus from before the first call. The replaced call
+         * resolves with the worksheet when its own request ends.
          * @param position - Worksheet index.
          * @param options - The options of the new table.
          * @returns The worksheet when its build ends, or undefined for a position without a worksheet.

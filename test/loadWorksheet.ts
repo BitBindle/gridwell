@@ -268,6 +268,68 @@ describe('loadWorksheet', () => {
             }
         });
 
+        it('keeps the active worksheet and the focus over two loads of the active worksheet', async () => {
+            const [one] = await create();
+            one.updateSelectionFromCoords(0, 0, 0, 0);
+            one.getCell('A1').focus();
+            server.responses['/a'] = { body: [['a']] };
+            server.responses['/b'] = { body: [['b']] };
+
+            const first = one.loadWorksheet(0, { url: '/a' });
+            const second = one.loadWorksheet(0, { url: '/b' });
+            await first;
+            await second;
+
+            expect(jspreadsheet.current).to.equal(one);
+            expect(one.getData()).to.eql([['b']]);
+            expect(document.activeElement).to.equal(one.getCell('A1'));
+            expect(one.getSelection()).to.eql([0, 0, 0, 0]);
+
+            const third = one.loadWorksheet(0, { url: '/a' });
+            await one.loadWorksheet(0, { data: [['d']] });
+            await third;
+            expect(jspreadsheet.current).to.equal(one);
+            expect(one.getData()).to.eql([['d']]);
+        });
+
+        it('gives the renames of two loads in their order', async () => {
+            const events: unknown[][] = [];
+            const [one] = await create({
+                onrenameworksheet: (worksheet, index, name, oldName) => {
+                    events.push([index, name, oldName]);
+                },
+            });
+            server.responses['/rows'] = { body: [['u']] };
+
+            const first = one.loadWorksheet(1, { worksheetName: 'New', url: '/rows' });
+            await one.loadWorksheet(1, { worksheetName: 'Newer', data: [['d']] });
+            await first;
+
+            expect(events).to.eql([
+                [1, 'New', 'Two'],
+                [1, 'Newer', 'New'],
+            ]);
+        });
+
+        it('builds the other worksheets when the source of a dropdown column fails', async () => {
+            const error = console.error;
+            console.error = () => undefined;
+            try {
+                server.responses['/source'] = { body: { a: 1 } };
+                const worksheets = await create({
+                    worksheets: [
+                        { worksheetName: 'One', data: [['a']], columns: [{ type: 'dropdown', url: '/source' }] },
+                        { worksheetName: 'Two', data: [['b']] },
+                    ],
+                });
+
+                expect(worksheets.length).to.equal(2);
+                expect(worksheets[1].getData()).to.eql([['b']]);
+            } finally {
+                console.error = error;
+            }
+        });
+
         it('dispatches onrenameworksheet for a load that a later load replaces', async () => {
             const events: unknown[][] = [];
             const [one] = await create({
