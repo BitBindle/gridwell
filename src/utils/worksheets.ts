@@ -19,22 +19,9 @@ import {
 import { getData, getDataFromRange, getValue, getValueFromCoords, setData, setValue, setValueFromCoords } from './data.js';
 import { cutControls } from '../events/clipboard.js';
 import { scrollControls, wheelControls } from '../events/scroll.js';
-import {
-    getHighlighted,
-    getRange,
-    getSelected,
-    getSelectedColumns,
-    getSelectedRows,
-    getSelection,
-    isSelected,
-    resetSelection,
-    selectAll,
-    updateSelectionFromCoords,
-} from './selection.js';
 import { deleteRow, getHeight, getRowData, hideRow, insertRow, moveRow, setHeight, setRowData, showRow } from './rows.js';
 import { getHeader, getHeaders, setHeader } from './headers.js';
 import { download } from './download.js';
-import { down, first, last, left, right, up } from './keys.js';
 import { createNestedHeader } from './headers.js';
 import { hideIndex, showIndex } from './rows.js';
 import { getWorksheetActive } from './activeWorksheet.js';
@@ -42,7 +29,7 @@ import { getWorksheetConfig, setConfig } from './config.js';
 import dispatch from './dispatch.js';
 import { getIdFromColumnName } from './internalHelpers.js';
 import { redo, undo } from './history.js';
-import { setGridFocusEvents, setGridLabels, setGridRoles } from './accessibility.js';
+import { setGridLabels, setGridRoles } from './accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import { Worksheet } from '../Worksheet.js';
 import type { Spreadsheet, WorksheetMethod } from '../types/internal';
@@ -195,7 +182,7 @@ const createGrid = function (this: Worksheet) {
     obj.table.appendChild(obj.thead);
     obj.table.appendChild(obj.tbody);
     setGridRoles.call(obj);
-    setGridFocusEvents.call(obj);
+    obj.selection.setFocusEvents();
 
     if (!obj.options.textOverflow) {
         obj.table.classList.add('jss_overflow');
@@ -629,23 +616,48 @@ export const deleteWorksheet: WorksheetMethod<'deleteWorksheet'> = function (pos
 
 // never[]: each method has its own parameters
 const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Worksheet, ...args: never[]) => unknown][] = [
-    ['selectAll', selectAll],
+    [
+        'selectAll',
+        function (this: Worksheet) {
+            return this.selection.selectAll();
+        },
+    ],
     [
         'updateSelectionFromCoords',
         function (this: Worksheet, x1: number, y1: number, x2: number, y2: number) {
-            return updateSelectionFromCoords.call(this, x1, y1, x2, y2);
+            return this.selection.updateFromCoords(x1, y1, x2, y2);
         },
     ],
     [
         'resetSelection',
         function (this: Worksheet) {
-            return resetSelection.call(this);
+            return this.selection.reset();
         },
     ],
-    ['getSelection', getSelection],
-    ['getSelected', getSelected],
-    ['getSelectedColumns', getSelectedColumns],
-    ['getSelectedRows', getSelectedRows],
+    [
+        'getSelection',
+        function (this: Worksheet) {
+            return this.selection.get();
+        },
+    ],
+    [
+        'getSelected',
+        function (this: Worksheet, columnNameOnly?: boolean) {
+            return this.selection.getSelected(columnNameOnly);
+        },
+    ],
+    [
+        'getSelectedColumns',
+        function (this: Worksheet, visibleOnly?: boolean) {
+            return this.selection.getSelectedColumns(visibleOnly);
+        },
+    ],
+    [
+        'getSelectedRows',
+        function (this: Worksheet, visibleOnly?: boolean) {
+            return this.selection.getSelectedRows(visibleOnly);
+        },
+    ],
     ['getData', getData],
     ['setData', setData],
     ['getValue', getValue],
@@ -861,8 +873,18 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.view.countPages();
         },
     ],
-    ['getRange', getRange],
-    ['isSelected', isSelected],
+    [
+        'getRange',
+        function (this: Worksheet) {
+            return this.selection.getRange();
+        },
+    ],
+    [
+        'isSelected',
+        function (this: Worksheet, x: number, y: number) {
+            return this.selection.isSelected(x, y);
+        },
+    ],
     [
         'setReadOnly',
         function (this: Worksheet, cell: string | HTMLElement, state: boolean) {
@@ -875,15 +897,50 @@ const worksheetPublicMethods: [keyof jspreadsheet.WorksheetInstance, (this: Work
             return this.cells.isReadOnly(x, y);
         },
     ],
-    ['getHighlighted', getHighlighted],
+    [
+        'getHighlighted',
+        function (this: Worksheet) {
+            return this.selection.getHighlighted();
+        },
+    ],
     // The public dispatch takes any event name, and dispatch is typed for the events of the library
     ['dispatch', dispatch as (this: Worksheet, ...args: never[]) => unknown],
-    ['down', down],
-    ['first', first],
-    ['last', last],
-    ['left', left],
-    ['right', right],
-    ['up', up],
+    [
+        'down',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.down(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'first',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.first(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'last',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.last(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'left',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.left(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'right',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.right(shiftKey, ctrlKey);
+        },
+    ],
+    [
+        'up',
+        function (this: Worksheet, shiftKey?: boolean, ctrlKey?: boolean) {
+            return this.selection.up(shiftKey, ctrlKey);
+        },
+    ],
     [
         'openFilter',
         function (this: Worksheet, columnId: number) {

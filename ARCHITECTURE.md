@@ -208,6 +208,13 @@ that changes it.
     use no worksheet and stay functions in `Clipboard.ts`. The public `copy`, `paste` and `download` call it.
 25. **The selection.** `selection.ts`, the moves of `keys.ts` and the accessibility code that follows the selection move
     into `Selection`; the fill with the selection corner (`fill.ts`) into `Pointer`.
+    Done. `worksheet.selection` selects cells (`updateFromCoords`, `update`, `reset`, `refresh`, `conditionalUpdate`,
+    `selectAll`), places the corner (`updateCorner`), tells which cells are selected (`get`, `getSelected`,
+    `getSelectedColumns`, `getSelectedRows`, `getRange`, `isSelected`, `getHighlighted`), moves the selection with the
+    keys (`up`, `down`, `left`, `right`, `first`, `last`, and `rightGet` and `downGet`, which the paste uses), and keeps
+    the selected cell the tab stop of the grid (`updateActiveCell`, `updateTabStop`, `restoreActiveCell`,
+    `setFocusEvents`). The roles and the labels of the grid stay in `accessibility.ts`. `worksheet.pointer.fill` fills
+    the cells after a drag or a double click of the corner (`copyData` before).
 26. **Columns.** `Columns` (`columns.ts`, the headers in `headers.ts`, and the frozen columns in `freeze.ts` and
     `freezePosition.ts`).
 27. **Rows.** `Rows` (`rows.ts`).

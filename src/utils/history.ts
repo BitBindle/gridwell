@@ -1,6 +1,5 @@
 import dispatch from './dispatch.js';
 import { injectArray } from './internalHelpers.js';
-import { conditionalSelectionUpdate } from './selection.js';
 import type { Worksheet, WorksheetHistoryRecord, WorksheetMethod } from '../types/internal';
 
 /**
@@ -36,7 +35,7 @@ const historyProcessRow = function (
         obj.options.data.splice(rowIndex, numOfRows);
         obj.rows.splice(rowIndex, numOfRows);
 
-        conditionalSelectionUpdate.call(obj, 1, rowIndex, numOfRows + rowIndex - 1);
+        obj.selection.conditionalUpdate(1, rowIndex, numOfRows + rowIndex - 1);
     } else {
         // Insert data
         const records = historyRecord.rowRecords.map((row) => {

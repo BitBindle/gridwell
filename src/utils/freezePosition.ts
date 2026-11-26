@@ -1,5 +1,4 @@
 import { getIndexWidth } from './freeze.js';
-import { updateCornerPosition } from './selection.js';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -66,5 +65,5 @@ export const updateFreezePosition = function (this: Worksheet) {
     }
 
     // Place the corner in the correct place
-    updateCornerPosition.call(obj);
+    obj.selection.updateCorner();
 };

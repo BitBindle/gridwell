@@ -1,8 +1,6 @@
 import jSuites from 'jsuites';
 import dispatch from '../utils/dispatch.js';
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
-import { refreshSelection, updateCornerPosition } from '../utils/selection.js';
-import { updateTabStop } from '../utils/accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { CellValue } from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
@@ -185,7 +183,7 @@ export class View {
                     (obj.filter!.children[columnId + 1] as HTMLElement).style.paddingRight = '';
                     (obj.filter!.children[columnId + 1] as HTMLElement).style.overflow = '';
                     obj.view.closeFilter(columnId);
-                    refreshSelection.call(obj);
+                    obj.selection.refresh();
                 },
             };
 
@@ -399,14 +397,14 @@ export class View {
         }
 
         // The tab stop of the grid can be in a row of the old page
-        updateTabStop.call(obj);
+        obj.selection.updateTabStop();
 
         if (obj.options.pagination! > 0) {
             this.updatePagination();
         }
 
         // Update corner position
-        updateCornerPosition.call(obj);
+        obj.selection.updateCorner();
 
         // Events. setData sets the page number of a worksheet with pagination.
         dispatch.call(obj, 'onchangepage', obj, pageNumber, oldPage, obj.options.pagination!);
@@ -463,14 +461,14 @@ export class View {
         }
 
         // The tab stop of the grid can be in a row that is not in the results
-        updateTabStop.call(obj);
+        obj.selection.updateTabStop();
 
         // Update pagination
         if (obj.options.pagination! > 0) {
             this.updatePagination();
         }
 
-        updateCornerPosition.call(obj);
+        obj.selection.updateCorner();
 
         dispatch.call(obj, 'onupdateresult', obj, obj.view.results);
 
@@ -551,7 +549,7 @@ export class View {
                     obj.tbody.appendChild(obj.rows[j].element);
                 }
                 // A moved row loses the focus
-                updateTabStop.call(obj);
+                obj.selection.updateTabStop();
             }
         }
     }
@@ -723,7 +721,7 @@ export class View {
         }
 
         // The tab stop of the grid can be in a removed row
-        updateTabStop.call(obj);
+        obj.selection.updateTabStop();
     }
 
     loadValidation() {
@@ -797,7 +795,7 @@ export class View {
         }
 
         // The tab stop of the grid can be in a removed row
-        updateTabStop.call(obj);
+        obj.selection.updateTabStop();
 
         return test;
     }
@@ -839,7 +837,7 @@ export class View {
         }
 
         // The tab stop of the grid can be in a removed row
-        updateTabStop.call(obj);
+        obj.selection.updateTabStop();
 
         return test;
     }

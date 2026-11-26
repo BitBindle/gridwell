@@ -1,9 +1,8 @@
 import formula from '@jspreadsheet/formula';
 import dispatch from '../utils/dispatch.js';
-import { refreshSelection } from '../utils/selection.js';
 import { getColumnName } from '../utils/helpers.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
-import { updateGridSize, updateRowIndex, updateTabStop } from '../utils/accessibility.js';
+import { updateGridSize, updateRowIndex } from '../utils/accessibility.js';
 import { updateCell } from '../utils/render.js';
 import { updateTable } from '../utils/table.js';
 import { parseValue } from '../utils/values.js';
@@ -512,10 +511,10 @@ export class Formulas {
         updateGridSize.call(obj);
 
         // The tab stop of the grid can be in a deleted row or column
-        updateTabStop.call(obj);
+        obj.selection.updateTabStop();
 
         // Refresh selection
-        refreshSelection.call(obj);
+        obj.selection.refresh();
 
         // Update table with custom configuration if applicable
         updateTable.call(obj);

@@ -1,6 +1,5 @@
 import jSuites from 'jsuites';
 import libraryBase from '../utils/libraryBase.js';
-import { selectAll, updateSelectionFromCoords } from '../utils/selection.js';
 import version from '../utils/version.js';
 import { getCellNameFromCoords } from '../utils/helpers.js';
 import { getElementIndex, getRole } from './helpers.js';
@@ -225,7 +224,7 @@ export const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
                     Number(y) < parseInt(current.selection.range[1]) ||
                     Number(y) > parseInt(current.selection.range[3])
                 ) {
-                    updateSelectionFromCoords.call(current, parseInt(x), parseInt(y), parseInt(x), parseInt(y), e);
+                    current.selection.updateFromCoords(parseInt(x), parseInt(y), parseInt(x), parseInt(y), e);
                 }
             } else if (role === 'row' || role === 'header') {
                 if (role === 'row') {
@@ -244,7 +243,7 @@ export const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
                     // A null index selects the whole row or column
                     const column = x == null ? null : parseInt(x);
                     const row = y == null ? null : parseInt(y);
-                    updateSelectionFromCoords.call(current, column, row, column, row, e);
+                    current.selection.updateFromCoords(column, row, column, row, e);
                 }
             } else if (role === 'nested') {
                 // The indexes of the columns under the nested header
@@ -263,10 +262,10 @@ export const contextMenuControls = function (e: TargetEvent<PointerEvent>) {
                     current.selection.range[1] != null ||
                     current.selection.range[3] != null
                 ) {
-                    updateSelectionFromCoords.call(current, columns[0], null, columns[columns.length - 1], null, e);
+                    current.selection.updateFromCoords(columns[0], null, columns[columns.length - 1], null, e);
                 }
             } else if (role === 'select-all') {
-                selectAll.call(current);
+                current.selection.selectAll();
             } else if (role === 'tabs') {
                 x = getElementIndex(e.target);
             } else if (role === 'footer') {

@@ -2,7 +2,6 @@ import jSuites from 'jsuites';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import { renderCell, updateCell } from '../utils/render.js';
 import dispatch from '../utils/dispatch.js';
-import { updateSelection } from '../utils/selection.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { MergeInfo, Worksheet } from '../types/internal';
 
@@ -278,7 +277,7 @@ export class Merges {
             // A column of the range can be hidden
             this.updateFirstCell(cellName);
             // In the initialization is not necessary keep the history
-            updateSelection.call(obj, obj.records[cell[1]][cell[0]].element);
+            obj.selection.update(obj.records[cell[1]][cell[0]].element);
 
             if (!ignoreHistoryAndEvents) {
                 obj.history.add({
@@ -330,7 +329,7 @@ export class Merges {
             }
 
             // Update selection
-            updateSelection.call(obj, obj.records[cell[1]][cell[0]].element, obj.records[cell[1] + j - 1][cell[0] + i! - 1].element);
+            obj.selection.update(obj.records[cell[1]][cell[0]].element, obj.records[cell[1] + j - 1][cell[0] + i! - 1].element);
 
             if (!keepOptions) {
                 delete obj.options.mergeCells[cellName];

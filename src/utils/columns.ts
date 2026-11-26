@@ -2,10 +2,9 @@ import jSuites from 'jsuites';
 import dispatch from './dispatch.js';
 import { getColumnName } from './helpers.js';
 import { createCell } from './render.js';
-import { conditionalSelectionUpdate, updateCornerPosition } from './selection.js';
 import { updateFreezePosition } from './freezePosition.js';
 import { getColumnNameFromId, injectArray } from './internalHelpers.js';
-import { setHeaderRole, updateTabStop } from './accessibility.js';
+import { setHeaderRole } from './accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetMethod } from '../types/internal';
 
@@ -573,7 +572,7 @@ export const deleteColumn: WorksheetMethod<'deleteColumn'> = function (columnNum
                 }
 
                 // Remove selection
-                conditionalSelectionUpdate.call(obj, 0, columnNumber, columnNumber + numOfColumns - 1);
+                obj.selection.conditionalUpdate(0, columnNumber, columnNumber + numOfColumns - 1);
 
                 // Adjust nested headers
                 if (obj.options.nestedHeaders && obj.options.nestedHeaders.length > 0 && obj.options.nestedHeaders[0] && obj.options.nestedHeaders[0][0]) {
@@ -700,7 +699,7 @@ export const setWidth = function (this: Worksheet, column: number | number[], wi
         dispatch.call(obj, 'onresizecolumn', obj, column, width, oldWidth);
 
         // Update corner position
-        updateCornerPosition.call(obj);
+        obj.selection.updateCorner();
     }
 };
 
@@ -780,7 +779,7 @@ export const hideColumn: WorksheetMethod<'hideColumn'> = function (colNumber) {
     obj.resetSelection();
 
     // The tab stop of the grid can be in a hidden column
-    updateTabStop.call(obj);
+    obj.selection.updateTabStop();
 };
 
 /**

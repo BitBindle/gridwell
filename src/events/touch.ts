@@ -1,6 +1,5 @@
 import libraryBase from '../utils/libraryBase.js';
 import { getCellColumnIndex } from '../utils/values.js';
-import { updateSelectionFromCoords } from '../utils/selection.js';
 import { getElement, getIndex } from './helpers.js';
 import type { TargetEvent } from '../types/internal';
 
@@ -31,7 +30,7 @@ export const touchStartControls = function (e: TargetEvent<TouchEvent>) {
             const rowId = getIndex(e.target, 'data-y');
 
             if (columnId != null && rowId != null) {
-                updateSelectionFromCoords.call(current, columnId, rowId, undefined, undefined, e);
+                current.selection.updateFromCoords(columnId, rowId, undefined, undefined, e);
 
                 if (current.options.editable == false) {
                     return;
