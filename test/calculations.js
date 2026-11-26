@@ -75,6 +75,12 @@ describe('Calculations', () => {
         expect(test[0].getValue('D2', true)).to.equal('a=b!');
     });
 
+    it('keeps the backslashes of a string literal (issue #21)', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['="a\\tb"', '="path\\data"', '="temp\\"', '="say ""a\\"" now"']] }] })[0];
+
+        expect(['A1', 'B1', 'C1', 'D1'].map((name) => worksheet.getValue(name, true))).to.deep.equal(['a\\tb', 'path\\data', 'temp\\', 'say "a\\" now']);
+    });
+
     describe('Test updating formulas when adding new rows', () => {
         it('1', () => {
             let test = jspreadsheet(root, {

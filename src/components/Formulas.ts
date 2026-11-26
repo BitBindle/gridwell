@@ -250,7 +250,8 @@ export class Formulas {
                 let literalIndex = 0;
                 const parsedExpression = expression.substr(1).replace(/"(?:[^"]|"")*"/g, (literal) => {
                     const name = `__JSSSTR${literalIndex++}__`;
-                    formulaExpressions[name] = `"${literal.slice(1, -1).replace(/""/g, '\\"')}"`;
+                    // The text of the literal, with "" as a quote, as JavaScript code: a backslash is a character, as in Excel
+                    formulaExpressions[name] = JSON.stringify(literal.slice(1, -1).replace(/""/g, '"'));
                     return name;
                 });
 
