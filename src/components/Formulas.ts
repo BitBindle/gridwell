@@ -136,8 +136,8 @@ export class Formulas {
             // The names of the cells of a range
             function getRangeNames(from: string, to: string) {
                 const names = [];
-                const e1 = getIdFromColumnName(from, true);
-                const e2 = getIdFromColumnName(to, true);
+                const e1 = getIdFromColumnName(from);
+                const e2 = getIdFromColumnName(to);
                 const x1 = Math.min(e1[0], e2[0]);
                 const x2 = Math.max(e1[0], e2[0]);
                 const y1 = Math.min(e1[1], e2[1]);
@@ -183,7 +183,7 @@ export class Formulas {
                         // Do not calculate again. The formula engine reads the values of the references itself.
                         if (!formulaEngine && typeof (globalThis as unknown as Record<string, unknown>)[reference] === 'undefined') {
                             // Coords
-                            const position = getIdFromColumnName(reference, true);
+                            const position = getIdFromColumnName(reference);
                             // Get value
                             let value: unknown;
 
@@ -291,7 +291,7 @@ export class Formulas {
                 chainLoopProtection[cellId] = true;
 
                 for (let i = 0; i < worksheet.formulas.chain[cellId].length; i++) {
-                    const cell = getIdFromColumnName(worksheet.formulas.chain[cellId][i], true);
+                    const cell = getIdFromColumnName(worksheet.formulas.chain[cellId][i]);
                     // Update cell
                     const value = `${worksheet.options.data[cell[1]][cell[0]]}`;
                     if (value.substr(0, 1) === '=') {
@@ -477,7 +477,7 @@ export class Formulas {
             for (const key of keys) {
                 const update = mergeCellUpdates[key];
                 if (update) {
-                    const info = getIdFromColumnName(key, true);
+                    const info = getIdFromColumnName(key);
                     let x = info[0];
                     let y = info[1];
                     updatePosition(x, y, x + update[1], y + update[2]);

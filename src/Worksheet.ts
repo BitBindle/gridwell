@@ -846,7 +846,7 @@ export class Worksheet {
         // Classes
         if (this.options.classes) {
             for (const [cellName, className] of Object.entries(this.options.classes)) {
-                const cell = getIdFromColumnName(cellName, true);
+                const cell = getIdFromColumnName(cellName);
                 this.records[cell[1]][cell[0]].element.classList.add(className);
             }
         }
