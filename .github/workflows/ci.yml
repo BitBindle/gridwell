@@ -19,7 +19,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                node-version: [20, 22]
+                node-version: [22, 24]
         steps:
             - uses: actions/checkout@v4
 
@@ -49,5 +49,5 @@ jobs:
             # `npm run coverage` builds the bundle with a source map and fails when the coverage is under the thresholds
             # in .c8rc.json. Once is enough.
             - name: Coverage
-              if: matrix.node-version == 22
+              if: matrix.node-version == 24
               run: npm run coverage
