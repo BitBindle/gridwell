@@ -215,10 +215,14 @@ export class Data {
             const y = columnId[1];
 
             // Update cell
-            records.push(worksheet.cells.update(x, y, value, force));
+            const record = worksheet.cells.update(x, y, value, force);
+            // A cell that did not change has no record
+            if (record) {
+                records.push(record);
 
-            // Update all formulas in the chain
-            worksheet.formulas.updateChain(x, y, records);
+                // Update all formulas in the chain
+                worksheet.formulas.updateChain(x, y, records);
+            }
         } else {
             let x = null;
             let y = null;
@@ -229,10 +233,14 @@ export class Data {
 
             // Update cell
             if (x != null && y != null) {
-                records.push(worksheet.cells.update(x, y, value, force));
+                const record = worksheet.cells.update(x, y, value, force);
+                // A cell that did not change has no record
+                if (record) {
+                    records.push(record);
 
-                // Update all formulas in the chain
-                worksheet.formulas.updateChain(x, y, records);
+                    // Update all formulas in the chain
+                    worksheet.formulas.updateChain(x, y, records);
+                }
             } else {
                 const keys = Object.keys(cell);
                 if (keys.length > 0) {
@@ -261,14 +269,23 @@ export class Data {
 
                         // Update cell
                         if (x != null && y != null) {
-                            records.push(worksheet.cells.update(x, y, cellValue, force));
+                            const record = worksheet.cells.update(x, y, cellValue, force);
+                            // A cell that did not change has no record
+                            if (record) {
+                                records.push(record);
 
-                            // Update all formulas in the chain
-                            worksheet.formulas.updateChain(x, y, records);
+                                // Update all formulas in the chain
+                                worksheet.formulas.updateChain(x, y, records);
+                            }
                         }
                     }
                 }
             }
+        }
+
+        // Nothing changed, for example in a read-only cell
+        if (!records.length) {
+            return;
         }
 
         // Update history
@@ -291,7 +308,7 @@ export class Data {
             };
         });
 
-        // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
+        // The coordinates can be text (issue #52)
         worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as CellChange[]);
     }
 
@@ -306,10 +323,19 @@ export class Data {
         const worksheet = this.worksheet;
 
         const records = [];
-        records.push(worksheet.cells.update(x, y, value, force));
+        const record = worksheet.cells.update(x, y, value, force);
+        // A cell that did not change has no record
+        if (record) {
+            records.push(record);
 
-        // Update all formulas in the chain
-        worksheet.formulas.updateChain(x, y, records);
+            // Update all formulas in the chain
+            worksheet.formulas.updateChain(x, y, records);
+        }
+
+        // Nothing changed, for example in a read-only cell
+        if (!records.length) {
+            return;
+        }
 
         // Update history
         worksheet.history.add({
@@ -331,7 +357,7 @@ export class Data {
             };
         });
 
-        // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
+        // The coordinates can be text (issue #52)
         worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as CellChange[]);
     }
 

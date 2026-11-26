@@ -297,7 +297,10 @@ export class Formulas {
                     // Update cell
                     const value = `${worksheet.options.data[cell[1]][cell[0]]}`;
                     if (value.substr(0, 1) === '=') {
-                        records.push(worksheet.cells.update(cell[0], cell[1], value, true));
+                        const record = worksheet.cells.update(cell[0], cell[1], value, true);
+                        if (record) {
+                            records.push(record);
+                        }
                     } else {
                         // No longer a formula: remove it from the chain, and read the next cell at the same index
                         worksheet.formulas.chain[cellId].splice(i, 1);

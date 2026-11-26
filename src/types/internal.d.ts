@@ -226,7 +226,7 @@ export type HistoryCellChange = {
     y: number;
     col: number;
     row: number;
-    /** Missing when the cell did not change, for example because it is read-only. */
+    /** Undefined when setValue was given undefined. */
     value?: jspreadsheet.CellValue;
     oldValue?: jspreadsheet.CellValue;
 };

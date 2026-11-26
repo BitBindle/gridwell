@@ -2,7 +2,7 @@ import { getCoordsFromCellName } from '../utils/helpers.js';
 import { getIdFromColumnName, getColumnNameFromId } from '../utils/internalHelpers.js';
 import jSuites from 'jsuites';
 import { getMask, isFormula } from '../utils/values.js';
-import type { Worksheet } from '../types/internal';
+import type { HistoryCellChange, Worksheet } from '../types/internal';
 import type jspreadsheet from '../jspreadsheet';
 
 // The date, then the date as text, then its parts
@@ -430,17 +430,11 @@ export class Cells {
         const c = this.getColumnIndex(x, y);
         const column = worksheet.options.columns?.[c];
 
-        let record;
+        let record: HistoryCellChange | null = null;
 
-        // Changing value depending on the column type
+        // A read-only cell does not change, and has no record
         if (worksheet.records[y][x].element.classList.contains('readonly') === true && !force) {
             // Do nothing
-            record = {
-                x,
-                y,
-                col: x,
-                row: y,
-            };
         } else {
             // Security
             if (`${value}`.substr(0, 1) === '=' && worksheet.options.secureFormulas === true) {
@@ -468,13 +462,14 @@ export class Cells {
             }
 
             // History format
+            const oldValue = worksheet.options.data[y][x];
             record = {
                 x,
                 y,
                 col: x,
                 row: y,
                 value,
-                oldValue: worksheet.options.data[y][x],
+                oldValue,
             };
 
             // A custom editor can have setValue, which is not in the public typings
@@ -604,7 +599,7 @@ export class Cells {
                 x,
                 y,
                 value,
-                record.oldValue
+                oldValue
             );
         }
 

@@ -337,6 +337,30 @@ describe('Dispatch events', () => {
 
         expect(calls).to.eql([[0, 50, 40]]);
     });
+
+    it('gives no change, history entry or onafterchanges for a read-only cell (issue #58)', () => {
+        const calls = [];
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b']], columns: [{ readOnly: true }, {}] }],
+            onchange: () => calls.push('onchange'),
+            onafterchanges: (instance, changes) => calls.push(changes),
+        })[0];
+
+        worksheet.setValue('A1', 'x');
+        worksheet.setValueFromCoords(0, 0, 'y');
+
+        expect(calls).to.eql([]);
+        expect(worksheet.history.records.length).to.equal(0);
+        expect(worksheet.getData()).to.eql([['a', 'b']]);
+
+        // Only the cell that changed is in the records
+        worksheet.setValue(['A1', 'B1'], 'z');
+
+        expect(calls.length).to.equal(2);
+        expect(calls[1]).to.eql([{ x: 1, y: 0, value: 'z', oldValue: 'b' }]);
+        expect(worksheet.history.records.length).to.equal(1);
+        expect(worksheet.history.records[0].records.length).to.equal(1);
+    });
 });
 
 describe('Destroy', () => {

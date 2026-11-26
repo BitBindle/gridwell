@@ -26,8 +26,8 @@ import type { EventHandlers, EventName, Spreadsheet, WorksheetState } from './ty
 /** The rows that persistence posts to the server, the data of onbeforesave */
 type SaveData = Parameters<NonNullable<jspreadsheet.SpreadsheetOptions['onbeforesave']>>[2];
 
-/** A record of onafterchanges. The coordinates can be text (issue #52), and a read-only cell has no value (issue #58). */
-type ChangeRecord = { x: number; y: number; value?: jspreadsheet.CellValue };
+/** A record of onafterchanges. The coordinates can be text (issue #52). */
+type ChangeRecord = { x: number; y: number; value: jspreadsheet.CellValue };
 
 /**
  * The fields of a worksheet and its public methods. The fields are in WorksheetState (src/types/internal.d.ts). The
@@ -123,8 +123,7 @@ export class Worksheet {
                     data: {},
                 };
             }
-            // A read-only cell has no value (issue #58)
-            rows[y].data[k] = change.value!;
+            rows[y].data[k] = change.value;
         }
 
         // Filter rows

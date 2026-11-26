@@ -193,10 +193,14 @@ export class Pointer {
                         }
                     }
 
-                    records.push(worksheet.cells.update(i, j, value));
+                    const record = worksheet.cells.update(i, j, value);
+                    // A cell that did not change has no record
+                    if (record) {
+                        records.push(record);
 
-                    // Update all formulas in the chain
-                    worksheet.formulas.updateChain(i, j, records);
+                        // Update all formulas in the chain
+                        worksheet.formulas.updateChain(i, j, records);
+                    }
                 }
                 posx++;
                 if (h[0] !== x1) {
@@ -205,6 +209,11 @@ export class Pointer {
             }
             posy++;
             rowNumber++;
+        }
+
+        // Nothing changed, for example in a read-only cell
+        if (!records.length) {
+            return;
         }
 
         // Update history
@@ -227,7 +236,7 @@ export class Pointer {
             };
         });
 
-        // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
+        // The coordinates can be text (issue #52)
         worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as CellChange[]);
     }
 

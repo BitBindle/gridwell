@@ -599,7 +599,10 @@ export class Editor {
             const column = worksheet.options.columns[worksheet.cells.getColumnIndex(x, y)];
             if (column.type === 'checkbox' || column.type === 'radio') {
                 // Update cell
-                records.push(worksheet.cells.update(x, y, !worksheet.options.data[y][x]));
+                const record = worksheet.cells.update(x, y, !worksheet.options.data[y][x]);
+                if (record) {
+                    records.push(record);
+                }
             }
         }
 
@@ -621,7 +624,7 @@ export class Editor {
                 };
             });
 
-            // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
+            // The coordinates can be text (issue #52)
             worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as CellChange[]);
         }
     }

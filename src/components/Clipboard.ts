@@ -398,12 +398,13 @@ export class Clipboard {
                     value = jSuites.calendar.extractDateFromString(value, worksheet.options.columns[i].options?.format || 'YYYY-MM-DD');
                 }
 
-                // Update and keep history
+                // Update and keep history. A cell that did not change, such as a read-only cell, has no record.
                 const record = worksheet.cells.update(colIndex, rowIndex, value);
-                // Keep history
-                records.push(record);
-                // Update all formulas in the chain
-                worksheet.formulas.updateChain(colIndex, rowIndex, records);
+                if (record) {
+                    records.push(record);
+                    // Update all formulas in the chain
+                    worksheet.formulas.updateChain(colIndex, rowIndex, records);
+                }
                 // Style
                 if (style?.[styleIndex]) {
                     const columnName = getColumnNameFromId([colIndex, rowIndex]);
@@ -540,18 +541,20 @@ export class Clipboard {
 
             worksheet.dispatch('onpaste', worksheet, eventRecords);
 
-            // On after changes
-            const onafterchangesRecords = records.map((record) => {
-                return {
-                    x: record.x,
-                    y: record.y,
-                    value: record.value,
-                    oldValue: record.oldValue,
-                };
-            });
+            // On after changes, when a cell changed
+            if (records.length) {
+                const onafterchangesRecords = records.map((record) => {
+                    return {
+                        x: record.x,
+                        y: record.y,
+                        value: record.value,
+                        oldValue: record.oldValue,
+                    };
+                });
 
-            // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-            worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as jspreadsheet.CellChange[]);
+                // The coordinates can be text (issue #52)
+                worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as jspreadsheet.CellChange[]);
+            }
         }
 
         worksheet.clipboard.clearBorder();

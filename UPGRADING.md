@@ -249,3 +249,10 @@ An event calls the `onevent` option, then the handler of the event in the option
 Version 5 returned the result of the last one, so a plugin whose `onevent` returned nothing made an `onbefore…` handler
 that returned `false` cancel nothing (#37). The result of an event is now `false` when any of them returns `false`, and
 otherwise the last result that is not `undefined`. A plugin's `onevent` that returns `false` cancels the action too.
+
+## A read-only cell gives no change
+
+`setValue`, `setValueFromCoords`, a paste and a fill leave a read-only cell as it is. Version 5 still put a record for
+the cell in the history and in `onafterchanges`, with the coordinates and without a value (#58). Now a cell that did
+not change has no record: `onafterchanges` has only the cells that changed, and when no cell changed it does not occur
+and the history gets no entry.
