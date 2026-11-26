@@ -65,25 +65,25 @@ export class Accessibility {
      * Number of rows before the first data row
      */
     private getHeaderRows() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        return obj.thead.children.length;
+        return worksheet.thead.children.length;
     }
 
     /**
      * Roles of the table, its sections and its header rows
      */
     setGridRoles() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        obj.table.setAttribute('role', 'grid');
+        worksheet.table.setAttribute('role', 'grid');
         // A selection can have more than one cell
-        obj.table.setAttribute('aria-multiselectable', 'true');
-        obj.thead.setAttribute('role', 'rowgroup');
-        obj.tbody.setAttribute('role', 'rowgroup');
+        worksheet.table.setAttribute('aria-multiselectable', 'true');
+        worksheet.thead.setAttribute('role', 'rowgroup');
+        worksheet.tbody.setAttribute('role', 'rowgroup');
 
-        for (let j = 0; j < obj.thead.children.length; j++) {
-            const tr = obj.thead.children[j];
+        for (let j = 0; j < worksheet.thead.children.length; j++) {
+            const tr = worksheet.thead.children[j];
             tr.setAttribute('role', 'row');
             tr.setAttribute('aria-rowindex', j + 1);
 
@@ -96,29 +96,29 @@ export class Accessibility {
         }
 
         // Select all corner
-        obj.headerContainer.children[0].setAttribute('aria-colindex', 1);
+        worksheet.headerContainer.children[0].setAttribute('aria-colindex', 1);
     }
 
     /**
      * Accessible names of the table, the select all corner and the clipboard helper
      */
     setGridLabels() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (obj.options.worksheetName) {
-            obj.table.setAttribute('aria-label', obj.options.worksheetName);
+        if (worksheet.options.worksheetName) {
+            worksheet.table.setAttribute('aria-label', worksheet.options.worksheetName);
         }
 
-        obj.headerContainer.children[0].setAttribute('aria-label', this.getLabelText('selectAll'));
+        worksheet.headerContainer.children[0].setAttribute('aria-label', this.getLabelText('selectAll'));
 
-        obj.clipboard.textarea.setAttribute('aria-label', this.getLabelText('clipboardHelper'));
+        worksheet.clipboard.textarea.setAttribute('aria-label', this.getLabelText('clipboardHelper'));
     }
 
     /**
      * Role and position of a data row and its row number
      */
     setRowRole(tr: HTMLTableRowElement, y: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         tr.setAttribute('role', 'row');
         this.updateRowIndex(tr, y);
@@ -130,7 +130,7 @@ export class Accessibility {
      * Position of a data row after a change of its index
      */
     updateRowIndex(tr: HTMLTableRowElement, y: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         tr.setAttribute('aria-rowindex', this.getHeaderRows() + parseInt(y) + 1);
     }
@@ -140,36 +140,36 @@ export class Accessibility {
      * columns. These rows have few cells.
      */
     updateGridSize() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const headerRows = this.getHeaderRows();
         let footerRows = 0;
 
         for (let j = 0; j < headerRows; j++) {
-            const tr = obj.thead.children[j];
+            const tr = worksheet.thead.children[j];
             if (tr.classList.contains('jss_nested')) {
                 // A nested header starts at its first column, which is in data-column
                 tr.children[0].setAttribute('aria-colindex', 1);
                 for (let i = 1; i < tr.children.length; i++) {
                     tr.children[i].setAttribute('aria-colindex', parseInt(tr.children[i].getAttribute('data-column')) + 2);
                 }
-            } else if (tr !== obj.headerContainer) {
+            } else if (tr !== worksheet.headerContainer) {
                 updateRowCells(tr);
             }
         }
 
-        if (obj.tfoot) {
-            obj.tfoot.setAttribute('role', 'rowgroup');
-            footerRows = obj.tfoot.children.length;
+        if (worksheet.tfoot) {
+            worksheet.tfoot.setAttribute('role', 'rowgroup');
+            footerRows = worksheet.tfoot.children.length;
             for (let j = 0; j < footerRows; j++) {
-                obj.tfoot.children[j].setAttribute('role', 'row');
-                obj.tfoot.children[j].setAttribute('aria-rowindex', headerRows + obj.rows.length + j + 1);
-                updateRowCells(obj.tfoot.children[j]);
+                worksheet.tfoot.children[j].setAttribute('role', 'row');
+                worksheet.tfoot.children[j].setAttribute('aria-rowindex', headerRows + worksheet.rows.length + j + 1);
+                updateRowCells(worksheet.tfoot.children[j]);
             }
         }
 
-        obj.table.setAttribute('aria-rowcount', headerRows + obj.rows.length + footerRows);
-        obj.table.setAttribute('aria-colcount', obj.headers.length + 1);
+        worksheet.table.setAttribute('aria-rowcount', headerRows + worksheet.rows.length + footerRows);
+        worksheet.table.setAttribute('aria-colcount', worksheet.headers.length + 1);
     }
 
     /**
@@ -178,9 +178,9 @@ export class Accessibility {
      * no name, because the editor shows other text and has its own name.
      */
     setCellLabel(td: HTMLTableCellElement) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (td.classList.contains('editor') || (obj.editor.isOpen() && obj.editor.cell === td)) {
+        if (td.classList.contains('editor') || (worksheet.editor.isOpen() && worksheet.editor.cell === td)) {
             td.removeAttribute('aria-label');
             return;
         }
@@ -189,7 +189,7 @@ export class Accessibility {
         const y = parseInt(td.getAttribute('data-y'));
         let text = td.textContent;
         if (!text && !td.querySelector('img')) {
-            const value = obj.getValueFromCoords(x, y);
+            const value = worksheet.getValueFromCoords(x, y);
             text = value === null || value === undefined ? '' : '' + value;
         }
 

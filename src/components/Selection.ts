@@ -24,8 +24,8 @@ type Step = 0 | 1;
 /**
  * Whether the worksheet has a selection
  */
-function hasSelection(obj: Worksheet): obj is SelectedWorksheet {
-    return obj.selection.range ? true : false;
+function hasSelection(worksheet: Worksheet): worksheet is SelectedWorksheet {
+    return worksheet.selection.range ? true : false;
 }
 
 /**
@@ -89,26 +89,26 @@ export class Selection {
      * The colspan attribute counts only the columns that are not hidden.
      */
     private getMergedColspan(element: HTMLElement, x: number, y: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        const merged = obj.options.mergeCells && obj.options.mergeCells[getColumnNameFromId([x, y])];
+        const merged = worksheet.options.mergeCells && worksheet.options.mergeCells[getColumnNameFromId([x, y])];
 
         return merged ? parseInt(merged[0]) : parseInt(element.getAttribute('colspan'));
     }
 
     updateCorner() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // If any selected cells
-        if (!obj.selection.highlighted || !obj.selection.highlighted.length) {
-            obj.corner.style.top = '-2000px';
-            obj.corner.style.left = '-2000px';
+        if (!worksheet.selection.highlighted || !worksheet.selection.highlighted.length) {
+            worksheet.corner.style.top = '-2000px';
+            worksheet.corner.style.left = '-2000px';
         } else {
             // Get last cell
-            const last = obj.selection.highlighted[obj.selection.highlighted.length - 1].element;
+            const last = worksheet.selection.highlighted[worksheet.selection.highlighted.length - 1].element;
             const lastX = parseInt(last.getAttribute('data-x'));
 
-            const contentRect = obj.content.getBoundingClientRect();
+            const contentRect = worksheet.content.getBoundingClientRect();
             const x1 = contentRect.left;
             const y1 = contentRect.top;
 
@@ -118,62 +118,62 @@ export class Selection {
             const w2 = lastRect.width;
             const h2 = lastRect.height;
 
-            const x = x2 - x1 + obj.content.scrollLeft + w2 - 4;
-            const y = y2 - y1 + obj.content.scrollTop + h2 - 4;
+            const x = x2 - x1 + worksheet.content.scrollLeft + w2 - 4;
+            const y = y2 - y1 + worksheet.content.scrollTop + h2 - 4;
 
             // Place the corner in the correct place
-            obj.corner.style.top = y + 'px';
-            obj.corner.style.left = x + 'px';
+            worksheet.corner.style.top = y + 'px';
+            worksheet.corner.style.left = x + 'px';
 
-            if (obj.options.freezeColumns) {
-                const width = obj.columns.getFreezeWidth();
+            if (worksheet.options.freezeColumns) {
+                const width = worksheet.columns.getFreezeWidth();
                 // Only check if the last column is not part of the merged cells
-                if (lastX > obj.options.freezeColumns - 1 && x2 - x1 + w2 < width) {
-                    obj.corner.style.display = 'none';
+                if (lastX > worksheet.options.freezeColumns - 1 && x2 - x1 + w2 < width) {
+                    worksheet.corner.style.display = 'none';
                 } else {
-                    if (obj.options.selectionCopy != false) {
-                        obj.corner.style.display = '';
+                    if (worksheet.options.selectionCopy != false) {
+                        worksheet.corner.style.display = '';
                     }
                 }
             } else {
-                if (obj.options.selectionCopy != false) {
-                    obj.corner.style.display = '';
+                if (worksheet.options.selectionCopy != false) {
+                    worksheet.corner.style.display = '';
                 }
             }
         }
 
-        obj.parent.toolbarManager.update(obj);
+        worksheet.parent.toolbarManager.update(worksheet);
     }
 
     reset(blur?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         let previousStatus: 0 | 1;
 
         // Remove style
-        if (!obj.selection.highlighted || !obj.selection.highlighted.length) {
+        if (!worksheet.selection.highlighted || !worksheet.selection.highlighted.length) {
             previousStatus = 0;
         } else {
             previousStatus = 1;
 
-            for (let i = 0; i < obj.selection.highlighted.length; i++) {
-                obj.selection.highlighted[i].element.classList.remove('highlight');
-                obj.selection.highlighted[i].element.classList.remove('highlight-left');
-                obj.selection.highlighted[i].element.classList.remove('highlight-right');
-                obj.selection.highlighted[i].element.classList.remove('highlight-top');
-                obj.selection.highlighted[i].element.classList.remove('highlight-bottom');
-                obj.selection.highlighted[i].element.classList.remove('highlight-selected');
-                obj.selection.highlighted[i].element.removeAttribute('aria-selected');
+            for (let i = 0; i < worksheet.selection.highlighted.length; i++) {
+                worksheet.selection.highlighted[i].element.classList.remove('highlight');
+                worksheet.selection.highlighted[i].element.classList.remove('highlight-left');
+                worksheet.selection.highlighted[i].element.classList.remove('highlight-right');
+                worksheet.selection.highlighted[i].element.classList.remove('highlight-top');
+                worksheet.selection.highlighted[i].element.classList.remove('highlight-bottom');
+                worksheet.selection.highlighted[i].element.classList.remove('highlight-selected');
+                worksheet.selection.highlighted[i].element.removeAttribute('aria-selected');
 
-                const px = parseInt(obj.selection.highlighted[i].element.getAttribute('data-x'));
-                const py = parseInt(obj.selection.highlighted[i].element.getAttribute('data-y'));
+                const px = parseInt(worksheet.selection.highlighted[i].element.getAttribute('data-x'));
+                const py = parseInt(worksheet.selection.highlighted[i].element.getAttribute('data-y'));
 
                 // Check for merged cells
                 let ux, uy;
 
-                if (obj.selection.highlighted[i].element.getAttribute('data-merged')) {
-                    const colspan = this.getMergedColspan(obj.selection.highlighted[i].element, px, py);
-                    const rowspan = parseInt(obj.selection.highlighted[i].element.getAttribute('rowspan'));
+                if (worksheet.selection.highlighted[i].element.getAttribute('data-merged')) {
+                    const colspan = this.getMergedColspan(worksheet.selection.highlighted[i].element, px, py);
+                    const rowspan = parseInt(worksheet.selection.highlighted[i].element.getAttribute('rowspan'));
                     ux = colspan > 0 ? px + (colspan - 1) : px;
                     uy = rowspan > 0 ? py + (rowspan - 1) : py;
                 } else {
@@ -183,37 +183,37 @@ export class Selection {
 
                 // Remove selected from headers
                 for (let j = px; j <= ux; j++) {
-                    if (obj.headers[j]) {
-                        obj.headers[j].classList.remove('selected');
+                    if (worksheet.headers[j]) {
+                        worksheet.headers[j].classList.remove('selected');
                     }
                 }
 
                 // Remove selected from rows
                 for (let j = py; j <= uy; j++) {
-                    if (obj.rows[j]) {
-                        obj.rows[j].element.classList.remove('selected');
+                    if (worksheet.rows[j]) {
+                        worksheet.rows[j].element.classList.remove('selected');
                     }
                 }
             }
         }
 
         // Reset highlighted cells
-        obj.selection.highlighted = [];
+        worksheet.selection.highlighted = [];
 
         // The tab stop of the grid stays on the active cell, which is not selected now
-        if (obj.selection.activeCell) {
-            obj.selection.activeCell.setAttribute('aria-selected', 'false');
+        if (worksheet.selection.activeCell) {
+            worksheet.selection.activeCell.setAttribute('aria-selected', 'false');
         }
 
         // Reset
-        obj.selection.range = null;
+        worksheet.selection.range = null;
 
         // Hide corner
-        obj.corner.style.top = '-2000px';
-        obj.corner.style.left = '-2000px';
+        worksheet.corner.style.top = '-2000px';
+        worksheet.corner.style.left = '-2000px';
 
         if (blur == true && previousStatus == 1) {
-            obj.dispatch('onblur', obj);
+            worksheet.dispatch('onblur', worksheet);
         }
 
         return previousStatus;
@@ -223,7 +223,7 @@ export class Selection {
      * Update selection based on two cells
      */
     update(el1: HTMLElement, el2?: HTMLElement, origin?: Event) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Both elements are cells, which have data-x and data-y
         const x1 = parseInt(el1.getAttribute('data-x'));
@@ -243,12 +243,12 @@ export class Selection {
 
     // A null x1 selects the rows from y1 to y2, and a null y1 selects the columns from x1 to x2
     updateFromCoords(x1: number | null, y1: number | null, x2?: number | null, y2?: number | null, origin?: Event) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // select column
         if (y1 == null) {
             y1 = 0;
-            y2 = obj.rows.length - 1;
+            y2 = worksheet.rows.length - 1;
 
             if (x1 == null) {
                 return;
@@ -256,7 +256,7 @@ export class Selection {
         } else if (x1 == null) {
             // select row
             x1 = 0;
-            x2 = obj.options.data[0].length - 1;
+            x2 = worksheet.options.data[0].length - 1;
         }
 
         // Same element
@@ -274,17 +274,17 @@ export class Selection {
         y2 = parseInt(y2);
 
         // Selection must be within the existing data
-        if (x1 >= obj.headers.length) {
-            x1 = obj.headers.length - 1;
+        if (x1 >= worksheet.headers.length) {
+            x1 = worksheet.headers.length - 1;
         }
-        if (y1 >= obj.rows.length) {
-            y1 = obj.rows.length - 1;
+        if (y1 >= worksheet.rows.length) {
+            y1 = worksheet.rows.length - 1;
         }
-        if (x2 >= obj.headers.length) {
-            x2 = obj.headers.length - 1;
+        if (x2 >= worksheet.headers.length) {
+            x2 = worksheet.headers.length - 1;
         }
-        if (y2 >= obj.rows.length) {
-            y2 = obj.rows.length - 1;
+        if (y2 >= worksheet.rows.length) {
+            y2 = worksheet.rows.length - 1;
         }
 
         // Limits
@@ -317,11 +317,11 @@ export class Selection {
         // Verify merged columns
         for (let i = px; i <= ux; i++) {
             for (let j = py; j <= uy; j++) {
-                if (obj.records[j][i] && obj.records[j][i].element.getAttribute('data-merged')) {
-                    const x = parseInt(obj.records[j][i].element.getAttribute('data-x'));
-                    const y = parseInt(obj.records[j][i].element.getAttribute('data-y'));
-                    const colspan = this.getMergedColspan(obj.records[j][i].element, x, y);
-                    const rowspan = parseInt(obj.records[j][i].element.getAttribute('rowspan'));
+                if (worksheet.records[j][i] && worksheet.records[j][i].element.getAttribute('data-merged')) {
+                    const x = parseInt(worksheet.records[j][i].element.getAttribute('data-x'));
+                    const y = parseInt(worksheet.records[j][i].element.getAttribute('data-y'));
+                    const colspan = this.getMergedColspan(worksheet.records[j][i].element, x, y);
+                    const rowspan = parseInt(worksheet.records[j][i].element.getAttribute('rowspan'));
 
                     if (colspan > 1) {
                         if (x < px) {
@@ -346,7 +346,7 @@ export class Selection {
 
         // Vertical limits
         for (let j = py; j <= uy; j++) {
-            if (obj.rows[j].element.style.display != 'none') {
+            if (worksheet.rows[j].element.style.display != 'none') {
                 if (borderTop == null) {
                     borderTop = j;
                 }
@@ -357,7 +357,7 @@ export class Selection {
         for (let i = px; i <= ux; i++) {
             for (let j = py; j <= uy; j++) {
                 // Horizontal limits
-                if (!obj.options.columns || !obj.options.columns[i] || obj.options.columns[i].type != 'hidden') {
+                if (!worksheet.options.columns || !worksheet.options.columns[i] || worksheet.options.columns[i].type != 'hidden') {
                     if (borderLeft == null) {
                         borderLeft = i;
                     }
@@ -375,77 +375,77 @@ export class Selection {
         }
 
         // The top and bottom are null when every selected row is hidden (issue #59)
-        const ret = obj.dispatch('onbeforeselection', obj, borderLeft, borderTop!, borderRight, borderBottom!, origin);
+        const ret = worksheet.dispatch('onbeforeselection', worksheet, borderLeft, borderTop!, borderRight, borderBottom!, origin);
         if (ret === false) {
             return false;
         }
 
         // Reset Selection
-        const previousState = obj.resetSelection();
+        const previousState = worksheet.resetSelection();
 
         // Keep selected cell
-        obj.selection.range = [x1, y1, x2, y2];
+        worksheet.selection.range = [x1, y1, x2, y2];
 
         // Add selected cell
-        if (obj.records[y1][x1]) {
-            obj.records[y1][x1].element.classList.add('highlight-selected');
+        if (worksheet.records[y1][x1]) {
+            worksheet.records[y1][x1].element.classList.add('highlight-selected');
         }
 
         // Redefining styles
         for (let i = px; i <= ux; i++) {
             for (let j = py; j <= uy; j++) {
-                if (obj.rows[j].element.style.display != 'none' && obj.records[j][i].element.style.display != 'none') {
-                    obj.records[j][i].element.classList.add('highlight');
-                    obj.records[j][i].element.setAttribute('aria-selected', 'true');
-                    obj.selection.highlighted.push(obj.records[j][i]);
+                if (worksheet.rows[j].element.style.display != 'none' && worksheet.records[j][i].element.style.display != 'none') {
+                    worksheet.records[j][i].element.classList.add('highlight');
+                    worksheet.records[j][i].element.setAttribute('aria-selected', 'true');
+                    worksheet.selection.highlighted.push(worksheet.records[j][i]);
                 }
             }
         }
 
         for (let i = borderLeft; i <= borderRight; i++) {
             if (
-                (!obj.options.columns || !obj.options.columns[i] || obj.options.columns[i].type != 'hidden') &&
-                obj.cols[i].colElement.style &&
-                obj.cols[i].colElement.style.display != 'none'
+                (!worksheet.options.columns || !worksheet.options.columns[i] || worksheet.options.columns[i].type != 'hidden') &&
+                worksheet.cols[i].colElement.style &&
+                worksheet.cols[i].colElement.style.display != 'none'
             ) {
                 // Top border. The borders are null when each row of the range is hidden.
-                if (obj.records[borderTop!] && obj.records[borderTop!][i]) {
-                    obj.records[borderTop!][i].element.classList.add('highlight-top');
+                if (worksheet.records[borderTop!] && worksheet.records[borderTop!][i]) {
+                    worksheet.records[borderTop!][i].element.classList.add('highlight-top');
                 }
                 // Bottom border
-                if (obj.records[borderBottom!] && obj.records[borderBottom!][i]) {
-                    obj.records[borderBottom!][i].element.classList.add('highlight-bottom');
+                if (worksheet.records[borderBottom!] && worksheet.records[borderBottom!][i]) {
+                    worksheet.records[borderBottom!][i].element.classList.add('highlight-bottom');
                 }
                 // Add selected from headers
-                obj.headers[i].classList.add('selected');
+                worksheet.headers[i].classList.add('selected');
             }
         }
 
         for (let j = borderTop!; j <= borderBottom!; j++) {
-            if (obj.rows[j] && obj.rows[j].element.style.display != 'none') {
+            if (worksheet.rows[j] && worksheet.rows[j].element.style.display != 'none') {
                 // Left border
-                obj.records[j][borderLeft].element.classList.add('highlight-left');
+                worksheet.records[j][borderLeft].element.classList.add('highlight-left');
                 // Right border
-                obj.records[j][borderRight].element.classList.add('highlight-right');
+                worksheet.records[j][borderRight].element.classList.add('highlight-right');
                 // Add selected from rows
-                obj.rows[j].element.classList.add('selected');
+                worksheet.rows[j].element.classList.add('selected');
             }
         }
 
-        obj.selection.bounds = [borderLeft, borderTop!, borderRight, borderBottom!];
+        worksheet.selection.bounds = [borderLeft, borderTop!, borderRight, borderBottom!];
 
         // The selected cell is the tab stop of the grid
         this.updateActiveCell(x1, y1, origin);
 
         // Handle events
         if (previousState == 0) {
-            obj.dispatch('onfocus', obj);
+            worksheet.dispatch('onfocus', worksheet);
 
-            obj.clipboard.clearBorder();
+            worksheet.clipboard.clearBorder();
         }
 
         // The top and bottom are null when every selected row is hidden (issue #59)
-        obj.dispatch('onselection', obj, borderLeft, borderTop!, borderRight, borderBottom!, origin);
+        worksheet.dispatch('onselection', worksheet, borderLeft, borderTop!, borderRight, borderBottom!, origin);
 
         // Find corner cell
         this.updateCorner();
@@ -457,16 +457,20 @@ export class Selection {
      * @return array
      */
     getSelectedColumns(visibleOnly?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (!obj.selection.range) {
+        if (!worksheet.selection.range) {
             return [];
         }
 
         const result = [];
 
-        for (let i = Math.min(obj.selection.range[0], obj.selection.range[2]); i <= Math.max(obj.selection.range[0], obj.selection.range[2]); i++) {
-            if (!visibleOnly || obj.headers[i].style.display != 'none') {
+        for (
+            let i = Math.min(worksheet.selection.range[0], worksheet.selection.range[2]);
+            i <= Math.max(worksheet.selection.range[0], worksheet.selection.range[2]);
+            i++
+        ) {
+            if (!visibleOnly || worksheet.headers[i].style.display != 'none') {
                 result.push(i);
             }
         }
@@ -478,10 +482,15 @@ export class Selection {
      * Refresh current selection
      */
     refresh() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (obj.selection.range) {
-            obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+        if (worksheet.selection.range) {
+            worksheet.updateSelectionFromCoords(
+                worksheet.selection.range[0],
+                worksheet.selection.range[1],
+                worksheet.selection.range[2],
+                worksheet.selection.range[3]
+            );
         }
     }
 
@@ -490,22 +499,24 @@ export class Selection {
      */
     // type is 1 for rows and 0 for columns
     conditionalUpdate(type: 0 | 1, o: number, d: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         if (type == 1) {
             if (
-                obj.selection.range &&
-                ((o >= obj.selection.range[1] && o <= obj.selection.range[3]) || (d >= obj.selection.range[1] && d <= obj.selection.range[3]))
+                worksheet.selection.range &&
+                ((o >= worksheet.selection.range[1] && o <= worksheet.selection.range[3]) ||
+                    (d >= worksheet.selection.range[1] && d <= worksheet.selection.range[3]))
             ) {
-                obj.resetSelection();
+                worksheet.resetSelection();
                 return;
             }
         } else {
             if (
-                obj.selection.range &&
-                ((o >= obj.selection.range[0] && o <= obj.selection.range[2]) || (d >= obj.selection.range[0] && d <= obj.selection.range[2]))
+                worksheet.selection.range &&
+                ((o >= worksheet.selection.range[0] && o <= worksheet.selection.range[2]) ||
+                    (d >= worksheet.selection.range[0] && d <= worksheet.selection.range[2]))
             ) {
-                obj.resetSelection();
+                worksheet.resetSelection();
                 return;
             }
         }
@@ -517,16 +528,20 @@ export class Selection {
      * @return array
      */
     getSelectedRows(visibleOnly?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (!obj.selection.range) {
+        if (!worksheet.selection.range) {
             return [];
         }
 
         const result = [];
 
-        for (let i = Math.min(obj.selection.range[1], obj.selection.range[3]); i <= Math.max(obj.selection.range[1], obj.selection.range[3]); i++) {
-            if (!visibleOnly || obj.rows[i].element.style.display != 'none') {
+        for (
+            let i = Math.min(worksheet.selection.range[1], worksheet.selection.range[3]);
+            i <= Math.max(worksheet.selection.range[1], worksheet.selection.range[3]);
+            i++
+        ) {
+            if (!visibleOnly || worksheet.rows[i].element.style.display != 'none') {
                 result.push(i);
             }
         }
@@ -535,30 +550,30 @@ export class Selection {
     }
 
     selectAll() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // updateSelectionFromCoords sets the range, unless onbeforeselection cancels the selection
-        obj.updateSelectionFromCoords(0, 0, obj.headers.length - 1, obj.records.length - 1);
+        worksheet.updateSelectionFromCoords(0, 0, worksheet.headers.length - 1, worksheet.records.length - 1);
     }
 
     get(): [number, number, number, number] | null {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (!obj.selection.range) {
+        if (!worksheet.selection.range) {
             return null;
         }
 
         return [
-            Math.min(obj.selection.range[0], obj.selection.range[2]),
-            Math.min(obj.selection.range[1], obj.selection.range[3]),
-            Math.max(obj.selection.range[0], obj.selection.range[2]),
-            Math.max(obj.selection.range[1], obj.selection.range[3]),
+            Math.min(worksheet.selection.range[0], worksheet.selection.range[2]),
+            Math.min(worksheet.selection.range[1], worksheet.selection.range[3]),
+            Math.max(worksheet.selection.range[0], worksheet.selection.range[2]),
+            Math.max(worksheet.selection.range[1], worksheet.selection.range[3]),
         ];
     }
 
     // The names of the cells, or their records. The public typings have an overload for each.
     getSelected(columnNameOnly?: boolean): (string | Worksheet['records'][number][number])[] {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const selectedRange = this.get();
 
@@ -573,7 +588,7 @@ export class Selection {
                 if (columnNameOnly) {
                     cells.push(getCellNameFromCoords(x, y));
                 } else {
-                    cells.push(obj.records[y][x]);
+                    cells.push(worksheet.records[y][x]);
                 }
             }
         }
@@ -582,7 +597,7 @@ export class Selection {
     }
 
     getRange() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const selectedRange = this.get();
 
@@ -594,14 +609,14 @@ export class Selection {
         const end = getCellNameFromCoords(selectedRange[2], selectedRange[3]);
 
         if (start === end) {
-            return obj.options.worksheetName + '!' + start;
+            return worksheet.options.worksheetName + '!' + start;
         }
 
-        return obj.options.worksheetName + '!' + start + ':' + end;
+        return worksheet.options.worksheetName + '!' + start + ':' + end;
     }
 
     isSelected(x: number, y: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const selection = this.get();
 
@@ -614,7 +629,7 @@ export class Selection {
     }
 
     getHighlighted(): [number, number, number, number][] {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const selection = this.get();
 
@@ -629,12 +644,12 @@ export class Selection {
      * A cell can be the tab stop when its row is in the table and the cell and its row are not hidden
      */
     private isVisibleCell(td: HTMLTableCellElement | null | undefined) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         return (
             !!td &&
             !!td.parentNode &&
-            td.parentNode.parentNode === obj.tbody &&
+            td.parentNode.parentNode === worksheet.tbody &&
             td.style.display !== 'none' &&
             (td.parentNode as HTMLElement).style.display !== 'none'
         );
@@ -644,10 +659,10 @@ export class Selection {
      * First visible cell of the rows in the table
      */
     private getFirstVisibleCell() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        for (let j = 0; j < obj.tbody.children.length; j++) {
-            const tr = obj.tbody.children[j] as HTMLTableRowElement;
+        for (let j = 0; j < worksheet.tbody.children.length; j++) {
+            const tr = worksheet.tbody.children[j] as HTMLTableRowElement;
             if (tr.style.display !== 'none') {
                 // The first child is the row number
                 for (let i = 1; i < tr.children.length; i++) {
@@ -666,9 +681,9 @@ export class Selection {
      * gives aria-selected="false" when it is not selected.
      */
     private setActiveCell(td: HTMLTableCellElement | null | undefined) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        const previous = obj.selection.activeCell;
+        const previous = worksheet.selection.activeCell;
         if (previous && previous !== td) {
             previous.tabIndex = -1;
             previous.removeAttribute('aria-label');
@@ -677,14 +692,14 @@ export class Selection {
             }
         }
 
-        obj.selection.activeCell = td || null;
+        worksheet.selection.activeCell = td || null;
 
         if (td) {
             // The editor of a cell takes the focus, so the cell is not a focus target while the editor is open
-            if (!obj.editor.isOpen() || obj.editor.cell !== td) {
+            if (!worksheet.editor.isOpen() || worksheet.editor.cell !== td) {
                 td.tabIndex = 0;
             }
-            obj.accessibility.setCellLabel(td);
+            worksheet.accessibility.setCellLabel(td);
             if (td.getAttribute('aria-selected') !== 'true') {
                 td.setAttribute('aria-selected', 'false');
             }
@@ -695,9 +710,9 @@ export class Selection {
      * The focused element in the document or in the shadow root of the worksheet
      */
     private getActiveElement() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        const root = obj.table.getRootNode() as Document | ShadowRoot;
+        const root = worksheet.table.getRootNode() as Document | ShadowRoot;
 
         return root.activeElement || null;
     }
@@ -710,26 +725,26 @@ export class Selection {
      * tab stop also gives the focus to the tab stop.
      */
     updateTabStop() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         let td: HTMLTableCellElement | null | undefined = null;
-        if (obj.selection.range) {
-            const x = obj.selection.range[0];
-            const y = obj.selection.range[1];
-            td = obj.records[y] && obj.records[y][x] ? obj.records[y][x].element : null;
+        if (worksheet.selection.range) {
+            const x = worksheet.selection.range[0];
+            const y = worksheet.selection.range[1];
+            td = worksheet.records[y] && worksheet.records[y][x] ? worksheet.records[y][x].element : null;
         }
 
         if (!this.isVisibleCell(td)) {
-            td = this.isVisibleCell(obj.selection.activeCell) ? obj.selection.activeCell : this.getFirstVisibleCell();
+            td = this.isVisibleCell(worksheet.selection.activeCell) ? worksheet.selection.activeCell : this.getFirstVisibleCell();
         }
 
         this.setActiveCell(td);
 
-        if (td && !obj.editor.isOpen() && libraryBase.jspreadsheet.current === obj) {
+        if (td && !worksheet.editor.isOpen() && libraryBase.jspreadsheet.current === worksheet) {
             const active = this.getActiveElement();
             // The focus was in the grid at the last selection
-            const lost = obj.selection.focusInGrid === true && isFocusLost();
-            const otherCell = !!active && active !== td && active.tagName === 'TD' && obj.tbody.contains(active);
+            const lost = worksheet.selection.focusInGrid === true && isFocusLost();
+            const otherCell = !!active && active !== td && active.tagName === 'TD' && worksheet.tbody.contains(active);
             if (lost || otherCell) {
                 td.focus({ preventScroll: true });
             }
@@ -740,11 +755,11 @@ export class Selection {
      * When the focus goes from the grid to an element outside the spreadsheet, a later change of the grid does not take it back
      */
     setFocusEvents() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        obj.table.addEventListener('focusout', (e) => {
-            if (e.relatedTarget && (e.relatedTarget as Node).nodeType === 1 && !obj.parent.element.contains(e.relatedTarget as Node)) {
-                obj.selection.focusInGrid = false;
+        worksheet.table.addEventListener('focusout', (e) => {
+            if (e.relatedTarget && (e.relatedTarget as Node).nodeType === 1 && !worksheet.parent.element.contains(e.relatedTarget as Node)) {
+                worksheet.selection.focusInGrid = false;
             }
         });
     }
@@ -755,9 +770,9 @@ export class Selection {
      * A selection does not take the focus from other parts of the page.
      */
     updateActiveCell(x: number, y: number, origin: Event | undefined) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        const td = obj.records[y] && obj.records[y][x] && obj.records[y][x].element;
+        const td = worksheet.records[y] && worksheet.records[y][x] && worksheet.records[y][x].element;
         if (!td) {
             return;
         }
@@ -765,13 +780,14 @@ export class Selection {
         this.setActiveCell(td);
 
         const active = this.getActiveElement();
-        const pointer = origin && origin.target && (origin.target as Node).nodeType === 1 && obj.table.contains(origin.target as Node);
-        const inGrid = pointer || (!!active && (active === obj.parent.element || active === obj.clipboard.textarea || obj.table.contains(active)));
-        const dropped = isFocusLost() && libraryBase.jspreadsheet.current === obj;
+        const pointer = origin && origin.target && (origin.target as Node).nodeType === 1 && worksheet.table.contains(origin.target as Node);
+        const inGrid =
+            pointer || (!!active && (active === worksheet.parent.element || active === worksheet.clipboard.textarea || worksheet.table.contains(active)));
+        const dropped = isFocusLost() && libraryBase.jspreadsheet.current === worksheet;
         // The focus was in the grid at the last selection
-        obj.selection.focusInGrid = inGrid || (dropped && obj.selection.focusInGrid === true);
+        worksheet.selection.focusInGrid = inGrid || (dropped && worksheet.selection.focusInGrid === true);
 
-        if (obj.selection.focusInGrid && !obj.editor.isOpen() && active !== td) {
+        if (worksheet.selection.focusInGrid && !worksheet.editor.isOpen() && active !== td) {
             td.focus({ preventScroll: true });
         }
     }
@@ -781,18 +797,18 @@ export class Selection {
      * with the removed editor.
      */
     restoreActiveCell(cell: HTMLTableCellElement) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
-        if (obj.selection.activeCell !== cell) {
+        if (worksheet.selection.activeCell !== cell) {
             cell.tabIndex = -1;
             return;
         }
 
         cell.tabIndex = 0;
-        obj.accessibility.setCellLabel(cell);
+        worksheet.accessibility.setCellLabel(cell);
 
         setTimeout(() => {
-            if (isFocusLost() && libraryBase.jspreadsheet.current === obj && obj.selection.activeCell === cell && !obj.editor.isOpen()) {
+            if (isFocusLost() && libraryBase.jspreadsheet.current === worksheet && worksheet.selection.activeCell === cell && !worksheet.editor.isOpen()) {
                 cell.focus({ preventScroll: true });
             }
         });
@@ -803,25 +819,25 @@ export class Selection {
      */
     private toFirstCell() {
         // The moves call it after they check that the worksheet has a selection
-        const obj = this.worksheet as SelectedWorksheet;
+        const worksheet = this.worksheet as SelectedWorksheet;
 
-        const element = obj.records[obj.selection.range[1]][obj.selection.range[0]].element;
+        const element = worksheet.records[worksheet.selection.range[1]][worksheet.selection.range[0]].element;
 
         if (element.getAttribute('data-merged')) {
-            obj.selection.range[0] = parseInt(element.getAttribute('data-x'));
-            obj.selection.range[1] = parseInt(element.getAttribute('data-y'));
+            worksheet.selection.range[0] = parseInt(element.getAttribute('data-x'));
+            worksheet.selection.range[1] = parseInt(element.getAttribute('data-y'));
         }
     }
 
     private upGet(x: number, y: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         x = parseInt(x);
         y = parseInt(y);
         for (let j = y - 1; j >= 0; j--) {
-            if (obj.records[j][x].element.style.display != 'none' && obj.rows[j].element.style.display != 'none') {
-                if (obj.records[j][x].element.getAttribute('data-merged')) {
-                    if (obj.records[j][x].element == obj.records[y][x].element) {
+            if (worksheet.records[j][x].element.style.display != 'none' && worksheet.rows[j].element.style.display != 'none') {
+                if (worksheet.records[j][x].element.getAttribute('data-merged')) {
+                    if (worksheet.records[j][x].element == worksheet.records[y][x].element) {
                         continue;
                     }
                 }
@@ -835,21 +851,21 @@ export class Selection {
 
     private upVisible(group: Corner, direction: Step) {
         // The moves call it after they check that the worksheet has a selection
-        const obj = this.worksheet as SelectedWorksheet;
+        const worksheet = this.worksheet as SelectedWorksheet;
 
         let x, y;
 
         if (group == 0) {
-            x = parseInt(obj.selection.range[0]);
-            y = parseInt(obj.selection.range[1]);
+            x = parseInt(worksheet.selection.range[0]);
+            y = parseInt(worksheet.selection.range[1]);
         } else {
-            x = parseInt(obj.selection.range[2]);
-            y = parseInt(obj.selection.range[3]);
+            x = parseInt(worksheet.selection.range[2]);
+            y = parseInt(worksheet.selection.range[3]);
         }
 
         if (direction == 0) {
             for (let j = 0; j < y; j++) {
-                if (obj.records[j][x].element.style.display != 'none' && obj.rows[j].element.style.display != 'none') {
+                if (worksheet.records[j][x].element.style.display != 'none' && worksheet.rows[j].element.style.display != 'none') {
                     y = j;
                     break;
                 }
@@ -859,58 +875,78 @@ export class Selection {
         }
 
         if (group == 0) {
-            obj.selection.range[0] = x;
-            obj.selection.range[1] = y;
+            worksheet.selection.range[0] = x;
+            worksheet.selection.range[1] = y;
         } else {
-            obj.selection.range[2] = x;
-            obj.selection.range[3] = y;
+            worksheet.selection.range[2] = x;
+            worksheet.selection.range[3] = y;
         }
     }
 
     up(shiftKey?: boolean, ctrlKey?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Without a selection, there is nothing to move
-        if (!hasSelection(obj)) {
+        if (!hasSelection(worksheet)) {
             return;
         }
 
         if (shiftKey) {
-            if (obj.selection.range[3] > 0) {
+            if (worksheet.selection.range[3] > 0) {
                 this.upVisible(1, ctrlKey ? 0 : 1);
             }
         } else {
-            if (obj.selection.range[1] > 0) {
+            if (worksheet.selection.range[1] > 0) {
                 this.upVisible(0, ctrlKey ? 0 : 1);
             }
             this.toFirstCell();
-            obj.selection.range[2] = obj.selection.range[0];
-            obj.selection.range[3] = obj.selection.range[1];
+            worksheet.selection.range[2] = worksheet.selection.range[0];
+            worksheet.selection.range[3] = worksheet.selection.range[1];
         }
 
         // Update selection
-        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+        worksheet.updateSelectionFromCoords(
+            worksheet.selection.range[0],
+            worksheet.selection.range[1],
+            worksheet.selection.range[2],
+            worksheet.selection.range[3]
+        );
 
         // Change page
-        if (obj.options.lazyLoading == true) {
-            if (obj.selection.range[1] == 0 || obj.selection.range[3] == 0) {
-                obj.view.loadPage(0);
-                obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+        if (worksheet.options.lazyLoading == true) {
+            if (worksheet.selection.range[1] == 0 || worksheet.selection.range[3] == 0) {
+                worksheet.view.loadPage(0);
+                worksheet.updateSelectionFromCoords(
+                    worksheet.selection.range[0],
+                    worksheet.selection.range[1],
+                    worksheet.selection.range[2],
+                    worksheet.selection.range[3]
+                );
             } else {
-                if (obj.view.loadValidation()) {
-                    obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+                if (worksheet.view.loadValidation()) {
+                    worksheet.updateSelectionFromCoords(
+                        worksheet.selection.range[0],
+                        worksheet.selection.range[1],
+                        worksheet.selection.range[2],
+                        worksheet.selection.range[3]
+                    );
                 } else {
-                    const item = parseInt((obj.tbody.firstChild as HTMLElement).getAttribute('data-y'));
-                    if (obj.selection.range[1] - item < 30) {
-                        obj.view.loadUp();
-                        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+                    const item = parseInt((worksheet.tbody.firstChild as HTMLElement).getAttribute('data-y'));
+                    if (worksheet.selection.range[1] - item < 30) {
+                        worksheet.view.loadUp();
+                        worksheet.updateSelectionFromCoords(
+                            worksheet.selection.range[0],
+                            worksheet.selection.range[1],
+                            worksheet.selection.range[2],
+                            worksheet.selection.range[3]
+                        );
                     }
                 }
             }
-        } else if (obj.options.pagination! > 0) {
-            const pageNumber = obj.whichPage(obj.selection.range[3]);
-            if (pageNumber != obj.view.pageNumber) {
-                obj.page(pageNumber);
+        } else if (worksheet.options.pagination! > 0) {
+            const pageNumber = worksheet.whichPage(worksheet.selection.range[3]);
+            if (pageNumber != worksheet.view.pageNumber) {
+                worksheet.page(pageNumber);
             }
         }
 
@@ -918,15 +954,15 @@ export class Selection {
     }
 
     rightGet(x: number, y: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         x = parseInt(x);
         y = parseInt(y);
 
-        for (let i = x + 1; i < obj.headers.length; i++) {
-            if (obj.records[y][i].element.style.display != 'none') {
-                if (obj.records[y][i].element.getAttribute('data-merged')) {
-                    if (obj.records[y][i].element == obj.records[y][x].element) {
+        for (let i = x + 1; i < worksheet.headers.length; i++) {
+            if (worksheet.records[y][i].element.style.display != 'none') {
+                if (worksheet.records[y][i].element.getAttribute('data-merged')) {
+                    if (worksheet.records[y][i].element == worksheet.records[y][x].element) {
                         continue;
                     }
                 }
@@ -940,21 +976,21 @@ export class Selection {
 
     private rightVisible(group: Corner, direction: Step) {
         // The moves call it after they check that the worksheet has a selection
-        const obj = this.worksheet as SelectedWorksheet;
+        const worksheet = this.worksheet as SelectedWorksheet;
 
         let x, y;
 
         if (group == 0) {
-            x = parseInt(obj.selection.range[0]);
-            y = parseInt(obj.selection.range[1]);
+            x = parseInt(worksheet.selection.range[0]);
+            y = parseInt(worksheet.selection.range[1]);
         } else {
-            x = parseInt(obj.selection.range[2]);
-            y = parseInt(obj.selection.range[3]);
+            x = parseInt(worksheet.selection.range[2]);
+            y = parseInt(worksheet.selection.range[3]);
         }
 
         if (direction == 0) {
-            for (let i = obj.headers.length - 1; i > x; i--) {
-                if (obj.records[y][i].element.style.display != 'none') {
+            for (let i = worksheet.headers.length - 1; i > x; i--) {
+                if (worksheet.records[y][i].element.style.display != 'none') {
                     x = i;
                     break;
                 }
@@ -964,48 +1000,53 @@ export class Selection {
         }
 
         if (group == 0) {
-            obj.selection.range[0] = x;
-            obj.selection.range[1] = y;
+            worksheet.selection.range[0] = x;
+            worksheet.selection.range[1] = y;
         } else {
-            obj.selection.range[2] = x;
-            obj.selection.range[3] = y;
+            worksheet.selection.range[2] = x;
+            worksheet.selection.range[3] = y;
         }
     }
 
     right(shiftKey?: boolean, ctrlKey?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Without a selection, there is nothing to move
-        if (!hasSelection(obj)) {
+        if (!hasSelection(worksheet)) {
             return;
         }
 
         if (shiftKey) {
-            if (obj.selection.range[2] < obj.headers.length - 1) {
+            if (worksheet.selection.range[2] < worksheet.headers.length - 1) {
                 this.rightVisible(1, ctrlKey ? 0 : 1);
             }
         } else {
-            if (obj.selection.range[0] < obj.headers.length - 1) {
+            if (worksheet.selection.range[0] < worksheet.headers.length - 1) {
                 this.rightVisible(0, ctrlKey ? 0 : 1);
             }
             this.toFirstCell();
-            obj.selection.range[2] = obj.selection.range[0];
-            obj.selection.range[3] = obj.selection.range[1];
+            worksheet.selection.range[2] = worksheet.selection.range[0];
+            worksheet.selection.range[3] = worksheet.selection.range[1];
         }
 
-        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+        worksheet.updateSelectionFromCoords(
+            worksheet.selection.range[0],
+            worksheet.selection.range[1],
+            worksheet.selection.range[2],
+            worksheet.selection.range[3]
+        );
         this.updateScroll(2);
     }
 
     downGet(x: number, y: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         x = parseInt(x);
         y = parseInt(y);
-        for (let j = y + 1; j < obj.rows.length; j++) {
-            if (obj.records[j][x].element.style.display != 'none' && obj.rows[j].element.style.display != 'none') {
-                if (obj.records[j][x].element.getAttribute('data-merged')) {
-                    if (obj.records[j][x].element == obj.records[y][x].element) {
+        for (let j = y + 1; j < worksheet.rows.length; j++) {
+            if (worksheet.records[j][x].element.style.display != 'none' && worksheet.rows[j].element.style.display != 'none') {
+                if (worksheet.records[j][x].element.getAttribute('data-merged')) {
+                    if (worksheet.records[j][x].element == worksheet.records[y][x].element) {
                         continue;
                     }
                 }
@@ -1019,21 +1060,21 @@ export class Selection {
 
     private downVisible(group: Corner, direction: Step) {
         // The moves call it after they check that the worksheet has a selection
-        const obj = this.worksheet as SelectedWorksheet;
+        const worksheet = this.worksheet as SelectedWorksheet;
 
         let x, y;
 
         if (group == 0) {
-            x = parseInt(obj.selection.range[0]);
-            y = parseInt(obj.selection.range[1]);
+            x = parseInt(worksheet.selection.range[0]);
+            y = parseInt(worksheet.selection.range[1]);
         } else {
-            x = parseInt(obj.selection.range[2]);
-            y = parseInt(obj.selection.range[3]);
+            x = parseInt(worksheet.selection.range[2]);
+            y = parseInt(worksheet.selection.range[3]);
         }
 
         if (direction == 0) {
-            for (let j = obj.rows.length - 1; j > y; j--) {
-                if (obj.records[j][x].element.style.display != 'none' && obj.rows[j].element.style.display != 'none') {
+            for (let j = worksheet.rows.length - 1; j > y; j--) {
+                if (worksheet.records[j][x].element.style.display != 'none' && worksheet.rows[j].element.style.display != 'none') {
                     y = j;
                     break;
                 }
@@ -1043,57 +1084,77 @@ export class Selection {
         }
 
         if (group == 0) {
-            obj.selection.range[0] = x;
-            obj.selection.range[1] = y;
+            worksheet.selection.range[0] = x;
+            worksheet.selection.range[1] = y;
         } else {
-            obj.selection.range[2] = x;
-            obj.selection.range[3] = y;
+            worksheet.selection.range[2] = x;
+            worksheet.selection.range[3] = y;
         }
     }
 
     down(shiftKey?: boolean, ctrlKey?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Without a selection, there is nothing to move
-        if (!hasSelection(obj)) {
+        if (!hasSelection(worksheet)) {
             return;
         }
 
         if (shiftKey) {
-            if (obj.selection.range[3] < obj.records.length - 1) {
+            if (worksheet.selection.range[3] < worksheet.records.length - 1) {
                 this.downVisible(1, ctrlKey ? 0 : 1);
             }
         } else {
-            if (obj.selection.range[1] < obj.records.length - 1) {
+            if (worksheet.selection.range[1] < worksheet.records.length - 1) {
                 this.downVisible(0, ctrlKey ? 0 : 1);
             }
             this.toFirstCell();
-            obj.selection.range[2] = obj.selection.range[0];
-            obj.selection.range[3] = obj.selection.range[1];
+            worksheet.selection.range[2] = worksheet.selection.range[0];
+            worksheet.selection.range[3] = worksheet.selection.range[1];
         }
 
-        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+        worksheet.updateSelectionFromCoords(
+            worksheet.selection.range[0],
+            worksheet.selection.range[1],
+            worksheet.selection.range[2],
+            worksheet.selection.range[3]
+        );
 
         // Change page
-        if (obj.options.lazyLoading == true) {
-            if (obj.selection.range[1] == obj.records.length - 1 || obj.selection.range[3] == obj.records.length - 1) {
-                obj.view.loadPage(-1);
-                obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+        if (worksheet.options.lazyLoading == true) {
+            if (worksheet.selection.range[1] == worksheet.records.length - 1 || worksheet.selection.range[3] == worksheet.records.length - 1) {
+                worksheet.view.loadPage(-1);
+                worksheet.updateSelectionFromCoords(
+                    worksheet.selection.range[0],
+                    worksheet.selection.range[1],
+                    worksheet.selection.range[2],
+                    worksheet.selection.range[3]
+                );
             } else {
-                if (obj.view.loadValidation()) {
-                    obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+                if (worksheet.view.loadValidation()) {
+                    worksheet.updateSelectionFromCoords(
+                        worksheet.selection.range[0],
+                        worksheet.selection.range[1],
+                        worksheet.selection.range[2],
+                        worksheet.selection.range[3]
+                    );
                 } else {
-                    const item = parseInt((obj.tbody.lastChild as HTMLElement).getAttribute('data-y'));
-                    if (item - obj.selection.range[3] < 30) {
-                        obj.view.loadDown();
-                        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+                    const item = parseInt((worksheet.tbody.lastChild as HTMLElement).getAttribute('data-y'));
+                    if (item - worksheet.selection.range[3] < 30) {
+                        worksheet.view.loadDown();
+                        worksheet.updateSelectionFromCoords(
+                            worksheet.selection.range[0],
+                            worksheet.selection.range[1],
+                            worksheet.selection.range[2],
+                            worksheet.selection.range[3]
+                        );
                     }
                 }
             }
-        } else if (obj.options.pagination! > 0) {
-            const pageNumber = obj.whichPage(obj.selection.range[3]);
-            if (pageNumber != obj.view.pageNumber) {
-                obj.page(pageNumber);
+        } else if (worksheet.options.pagination! > 0) {
+            const pageNumber = worksheet.whichPage(worksheet.selection.range[3]);
+            if (pageNumber != worksheet.view.pageNumber) {
+                worksheet.page(pageNumber);
             }
         }
 
@@ -1101,14 +1162,14 @@ export class Selection {
     }
 
     private leftGet(x: number, y: number) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         x = parseInt(x);
         y = parseInt(y);
         for (let i = x - 1; i >= 0; i--) {
-            if (obj.records[y][i].element.style.display != 'none') {
-                if (obj.records[y][i].element.getAttribute('data-merged')) {
-                    if (obj.records[y][i].element == obj.records[y][x].element) {
+            if (worksheet.records[y][i].element.style.display != 'none') {
+                if (worksheet.records[y][i].element.getAttribute('data-merged')) {
+                    if (worksheet.records[y][i].element == worksheet.records[y][x].element) {
                         continue;
                     }
                 }
@@ -1122,21 +1183,21 @@ export class Selection {
 
     private leftVisible(group: Corner, direction: Step) {
         // The moves call it after they check that the worksheet has a selection
-        const obj = this.worksheet as SelectedWorksheet;
+        const worksheet = this.worksheet as SelectedWorksheet;
 
         let x, y;
 
         if (group == 0) {
-            x = parseInt(obj.selection.range[0]);
-            y = parseInt(obj.selection.range[1]);
+            x = parseInt(worksheet.selection.range[0]);
+            y = parseInt(worksheet.selection.range[1]);
         } else {
-            x = parseInt(obj.selection.range[2]);
-            y = parseInt(obj.selection.range[3]);
+            x = parseInt(worksheet.selection.range[2]);
+            y = parseInt(worksheet.selection.range[3]);
         }
 
         if (direction == 0) {
             for (let i = 0; i < x; i++) {
-                if (obj.records[y][i].element.style.display != 'none') {
+                if (worksheet.records[y][i].element.style.display != 'none') {
                     x = i;
                     break;
                 }
@@ -1146,114 +1207,132 @@ export class Selection {
         }
 
         if (group == 0) {
-            obj.selection.range[0] = x;
-            obj.selection.range[1] = y;
+            worksheet.selection.range[0] = x;
+            worksheet.selection.range[1] = y;
         } else {
-            obj.selection.range[2] = x;
-            obj.selection.range[3] = y;
+            worksheet.selection.range[2] = x;
+            worksheet.selection.range[3] = y;
         }
     }
 
     left(shiftKey?: boolean, ctrlKey?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Without a selection, there is nothing to move
-        if (!hasSelection(obj)) {
+        if (!hasSelection(worksheet)) {
             return;
         }
 
         if (shiftKey) {
-            if (obj.selection.range[2] > 0) {
+            if (worksheet.selection.range[2] > 0) {
                 this.leftVisible(1, ctrlKey ? 0 : 1);
             }
         } else {
-            if (obj.selection.range[0] > 0) {
+            if (worksheet.selection.range[0] > 0) {
                 this.leftVisible(0, ctrlKey ? 0 : 1);
             }
             this.toFirstCell();
-            obj.selection.range[2] = obj.selection.range[0];
-            obj.selection.range[3] = obj.selection.range[1];
+            worksheet.selection.range[2] = worksheet.selection.range[0];
+            worksheet.selection.range[3] = worksheet.selection.range[1];
         }
 
-        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+        worksheet.updateSelectionFromCoords(
+            worksheet.selection.range[0],
+            worksheet.selection.range[1],
+            worksheet.selection.range[2],
+            worksheet.selection.range[3]
+        );
         this.updateScroll(0);
     }
 
     first(shiftKey?: boolean, ctrlKey?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Without a selection, there is nothing to move
-        if (!hasSelection(obj)) {
+        if (!hasSelection(worksheet)) {
             return;
         }
 
         if (shiftKey) {
             if (ctrlKey) {
-                obj.selection.range[3] = 0;
+                worksheet.selection.range[3] = 0;
             } else {
                 this.leftVisible(1, 0);
             }
         } else {
             if (ctrlKey) {
-                obj.selection.range[1] = 0;
+                worksheet.selection.range[1] = 0;
             } else {
                 this.leftVisible(0, 0);
             }
             this.toFirstCell();
-            obj.selection.range[2] = obj.selection.range[0];
-            obj.selection.range[3] = obj.selection.range[1];
+            worksheet.selection.range[2] = worksheet.selection.range[0];
+            worksheet.selection.range[3] = worksheet.selection.range[1];
         }
 
         // Change page
-        if (obj.options.lazyLoading == true && (obj.selection.range[1] == 0 || obj.selection.range[3] == 0)) {
-            obj.view.loadPage(0);
-        } else if (obj.options.pagination! > 0) {
-            const pageNumber = obj.whichPage(obj.selection.range[3]);
-            if (pageNumber != obj.view.pageNumber) {
-                obj.page(pageNumber);
+        if (worksheet.options.lazyLoading == true && (worksheet.selection.range[1] == 0 || worksheet.selection.range[3] == 0)) {
+            worksheet.view.loadPage(0);
+        } else if (worksheet.options.pagination! > 0) {
+            const pageNumber = worksheet.whichPage(worksheet.selection.range[3]);
+            if (pageNumber != worksheet.view.pageNumber) {
+                worksheet.page(pageNumber);
             }
         }
 
-        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+        worksheet.updateSelectionFromCoords(
+            worksheet.selection.range[0],
+            worksheet.selection.range[1],
+            worksheet.selection.range[2],
+            worksheet.selection.range[3]
+        );
         this.updateScroll(1);
     }
 
     last(shiftKey?: boolean, ctrlKey?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Without a selection, there is nothing to move
-        if (!hasSelection(obj)) {
+        if (!hasSelection(worksheet)) {
             return;
         }
 
         if (shiftKey) {
             if (ctrlKey) {
-                obj.selection.range[3] = obj.records.length - 1;
+                worksheet.selection.range[3] = worksheet.records.length - 1;
             } else {
                 this.rightVisible(1, 0);
             }
         } else {
             if (ctrlKey) {
-                obj.selection.range[1] = obj.records.length - 1;
+                worksheet.selection.range[1] = worksheet.records.length - 1;
             } else {
                 this.rightVisible(0, 0);
             }
             this.toFirstCell();
-            obj.selection.range[2] = obj.selection.range[0];
-            obj.selection.range[3] = obj.selection.range[1];
+            worksheet.selection.range[2] = worksheet.selection.range[0];
+            worksheet.selection.range[3] = worksheet.selection.range[1];
         }
 
         // Change page
-        if (obj.options.lazyLoading == true && (obj.selection.range[1] == obj.records.length - 1 || obj.selection.range[3] == obj.records.length - 1)) {
-            obj.view.loadPage(-1);
-        } else if (obj.options.pagination! > 0) {
-            const pageNumber = obj.whichPage(obj.selection.range[3]);
-            if (pageNumber != obj.view.pageNumber) {
-                obj.page(pageNumber);
+        if (
+            worksheet.options.lazyLoading == true &&
+            (worksheet.selection.range[1] == worksheet.records.length - 1 || worksheet.selection.range[3] == worksheet.records.length - 1)
+        ) {
+            worksheet.view.loadPage(-1);
+        } else if (worksheet.options.pagination! > 0) {
+            const pageNumber = worksheet.whichPage(worksheet.selection.range[3]);
+            if (pageNumber != worksheet.view.pageNumber) {
+                worksheet.page(pageNumber);
             }
         }
 
-        obj.updateSelectionFromCoords(obj.selection.range[0], obj.selection.range[1], obj.selection.range[2], obj.selection.range[3]);
+        worksheet.updateSelectionFromCoords(
+            worksheet.selection.range[0],
+            worksheet.selection.range[1],
+            worksheet.selection.range[2],
+            worksheet.selection.range[3]
+        );
         this.updateScroll(3);
     }
 
@@ -1261,17 +1340,17 @@ export class Selection {
      * Update scroll position based on the selection
      */
     private updateScroll(direction: 0 | 1 | 2 | 3) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Jspreadsheet Container information
-        const contentRect = obj.content.getBoundingClientRect();
+        const contentRect = worksheet.content.getBoundingClientRect();
         const x1 = contentRect.left;
         const y1 = contentRect.top;
         const w1 = contentRect.width;
         const h1 = contentRect.height;
 
         // Direction Left or Up
-        const reference = obj.records[obj.selection.range![3]][obj.selection.range![2]].element;
+        const reference = worksheet.records[worksheet.selection.range![3]][worksheet.selection.range![2]].element;
 
         // Reference
         const referenceRect = reference.getBoundingClientRect();
@@ -1284,54 +1363,54 @@ export class Selection {
 
         // Direction
         if (direction == 0 || direction == 1) {
-            x = x2 - x1 + obj.content.scrollLeft;
-            y = y2 - y1 + obj.content.scrollTop - 2;
+            x = x2 - x1 + worksheet.content.scrollLeft;
+            y = y2 - y1 + worksheet.content.scrollTop - 2;
         } else {
-            x = x2 - x1 + obj.content.scrollLeft + w2;
-            y = y2 - y1 + obj.content.scrollTop + h2;
+            x = x2 - x1 + worksheet.content.scrollLeft + w2;
+            y = y2 - y1 + worksheet.content.scrollTop + h2;
         }
 
         // Top position check
-        if (y > obj.content.scrollTop + 30 && y < obj.content.scrollTop + h1) {
+        if (y > worksheet.content.scrollTop + 30 && y < worksheet.content.scrollTop + h1) {
             // In the viewport
         } else {
             // Out of viewport
-            if (y < obj.content.scrollTop + 30) {
-                obj.content.scrollTop = y - h2;
+            if (y < worksheet.content.scrollTop + 30) {
+                worksheet.content.scrollTop = y - h2;
             } else {
-                obj.content.scrollTop = y - (h1 - 2);
+                worksheet.content.scrollTop = y - (h1 - 2);
             }
         }
 
         // Freeze columns?
-        const freezed = obj.columns.getFreezeWidth();
+        const freezed = worksheet.columns.getFreezeWidth();
 
         // The frozen columns stay at the left of the content only when scrollLeft is more than the width of the index column.
         // Then a cell whose left border is under the frozen columns goes to the right of the frozen columns.
-        const indexWidth = obj.columns.getIndexWidth();
-        const frozen = freezed > 0 && obj.content.scrollLeft > indexWidth;
-        const left = x2 - x1 + obj.content.scrollLeft;
-        const underFreezed = frozen && left < obj.content.scrollLeft + freezed;
+        const indexWidth = worksheet.columns.getIndexWidth();
+        const frozen = freezed > 0 && worksheet.content.scrollLeft > indexWidth;
+        const left = x2 - x1 + worksheet.content.scrollLeft;
+        const underFreezed = frozen && left < worksheet.content.scrollLeft + freezed;
 
         // Left position check - TODO: change that to the bottom border of the element
         if (
-            (frozen && obj.selection.range![2] < obj.options.freezeColumns!) ||
-            (!underFreezed && x > obj.content.scrollLeft + freezed && x < obj.content.scrollLeft + w1)
+            (frozen && worksheet.selection.range![2] < worksheet.options.freezeColumns!) ||
+            (!underFreezed && x > worksheet.content.scrollLeft + freezed && x < worksheet.content.scrollLeft + w1)
         ) {
             // In the viewport
         } else if (underFreezed) {
-            obj.content.scrollLeft = left - freezed - 1 < indexWidth ? 0 : left - freezed - 1;
+            worksheet.content.scrollLeft = left - freezed - 1 < indexWidth ? 0 : left - freezed - 1;
         } else {
             // Out of viewport
-            if (x < obj.content.scrollLeft + 30) {
-                obj.content.scrollLeft = x;
-                if (obj.content.scrollLeft < 50) {
-                    obj.content.scrollLeft = 0;
+            if (x < worksheet.content.scrollLeft + 30) {
+                worksheet.content.scrollLeft = x;
+                if (worksheet.content.scrollLeft < 50) {
+                    worksheet.content.scrollLeft = 0;
                 }
-            } else if (x < obj.content.scrollLeft + freezed) {
-                obj.content.scrollLeft = x - freezed - 1;
+            } else if (x < worksheet.content.scrollLeft + freezed) {
+                worksheet.content.scrollLeft = x - freezed - 1;
             } else {
-                obj.content.scrollLeft = x - (w1 - 20);
+                worksheet.content.scrollLeft = x - (w1 - 20);
             }
         }
     }

@@ -18,126 +18,126 @@ export class Data {
 
     // data can be rows of objects. They are changed to arrays.
     set(data?: CellValue[][] | Record<string, CellValue>[]): void {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Update data. Rows of objects are changed to arrays below.
         if (data) {
-            obj.options.data = data as CellValue[][];
+            worksheet.options.data = data as CellValue[][];
         }
 
         // Data
-        if (!obj.options.data) {
-            obj.options.data = [];
+        if (!worksheet.options.data) {
+            worksheet.options.data = [];
         }
 
         // Prepare data
-        if (obj.options.data && obj.options.data[0]) {
-            if (!Array.isArray(obj.options.data[0])) {
+        if (worksheet.options.data && worksheet.options.data[0]) {
+            if (!Array.isArray(worksheet.options.data[0])) {
                 const rows: CellValue[][] = [];
-                for (let j = 0; j < obj.options.data.length; j++) {
+                for (let j = 0; j < worksheet.options.data.length; j++) {
                     const row: CellValue[] = [];
-                    for (let i = 0; i < obj.options.columns.length; i++) {
+                    for (let i = 0; i < worksheet.options.columns.length; i++) {
                         // The rows are objects here
-                        row[i] = (obj.options.data[j] as unknown as Record<string, CellValue>)[obj.options.columns[i].name!];
+                        row[i] = (worksheet.options.data[j] as unknown as Record<string, CellValue>)[worksheet.options.columns[i].name!];
                     }
                     rows.push(row);
                 }
 
-                obj.options.data = rows;
+                worksheet.options.data = rows;
             }
         }
 
         // Adjust minimal dimensions
         let j = 0;
         let i = 0;
-        const size_i = (obj.options.columns && obj.options.columns.length) || 0;
-        const size_j = obj.options.data.length;
-        const min_i = obj.options.minDimensions[0];
-        const min_j = obj.options.minDimensions[1];
+        const size_i = (worksheet.options.columns && worksheet.options.columns.length) || 0;
+        const size_j = worksheet.options.data.length;
+        const min_i = worksheet.options.minDimensions[0];
+        const min_j = worksheet.options.minDimensions[1];
         const max_i = min_i > size_i ? min_i : size_i;
         const max_j = min_j > size_j ? min_j : size_j;
 
         for (j = 0; j < max_j; j++) {
             for (i = 0; i < max_i; i++) {
-                if (obj.options.data[j] == undefined) {
-                    obj.options.data[j] = [];
+                if (worksheet.options.data[j] == undefined) {
+                    worksheet.options.data[j] = [];
                 }
 
-                if (obj.options.data[j][i] == undefined) {
-                    obj.options.data[j][i] = '';
+                if (worksheet.options.data[j][i] == undefined) {
+                    worksheet.options.data[j][i] = '';
                 }
             }
         }
 
         // Reset containers
-        obj.rows = [];
-        obj.view.results = null;
-        obj.records = [];
-        obj.history.clear();
+        worksheet.rows = [];
+        worksheet.view.results = null;
+        worksheet.records = [];
+        worksheet.history.clear();
 
         // Reset data
-        obj.tbody.innerHTML = '';
+        worksheet.tbody.innerHTML = '';
 
         let startNumber;
         let finalNumber;
 
         // Lazy loading
-        if (obj.options.lazyLoading == true) {
+        if (worksheet.options.lazyLoading == true) {
             // Load only 100 records
             startNumber = 0;
-            finalNumber = obj.options.data.length < 100 ? obj.options.data.length : 100;
+            finalNumber = worksheet.options.data.length < 100 ? worksheet.options.data.length : 100;
 
-            if (obj.options.pagination) {
+            if (worksheet.options.pagination) {
                 // pagination is declared as a number, and false turns it off as 0 does
-                (obj.options as { pagination?: number | false }).pagination = false;
+                (worksheet.options as { pagination?: number | false }).pagination = false;
                 console.error('Jspreadsheet: Pagination will be disable due the lazyLoading');
             }
-        } else if (obj.options.pagination) {
+        } else if (worksheet.options.pagination) {
             // Pagination
-            if (!obj.view.pageNumber) {
-                obj.view.pageNumber = 0;
+            if (!worksheet.view.pageNumber) {
+                worksheet.view.pageNumber = 0;
             }
-            startNumber = obj.options.pagination * obj.view.pageNumber;
-            finalNumber = obj.options.pagination * obj.view.pageNumber + obj.options.pagination;
+            startNumber = worksheet.options.pagination * worksheet.view.pageNumber;
+            finalNumber = worksheet.options.pagination * worksheet.view.pageNumber + worksheet.options.pagination;
 
-            if (obj.options.data.length < finalNumber) {
-                finalNumber = obj.options.data.length;
+            if (worksheet.options.data.length < finalNumber) {
+                finalNumber = worksheet.options.data.length;
             }
         } else {
             startNumber = 0;
-            finalNumber = obj.options.data.length;
+            finalNumber = worksheet.options.data.length;
         }
 
         // Append nodes to the HTML
-        for (j = 0; j < obj.options.data.length; j++) {
+        for (j = 0; j < worksheet.options.data.length; j++) {
             // Create row
-            const row = obj.rowManager.create(j, obj.options.data[j]);
+            const row = worksheet.rowManager.create(j, worksheet.options.data[j]);
             // Append line to the table
             if (j >= startNumber && j < finalNumber) {
-                obj.tbody.appendChild(row.element);
+                worksheet.tbody.appendChild(row.element);
             }
         }
 
-        if (obj.options.lazyLoading == true) {
+        if (worksheet.options.lazyLoading == true) {
             // Do not create pagination with lazyloading activated
-        } else if (obj.options.pagination) {
-            obj.view.updatePagination();
+        } else if (worksheet.options.pagination) {
+            worksheet.view.updatePagination();
         }
 
         // Merge cells
-        if (obj.options.mergeCells) {
-            const keys = Object.keys(obj.options.mergeCells);
+        if (worksheet.options.mergeCells) {
+            const keys = Object.keys(worksheet.options.mergeCells);
             for (let i = 0; i < keys.length; i++) {
-                const num = obj.options.mergeCells[keys[i]];
-                obj.merges.set(keys[i], num[0], num[1], 1);
+                const num = worksheet.options.mergeCells[keys[i]];
+                worksheet.merges.set(keys[i], num[0], num[1], 1);
             }
         }
 
         // Update the size of the grid
-        obj.accessibility.updateGridSize();
+        worksheet.accessibility.updateGridSize();
 
         // The rows are new, so the tab stop of the grid is new
-        obj.selection.updateTabStop();
+        worksheet.selection.updateTabStop();
 
         // Updata table with custom configurations if applicable
         this.updateTable();
@@ -150,7 +150,7 @@ export class Data {
      * @return string value
      */
     getValue(cell: string, processedValue?: boolean): CellValue | null {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         if (typeof cell !== 'string') {
             return null;
@@ -163,11 +163,11 @@ export class Data {
         let value = null;
 
         if (x != null && y != null) {
-            if (obj.records[y] && obj.records[y][x] && processedValue) {
-                value = obj.records[y][x].element.innerHTML;
+            if (worksheet.records[y] && worksheet.records[y][x] && processedValue) {
+                value = worksheet.records[y][x].element.innerHTML;
             } else {
-                if (obj.options.data[y] && obj.options.data[y][x] != 'undefined') {
-                    value = obj.options.data[y][x];
+                if (worksheet.options.data[y] && worksheet.options.data[y][x] != 'undefined') {
+                    value = worksheet.options.data[y][x];
                 }
             }
         }
@@ -183,16 +183,16 @@ export class Data {
      * @return string value
      */
     getValueFromCoords(x: number, y: number, processedValue?: boolean): CellValue | null {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         let value = null;
 
         if (x != null && y != null) {
-            if (obj.records[y] && obj.records[y][x] && processedValue) {
-                value = obj.records[y][x].element.innerHTML;
+            if (worksheet.records[y] && worksheet.records[y][x] && processedValue) {
+                value = worksheet.records[y][x].element.innerHTML;
             } else {
-                if (obj.options.data[y] && obj.options.data[y][x] != 'undefined') {
-                    value = obj.options.data[y][x];
+                if (worksheet.options.data[y] && worksheet.options.data[y][x] != 'undefined') {
+                    value = worksheet.options.data[y][x];
                 }
             }
         }
@@ -209,7 +209,7 @@ export class Data {
      */
     // any: a cell element gives the text of data-x and data-y to updateCell (issue #52)
     setValue(cell: any, value?: CellValue, force?: boolean): void {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const records = [];
 
@@ -219,10 +219,10 @@ export class Data {
             const y = columnId[1];
 
             // Update cell
-            records.push(obj.cells.update(x, y, value, force));
+            records.push(worksheet.cells.update(x, y, value, force));
 
             // Update all formulas in the chain
-            obj.formulas.updateChain(x, y, records);
+            worksheet.formulas.updateChain(x, y, records);
         } else {
             let x = null;
             let y = null;
@@ -233,10 +233,10 @@ export class Data {
 
             // Update cell
             if (x != null && y != null) {
-                records.push(obj.cells.update(x, y, value, force));
+                records.push(worksheet.cells.update(x, y, value, force));
 
                 // Update all formulas in the chain
-                obj.formulas.updateChain(x, y, records);
+                worksheet.formulas.updateChain(x, y, records);
             } else {
                 const keys = Object.keys(cell);
                 if (keys.length > 0) {
@@ -265,10 +265,10 @@ export class Data {
 
                         // Update cell
                         if (x != null && y != null) {
-                            records.push(obj.cells.update(x, y, cellValue, force));
+                            records.push(worksheet.cells.update(x, y, cellValue, force));
 
                             // Update all formulas in the chain
-                            obj.formulas.updateChain(x, y, records);
+                            worksheet.formulas.updateChain(x, y, records);
                         }
                     }
                 }
@@ -276,10 +276,10 @@ export class Data {
         }
 
         // Update history
-        obj.history.add({
+        worksheet.history.add({
             action: 'setValue',
             records,
-            selection: obj.selection.range && [...obj.selection.range],
+            selection: worksheet.selection.range && [...worksheet.selection.range],
         });
 
         // Update table with custom configurations if applicable
@@ -296,7 +296,7 @@ export class Data {
         });
 
         // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-        obj.dispatch('onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
+        worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as CellChange[]);
     }
 
     /**
@@ -308,19 +308,19 @@ export class Data {
      * @return void
      */
     setValueFromCoords(x: number, y: number, value: CellValue, force?: boolean): void {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const records = [];
-        records.push(obj.cells.update(x, y, value, force));
+        records.push(worksheet.cells.update(x, y, value, force));
 
         // Update all formulas in the chain
-        obj.formulas.updateChain(x, y, records);
+        worksheet.formulas.updateChain(x, y, records);
 
         // Update history
-        obj.history.add({
+        worksheet.history.add({
             action: 'setValue',
             records,
-            selection: obj.selection.range && [...obj.selection.range],
+            selection: worksheet.selection.range && [...worksheet.selection.range],
         });
 
         // Update table with custom configurations if applicable
@@ -337,7 +337,7 @@ export class Data {
         });
 
         // The coordinates can be text (issue #52), and a read-only cell has no value (issue #58)
-        obj.dispatch('onafterchanges', obj, onafterchangesRecords as unknown as CellChange[]);
+        worksheet.dispatch('onafterchanges', worksheet, onafterchangesRecords as unknown as CellChange[]);
     }
 
     /**
@@ -348,7 +348,7 @@ export class Data {
      */
     // The public typings have one overload for each kind of result: rows of values, text with a delimiter, or objects with asJson
     get(highlighted?: boolean, processed?: boolean, delimiter?: string | null, asJson?: boolean) {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Control vars
         const dataset: CellValue[][] = [];
@@ -357,26 +357,26 @@ export class Data {
 
         // Column and row length
         const x = Math.max(
-            ...obj.options.data.map((row) => {
+            ...worksheet.options.data.map((row) => {
                 return row.length;
             })
         );
-        const y = obj.options.data.length;
+        const y = worksheet.options.data.length;
 
         // Go through the columns to get the data
         for (let j = 0; j < y; j++) {
             px = 0;
             for (let i = 0; i < x; i++) {
                 // Cell selected or fullset
-                if (!highlighted || obj.records[j][i].element.classList.contains('highlight')) {
+                if (!highlighted || worksheet.records[j][i].element.classList.contains('highlight')) {
                     // Get value
                     if (!dataset[py]) {
                         dataset[py] = [];
                     }
                     if (processed) {
-                        dataset[py][px] = obj.records[j][i].element.innerHTML;
+                        dataset[py][px] = worksheet.records[j][i].element.innerHTML;
                     } else {
-                        dataset[py][px] = obj.options.data[j][i];
+                        dataset[py][px] = worksheet.options.data[j][i];
                     }
                     px++;
                 }
@@ -412,7 +412,7 @@ export class Data {
     }
 
     getFromRange(range: string, processed: true): CellValue[][] {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         const coords = getCoordsFromRange(range);
 
@@ -423,9 +423,9 @@ export class Data {
 
             for (let x = coords[0]; x <= coords[2]; x++) {
                 if (processed) {
-                    dataset[dataset.length - 1].push(obj.records[y][x].element.innerHTML);
+                    dataset[dataset.length - 1].push(worksheet.records[y][x].element.innerHTML);
                 } else {
-                    dataset[dataset.length - 1].push(obj.options.data[y][x]);
+                    dataset[dataset.length - 1].push(worksheet.options.data[y][x]);
                 }
             }
         }
@@ -438,15 +438,15 @@ export class Data {
      * footers and place the selection corner again.
      */
     updateTable() {
-        const obj = this.worksheet;
+        const worksheet = this.worksheet;
 
         // Check for spare
-        if (obj.options.minSpareRows! > 0) {
+        if (worksheet.options.minSpareRows! > 0) {
             let numBlankRows = 0;
-            for (let j = obj.rows.length - 1; j >= 0; j--) {
+            for (let j = worksheet.rows.length - 1; j >= 0; j--) {
                 let test = false;
-                for (let i = 0; i < obj.headers.length; i++) {
-                    if (obj.options.data[j][i]) {
+                for (let i = 0; i < worksheet.headers.length; i++) {
+                    if (worksheet.options.data[j][i]) {
                         test = true;
                     }
                 }
@@ -457,17 +457,17 @@ export class Data {
                 }
             }
 
-            if (obj.options.minSpareRows! - numBlankRows > 0) {
-                obj.insertRow(obj.options.minSpareRows! - numBlankRows);
+            if (worksheet.options.minSpareRows! - numBlankRows > 0) {
+                worksheet.insertRow(worksheet.options.minSpareRows! - numBlankRows);
             }
         }
 
-        if (obj.options.minSpareCols! > 0) {
+        if (worksheet.options.minSpareCols! > 0) {
             let numBlankCols = 0;
-            for (let i = obj.headers.length - 1; i >= 0; i--) {
+            for (let i = worksheet.headers.length - 1; i >= 0; i--) {
                 let test = false;
-                for (let j = 0; j < obj.rows.length; j++) {
-                    if (obj.options.data[j][i]) {
+                for (let j = 0; j < worksheet.rows.length; j++) {
+                    if (worksheet.options.data[j][i]) {
                         test = true;
                     }
                 }
@@ -478,23 +478,23 @@ export class Data {
                 }
             }
 
-            if (obj.options.minSpareCols! - numBlankCols > 0) {
-                obj.insertColumn(obj.options.minSpareCols! - numBlankCols);
+            if (worksheet.options.minSpareCols! - numBlankCols > 0) {
+                worksheet.insertColumn(worksheet.options.minSpareCols! - numBlankCols);
             }
         }
 
         // Update footers
-        if (obj.options.footers) {
-            obj.formulas.setFooter();
+        if (worksheet.options.footers) {
+            worksheet.formulas.setFooter();
         }
 
-        if (obj.options.columns.length < obj.options.minDimensions[0]) {
-            obj.options.minDimensions[0] = obj.options.columns.length;
+        if (worksheet.options.columns.length < worksheet.options.minDimensions[0]) {
+            worksheet.options.minDimensions[0] = worksheet.options.columns.length;
         }
 
         // Update corner position
         setTimeout(() => {
-            obj.selection.updateCorner();
+            worksheet.selection.updateCorner();
         }, 0);
     }
 }

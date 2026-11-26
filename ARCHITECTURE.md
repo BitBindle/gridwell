@@ -341,6 +341,11 @@ behaviour, and turns on the ESLint rule that keeps the new style, so that new co
 38. **`this` in the classes.** With arrow callbacks, the methods of `Worksheet`, `Spreadsheet` and the classes of
     `utils/` use `this` instead of `const obj = this` and `const spreadsheet = this`, and the components name their
     worksheet `worksheet` instead of `obj`. Rule: `@typescript-eslint/no-this-alias`, which is off today.
+    Done. A script with the TypeScript language service removed the 31 aliases of `this` in `Worksheet` and `Spreadsheet`,
+    and renamed `obj` to `worksheet` in the 198 methods of the components. The 8 methods of option objects that used an
+    alias, such as the callbacks of the tabs and of `jSuites.ajax`, are arrow properties. The checkbox of a cell and the
+    number of rows on a page read their element from a constant instead of `this`, and the `success` of the
+    requests for the sources of the dropdown columns reads the column from the loop instead of `this.index`.
 39. **Loops.** A loop over an array whose index only reads the item becomes `for (const item of items)`, a loop over
     `Object.keys` with a lookup becomes `for (const [key, value] of Object.entries(...))`, `indexOf(...) >= 0` becomes
     `includes`, and `Array.prototype.x.call(list, ...)` becomes `Array.from(list).x(...)`. Rules:

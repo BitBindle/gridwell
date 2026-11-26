@@ -33,8 +33,6 @@ export default tseslint.config(
             },
         },
         rules: {
-            // The modules use the worksheet as this, and most functions start with const obj = this
-            '@typescript-eslint/no-this-alias': 'off',
             // any is allowed while the code moves to TypeScript
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-unused-vars': 'off',
