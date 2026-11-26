@@ -316,3 +316,10 @@ worksheet the id `jss_textarea`, so a page with two worksheets had duplicate ids
 before it is added to the document, it now throws an `Error` (#55). Version 5 failed in a promise: it returned an empty
 array, created no spreadsheet and gave an unhandled rejection. Add the table to an element before you call
 `jspreadsheet`.
+
+## A formula reads only formatted numbers as numbers
+
+A formula reads the text of a referenced cell as a number when the text is a number with symbols around it, such as
+`$ 1,234.50`, `1 234,5 €` (with `decimal: ','` on the column) or `50%` (#129). Version 5 kept every digit of any text,
+so `Room 12b` was `12` and the date `01/02/2024` was `1022024`. Such texts are now texts, as in Excel. A formatted zero,
+such as `$ 0`, is now the number `0` instead of its text. Set `autoCasting: false` to read every text as text.
