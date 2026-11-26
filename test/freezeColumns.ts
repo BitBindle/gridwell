@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Worksheet } from './support/gridwell';
 
 function rect(left: number, top: number, width: number, height: number) {
     // The rectangle has no toJSON, which the code does not call
@@ -16,7 +16,7 @@ function scrolledWorksheet(scrollLeft: number) {
         }
     }
 
-    const worksheet = jspreadsheet(root, {
+    const worksheet = gridwell(root, {
         worksheets: [{ data, freezeColumns: 2, defaultColWidth: 300, columns: [{ width: 100 }, { width: 100 }], tableOverflow: true }],
     })[0];
 
@@ -86,7 +86,7 @@ describe('Freeze columns', () => {
             data.push(['a', 'b', 'c', 'd']);
         }
         const options = { data, freezeColumns: 1, tableOverflow: true };
-        const worksheets = jspreadsheet(root, { worksheets: [options, { ...options }] });
+        const worksheets = gridwell(root, { worksheets: [options, { ...options }] });
         await new Promise((resolve) => setTimeout(resolve));
 
         for (const worksheet of worksheets) {

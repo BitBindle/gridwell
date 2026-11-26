@@ -1,14 +1,14 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 /**
  * The texts that the cells of the first row show.
  * @param columns - The columns.
  * @param data - The values of the first row.
  */
-function shown(columns: Jspreadsheet.Column[], data: Jspreadsheet.CellValue[]) {
-    const worksheet = jspreadsheet(root, { worksheets: [{ data: [data], columns }] })[0];
+function shown(columns: Gridwell.Column[], data: Gridwell.CellValue[]) {
+    const worksheet = gridwell(root, { worksheets: [{ data: [data], columns }] })[0];
     return worksheet.records[0].map((record) => record.element.textContent);
 }
 
@@ -90,7 +90,7 @@ describe('Number formats', () => {
     });
 
     it('marks the cells of a section with the color [Red] red', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [[5, -5, 'a']], columns: [{ mask: '[Red]0;0' }, { mask: '0;[Red]0' }, { mask: '0;[Red]0' }] }],
         })[0];
 
@@ -129,7 +129,7 @@ describe('Number formats', () => {
 
 describe('The editor of a cell with a mask', () => {
     it('shows the number without the symbols of the mask, and keeps a number typed with them as a number', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [[1234.5, 1234.5, 1234.5, -5]],
@@ -149,7 +149,7 @@ describe('The editor of a cell with a mask', () => {
     });
 
     it('shows a percentage with its percent sign, and reads a number typed in it as a percentage', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [[0.125, 0.07, 0.5]],
@@ -167,7 +167,7 @@ describe('The editor of a cell with a mask', () => {
     });
 
     it('keeps a text that is not a number, a formula and an empty text as they are typed', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [[1, 2, 3, 4]],
@@ -192,7 +192,7 @@ describe('The editor of a cell with a mask', () => {
     });
 
     it('shows the date of a date mask, and reads a date typed in its format as the number of days', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [[45000, 'later']], columns: [{ mask: 'DD/MM/YYYY' }, { mask: 'DD/MM/YYYY' }] }],
         })[0];
 
@@ -206,7 +206,7 @@ describe('The editor of a cell with a mask', () => {
 
 describe('Date formats', () => {
     afterEach(() => {
-        jspreadsheet.setDictionary({ March: 'March', Tuesday: 'Tuesday' });
+        gridwell.setDictionary({ March: 'March', Tuesday: 'Tuesday' });
     });
 
     it('shows the date of a calendar cell in the format of its column', () => {
@@ -249,9 +249,9 @@ describe('Date formats', () => {
     });
 
     it('shows and reads the names of the months and the days in the language of the dictionary', () => {
-        jspreadsheet.setDictionary({ March: 'März', Tuesday: 'Dienstag' });
+        gridwell.setDictionary({ March: 'März', Tuesday: 'Dienstag' });
 
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [['2024-03-05', '']],
@@ -283,9 +283,9 @@ describe('Date formats', () => {
             Sat: 'T7',
             Mon: 'T2',
         };
-        jspreadsheet.setDictionary(translations);
+        gridwell.setDictionary(translations);
         try {
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [
                     {
                         data: [['2024-06-01', '2024-07-01', '2024-05-04', '2024-05-04', '', '', '']],
@@ -310,12 +310,12 @@ describe('Date formats', () => {
             expect(worksheet.getValueFromCoords(5, 0)).to.equal('2024-05-04 00:00:00');
             expect(worksheet.getValueFromCoords(6, 0)).to.equal('2024-12-02 00:00:00');
         } finally {
-            jspreadsheet.setDictionary(Object.fromEntries(Object.keys(translations).map((text) => [text, ''])));
+            gridwell.setDictionary(Object.fromEntries(Object.keys(translations).map((text) => [text, ''])));
         }
     });
 
     it('keeps a pasted date in the ISO format, reads a date in the format of the column and empties a text that is not a date', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 { data: [['', '', '', '']], columns: Array.from({ length: 4 }, () => ({ type: 'calendar' as const, options: { format: 'DD/MM/YYYY' } })) },
             ],

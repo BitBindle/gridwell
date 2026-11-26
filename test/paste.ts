@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 // jsdom has no execCommand, which a copy calls. The library does not read its result.
 global.document.execCommand = function execCommandMock() {
@@ -16,7 +16,7 @@ const fixtureData = () => [
 
 describe('Paste', () => {
     it('no expand', () => {
-        const sheet = jspreadsheet(root, {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     data: fixtureData(),
@@ -37,7 +37,7 @@ describe('Paste', () => {
     });
 
     it('expand', () => {
-        const sheet = jspreadsheet(root, {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     data: fixtureData(),
@@ -61,7 +61,7 @@ describe('Paste', () => {
     });
 
     it('repeat horizontal', () => {
-        const sheet = jspreadsheet(root, {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     data: fixtureData(),
@@ -82,7 +82,7 @@ describe('Paste', () => {
     });
 
     it('repeat vertical', () => {
-        const sheet = jspreadsheet(root, {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     data: fixtureData(),
@@ -103,7 +103,7 @@ describe('Paste', () => {
     });
 
     it('repeat rectangle', () => {
-        const sheet = jspreadsheet(root, {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     data: fixtureData(),
@@ -124,7 +124,7 @@ describe('Paste', () => {
     });
 
     it('skip hidden column', () => {
-        const sheet = jspreadsheet(root, {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     columns: [
@@ -151,7 +151,7 @@ describe('Paste', () => {
     });
 
     it('skip hidden row', () => {
-        const sheet = jspreadsheet(root, {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     data: fixtureData(),
@@ -172,8 +172,8 @@ describe('Paste', () => {
         ]);
     });
 
-    it('see https://github.com/jspreadsheet/ce/pull/1717#issuecomment-2576060698', () => {
-        const sheet = jspreadsheet(root, {
+    it('see https://github.com/gridwell/ce/pull/1717#issuecomment-2576060698', () => {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     minDimensions: [4, 4],
@@ -200,8 +200,8 @@ describe('Paste', () => {
         ]);
     });
 
-    it('see https://github.com/jspreadsheet/ce/pull/1717#issuecomment-2580087207', () => {
-        const sheet = jspreadsheet(root, {
+    it('see https://github.com/gridwell/ce/pull/1717#issuecomment-2580087207', () => {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     minDimensions: [10, 4],
@@ -239,7 +239,7 @@ describe('Paste', () => {
 
     it('large data paste', () => {
         const count: Record<string, number> = {};
-        const sheet = jspreadsheet(root, {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     data: fixtureData(),
@@ -272,7 +272,7 @@ describe('Paste', () => {
 
     it('expand with hidden cells', () => {
         const count: Record<string, number> = {};
-        const sheet = jspreadsheet(root, {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     columns: [
@@ -306,7 +306,7 @@ describe('Paste', () => {
     }).timeout(10 * 1000);
 
     it('copy and paste with style', () => {
-        const sheet = jspreadsheet(root, {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     data: fixtureData(),
@@ -333,7 +333,7 @@ describe('Paste', () => {
             return true;
         };
 
-        const sheet = jspreadsheet(root, {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     data: fixtureData(),
@@ -372,7 +372,7 @@ describe('Paste', () => {
         };
 
         let isLoaded = false;
-        const sheets = jspreadsheet(root, {
+        const sheets = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -417,7 +417,7 @@ describe('Paste', () => {
     });
 
     it('fix - u0000 is pasted, when the last cell ends in a tab', () => {
-        const sheet = jspreadsheet(root, {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     data: fixtureData(),
@@ -438,7 +438,7 @@ describe('Paste', () => {
     });
 
     it('paste lacked columns data', () => {
-        const sheet = jspreadsheet(root, {
+        const sheet = gridwell(root, {
             worksheets: [
                 {
                     data: fixtureData(),
@@ -459,8 +459,8 @@ describe('Paste', () => {
     });
 
     describe('onbeforepaste', () => {
-        const pasteWith = (onbeforepaste: Jspreadsheet.SpreadsheetOptions['onbeforepaste']) => {
-            const sheet = jspreadsheet(root, {
+        const pasteWith = (onbeforepaste: Gridwell.SpreadsheetOptions['onbeforepaste']) => {
+            const sheet = gridwell(root, {
                 worksheets: [{ minDimensions: [3, 3] }],
                 onbeforepaste,
             })[0];
@@ -529,7 +529,7 @@ describe('Copy and paste without a selection', () => {
         };
 
         try {
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [
                     {
                         data: [
@@ -558,7 +558,7 @@ describe('Copy and paste without a selection', () => {
     });
 
     it('pastes at the target cell', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 3] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ minDimensions: [3, 3] }] })[0];
 
         worksheet.paste(1, 1, 'x\ty\nz');
 
@@ -577,7 +577,7 @@ describe('Cut', () => {
         document.execCommand = () => true;
 
         try {
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [{ data: [['a', 'b']] }],
                 oncopy: () => false,
             })[0];
@@ -596,7 +596,7 @@ describe('Cut', () => {
         document.execCommand = () => true;
 
         try {
-            const worksheet = jspreadsheet(root, { worksheets: [{ data: [['a', 'b']] }] })[0];
+            const worksheet = gridwell(root, { worksheets: [{ data: [['a', 'b']] }] })[0];
             worksheet.updateSelectionFromCoords(0, 0, 0, 0);
 
             worksheet.copy(true);
@@ -610,8 +610,8 @@ describe('Cut', () => {
 });
 
 describe('The styles of the copied cells', () => {
-    const create = (options?: Partial<Jspreadsheet.SpreadsheetOptions>) =>
-        jspreadsheet(root, {
+    const create = (options?: Partial<Gridwell.SpreadsheetOptions>) =>
+        gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -669,7 +669,7 @@ describe('The styles of the copied cells', () => {
 
 describe('The clipboard', () => {
     const create = () =>
-        jspreadsheet(root, {
+        gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -745,7 +745,7 @@ describe('The clipboard', () => {
     });
 
     it('is not shared between worksheets', async () => {
-        const worksheets = jspreadsheet(root, {
+        const worksheets = gridwell(root, {
             worksheets: [{ data: [['A']] }, { data: [['B']] }],
         });
 
@@ -784,7 +784,7 @@ describe('Download', () => {
     };
 
     it('downloads the data with the headers and the nested headers', async () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -803,7 +803,7 @@ describe('Download', () => {
     });
 
     it('downloads the shown values when processed', async () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [[1, '=A1+1']] }],
         })[0];
 
@@ -814,7 +814,7 @@ describe('Download', () => {
 
 describe('Paste in a calendar column', () => {
     it('reads a date with the format of the column that gets the value, not of the column at its position in the text', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [['', '', '']],

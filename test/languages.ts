@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Worksheet } from './support/gridwell';
 
 // The tests run in Node, from the folder of the repository, so they read its files
 const fs = require('fs') as {
@@ -83,13 +83,13 @@ describe('The translations in resources/lang (issue #153)', () => {
     describe('A file given to setDictionary', () => {
         afterEach(() => {
             // An empty translation shows the English text again
-            jspreadsheet.setDictionary(Object.fromEntries(Object.keys(english).map((text) => [text, ''])));
+            gridwell.setDictionary(Object.fromEntries(Object.keys(english).map((text) => [text, ''])));
         });
 
         it('translates the texts of the spreadsheet', async () => {
-            jspreadsheet.setDictionary(read('de_DE.json'));
+            gridwell.setDictionary(read('de_DE.json'));
             const worksheet = await new Promise<Worksheet>((resolve) => {
-                const instance = jspreadsheet(root, {
+                const instance = gridwell(root, {
                     worksheets: [{ minDimensions: [2, 6], search: true, pagination: 2, paginationOptions: [2, 5] }],
                     onload: () => resolve(instance[0]),
                 });

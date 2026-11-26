@@ -1,5 +1,5 @@
 import { createFromTable } from './helpers.js';
-import type jspreadsheet from '../jspreadsheet';
+import type gridwell from '../gridwell';
 import { Spreadsheet } from '../Spreadsheet.js';
 import type { Worksheet } from '../types/internal';
 
@@ -7,11 +7,11 @@ import type { Worksheet } from '../types/internal';
  * Create a spreadsheet in an element and build it. A table is replaced by a div. The div gets the spreadsheet in its
  * spreadsheet property.
  */
-export async function createSpreadsheet(el: HTMLElement & { spreadsheet?: Spreadsheet }, options: jspreadsheet.SpreadsheetOptions, worksheets: Worksheet[]) {
+export async function createSpreadsheet(el: HTMLElement & { spreadsheet?: Spreadsheet }, options: gridwell.SpreadsheetOptions, worksheets: Worksheet[]) {
     if (el.tagName === 'TABLE') {
         if (!options) {
             // The worksheets are added below
-            options = {} as jspreadsheet.SpreadsheetOptions;
+            options = {} as gridwell.SpreadsheetOptions;
         }
 
         if (!options.worksheets) {
@@ -24,7 +24,7 @@ export async function createSpreadsheet(el: HTMLElement & { spreadsheet?: Spread
         options.worksheets[0] = tableOptions!;
 
         const div = document.createElement('div');
-        // jspreadsheet checks that the table has a parent
+        // gridwell checks that the table has a parent
         el.parentNode!.insertBefore(div, el);
         el.remove();
         el = div;

@@ -4,7 +4,7 @@ import { Toolbar } from './utils/toolbar.js';
 import { Tabs } from './utils/tabs.js';
 import { ContextMenu } from './utils/contextMenu.js';
 import { Worksheet } from './Worksheet.js';
-import type jspreadsheet from './jspreadsheet';
+import type gridwell from './gridwell';
 import type { EventHandlers, EventName, SpreadsheetState } from './types/internal';
 import type { TabsOptions } from './utils/tabs.js';
 
@@ -22,8 +22,8 @@ export interface Spreadsheet extends SpreadsheetState {}
  */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class Spreadsheet {
-    constructor(element: HTMLElement, config: jspreadsheet.SpreadsheetOptions, worksheets: Worksheet[]) {
-        // jspreadsheet() returns this array before the worksheets are built, and build fills it
+    constructor(element: HTMLElement, config: gridwell.SpreadsheetOptions, worksheets: Worksheet[]) {
+        // gridwell() returns this array before the worksheets are built, and build fills it
         this.worksheets = worksheets;
         this.config = config;
         // The element gets the spreadsheet in its spreadsheet property when the spreadsheet is built
@@ -43,12 +43,12 @@ export class Spreadsheet {
      * event handlers. The element gets the spreadsheet at the end.
      */
     async build() {
-        // The options that jspreadsheet() got, and the element that the spreadsheet fills
+        // The options that gridwell() got, and the element that the spreadsheet fills
         const options = this.config;
         const el = this.element;
 
         // setPlugins ignores a missing value
-        this.setPlugins(options.plugins as Record<string, jspreadsheet.PluginFactory>);
+        this.setPlugins(options.plugins as Record<string, gridwell.PluginFactory>);
 
         // Create as worksheets
         await this.createWorksheets(options, el);
@@ -72,7 +72,7 @@ export class Spreadsheet {
         el.spreadsheet = this;
     }
 
-    private async createWorksheets(options: jspreadsheet.SpreadsheetOptions, el: HTMLElement) {
+    private async createWorksheets(options: gridwell.SpreadsheetOptions, el: HTMLElement) {
         // Create worksheets
         const o = options.worksheets;
         if (o) {
@@ -190,7 +190,7 @@ export class Spreadsheet {
     /**
      * Create a worksheet and add it and its options to the spreadsheet. The worksheet is built when its tab is created.
      */
-    createWorksheetObj(options: jspreadsheet.WorksheetOptions) {
+    createWorksheetObj(options: gridwell.WorksheetOptions) {
         if (!options.worksheetName) {
             options.worksheetName = this.getNextDefaultWorksheetName();
         }
@@ -320,7 +320,7 @@ export class Spreadsheet {
      * Change options of the spreadsheet.
      * @param config - The options to change.
      */
-    setConfig(config: Partial<jspreadsheet.SpreadsheetOptions> | Partial<jspreadsheet.WorksheetOptions>) {
+    setConfig(config: Partial<gridwell.SpreadsheetOptions> | Partial<gridwell.WorksheetOptions>) {
         for (const [key, value] of Object.entries(config)) {
             // The options are set by name, and SpreadsheetOptions has no index signature
             (this.config as unknown as Record<string, unknown>)[key] = value;
@@ -338,14 +338,14 @@ export class Spreadsheet {
     /**
      * Add plugins to the spreadsheet. Each plugin factory gets the spreadsheet, empty options and the spreadsheet options.
      */
-    setPlugins(newPlugins: Record<string, jspreadsheet.PluginFactory>) {
+    setPlugins(newPlugins: Record<string, gridwell.PluginFactory>) {
         if (!this.plugins) {
             this.plugins = {};
         }
 
         if (typeof newPlugins === 'object') {
             for (const [pluginName, plugin] of Object.entries(newPlugins)) {
-                this.plugins[pluginName] = plugin.call(libraryBase.jspreadsheet, this, {}, this.config);
+                this.plugins[pluginName] = plugin.call(libraryBase.gridwell, this, {}, this.config);
             }
         }
     }

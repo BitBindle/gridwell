@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet from './support/jspreadsheet';
+import gridwell from './support/gridwell';
 import type { Dropdown } from '../src/utils/dropdown';
 
 // The element of a dropdown, which keeps the dropdown
@@ -8,7 +8,7 @@ type DropdownElement = HTMLElement & { dropdown: Dropdown };
 
 describe('Use search', () => {
     it('search and resetSearch methods', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -53,7 +53,7 @@ describe('The view of a worksheet', () => {
     ];
 
     it('shows every row on page 0 before a search, a filter or a page change', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data }] })[0];
 
         expect(worksheet.view.results).to.equal(null);
         expect(worksheet.view.filters).to.eql([]);
@@ -61,7 +61,7 @@ describe('The view of a worksheet', () => {
     });
 
     it('keeps the rows that a search finds until the search is reset', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ search: true, data }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ search: true, data }] })[0];
 
         worksheet.search('Honda');
         expect(worksheet.view.results).to.eql([0, 2]);
@@ -71,7 +71,7 @@ describe('The view of a worksheet', () => {
     });
 
     it('keeps the values of a filter and the rows it finds until the filters are reset', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ filters: true, data }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ filters: true, data }] })[0];
 
         worksheet.openFilter(0);
         const dropdown = worksheet.filter!.children[1].querySelector<DropdownElement>('.jdropdown')!.dropdown;
@@ -88,7 +88,7 @@ describe('The view of a worksheet', () => {
     });
 
     it('shows the values of a column as text in its filter', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ filters: true, data: [['A & B'], ['<img src=x>']] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ filters: true, data: [['A & B'], ['<img src=x>']] }] })[0];
 
         worksheet.openFilter(0);
         const items = Array.from(worksheet.filter!.children[1].querySelectorAll('.jdropdown-item')).map((item) => item.textContent);
@@ -104,7 +104,7 @@ describe('The view of a worksheet', () => {
     });
 
     it('keeps the page that the worksheet shows', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ pagination: 2, data }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ pagination: 2, data }] })[0];
 
         worksheet.page(1);
 
@@ -113,7 +113,7 @@ describe('The view of a worksheet', () => {
     });
 
     it('goes back to page 0 when a search starts', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ search: true, pagination: 2, data }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ search: true, pagination: 2, data }] })[0];
 
         worksheet.page(1);
         worksheet.search('Peugeot');
@@ -123,7 +123,7 @@ describe('The view of a worksheet', () => {
     });
 
     it('is not shared between worksheets', async () => {
-        const worksheets = jspreadsheet(root, { worksheets: [{ search: true, data }, { data }] });
+        const worksheets = gridwell(root, { worksheets: [{ search: true, data }, { data }] });
         await new Promise((resolve) => setTimeout(resolve));
 
         worksheets[0].search('Mazda');
@@ -132,7 +132,7 @@ describe('The view of a worksheet', () => {
         expect(worksheets[1].view.results).to.equal(null);
     });
     it('sorts the rows that a filter found and keeps the filter', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ filters: true, data }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ filters: true, data }] })[0];
 
         worksheet.openFilter(0);
         const dropdown = worksheet.filter!.children[1].querySelector<DropdownElement>('.jdropdown')!.dropdown;
@@ -149,7 +149,7 @@ describe('The view of a worksheet', () => {
     });
 
     it('tells the page of a row, among the rows that a search found', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ pagination: 1, search: true, data }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ pagination: 1, search: true, data }] })[0];
 
         expect(worksheet.whichPage(2)).to.equal(2);
 

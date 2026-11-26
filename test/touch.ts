@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 describe('Touch', () => {
     it('opens no editor after a long touch when the worksheet is not editable', async () => {
         const events: string[] = [];
         const worksheet = await new Promise<Worksheet>((resolve) => {
-            const instance = jspreadsheet(root, {
+            const instance = gridwell(root, {
                 worksheets: [{ minDimensions: [3, 3], editable: false }],
                 oneditionstart: () => events.push('start'),
                 onload: () => resolve(instance[0]),
@@ -23,9 +23,9 @@ describe('Touch', () => {
         expect(worksheet.selection.range!.map(Number)).to.eql([1, 1, 1, 1]);
     });
 
-    const load = (element: HTMLElement, options: Jspreadsheet.SpreadsheetOptions) =>
+    const load = (element: HTMLElement, options: Gridwell.SpreadsheetOptions) =>
         new Promise<Worksheet>((resolve) => {
-            const instance = jspreadsheet(element, { ...options, onload: () => resolve(instance[0]) });
+            const instance = gridwell(element, { ...options, onload: () => resolve(instance[0]) });
         });
 
     const touch = (element: Element, type: string) => element.dispatchEvent(new window.Event(type, { bubbles: true }));
@@ -62,19 +62,19 @@ describe('Touch', () => {
 
             touch(first.records[0][0].element, 'touchstart');
             touch(first.records[0][0].element, 'touchend');
-            expect(jspreadsheet.current).to.equal(first);
+            expect(gridwell.current).to.equal(first);
 
             touch(second.records[1][1].element, 'touchstart');
             touch(second.records[1][1].element, 'touchend');
-            expect(jspreadsheet.current).to.equal(second);
+            expect(gridwell.current).to.equal(second);
             expect(first.selection.range).to.equal(null);
 
             touch(document.body, 'touchstart');
-            expect(jspreadsheet.current).to.equal(null);
+            expect(gridwell.current).to.equal(null);
             expect(second.selection.range).to.equal(null);
         } finally {
-            // jspreadsheet() made the element the element of a spreadsheet
-            jspreadsheet.destroy(other as Jspreadsheet.JspreadsheetInstanceElement);
+            // gridwell() made the element the element of a spreadsheet
+            gridwell.destroy(other as Gridwell.GridwellInstanceElement);
             other.remove();
         }
     });

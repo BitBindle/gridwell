@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell } from './support/gridwell';
 
 describe('Use the redo method', () => {
     it('.undo', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -46,7 +46,7 @@ describe('Use the redo method', () => {
     });
 
     it('.redo after undo something', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -100,7 +100,7 @@ describe('Use the redo method', () => {
 
 describe('The undo history', () => {
     const create = () =>
-        jspreadsheet(root, {
+        gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -167,8 +167,8 @@ describe('The undo history', () => {
     });
 
     it('gives undo and redo events the record', () => {
-        const events: [string, Jspreadsheet.HistoryRecord | undefined][] = [];
-        const worksheet = jspreadsheet(root, {
+        const events: [string, Gridwell.HistoryRecord | undefined][] = [];
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [['Hello']] }],
             onundo: (instance, record) => events.push(['undo', record]),
             onredo: (instance, record) => events.push(['redo', record]),
@@ -216,7 +216,7 @@ describe('The undo history', () => {
     });
 
     it('is not shared between worksheets', async () => {
-        const worksheets = jspreadsheet(root, {
+        const worksheets = gridwell(root, {
             worksheets: [{ data: [['A']] }, { data: [['B']] }],
         });
 
@@ -233,7 +233,7 @@ describe('The undo history', () => {
 
 describe('Undo and redo the changes to columns, rows and the order', () => {
     const create = () =>
-        jspreadsheet(root, {
+        gridwell(root, {
             worksheets: [
                 {
                     data: [

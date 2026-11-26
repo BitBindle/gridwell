@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet from './support/jspreadsheet';
+import gridwell from './support/gridwell';
 
 describe('Use the data method', () => {
     it('getData and it returns the data properly', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -44,7 +44,7 @@ describe('Use the data method', () => {
     });
 
     it('setData and it sets data properly', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -76,7 +76,7 @@ describe('Use the data method', () => {
     });
 
     it('setValue and it sets the value of a cell', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -118,7 +118,7 @@ describe('Use the data method', () => {
     });
 
     it('setValue with a list gives the value argument to each item without its own value', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     minDimensions: [3, 1],
@@ -134,7 +134,7 @@ describe('Use the data method', () => {
     });
 
     it('getValue and it gets the value from the cell', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -155,7 +155,7 @@ describe('Use the data method', () => {
     });
 
     it('getValueFromCoords and it gets the not processed cell value', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -176,7 +176,7 @@ describe('Use the data method', () => {
     });
 
     it('getValueFromCoords and it gets the processed cell value', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -197,7 +197,7 @@ describe('Use the data method', () => {
     });
 
     it('setValueFromCoords and it sets the value of a cell', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -239,7 +239,7 @@ describe('Use the data method', () => {
     });
 
     it('setValueFromCoords history', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -273,7 +273,7 @@ describe('Use the data method', () => {
 
 describe('Get the data as text, as objects or from a range', () => {
     const create = () =>
-        jspreadsheet(root, {
+        gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -329,7 +329,7 @@ describe('Get the data as text, as objects or from a range', () => {
     });
 
     it('setData changes rows of objects to arrays by the column names', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     columns: [{ name: 'city' }, { name: 'country' }],
@@ -352,7 +352,7 @@ describe('Get the data as text, as objects or from a range', () => {
 
 describe('Get the value of a cell that is missing or holds the text undefined', () => {
     it('getValue and getValueFromCoords return the text undefined of a cell (issue #36)', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['undefined', 'x']] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: [['undefined', 'x']] }] })[0];
 
         expect(worksheet.getValue('A1')).to.equal('undefined');
         expect(worksheet.getValueFromCoords(0, 0)).to.equal('undefined');
@@ -360,7 +360,7 @@ describe('Get the value of a cell that is missing or holds the text undefined', 
     });
 
     it('getValue and getValueFromCoords return null for a column outside the data (issue #49)', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['a', 'b'], ['c']], columns: [{}, {}] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: [['a', 'b'], ['c']], columns: [{}, {}] }] })[0];
 
         expect(worksheet.getValue('C1')).to.equal(null);
         expect(worksheet.getValueFromCoords(2, 0)).to.equal(null);

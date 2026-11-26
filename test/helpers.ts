@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 describe('Create the options from a table', () => {
     function createTable(html: string) {
@@ -12,7 +12,7 @@ describe('Create the options from a table', () => {
     it('reads the class, style, merge and height of each cell', () => {
         const table = createTable('<tr><td class="a" style="color:red">x</td><td>1</td></tr>' + '<tr style="height: 50px"><td colspan="2">y</td></tr>');
 
-        const options = jspreadsheet.helpers.createFromTable(table, {});
+        const options = gridwell.helpers.createFromTable(table, {});
 
         expect(options.data).to.eql([['x', '1'], ['y']]);
         expect(options.classes).to.eql({ A1: 'a' });
@@ -28,7 +28,7 @@ describe('Create the options from a table', () => {
                 '<tr style="height: 50px"><td colspan="2">y</td></tr>'
         );
 
-        const options = jspreadsheet.helpers.createFromTable(table, { parseTableFirstRowAsHeader: true });
+        const options = gridwell.helpers.createFromTable(table, { parseTableFirstRowAsHeader: true });
 
         expect(options.columns!.map((column) => column.title)).to.eql(['Name', 'Age']);
         expect(options.data).to.eql([['x', '1'], ['y']]);
@@ -45,7 +45,7 @@ describe('Create the nested headers from a table', () => {
         table.innerHTML =
             '<thead><tr><th colspan="2">Group</th><th>Single</th></tr><tr><th>A</th><th>B</th><th>C</th></tr></thead><tbody><tr><td>1</td><td>2</td><td>3</td></tr></tbody>';
 
-        const options = jspreadsheet.helpers.createFromTable(table, {});
+        const options = gridwell.helpers.createFromTable(table, {});
 
         expect(options.nestedHeaders![0][0].colspan).to.equal(2);
         expect(options.nestedHeaders![0][1].colspan).to.equal(1);
@@ -66,7 +66,7 @@ describe('Read the options of a table', () => {
 
         try {
             // @ts-expect-error -- the test passes an element that is not a table
-            expect(jspreadsheet.helpers.createFromTable(document.createElement('div'))).to.equal(undefined);
+            expect(gridwell.helpers.createFromTable(document.createElement('div'))).to.equal(undefined);
         } finally {
             console.log = log;
         }
@@ -81,7 +81,7 @@ describe('Read the options of a table', () => {
                 '<tbody><tr><td>1</td><td>x</td><td>y</td></tr></tbody>'
         );
 
-        const options = jspreadsheet.helpers.createFromTable(table);
+        const options = gridwell.helpers.createFromTable(table);
 
         expect(options.columns![0]).to.eql({ width: '50px', type: 'numeric', title: 'Amount', align: 'right', name: 'amount', id: 'a', mask: '0.00' });
         expect(options.columns![1]).to.eql({ width: '50px', type: 'text', title: 'Name' });
@@ -93,7 +93,7 @@ describe('Read the options of a table', () => {
                 '<tfoot><tr><td>Total</td><td>2</td></tr></tfoot>'
         );
 
-        const options = jspreadsheet.helpers.createFromTable(table);
+        const options = gridwell.helpers.createFromTable(table);
 
         expect(options.data).to.eql([['=A2*2', '=B2', 'b', 'c', 'd']]);
         // A hidden cell is shown, so it has no style left
@@ -108,16 +108,16 @@ describe('Read the options of a table', () => {
         }
         const table = createTable(`<thead><tr><th>Date</th><th>Answer</th><th>Number</th></tr></thead><tbody>${html}</tbody>`);
 
-        const options = jspreadsheet.helpers.createFromTable(table, { parseTableAutoCellType: true });
+        const options = gridwell.helpers.createFromTable(table, { parseTableAutoCellType: true });
 
         expect(options.columns!.map((column) => column.type)).to.eql(['calendar', 'dropdown', 'text']);
-        expect((options.columns![1] as Jspreadsheet.DropdownColumn).source).to.eql(['no', 'yes']);
+        expect((options.columns![1] as Gridwell.DropdownColumn).source).to.eql(['no', 'yes']);
     });
 });
 
 describe('Parse a CSV text', () => {
     it('reads the quoted fields, the quotes in them and each kind of line break', () => {
-        expect(jspreadsheet.helpers.parseCSV('a,"b,c","d ""e"""\r\nf\rg;h\ni')).to.eql([
+        expect(gridwell.helpers.parseCSV('a,"b,c","d ""e"""\r\nf\rg;h\ni')).to.eql([
             ['a', 'b,c', 'd "e"'],
             ['f', '', ''],
             ['g;h', '', ''],
@@ -126,7 +126,7 @@ describe('Parse a CSV text', () => {
     });
 
     it('splits the fields at the delimiter', () => {
-        expect(jspreadsheet.helpers.parseCSV('a;b\nc;d', ';')).to.eql([
+        expect(gridwell.helpers.parseCSV('a;b\nc;d', ';')).to.eql([
             ['a', 'b'],
             ['c', 'd'],
         ]);
@@ -135,7 +135,7 @@ describe('Parse a CSV text', () => {
 
 describe('Invert an object', () => {
     it('makes the values the keys', () => {
-        const inverted = jspreadsheet.helpers.invert({ a: 1, b: 'x' });
+        const inverted = gridwell.helpers.invert({ a: 1, b: 'x' });
 
         expect(inverted[1]).to.equal('a');
         expect(inverted.x).to.equal('b');
@@ -145,7 +145,7 @@ describe('Invert an object', () => {
 describe('Show a value with the mask of its column', () => {
     it('uses the mask, the format or the locale of the column', async () => {
         const worksheet = await new Promise<Worksheet>((resolve) => {
-            const instance = jspreadsheet(root, {
+            const instance = gridwell(root, {
                 worksheets: [
                     {
                         data: [[1.5, 1.5, 3, 1234.5]],

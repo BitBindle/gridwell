@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet from './support/jspreadsheet';
+import gridwell from './support/gridwell';
 
 const codes: Record<string, number> = { Tab: 9, Enter: 13, Escape: 27, ' ': 32 };
 
@@ -34,7 +34,7 @@ describe('The rich text editor of an html column', () => {
     });
 
     const open = async (value: string) => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: [[value, 'x']], columns: [{ type: 'html' }, {}] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: [[value, 'x']], columns: [{ type: 'html' }, {}] }] })[0];
         await waitForListeners();
         worksheet.updateSelectionFromCoords(0, 0, 0, 0);
         const cell = worksheet.getCell('A1');
@@ -131,7 +131,7 @@ describe('The image editor of an image column', () => {
     const image = 'data:image/png;base64,iVBORw0KGgo=';
 
     const open = async (value: string) => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: [[value, 'x']], columns: [{ type: 'image' }, {}] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: [[value, 'x']], columns: [{ type: 'image' }, {}] }] })[0];
         await waitForListeners();
         worksheet.updateSelectionFromCoords(0, 0, 0, 0);
         const cell = worksheet.getCell('A1');

@@ -8,7 +8,7 @@ export function pasteControls(e?: TargetEvent<ClipboardEvent>) {
         return;
     }
 
-    const current = libraryBase.jspreadsheet.current;
+    const current = libraryBase.gridwell.current;
 
     if (current?.selection.range) {
         if (!current.editor.isOpen()) {
@@ -30,7 +30,7 @@ export function pasteControls(e?: TargetEvent<ClipboardEvent>) {
 }
 
 export function cutControls(e?: TargetEvent<ClipboardEvent>) {
-    const current = libraryBase.jspreadsheet.current;
+    const current = libraryBase.gridwell.current;
 
     if (current) {
         // Without a selection, there is nothing to cut
@@ -50,7 +50,7 @@ export function cutControls(e?: TargetEvent<ClipboardEvent>) {
 }
 
 export function copyControls(e?: TargetEvent<ClipboardEvent>) {
-    const current = libraryBase.jspreadsheet.current;
+    const current = libraryBase.gridwell.current;
 
     if (current) {
         if (!current.editor.isOpen()) {

@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 
 import type { WorksheetHistoryRecord } from '../src/types/internal';
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
-const load = (options: Jspreadsheet.SpreadsheetOptions, element?: HTMLElement) => {
+const load = (options: Gridwell.SpreadsheetOptions, element?: HTMLElement) => {
     return new Promise<Worksheet>((resolve) => {
-        const instance = jspreadsheet(element || root, {
+        const instance = gridwell(element || root, {
             ...options,
             onload: () => resolve(instance[0]),
         });
@@ -174,7 +174,7 @@ describe('Keys on a jss_object control outside the grid', () => {
         // A custom editor with a jss_object control outside the worksheet, for example a floating panel
         const control = document.createElement('input');
         control.className = 'jss_object';
-        const editorType: Jspreadsheet.CustomEditor = {
+        const editorType: Gridwell.CustomEditor = {
             createCell(cell, value) {
                 // The cells of the test have texts
                 cell.textContent = value as string;
@@ -211,10 +211,10 @@ describe('Keys on a jss_object control outside the grid', () => {
 describe('Dispatch events', () => {
     it('gives onevent and plugins the event name and the arguments, and the event handler the arguments', () => {
         const calls: unknown[][] = [];
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [['a', 'b']] }],
             // The arguments of an event with more arguments than the shortest event, narrowed by a test of the name
-            onevent(...args: Jspreadsheet.EventArguments) {
+            onevent(...args: Gridwell.EventArguments) {
                 if (args[0] === 'onchange') {
                     const [, instance, , x, y, value] = args;
                     calls.push(['onevent', instance === worksheet, x, y, value]);
@@ -226,7 +226,7 @@ describe('Dispatch events', () => {
             plugins: {
                 test() {
                     return {
-                        onevent(...args: Jspreadsheet.EventArguments) {
+                        onevent(...args: Gridwell.EventArguments) {
                             if (args[0] === 'onchange') {
                                 const [, instance, , x, y, value] = args;
                                 calls.push(['plugin', instance === worksheet, x, y, value]);
@@ -248,7 +248,7 @@ describe('Dispatch events', () => {
 
     it('gives onbeforechange and onchange undefined as the new value when setValue has no value', () => {
         const calls: unknown[][] = [];
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [['a', 'b']] }],
             onbeforechange(instance, cell, x, y, value) {
                 calls.push(['onbeforechange', value]);
@@ -267,7 +267,7 @@ describe('Dispatch events', () => {
     });
 
     it('returns the result of the handler, so that onbeforeinsertrow can cancel the insertion', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [['a']] }],
             onbeforeinsertrow() {
                 return false;
@@ -280,7 +280,7 @@ describe('Dispatch events', () => {
     });
 
     it('keeps a false of the handler when a plugin with onevent returns nothing or another value (issue #37)', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [['a']] }],
             onbeforeinsertrow: () => false,
             plugins: {
@@ -295,7 +295,7 @@ describe('Dispatch events', () => {
     });
 
     it('lets a plugin cancel an action, and keeps the result of the handler when onevent returns nothing (issue #37)', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [['a']] }],
             onevent: () => {},
             onbeforechange: (instance, cell, x, y, value) => `${value}!`,
@@ -310,7 +310,7 @@ describe('Dispatch events', () => {
     });
 
     it('gives oncreateworksheet the options of the new worksheet', async () => {
-        let createdOptions: Jspreadsheet.WorksheetOptions | null = null;
+        let createdOptions: Gridwell.WorksheetOptions | null = null;
         const worksheet = await load({
             worksheets: [{ minDimensions: [2, 2], worksheetName: 'First' }],
         });
@@ -330,7 +330,7 @@ describe('Dispatch events', () => {
 
     it('gives onresizerow the old height as a number after the row was resized with the mouse', () => {
         const calls: number[][] = [];
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ minDimensions: [2, 2] }],
             onresizerow(instance, row, newHeight, oldHeight) {
                 calls.push([row, newHeight, oldHeight]);
@@ -346,7 +346,7 @@ describe('Dispatch events', () => {
 
     it('gives the change events the column and row as numbers, however the cell changed (issue #52)', () => {
         const calls: unknown[][] = [];
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ minDimensions: [3, 3] }],
             onbeforechange: (instance, cell, x, y) => calls.push(['before', x, y]),
             onchange: (instance, cell, x, y) => calls.push(['change', x, y]),
@@ -383,7 +383,7 @@ describe('Dispatch events', () => {
 
     it('cancels the change when onbeforechange returns false (issue #38)', () => {
         const calls: string[] = [];
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [['a', 'b']] }],
             onbeforechange: (instance, cell, x, y, value) => (value === 'no' ? false : undefined),
             onchange: () => calls.push('onchange'),
@@ -415,8 +415,8 @@ describe('Dispatch events', () => {
     });
 
     it('gives no change, history entry or onafterchanges for a read-only cell (issue #58)', () => {
-        const calls: (string | Jspreadsheet.CellChange[])[] = [];
-        const worksheet = jspreadsheet(root, {
+        const calls: (string | Gridwell.CellChange[])[] = [];
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [['a', 'b']], columns: [{ readOnly: true }, {}] }],
             onchange: () => calls.push('onchange'),
             onafterchanges: (instance, changes) => calls.push(changes),
@@ -461,7 +461,7 @@ describe('Destroy', () => {
         removed.length = 0;
 
         // root is the element of the spreadsheet
-        jspreadsheet.destroy(root as Jspreadsheet.JspreadsheetInstanceElement, true);
+        gridwell.destroy(root as Gridwell.GridwellInstanceElement, true);
         container.remove();
 
         expect(added.length).to.be.above(0);
@@ -476,9 +476,9 @@ describe('Destroy', () => {
 
 describe('Context menu', () => {
     // The spreadsheet adds its event handlers after a promise
-    const load = (options: Jspreadsheet.SpreadsheetOptions) =>
+    const load = (options: Gridwell.SpreadsheetOptions) =>
         new Promise<Worksheet>((resolve) => {
-            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+            const instance = gridwell(root, { ...options, onload: () => resolve(instance[0]) });
         });
 
     const contextmenu = (element: Element) => element.dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
@@ -543,9 +543,9 @@ describe('Context menu', () => {
 });
 
 describe('Rename a column (issue #42)', () => {
-    const load = (options: Jspreadsheet.SpreadsheetOptions) =>
+    const load = (options: Gridwell.SpreadsheetOptions) =>
         new Promise<Worksheet>((resolve) => {
-            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+            const instance = gridwell(root, { ...options, onload: () => resolve(instance[0]) });
         });
 
     const mouse = (element: EventTarget, type: string) => element.dispatchEvent(new window.MouseEvent(type, { bubbles: true, cancelable: true, buttons: 1 }));
@@ -569,7 +569,7 @@ describe('Rename a column (issue #42)', () => {
     });
 
     const renameItem = async () => {
-        let items: Jspreadsheet.ContextMenuItem[] | undefined;
+        let items: Gridwell.ContextMenuItem[] | undefined;
         const worksheet = await load({
             worksheets: [{ data: [['a', 'b']], columns: [{ title: 'Name' }, { title: 'Age' }] }],
             contextMenu: (instance, x, y, e, defaultItems) => {
@@ -580,7 +580,7 @@ describe('Rename a column (issue #42)', () => {
 
         worksheet.headers[0].dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
 
-        return { worksheet, item: items!.find((item) => item.title === 'Rename this column') as Jspreadsheet.ContextMenuOption };
+        return { worksheet, item: items!.find((item) => item.title === 'Rename this column') as Gridwell.ContextMenuOption };
     };
 
     it('keeps the title when the prompt of "Rename this column" is cancelled', async () => {

@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet from './support/jspreadsheet';
+import gridwell from './support/gridwell';
 
 describe('Use pagination', () => {
     it('shows the page number and the number of pages', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ minDimensions: [2, 10], pagination: 3 }],
         })[0];
 
@@ -14,7 +14,7 @@ describe('Use pagination', () => {
     });
 
     it('Start the worksheet with pagination', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     minDimensions: [7, 7],
@@ -47,7 +47,7 @@ describe('Use pagination', () => {
     });
 
     it('page method', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     minDimensions: [7, 7],

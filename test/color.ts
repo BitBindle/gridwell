@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet from './support/jspreadsheet';
+import gridwell from './support/gridwell';
 
 // The key codes, which the keys of the editor read
 const codes: Record<string, number> = { Enter: 13, Escape: 27, ' ': 32, Home: 36, End: 35, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40 };
@@ -17,7 +17,7 @@ const waitForListeners = () => new Promise((resolve) => setTimeout(resolve));
 describe('The color picker', () => {
     describe('The editor of a color column', () => {
         const create = async (value = '#e57373', options?: object) => {
-            const instance = jspreadsheet(root, {
+            const instance = gridwell(root, {
                 worksheets: [{ data: [[value, 'x']], columns: [{ type: 'color', options }, {}] }],
             });
             await waitForListeners();
@@ -158,7 +158,7 @@ describe('The color picker', () => {
         });
 
         it('has a fixed position under the cell in a worksheet that scrolls', async () => {
-            const instance = jspreadsheet(root, {
+            const instance = gridwell(root, {
                 worksheets: [{ data: [['#e57373']], columns: [{ type: 'color' }], tableOverflow: true }],
             });
             await waitForListeners();
@@ -173,7 +173,7 @@ describe('The color picker', () => {
 
     describe('The colors of the toolbar', () => {
         const createWithToolbar = async () => {
-            const instance = jspreadsheet(root, { toolbar: true, worksheets: [{ minDimensions: [3, 3] }] });
+            const instance = gridwell(root, { toolbar: true, worksheets: [{ minDimensions: [3, 3] }] });
             await waitForListeners();
             instance[0].updateSelectionFromCoords(0, 0, 1, 0);
             return instance[0];

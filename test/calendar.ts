@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell } from './support/gridwell';
 
 // The key codes, which the keys of the editor and of the grid read
 const codes: Record<string, number> = {
@@ -41,11 +41,11 @@ const today = () => {
 
 /** A worksheet with a calendar column, with the editor of A1 open. */
 async function open(
-    options: Jspreadsheet.CalendarOptions = {},
-    value: Jspreadsheet.CellValue = '2024-03-05',
-    worksheetOptions: Partial<Jspreadsheet.WorksheetOptions> = {}
+    options: Gridwell.CalendarOptions = {},
+    value: Gridwell.CellValue = '2024-03-05',
+    worksheetOptions: Partial<Gridwell.WorksheetOptions> = {}
 ) {
-    const instance = jspreadsheet(root, {
+    const instance = gridwell(root, {
         worksheets: [
             {
                 data: [
@@ -146,7 +146,7 @@ describe('The calendar', () => {
 
     it('shows the short names of the days and the months as the dictionary translates them (issue #155)', async () => {
         const days = { Sun: '周日', Mon: '周一', Tue: '周二', Wed: '周三', Thu: '周四', Fri: '周五', Sat: '周六', Sunday: '星期日', Monday: '星期一' };
-        jspreadsheet.setDictionary({ ...days, Mar: '3月', March: '三月' });
+        gridwell.setDictionary({ ...days, Mar: '3月', March: '三月' });
         try {
             const { grid, button } = await open({}, '2024-03-05');
 
@@ -158,7 +158,7 @@ describe('The calendar', () => {
             button('jcalendar-month').click();
             expect(grid.querySelectorAll('.jcalendar-set-month')[2].textContent).to.equal('3月');
         } finally {
-            jspreadsheet.setDictionary(Object.fromEntries(['Mar', 'March', ...Object.keys(days)].map((text) => [text, ''])));
+            gridwell.setDictionary(Object.fromEntries(['Mar', 'March', ...Object.keys(days)].map((text) => [text, ''])));
         }
     });
 
@@ -492,7 +492,7 @@ describe('The calendar', () => {
     });
 
     it('opens over the input when there is no room under it', async () => {
-        const instance = jspreadsheet(root, { worksheets: [{ data: [['2024-03-05']], columns: [{ type: 'calendar' }] }] });
+        const instance = gridwell(root, { worksheets: [{ data: [['2024-03-05']], columns: [{ type: 'calendar' }] }] });
         await waitForListeners();
         const worksheet = instance[0];
         const cell = worksheet.getCell('A1');
@@ -515,7 +515,7 @@ describe('The calendar', () => {
     });
 
     it('opens over the input when the element that scrolls has no room under it, and stops at its edge', async () => {
-        const instance = jspreadsheet(root, { worksheets: [{ data: [['2024-03-05']], columns: [{ type: 'calendar' }] }] });
+        const instance = gridwell(root, { worksheets: [{ data: [['2024-03-05']], columns: [{ type: 'calendar' }] }] });
         await waitForListeners();
         const worksheet = instance[0];
         const cell = worksheet.getCell('A1');

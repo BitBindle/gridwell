@@ -1,6 +1,6 @@
 import { translate } from '../utils/dictionary.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
-import type jspreadsheet from '../jspreadsheet';
+import type gridwell from '../gridwell';
 import type { MergeInfo, Worksheet } from '../types/internal';
 
 /**
@@ -288,7 +288,7 @@ export class Merges {
      * @param data - The values of the other cells of the range, which the history kept.
      * @param keepOptions - Keep the range in the options.
      */
-    remove(cellName: string, data?: jspreadsheet.CellValue[] | null, keepOptions?: boolean) {
+    remove(cellName: string, data?: gridwell.CellValue[] | null, keepOptions?: boolean) {
         const worksheet = this.worksheet;
 
         if (worksheet.options.mergeCells?.[cellName]) {

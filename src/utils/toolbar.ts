@@ -3,7 +3,7 @@ import { getCellNameFromCoords } from './helpers.js';
 import { ColorPicker, type ColorElement } from './color.js';
 import { BordersDialog, type BorderOptions } from './borders.js';
 import { ToolbarControl } from './toolbarControl.js';
-import type jspreadsheet from '../jspreadsheet';
+import type gridwell from '../gridwell';
 import type { Spreadsheet, Worksheet } from '../types/internal';
 
 function setItemStatus(toolbarItem: HTMLElement, worksheet: Worksheet) {
@@ -57,7 +57,7 @@ function getSelectedRange(range: [number, number, number, number]) {
 /**
  * Undo, redo and save.
  */
-function getHistoryItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
+function getHistoryItems(spreadsheet: Spreadsheet): gridwell.ToolbarItem[] {
     return [
         {
             content: 'undo',
@@ -94,7 +94,7 @@ function getHistoryItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
 /**
  * The font, the size, the alignment, bold, the color of the text and the color of the background.
  */
-function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
+function getFontItems(spreadsheet: Spreadsheet): gridwell.ToolbarItem[] {
     return [
         {
             type: 'select',
@@ -166,7 +166,7 @@ function getFontItems(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem[] {
 /**
  * The vertical alignment.
  */
-function getVerticalAlignItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
+function getVerticalAlignItem(spreadsheet: Spreadsheet): gridwell.ToolbarItem {
     const verticalAlign = ['top', 'middle', 'bottom'];
 
     return {
@@ -188,7 +188,7 @@ function getVerticalAlignItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarIte
 /**
  * Merge the selected cells, or remove the merge of the selected merged cells.
  */
-function getMergeItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
+function getMergeItem(spreadsheet: Spreadsheet): gridwell.ToolbarItem {
     return {
         content: 'web',
         tooltip: translate('Merge the selected cells'),
@@ -300,7 +300,7 @@ function setBorders(worksheet: Worksheet, borders: BorderOptions, type: string) 
 /**
  * The borders: a button that opens a dialog with the types of borders, and their color, thickness and style.
  */
-function getBordersItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
+function getBordersItem(spreadsheet: Spreadsheet): gridwell.ToolbarItem {
     return {
         content: 'border_all',
         tooltip: translate('Borders'),
@@ -316,7 +316,7 @@ function getBordersItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
 /**
  * Toggle the fullscreen of the spreadsheet.
  */
-function getFullscreenItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
+function getFullscreenItem(spreadsheet: Spreadsheet): gridwell.ToolbarItem {
     return {
         content: 'fullscreen',
         tooltip: translate('Toggle Fullscreen'),
@@ -329,7 +329,7 @@ function getFullscreenItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
                 c.children[0].textContent = 'fullscreen';
             }
         },
-        updateState(a: HTMLElement, b: object, c: HTMLElement, d: jspreadsheet.WorksheetInstance) {
+        updateState(a: HTMLElement, b: object, c: HTMLElement, d: gridwell.WorksheetInstance) {
             if (d.parent.config.fullscreen === true) {
                 c.children[0].textContent = 'fullscreen_exit';
             } else {
@@ -356,7 +356,7 @@ export class Toolbar {
     /**
      * The items of the default toolbar.
      */
-    getDefault(): jspreadsheet.ToolbarItem[] {
+    getDefault(): gridwell.ToolbarItem[] {
         const spreadsheet = this.spreadsheet;
 
         return [
@@ -376,11 +376,11 @@ export class Toolbar {
      * color item becomes a button that opens a color picker.
      * @param toolbar - The settings of the toolbar.
      */
-    private adjustItems(toolbar: jspreadsheet.ToolbarOptions) {
+    private adjustItems(toolbar: gridwell.ToolbarOptions) {
         const spreadsheet = this.spreadsheet;
 
         // A divisor has no other properties
-        const items = toolbar.items as jspreadsheet.ToolbarItemBase[];
+        const items = toolbar.items as gridwell.ToolbarItemBase[];
 
         for (const item of items) {
             if (item.type === 'select') {
@@ -427,7 +427,7 @@ export class Toolbar {
      * Create the element of the toolbar.
      * @param toolbar - The settings of the toolbar.
      */
-    create(toolbar: jspreadsheet.ToolbarOptions) {
+    create(toolbar: gridwell.ToolbarOptions) {
         const spreadsheet = this.spreadsheet;
 
         const toolbarElement = document.createElement('div');
@@ -463,7 +463,7 @@ export class Toolbar {
         const spreadsheet = this.spreadsheet;
 
         if (spreadsheet.config.toolbar && !spreadsheet.toolbar) {
-            let toolbar: jspreadsheet.ToolbarOptions;
+            let toolbar: gridwell.ToolbarOptions;
 
             if (Array.isArray(spreadsheet.config.toolbar)) {
                 toolbar = {

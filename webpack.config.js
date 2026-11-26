@@ -16,10 +16,10 @@ class MyPlugin {
                 const header = `;(function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
-    global.gridwell = global.jspreadsheet = factory();
+    global.gridwell = factory();
 }(this, (function () {`;
 
-                const footer = `    return jspreadsheet;
+                const footer = `    return gridwell;
 })));`;
 
                 // Add the header and the footer to the bundled file
@@ -43,7 +43,7 @@ module.exports = (env, argv) => {
         output: {
             filename: 'index.js',
             path: path.resolve(__dirname, 'dist'),
-            library: 'jspreadsheet',
+            library: 'gridwell',
             libraryExport: 'default',
             // Remove the files of the last build, such as the source map of a coverage build
             clean: true,
@@ -68,7 +68,7 @@ module.exports = (env, argv) => {
             },
             hot: 'only',
         },
-        // The version that jspreadsheet.version() gives. The publish workflow sets it in package.json before the build.
+        // The version that gridwell.version() gives. The publish workflow sets it in package.json before the build.
         plugins: [new DefinePlugin({ __VERSION__: JSON.stringify(version) })],
         resolve: {
             extensions: ['.ts', '.js'],
@@ -107,9 +107,9 @@ module.exports = (env, argv) => {
         webpack.plugins.push(
             new CopyPlugin({
                 patterns: [
-                    { from: 'src/jspreadsheet.d.ts', to: 'index.d.ts' },
-                    { from: 'src/jspreadsheet.css', to: 'jspreadsheet.css' },
-                    { from: 'src/jspreadsheet.themes.css', to: 'jspreadsheet.themes.css' },
+                    { from: 'src/gridwell.d.ts', to: 'index.d.ts' },
+                    { from: 'src/gridwell.css', to: 'gridwell.css' },
+                    { from: 'src/gridwell.themes.css', to: 'gridwell.themes.css' },
                 ],
             })
         );

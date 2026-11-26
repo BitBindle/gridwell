@@ -1,7 +1,7 @@
 import { parseDate, toDateParts } from '../utils/dates.js';
 import { parseCSV } from '../utils/helpers.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
-import type jspreadsheet from '../jspreadsheet';
+import type gridwell from '../gridwell';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -338,7 +338,7 @@ export class Clipboard {
      * Insert the columns and the rows that the paste needs after the target cell, counting the hidden ones, and then update
      * the references once.
      */
-    private insertSpaceForPaste(colIndex: number, rowIndex: number, rows: jspreadsheet.CellValue[][]) {
+    private insertSpaceForPaste(colIndex: number, rowIndex: number, rows: gridwell.CellValue[][]) {
         const worksheet = this.worksheet;
 
         const hiddenColCount = worksheet.headers.slice(colIndex).filter((x) => x.style.display === 'none').length;
@@ -367,7 +367,7 @@ export class Clipboard {
      * Insert a column or a row when the data goes past the last one, if the worksheet allows it.
      * @returns The records for the history, the new and the old styles, and the last cell written.
      */
-    private pasteRows(x: number, y: number, rows: jspreadsheet.CellValue[][], style: string[] | null) {
+    private pasteRows(x: number, y: number, rows: gridwell.CellValue[][], style: string[] | null) {
         const worksheet = this.worksheet;
 
         // Records
@@ -482,7 +482,7 @@ export class Clipboard {
         style = repeated.style;
 
         // The rows to paste, which onbeforepaste can replace
-        let rows: jspreadsheet.CellValue[][] = repeated.rows;
+        let rows: gridwell.CellValue[][] = repeated.rows;
 
         // Paste filter
         const ret = worksheet.dispatch(

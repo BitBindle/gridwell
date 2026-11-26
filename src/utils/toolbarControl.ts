@@ -1,9 +1,9 @@
 import { translate } from './dictionary.js';
 import { Picker } from './picker.js';
-import type jspreadsheet from '../jspreadsheet';
+import type gridwell from '../gridwell';
 
 /** The element of an item of the toolbar, with the updateState and the style property of its item. */
-type ItemElement = HTMLDivElement & { updateState?: jspreadsheet.ToolbarItemBase['updateState']; k?: unknown };
+type ItemElement = HTMLDivElement & { updateState?: gridwell.ToolbarItemBase['updateState']; k?: unknown };
 
 /**
  * The toolbar of a spreadsheet, with the WAI-ARIA toolbar pattern. Its items are buttons with an icon, pickers, labels
@@ -20,12 +20,12 @@ export class ToolbarControl {
     readonly element: HTMLDivElement & { toolbar?: ToolbarControl };
 
     /** The settings of the toolbar, with its items. A type, not an interface, so that it fits the public ToolbarInstance. */
-    readonly options: { items: jspreadsheet.ToolbarItem[]; [property: string]: unknown };
+    readonly options: { items: gridwell.ToolbarItem[]; [property: string]: unknown };
 
     // The element that holds the items
     private readonly content: HTMLDivElement;
 
-    constructor(element: HTMLDivElement & { toolbar?: ToolbarControl }, options: jspreadsheet.ToolbarOptions) {
+    constructor(element: HTMLDivElement & { toolbar?: ToolbarControl }, options: gridwell.ToolbarOptions) {
         this.element = element;
         this.options = { ...options };
 
@@ -67,11 +67,11 @@ export class ToolbarControl {
      * Replace the items of the toolbar.
      * @param items - The items.
      */
-    create(items: jspreadsheet.ToolbarItem[]) {
+    create(items: gridwell.ToolbarItem[]) {
         this.options.items = items;
         this.content.textContent = '';
 
-        for (const item of items as jspreadsheet.ToolbarItemBase[]) {
+        for (const item of items as gridwell.ToolbarItemBase[]) {
             this.content.appendChild(this.createItem(item));
         }
 
@@ -137,7 +137,7 @@ export class ToolbarControl {
      * The element of an item.
      * @param item - The item.
      */
-    private createItem(item: jspreadsheet.ToolbarItemBase) {
+    private createItem(item: gridwell.ToolbarItemBase) {
         const element: ItemElement = document.createElement('div');
         element.classList.add('jtoolbar-item');
 

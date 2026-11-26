@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 describe('Toolbar', () => {
     const createWithToolbar = async () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             toolbar: true,
             worksheets: [{ minDimensions: [3, 3] }],
         });
@@ -44,11 +44,11 @@ describe('Toolbar', () => {
             picker.querySelectorAll<HTMLElement>('.jpicker-item')[index].click();
         };
 
-        const getStyle = (worksheet: Jspreadsheet.WorksheetInstance, cellName: string) => worksheet.getCell(cellName).getAttribute('style') || '';
+        const getStyle = (worksheet: Gridwell.WorksheetInstance, cellName: string) => worksheet.getCell(cellName).getAttribute('style') || '';
 
         it('has the items of the default toolbar, in order', async () => {
             let items = null as unknown[] | null;
-            jspreadsheet(root, {
+            gridwell(root, {
                 worksheets: [{ minDimensions: [3, 3] }],
                 toolbar(toolbar) {
                     // A divisor item has no content
@@ -79,7 +79,7 @@ describe('Toolbar', () => {
 
         it('the size, the alignment, bold and the vertical alignment style the selected cells', async () => {
             const changes: Record<string, string>[] = [];
-            jspreadsheet(root, {
+            gridwell(root, {
                 toolbar: true,
                 worksheets: [{ minDimensions: [3, 3] }],
                 onchangestyle: (worksheet, newValue) => {
@@ -87,7 +87,7 @@ describe('Toolbar', () => {
                 },
             });
             await new Promise((resolve) => setTimeout(resolve, 0));
-            const worksheet = jspreadsheet.current!;
+            const worksheet = gridwell.current!;
             worksheet.updateSelectionFromCoords(0, 0, 1, 1);
 
             choose(1, 3);
@@ -177,7 +177,7 @@ describe('Toolbar', () => {
         });
 
         it('the items that change cells are disabled on a worksheet that is not editable', async () => {
-            jspreadsheet(root, {
+            gridwell(root, {
                 toolbar: true,
                 worksheets: [{ minDimensions: [3, 3], editable: false }],
             });
@@ -192,7 +192,7 @@ describe('Toolbar', () => {
     describe('Settings', () => {
         it('gives a toolbar function and the toolbar of a plugin the settings with the items', async () => {
             const calls: [string, boolean | number][] = [];
-            jspreadsheet(root, {
+            gridwell(root, {
                 worksheets: [{ minDimensions: [3, 3] }],
                 toolbar(toolbar) {
                     calls.push(['option', Array.isArray(toolbar.items)]);
@@ -253,8 +253,8 @@ describe('Toolbar', () => {
         });
 
         it('gives updateState the worksheet whose cells are selected, and the worksheet of the open tab', async () => {
-            const states: Jspreadsheet.WorksheetInstance[] = [];
-            const instance = jspreadsheet(root, {
+            const states: Gridwell.WorksheetInstance[] = [];
+            const instance = gridwell(root, {
                 toolbar: [
                     {
                         type: 'i',
@@ -283,7 +283,7 @@ describe('Toolbar', () => {
 
         it('a select item with a style property styles the selected cells with the chosen value', async () => {
             const changes: Record<string, string>[] = [];
-            const instance = jspreadsheet(root, {
+            const instance = gridwell(root, {
                 toolbar: [{ type: 'select', k: 'text-align', v: ['left', 'right'] }],
                 worksheets: [{ minDimensions: [3, 3] }],
                 onchangestyle: (worksheet, newValue) => {
@@ -302,7 +302,7 @@ describe('Toolbar', () => {
     describe('Items', () => {
         it('creates labels, icons with other classes, and items with an id, a width, a title, and active or disabled', async () => {
             const clicks: unknown[][] = [];
-            const instance = jspreadsheet(root, {
+            const instance = gridwell(root, {
                 toolbar: [
                     { type: 'label', content: '<b>Label</b>' },
                     { type: 'divisor' },
@@ -360,7 +360,7 @@ describe('Toolbar', () => {
         it('has the methods of the toolbar on the element', async () => {
             const instance = await createWithToolbar();
             const element = instance[0].parent.toolbar;
-            const toolbar = element.toolbar as unknown as Jspreadsheet.ToolbarInstance;
+            const toolbar = element.toolbar as unknown as Gridwell.ToolbarInstance;
 
             expect(toolbar.get()).to.equal(element);
             expect((toolbar.options.items as unknown[]).length).to.equal(15);
@@ -396,14 +396,14 @@ describe('Toolbar', () => {
             expect(fonts[0].getAttribute('aria-selected')).to.equal('false');
             expect(fonts[2].getAttribute('aria-selected')).to.equal('true');
             expect(font.querySelector('.jpicker-header')!.textContent).to.equal('Arial');
-            expect((font as HTMLElement & { picker: Jspreadsheet.PickerInstance }).picker.getValue()).to.equal('2');
+            expect((font as HTMLElement & { picker: Gridwell.PickerInstance }).picker.getValue()).to.equal('2');
         });
 
         it('closes a picker on a press outside it', async () => {
             await createWithToolbar();
 
             const picker = root.querySelector<HTMLElement>('.jss_toolbar .jpicker')!;
-            const instance = (picker as HTMLElement & { picker: Jspreadsheet.PickerInstance }).picker;
+            const instance = (picker as HTMLElement & { picker: Gridwell.PickerInstance }).picker;
             picker.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
             expect(instance.isOpened()).to.equal(true);
 
@@ -727,12 +727,12 @@ describe('Toolbar', () => {
         });
     });
     describe('Pickers', () => {
-        type PickerElement = HTMLElement & { picker: Jspreadsheet.PickerInstance };
+        type PickerElement = HTMLElement & { picker: Gridwell.PickerInstance };
 
         // A toolbar item may have the other options of a picker, which the typings do not list
         const createPicker = async (options: Record<string, unknown> = {}) => {
-            const item = { type: 'select', options: ['a', 'b', 'c', 'd'], ...options } as Jspreadsheet.ToolbarItem;
-            jspreadsheet(root, { toolbar: [item], worksheets: [{ minDimensions: [3, 3] }] });
+            const item = { type: 'select', options: ['a', 'b', 'c', 'd'], ...options } as Gridwell.ToolbarItem;
+            gridwell(root, { toolbar: [item], worksheets: [{ minDimensions: [3, 3] }] });
             await new Promise((resolve) => setTimeout(resolve, 0));
 
             const element = root.querySelector<PickerElement>('.jss_toolbar .jpicker')!;

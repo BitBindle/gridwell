@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 
-import jspreadsheet from './support/jspreadsheet';
+import gridwell from './support/gridwell';
 
 describe('Meta tests', () => {
     describe('Set meta information', () => {
         it('Set meta information using an object', () => {
-            const instance = jspreadsheet(root, {
+            const instance = gridwell(root, {
                 worksheets: [
                     {
                         data: [
@@ -34,7 +34,7 @@ describe('Meta tests', () => {
         });
 
         it('Set meta information using strings', () => {
-            const instance = jspreadsheet(root, {
+            const instance = gridwell(root, {
                 worksheets: [
                     {
                         data: [
@@ -72,7 +72,7 @@ describe('Meta tests', () => {
     });
 
     it('Get meta information', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -108,7 +108,7 @@ describe('Meta tests', () => {
     });
 
     it('The meta information follows its cell when a row is inserted above it', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: [

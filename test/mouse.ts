@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 describe('The mouse on the document', () => {
     // The spreadsheet adds its event handlers after a promise
-    const load = (options: Jspreadsheet.SpreadsheetOptions) =>
+    const load = (options: Gridwell.SpreadsheetOptions) =>
         new Promise<Worksheet[]>((resolve) => {
-            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance) });
+            const instance = gridwell(root, { ...options, onload: () => resolve(instance) });
         });
 
     const mouse = (element: EventTarget, type: string, options?: MouseEventInit) =>
@@ -194,7 +194,7 @@ describe('Typing in the search of a worksheet', () => {
     const data = [['Honda'], ['Mazda'], ['Honda']];
 
     it('searches the rows a moment after the last key', async () => {
-        const [worksheet] = jspreadsheet(root, { worksheets: [{ data, search: true }] });
+        const [worksheet] = gridwell(root, { worksheets: [{ data, search: true }] });
         await wait(0);
 
         worksheet.searchInput.focus();
@@ -210,7 +210,7 @@ describe('Typing in the search of a worksheet', () => {
     });
 
     it('does not search when the mouse moves before the moment ends', async () => {
-        const [worksheet] = jspreadsheet(root, { worksheets: [{ data, search: true }] });
+        const [worksheet] = gridwell(root, { worksheets: [{ data, search: true }] });
         await wait(0);
 
         worksheet.searchInput.focus();

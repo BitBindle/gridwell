@@ -6,7 +6,7 @@ lists the changes that can break an application, and what to do instead. Each st
 ## The package is @bitbindle/gridwell
 
 The fork is called Gridwell, and its package is `@bitbindle/gridwell`, not `jspreadsheet-ce`. Install it and change the
-imports; the API keeps its names:
+imports. The library is called `gridwell` too (see [the next section](#the-library-is-called-gridwell)):
 
 ```js
 // Version 5
@@ -14,11 +14,10 @@ import jspreadsheet from 'jspreadsheet-ce';
 import 'jspreadsheet-ce/dist/jspreadsheet.css';
 
 // Version 6
-import jspreadsheet from '@bitbindle/gridwell';
-import '@bitbindle/gridwell/dist/jspreadsheet.css';
+import gridwell from '@bitbindle/gridwell';
+import '@bitbindle/gridwell/dist/gridwell.css';
 ```
 
-- The script of the bundle sets the global `gridwell` as well as `jspreadsheet`.
 - There is no Vue wrapper. `@jspreadsheet-ce/vue` was a component that called `jspreadsheet()` in `mounted`: call
   `gridwell()` on an element of your component instead. The repository no longer has the `<jspreadsheet>` web
   component example (`src/webcomponent.js`) or the documentation of version 4 (`docs/`).
@@ -26,9 +25,34 @@ import '@bitbindle/gridwell/dist/jspreadsheet.css';
   the fork.
 - The package has only `dist/` and `resources/lang/`, with the README and the license.
 
+## The library is called gridwell
+
+The function, the global of the script, the types and the files are called `gridwell` instead of `jspreadsheet`. Only
+the names have changed:
+
+```js
+// Version 5
+jspreadsheet(element, { worksheets: [{ minDimensions: [5, 5] }] });
+jspreadsheet.setDictionary(de);
+
+// Version 6
+gridwell(element, { worksheets: [{ minDimensions: [5, 5] }] });
+gridwell.setDictionary(de);
+```
+
+- The script sets the global `gridwell`, and no longer `jspreadsheet`. With a module loader, name the default import as
+  you like.
+- The stylesheets are `dist/gridwell.css` and `dist/gridwell.themes.css`, not `dist/jspreadsheet.css` and
+  `dist/jspreadsheet.themes.css`.
+- The namespace of the types is `gridwell`: `gridwell.WorksheetOptions`, `gridwell.CellValue`, and so on. The type of the
+  library, `JSpreadsheet`, is `Gridwell`, and `JspreadsheetInstanceElement` is `GridwellInstanceElement`.
+- The element of a worksheet has the worksheet as `element.gridwell`, not `element.jspreadsheet`.
+- The messages in the console start with `Gridwell:`, not `Jspreadsheet:`.
+- The CSS classes keep their names, such as `jss_worksheet`, and so do the methods, the options and the events.
+
 ## Worksheets and spreadsheets are class instances
 
-`jspreadsheet()` still returns the array of worksheets, and each worksheet still has `parent`, its spreadsheet. Both
+`gridwell()` still returns the array of worksheets, and each worksheet still has `parent`, its spreadsheet. Both
 are now instances of the `Worksheet` and `Spreadsheet` classes, and their methods are on the prototype instead of on
 each instance.
 
@@ -167,7 +191,7 @@ resize, the move of columns and rows, the fill with the selection corner and the
 
 ## The keys go to the grid that has the focus
 
-The keys go to the active worksheet, `jspreadsheet.current`. A press on a worksheet made it the active worksheet, and
+The keys go to the active worksheet, `gridwell.current`. A press on a worksheet made it the active worksheet, and
 now the focus does too: when the focus moves into another worksheet, for example with Tab, that worksheet becomes the
 active worksheet. The worksheet that was active closes its editor and loses its selection, as after a press on the
 other worksheet, and a focused cell becomes the selection of a worksheet without one. The focus on the tabs or the
@@ -238,7 +262,7 @@ cast where it relied on `any`:
     `(event, instance, cell?) => …`. To narrow the arguments with a test of the name, take them as `EventArguments`:
 
     ```ts
-    onevent: function (...args: jspreadsheet.EventArguments) {
+    onevent: function (...args: gridwell.EventArguments) {
         if (args[0] === 'onchange') {
             const [, worksheet, cell, x, y, value] = args; // WorksheetInstance, HTMLTableCellElement, number, …
         }
@@ -250,7 +274,7 @@ cast where it relied on `any`:
     spreadsheet there.
 
 - **dispatch.** It takes the name of an event of `SpreadsheetOptions` and the arguments of its handler. To dispatch an
-  event of your own, cast the name, for example `worksheet.dispatch('oncustom' as jspreadsheet.EventName, worksheet)`.
+  event of your own, cast the name, for example `worksheet.dispatch('oncustom' as gridwell.EventName, worksheet)`.
 
 ## setConfig takes the options to change
 
@@ -273,7 +297,7 @@ declare. This applies to the options of a spreadsheet, a worksheet and a column,
 // Version 5: 0 disabled editing
 jspreadsheet(element, { worksheets: [{ editable: 0 }] });
 // Version 6
-jspreadsheet(element, { worksheets: [{ editable: false }] });
+gridwell(element, { worksheets: [{ editable: false }] });
 ```
 
 The values of the cells are still compared loosely where the library reads them: `1`, `'1'`, `true` and `'true'` check a
@@ -352,12 +376,12 @@ The hidden textarea that a worksheet uses for the clipboard has no `id` any more
 worksheet the id `jss_textarea`, so a page with two worksheets had duplicate ids (#68). Select it by its class,
 `.jss_textarea`, or through `worksheet.clipboard.textarea`.
 
-## jspreadsheet throws for a table without a parent
+## gridwell throws for a table without a parent
 
-`jspreadsheet(table, options)` replaces the table with a div in its parent. When the table has no parent, for example
+`gridwell(table, options)` replaces the table with a div in its parent. When the table has no parent, for example
 before it is added to the document, it now throws an `Error` (#55). Version 5 failed in a promise: it returned an empty
 array, created no spreadsheet and gave an unhandled rejection. Add the table to an element before you call
-`jspreadsheet`.
+`gridwell`.
 
 ## A formula reads only formatted numbers as numbers
 
@@ -375,19 +399,19 @@ registers it once, before it creates the spreadsheets:
 ```javascript
 import formula from '@jspreadsheet/formula';
 
-jspreadsheet.setFormulaEngine(formula);
+gridwell.setFormulaEngine(formula);
 ```
 
-With the scripts of a CDN, call `jspreadsheet.setFormulaEngine(formula)` after the script of the engine. Without an
+With the scripts of a CDN, call `gridwell.setFormulaEngine(formula)` after the script of the engine. Without an
 engine, a formula shows `#ENGINE`, which Excel never shows, and the console says once why. `executeFormula` also returns
 `'#ENGINE'`. The `formulaEngine` option of a spreadsheet still replaces the engine, and needs none to be registered. A
 spreadsheet without formulas no longer needs the 140 KB of the engine.
 
-## Translate with jspreadsheet.setDictionary
+## Translate with gridwell.setDictionary
 
-Jspreadsheet keeps its own dictionary and no longer reads the dictionary of jSuites. An application that called
+Gridwell keeps its own dictionary and no longer reads the dictionary of jSuites. An application that called
 `jSuites.setDictionary`, or set `document.dictionary`, to translate the texts of the spreadsheet calls
-`jspreadsheet.setDictionary` instead. It takes the same object. An empty translation shows the English text again.
+`gridwell.setDictionary` instead. It takes the same object. An empty translation shows the English text again.
 
 ## The requests are sent with fetch
 
@@ -399,7 +423,7 @@ new `onbeforerequest` event, which gets the worksheet, the url and the options o
 return others, or return `false` to cancel the request.
 
 ```javascript
-jspreadsheet(element, {
+gridwell(element, {
     worksheets: [{ url: '/data' }],
     onbeforerequest(worksheet, url, options) {
         options.headers.Authorization = `Bearer ${token}`;
@@ -415,13 +439,13 @@ left the worksheet without its table before.
 ## The masks show numbers and dates without jSuites
 
 The masks of the columns (`mask`, `format`, and `locale` with `options`) and the formats of the calendar columns are read
-by Jspreadsheet, not by `jSuites.mask` and `jSuites.calendar`. The number formats follow Excel, and some cells show
+by Gridwell, not by `jSuites.mask` and `jSuites.calendar`. The number formats follow Excel, and some cells show
 other texts than before:
 
 - A column with a `locale` shows what `Intl.NumberFormat` gives with its `options`: `$3.00` for 3 in US dollars, where
   jSuites showed `$3` (issue #136). Its `decimal` option no longer replaces the `options` of the locale.
 - The second section of a mask, for the negative numbers, shows the number without its minus, as in Excel: `0;[Red]0`
-  shows 5 in red for -5, and `0;[Red](0)` shows `(5)`. The parentheses are those of the section; Jspreadsheet no longer
+  shows 5 in red for -5, and `0;[Red](0)` shows `(5)`. The parentheses are those of the section; Gridwell no longer
   adds them when the section has one. A color, such as `[Red]`, now applies to the section it is in, also the first.
 - Without a section for the negative numbers, the minus goes before the symbols: `-$ 5.00` for -5 with `$ #,##0.00`.
 - A text that is not a number shows as it is, where jSuites showed an empty text or only its digits (`12` for `a1b2`).
@@ -446,7 +470,7 @@ The dates of the calendar columns, and of the date masks, are written and read w
 
 ## The context menu works without jSuites
 
-The context menu is shown by Jspreadsheet, not by `jSuites.contextmenu`. It keeps the class names of jSuites
+The context menu is shown by Gridwell, not by `jSuites.contextmenu`. It keeps the class names of jSuites
 (`jcontextmenu`, `jcontextmenu-focus`, `jcontextmenu-disabled`, `jcontexthassubmenu`), its place and its look, and the
 element still keeps the menu as `contextmenu`, with `open(e, items)`, `create(items)`, `close()` and `isOpened()`. These change:
 
@@ -466,7 +490,7 @@ element still keeps the menu as `contextmenu`, with `open(e, items)`, `create(it
 
 ## The toolbar and the color picker work without jSuites
 
-The toolbar, the pickers of its select items and the color picker are shown by Jspreadsheet, not by `jSuites.toolbar`,
+The toolbar, the pickers of its select items and the color picker are shown by Gridwell, not by `jSuites.toolbar`,
 `jSuites.picker` and `jSuites.color`. They keep the class names of jSuites (`jtoolbar`, `jtoolbar-item`, `jpicker`,
 `jpicker-focus`, `jcolor`, `jcolor-focus`, …) and their look, and the elements still keep them as `toolbar`, `picker`
 and `color`. These change:
@@ -492,11 +516,11 @@ and `color`. These change:
   only the first time.
 - In the editor of a color column, Escape on the picker closes the editor without saving, as on the input. The options
   of the column (`palette`, `placeholder`, `closeOnChange`, `doneLabel`, `resetLabel`, `onopen`, `onchange`) are still
-  given to the picker. The texts of the buttons are translated with `jspreadsheet.setDictionary` (`Reset`, `Done`).
+  given to the picker. The texts of the buttons are translated with `gridwell.setDictionary` (`Reset`, `Done`).
 
 ## The dropdown works without jSuites
 
-The editor of a dropdown column and the filters of the columns are shown by Jspreadsheet, not by `jSuites.dropdown`.
+The editor of a dropdown column and the filters of the columns are shown by Gridwell, not by `jSuites.dropdown`.
 They keep the class names of jSuites (`jdropdown`, `jdropdown-header`, `jdropdown-item`, `jdropdown-selected`,
 `jdropdown-cursor`, …) and the look of its default mode, and the element still keeps the dropdown as `dropdown`, with
 `getValue(asArray)`, `getText()`, `setValue(value)`, `open()`, `close(ignoreEvents)`, `isOpened()`, `reset()` and
@@ -528,7 +552,7 @@ They keep the class names of jSuites (`jdropdown`, `jdropdown-header`, `jdropdow
 
 ## The calendar works without jSuites
 
-The editor of a calendar column is shown by Jspreadsheet, not by `jSuites.calendar`. It keeps the class names of jSuites
+The editor of a calendar column is shown by Gridwell, not by `jSuites.calendar`. It keeps the class names of jSuites
 (`jcalendar`, `jcalendar-container`, `jcalendar-input`, `jcalendar-selected`, `jcalendar-disabled`, …) and its look,
 and the input still keeps the calendar as `calendar`, with `open()`, `close(ignoreEvents)`, `isOpened()`, `getValue()`,
 `setValue(value)` and `reset()`. These change:
@@ -548,12 +572,12 @@ and the input still keeps the calendar as `calendar`, with `open()`, `close(igno
 - The calendar no longer has the type `year-month-picker`, the options `months`, `monthsFull`, `weekdays`,
   `textDone`, `textReset`, `textUpdate`, `controls`, `dataType`, `autoSelect` and `onupdate`, nor the warning class on
   an input with a date out of the `validRange`. The years view shows 25 years. The swipe between the months is gone.
-- The texts are translated with `jspreadsheet.setDictionary` (`Reset`, `Done`, `Update`, and the new `Previous`, `Next`,
+- The texts are translated with `gridwell.setDictionary` (`Reset`, `Done`, `Update`, and the new `Previous`, `Next`,
   `Hour` and `Minute`). The names of the months and the weekdays are translated with it too, as in the cells.
 
 ## The rich text and image editors work without jSuites
 
-The editors of the `html` and `image` columns are shown by Jspreadsheet, not by `jSuites.editor` and `jSuites.image`.
+The editors of the `html` and `image` columns are shown by Gridwell, not by `jSuites.editor` and `jSuites.image`.
 The columns keep their types and their values, and the cells show them as before. These change:
 
 - The rich text editor is an element with `contenteditable`, the class `jss_richtext`, and the role `textbox`. It has no
@@ -569,17 +593,17 @@ The columns keep their types and their values, and the cells show them as before
   dialog without saving. An image file can be dropped on it. It no longer opens the file dialog on a press on the image,
   has no close icon and no `upload` options: the options of the column, such as `maxWidth`, `maxHeight` and
   `maxJpegSizeBytes`, are not read. The element of the dialog keeps it as `upload`, with `getValue()` and `setValue(value)`.
-- The new texts are translated with `jspreadsheet.setDictionary`: `Choose an image`, `Remove` and `Done`.
+- The new texts are translated with `gridwell.setDictionary`: `Choose an image`, `Remove` and `Done`.
 
-## Jspreadsheet does not need jSuites
+## Gridwell does not need jSuites
 
-Jspreadsheet no longer depends on jSuites. The package is not installed with it, and the bundle no longer reads the
-global `jSuites` or calls `require('jsuites')`. A page needs only the script and the stylesheet of Jspreadsheet:
+Gridwell no longer depends on jSuites. The package is not installed with it, and the bundle no longer reads the
+global `jSuites` or calls `require('jsuites')`. A page needs only the script and the stylesheet of Gridwell:
 
 - Remove the script and the stylesheet of jSuites, unless the application uses jSuites itself. The stylesheet of
-  Jspreadsheet has the styles of the tabs, the context menu, the toolbar, the pickers, the color picker, the dropdown, the
+  Gridwell has the styles of the tabs, the context menu, the toolbar, the pickers, the color picker, the dropdown, the
   calendar and the image editor. The stylesheet of jSuites still works next to it, but it is not needed.
-- `jspreadsheet.setDictionary` no longer passes the translations to `jSuites.setDictionary`. An application that shows
+- `gridwell.setDictionary` no longer passes the translations to `jSuites.setDictionary`. An application that shows
   jSuites controls of its own translates them with `jSuites.setDictionary`.
 - A press near the top right corner of an element with the class `jclose`, the close icon of the jSuites image editor, no
   longer closes the editor of the cell.
@@ -587,11 +611,11 @@ global `jSuites` or calls `require('jsuites')`. A page needs only the script and
 ## The pagination puts a space before "entries"
 
 The text after the number of rows on a page starts with a space: "Show 10 entries", where it showed "Show 10entries".
-A translation of `entries` with `jspreadsheet.setDictionary` needs no space at its start any more.
+A translation of `entries` with `gridwell.setDictionary` needs no space at its start any more.
 
 ## The language files translate by English text
 
-The files in `resources/lang` have the English texts as their keys, as `jspreadsheet.setDictionary` reads them, such as
+The files in `resources/lang` have the English texts as their keys, as `gridwell.setDictionary` reads them, such as
 `"Insert a new column before": "Eine neue Spalte davor einfügen"`. Their keys were the names of version 4, such as
 `insertANewColumnBefore`, so they translated nothing (issue #153). They also translate the texts that were added since,
 such as those of the toolbar, the calendar, the filters and the image editor. An application that read the old keys
@@ -604,7 +628,7 @@ The Borders item of the toolbar is a button that opens a dialog, where it was a 
 The dialog has the types of borders, then the border color, the border thickness and the border style, and the keyboard
 reaches each of them: the arrows move between the types, Tab moves between the types, the color, the thickness and the
 style, and Escape closes the dialog. The types are buttons with names, such as "Outer borders", which are new texts for
-`jspreadsheet.setDictionary`.
+`gridwell.setDictionary`.
 
 - In the items that the `toolbar` option gets, the borders are an icon item (`content: 'border_all'`), not an item of
   type `select` with `options`, `columns` and `onchange`.
@@ -615,7 +639,7 @@ style, and Escape closes the dialog. The types are buttons with names, such as "
 ## The short names of the months and the days have their own translations
 
 The short names of the months and the days, which the tokens `MMM`, `MON`, `DDD` and `DY` show and the calendar shows,
-are texts of their own: `Jan` to `Dec` and `Sun` to `Sat`. Jspreadsheet cut the first three letters of the full names,
+are texts of their own: `Jan` to `Dec` and `Sun` to `Sat`. Gridwell cut the first three letters of the full names,
 so a language whose short names are not those letters showed wrong names, such as `Thá` for `Thg 6` in Vietnamese,
 and could not read its own short names in a pasted date (issue #155). A dictionary that translated only the full names
 shows the English short names now: add the translations of the short names. The short name of May is the same text as

@@ -1,9 +1,9 @@
-export = jspreadsheet;
-export as namespace jspreadsheet;
+export = gridwell;
+export as namespace gridwell;
 
-declare const jspreadsheet: jspreadsheet.JSpreadsheet;
+declare const gridwell: gridwell.Gridwell;
 
-declare namespace jspreadsheet {
+declare namespace gridwell {
     type CellValue = string | number | boolean;
 
     type DropdownSourceItem =
@@ -627,7 +627,7 @@ declare namespace jspreadsheet {
      * The type of onevent, which gets every event: one signature for each event, with the name of the event, then the
      * arguments of its handler. A handler can name fewer parameters than an event gives, such as `(event) => …` or
      * `(event, instance) => …`. To narrow the arguments with a test of the name, take them as
-     * `(...args: jspreadsheet.EventArguments) => …`.
+     * `(...args: gridwell.EventArguments) => …`.
      */
     type EventListener = {
         [E in EventName]: (listener: (event: E, ...args: Parameters<EventHandlers[E]>) => unknown) => void;
@@ -732,7 +732,7 @@ declare namespace jspreadsheet {
         debugFormulas?: boolean;
 
         /**
-         * Calculate formulas with an engine of the application in place of the engine of `jspreadsheet.setFormulaEngine`.
+         * Calculate formulas with an engine of the application in place of the engine of `gridwell.setFormulaEngine`.
          * The worksheet does not calculate the referenced cells first. The engine reads their raw values and calculates referenced formulas itself.
          * The worksheet still calculates the dependent cells again when a referenced cell changes.
          * A formula that refers to its own cell shows "#ERROR", and the engine does not get it.
@@ -758,7 +758,7 @@ declare namespace jspreadsheet {
 
         /**
          * Texts of the accessible names that assistive technology reads. A missing text is the English default, which
-         * `jspreadsheet.setDictionary` can translate. `{0}` in a text stands for a value. Set `labels` when you create the
+         * `gridwell.setDictionary` can translate. `{0}` in a text stands for a value. Set `labels` when you create the
          * spreadsheet.
          */
         labels?: {
@@ -1155,7 +1155,7 @@ declare namespace jspreadsheet {
 
         /**
          * Event fired when a spreadsheet is created.
-         * @param instance - Jspreadsheet instance.
+         * @param instance - Gridwell instance.
          */
         onload?: (instance: SpreadsheetInstance) => void;
 
@@ -1428,7 +1428,7 @@ declare namespace jspreadsheet {
 
         /**
          * Default filename for a download method.
-         * @default "jspreadsheet"
+         * @default "gridwell"
          */
         csvFileName?: string;
 
@@ -1628,7 +1628,7 @@ declare namespace jspreadsheet {
         worksheetName?: string;
     }
 
-    interface JspreadsheetInstanceElement extends HTMLDivElement {
+    interface GridwellInstanceElement extends HTMLDivElement {
         /**
          * Jss instance this element belongs to
          */
@@ -1639,7 +1639,7 @@ declare namespace jspreadsheet {
         /**
          * Jss worksheet instance this element belongs to
          */
-        jspreadsheet: WorksheetInstance;
+        gridwell: WorksheetInstance;
     }
 
     interface DragInfo {
@@ -1799,12 +1799,12 @@ declare namespace jspreadsheet {
         /**
          * Root HTML element of this jss instance.
          */
-        el: JspreadsheetInstanceElement;
+        el: GridwellInstanceElement;
 
         /**
          * Alias for el.
          */
-        element: JspreadsheetInstanceElement;
+        element: GridwellInstanceElement;
 
         /**
          * Toogle table fullscreen mode.
@@ -1867,7 +1867,7 @@ declare namespace jspreadsheet {
     }
 
     /**
-     * A worksheet: an instance of the Worksheet class, one table of a spreadsheet. `jspreadsheet()` returns the
+     * A worksheet: an instance of the Worksheet class, one table of a spreadsheet. `gridwell()` returns the
      * worksheets. The methods are on the prototype, so they need the worksheet as `this`. The fields that only the
      * library uses, such as the col tags and the selection corner, are not declared here.
      */
@@ -2705,7 +2705,7 @@ declare namespace jspreadsheet {
 
     /**
      * An engine that calculates formulas, such as the default export of `@jspreadsheet/formula`. See
-     * `jspreadsheet.setFormulaEngine`.
+     * `gridwell.setFormulaEngine`.
      * @param expression - The formula without the "=". Its references, and its text literals, are names of `variables`.
      * @param variables - The values of the references and the text literals, by name. A text is a JavaScript string literal.
      * @param x - Column index of the cell. Undefined for a footer, and when `executeFormula` gets no coordinates.
@@ -2721,7 +2721,7 @@ declare namespace jspreadsheet {
         instance: WorksheetInstance
     ) => unknown;
 
-    interface JSpreadsheet {
+    interface Gridwell {
         /**
          * Create a spreadsheet from a table, which is replaced by a div in its parent, so it must have a parent: without
          * one, this throws. The first worksheet loads the data and the options of the table. It returns the worksheets,
@@ -2749,7 +2749,7 @@ declare namespace jspreadsheet {
          * @param element - Root element of jss instance.
          * @param destroyEventHandlers - Remove event listeners. Default: false.
          */
-        destroy: (element: JspreadsheetInstanceElement, destroyEventHandlers?: boolean) => void;
+        destroy: (element: GridwellInstanceElement, destroyEventHandlers?: boolean) => void;
 
         /**
          * Destroy all instances of jss.

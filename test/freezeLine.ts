@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
-function frozenWorksheet(columns?: Jspreadsheet.Column[]) {
-    const worksheet = jspreadsheet(root, {
+function frozenWorksheet(columns?: Gridwell.Column[]) {
+    const worksheet = gridwell(root, {
         worksheets: [{ minDimensions: [12, 3], freezeColumns: 3, columns, tableOverflow: true }],
     })[0];
 

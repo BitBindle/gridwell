@@ -1,4 +1,4 @@
-import type jspreadsheet from '../jspreadsheet';
+import type gridwell from '../gridwell';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -41,7 +41,7 @@ export class Meta {
         const worksheet = this.worksheet;
 
         if (worksheet.options.meta) {
-            const newMeta: Record<string, jspreadsheet.MetaInformation> = {};
+            const newMeta: Record<string, gridwell.MetaInformation> = {};
             for (const [key, meta] of Object.entries(worksheet.options.meta)) {
                 if (affectedCells[key]) {
                     newMeta[affectedCells[key]] = meta;
@@ -60,7 +60,7 @@ export class Meta {
      * @param k - The key, with a cell name.
      * @param v - The value, with a cell name.
      */
-    set(o: string | Record<string, jspreadsheet.MetaInformation>, k?: string, v?: string) {
+    set(o: string | Record<string, gridwell.MetaInformation>, k?: string, v?: string) {
         const worksheet = this.worksheet;
 
         if (!worksheet.options.meta) {
@@ -84,12 +84,12 @@ export class Meta {
                 }
 
                 // o is the information by cell name
-                for (const [property, value] of Object.entries((o as Record<string, jspreadsheet.MetaInformation>)[key])) {
+                for (const [property, value] of Object.entries((o as Record<string, gridwell.MetaInformation>)[key])) {
                     worksheet.options.meta[key][property] = value;
                 }
             }
 
-            worksheet.dispatch('onchangemeta', worksheet, o as Record<string, jspreadsheet.MetaInformation>);
+            worksheet.dispatch('onchangemeta', worksheet, o as Record<string, gridwell.MetaInformation>);
         }
     }
 }

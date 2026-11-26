@@ -1,9 +1,9 @@
 /**
- * Types the library code uses internally. They are not published: the public typings are in src/jspreadsheet.d.ts.
+ * Types the library code uses internally. They are not published: the public typings are in src/gridwell.d.ts.
  *
  * Import them with `import type { Worksheet } from '../types/internal';`.
  */
-import type jspreadsheet from '../jspreadsheet';
+import type gridwell from '../gridwell';
 import type { Tabs } from '../utils/tabs';
 import type { Toolbar } from '../utils/toolbar';
 import type { ToolbarControl } from '../utils/toolbarControl';
@@ -34,24 +34,24 @@ export type { Spreadsheet, Worksheet };
 /**
  * The fields of a worksheet as the library sees it: the public instance and the state that only the library uses.
  */
-export interface WorksheetState extends jspreadsheet.WorksheetInstance {
+export interface WorksheetState extends gridwell.WorksheetInstance {
     parent: Spreadsheet;
 
     /** The events find the worksheet of an element through jssWorksheet. */
-    element: jspreadsheet.JworksheetInstanceElement & { jssWorksheet: Worksheet };
+    element: gridwell.JworksheetInstanceElement & { jssWorksheet: Worksheet };
 
-    options: Omit<jspreadsheet.WorksheetOptions, 'data' | 'columns' | 'minDimensions'> & {
+    options: Omit<gridwell.WorksheetOptions, 'data' | 'columns' | 'minDimensions'> & {
         /**
          * setData changes rows that are objects to arrays, so the library code always gets arrays. setData also sets
          * an empty array when there is no data.
          */
-        data: jspreadsheet.CellValue[][];
+        data: gridwell.CellValue[][];
         /**
          * Column is a union by type, and the code reads the options of one type after a test of the type that the
          * type check cannot follow. The index signature allows that. The worksheet is set up with an empty array when
          * there are no columns.
          */
-        columns: (jspreadsheet.Column & Record<string, any>)[];
+        columns: (gridwell.Column & Record<string, any>)[];
         /** The worksheet is set up with [0, 0] when the option is missing. */
         minDimensions: [number, number];
     };
@@ -104,7 +104,7 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
     /** The keys of an open editor and of the grid. */
     keyboard: Keyboard;
 
-    /** The div that holds the link to the Jspreadsheet site, below the table. */
+    /** The div that holds the link to the Gridwell site, below the table. */
     ads: HTMLDivElement;
 
     /** The col tags of the table, one for each column, with the index of the column. */
@@ -141,11 +141,11 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
 /**
  * The fields of a spreadsheet as the library sees it.
  */
-export interface SpreadsheetState extends jspreadsheet.SpreadsheetInstance {
+export interface SpreadsheetState extends gridwell.SpreadsheetInstance {
     worksheets: Worksheet[];
 
     /** The tabs of the worksheets, which the Tabs constructor keeps on the element. */
-    element: jspreadsheet.JspreadsheetInstanceElement & { tabs?: Tabs };
+    element: gridwell.GridwellInstanceElement & { tabs?: Tabs };
 
     /** The context menu, which keeps its ContextMenu on its element. */
     contextMenu: HTMLDivElement & { contextmenu: ContextMenu };
@@ -163,16 +163,16 @@ export interface SpreadsheetState extends jspreadsheet.SpreadsheetInstance {
 /** A merged range in options.mergeCells: the colspan, the rowspan and, after setMerge, the cells that the range hides. */
 export type MergeInfo = [number, number, HTMLTableCellElement[]?];
 
-/** The handlers of the events, by event name (see src/jspreadsheet.d.ts). */
-export type EventHandlers = jspreadsheet.EventHandlers;
+/** The handlers of the events, by event name (see src/gridwell.d.ts). */
+export type EventHandlers = gridwell.EventHandlers;
 
 /** The name of an event that dispatch can trigger. */
-export type EventName = jspreadsheet.EventName;
+export type EventName = gridwell.EventName;
 
 /**
- * The jspreadsheet function, with the state the library keeps on it.
+ * The gridwell function, with the state the library keeps on it.
  */
-export interface Library extends jspreadsheet.JSpreadsheet {
+export interface Library extends gridwell.Gridwell {
     /** The worksheet that gets the keyboard and clipboard events. */
     current: Worksheet | null;
 
@@ -223,8 +223,8 @@ export type HistoryCellChange = {
     col: number;
     row: number;
     /** Undefined when setValue was given undefined. */
-    value: jspreadsheet.CellValue | undefined;
-    oldValue: jspreadsheet.CellValue;
+    value: gridwell.CellValue | undefined;
+    oldValue: gridwell.CellValue;
 };
 
 /**
@@ -244,7 +244,7 @@ export type WorksheetHistoryRecord =
           cols: Worksheet['cols'];
           records: Worksheet['records'];
           footers: (string | number)[][];
-          data: jspreadsheet.CellValue[][];
+          data: gridwell.CellValue[][];
       }
     | {
           action: 'insertRow' | 'deleteRow';
@@ -253,7 +253,7 @@ export type WorksheetHistoryRecord =
           /** insertRow keeps its argument. deleteRow stores 1, so that undo inserts the rows before rowNumber. */
           insertBefore: boolean | number | undefined;
           rowRecords: Worksheet['records'];
-          rowData: jspreadsheet.CellValue[][];
+          rowData: gridwell.CellValue[][];
           rowNode: Worksheet['rows'];
       }
     | { action: 'moveColumn' | 'moveRow'; oldValue: number; newValue: number }
@@ -275,7 +275,7 @@ export type WorksheetHistoryRecord =
           newStyle?: Record<string, string>;
           oldStyle?: Record<string, string>;
       }
-    | { action: 'setMerge'; column: string; colspan: number; rowspan: number; data: jspreadsheet.CellValue[] }
+    | { action: 'setMerge'; column: string; colspan: number; rowspan: number; data: gridwell.CellValue[] }
     | { action: 'orderBy'; rows: number[]; column: number; order: boolean | number }
     /** The styles by cell name, each as 'property:value' entries joined with ';' */
     | { action: 'setStyle'; oldValue: Record<string, string>; newValue: Record<string, string> };

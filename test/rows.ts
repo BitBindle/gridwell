@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 describe('Use the rows method', () => {
     it('deleteRow and a row is removed', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -40,7 +40,7 @@ describe('Use the rows method', () => {
     });
 
     it('insertRow and a row is added', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -76,7 +76,7 @@ describe('Use the rows method', () => {
     });
 
     it('moveRow and the row is moved', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -113,7 +113,7 @@ describe('Use the rows method', () => {
     });
 
     it('deleteRow history', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -154,7 +154,7 @@ describe('Use the rows method', () => {
     });
 
     it('insertRow history', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -195,7 +195,7 @@ describe('Use the rows method', () => {
     });
 
     it('moveRow history', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -232,9 +232,9 @@ describe('Use the rows method', () => {
 
 describe('Drag a row', () => {
     // The spreadsheet adds its event handlers after a promise
-    const load = (options: Jspreadsheet.SpreadsheetOptions) =>
+    const load = (options: Gridwell.SpreadsheetOptions) =>
         new Promise<Worksheet>((resolve) => {
-            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+            const instance = gridwell(root, { ...options, onload: () => resolve(instance[0]) });
         });
 
     // jsdom has no layout, so offsetX and offsetY are set: a press at the right edge of a row number starts a drag
@@ -272,8 +272,8 @@ describe('Drag a row', () => {
 
 describe('Insert rows', () => {
     it('gives the events the new rows, and puts them before or after the row', () => {
-        const events: [string, Parameters<NonNullable<Jspreadsheet.SpreadsheetOptions['oninsertrow']>>[1]][] = [];
-        const worksheet = jspreadsheet(root, {
+        const events: [string, Parameters<NonNullable<Gridwell.SpreadsheetOptions['oninsertrow']>>[1]][] = [];
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -332,7 +332,7 @@ describe('Insert rows', () => {
 
 describe('Row heights, visibility and data', () => {
     it('getHeight returns the height of a row, and of the rows that have one', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -355,7 +355,7 @@ describe('Row heights, visibility and data', () => {
     });
 
     it('hideRow and showRow hide and show the rows', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -381,7 +381,7 @@ describe('Row heights, visibility and data', () => {
     });
 
     it('getRowData and setRowData read and change the values of a row', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [

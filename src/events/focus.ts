@@ -15,11 +15,11 @@ export function focusInControls(e: TargetEvent<FocusEvent>) {
     }
 
     const element = e.target.closest('.jss_container') as Worksheet['element'] | null;
-    if (!element || libraryBase.jspreadsheet.current === element.jssWorksheet) {
+    if (!element || libraryBase.gridwell.current === element.jssWorksheet) {
         return;
     }
 
-    const previous = libraryBase.jspreadsheet.current;
+    const previous = libraryBase.gridwell.current;
     if (previous) {
         if (previous.editor.isOpen()) {
             previous.editor.close(previous.editor.cell, true);
@@ -28,7 +28,7 @@ export function focusInControls(e: TargetEvent<FocusEvent>) {
     }
 
     const worksheet = element.jssWorksheet;
-    libraryBase.jspreadsheet.current = worksheet;
+    libraryBase.gridwell.current = worksheet;
 
     if (!worksheet.selection.range && e.target.tagName === 'TD' && worksheet.tbody.contains(e.target)) {
         const x = getIndex(e.target, 'data-x');

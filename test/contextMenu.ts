@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 describe('The default context menu', () => {
     // The spreadsheet adds its event handlers after a promise
-    const load = (options: Jspreadsheet.SpreadsheetOptions) =>
+    const load = (options: Gridwell.SpreadsheetOptions) =>
         new Promise<Worksheet[]>((resolve) => {
-            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance) });
+            const instance = gridwell(root, { ...options, onload: () => resolve(instance) });
         });
 
     const contextmenu = (element: Element) => element.dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
@@ -236,7 +236,7 @@ describe('The default context menu', () => {
 
         expect(messages).to.have.length(1);
         expect(messages[0]).to.match(/Gridwell/);
-        expect(String(messages[0])).to.contain(jspreadsheet.version().version);
+        expect(String(messages[0])).to.contain(gridwell.version().version);
     });
 
     it('shows the text of the about option with "About"', async () => {
@@ -375,9 +375,9 @@ describe('The default context menu', () => {
 });
 
 describe('The context menu', () => {
-    const load = (options: Jspreadsheet.SpreadsheetOptions, element: HTMLElement = root) =>
+    const load = (options: Gridwell.SpreadsheetOptions, element: HTMLElement = root) =>
         new Promise<Worksheet[]>((resolve) => {
-            const instance = jspreadsheet(element, { ...options, onload: () => resolve(instance) });
+            const instance = gridwell(element, { ...options, onload: () => resolve(instance) });
         });
 
     const menu = (element: Element = root) => element.querySelector<HTMLElement>('.jss_contextmenu')!;
@@ -390,7 +390,7 @@ describe('The context menu', () => {
     const open = (element: Element, init: MouseEventInit = {}) =>
         element.dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true, ...init }));
 
-    const options = (choices: string[]): Jspreadsheet.SpreadsheetOptions => ({
+    const options = (choices: string[]): Gridwell.SpreadsheetOptions => ({
         worksheets: [{ minDimensions: [2, 2] }],
         contextMenu: () => [
             {
@@ -627,7 +627,7 @@ describe('The context menu', () => {
             expect(menu().classList.contains('jcontextmenu-focus')).to.equal(false);
             expect(menu(other).classList.contains('jcontextmenu-focus')).to.equal(true);
         } finally {
-            jspreadsheet.destroy(other as Jspreadsheet.JspreadsheetInstanceElement);
+            gridwell.destroy(other as Gridwell.GridwellInstanceElement);
             other.remove();
         }
     });

@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet from './support/jspreadsheet';
+import gridwell from './support/gridwell';
 
 describe('Use footers', () => {
     it('Start the worksheet with a footer', () => {
-        jspreadsheet(root, {
+        gridwell(root, {
             tabs: true,
             worksheets: [
                 {
@@ -38,7 +38,7 @@ describe('Use footers', () => {
     });
 
     it('insertColumn adds an empty footer cell for each new column', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [['1', '2', '3']],
@@ -65,7 +65,7 @@ describe('Use footers', () => {
 
     it('runs a footer formula without coordinates, also when it refers to the data cell at its position (issue #18)', () => {
         const calls: [string, number | undefined, number | undefined][] = [];
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [
                 {
                     data: [

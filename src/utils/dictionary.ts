@@ -1,4 +1,4 @@
-// The translations of jspreadsheet.setDictionary, by English text. A Map, so that a text such as "constructor" is not
+// The translations of gridwell.setDictionary, by English text. A Map, so that a text such as "constructor" is not
 // read from the prototype of an object.
 const dictionary = new Map<string, string>();
 

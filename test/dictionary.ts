@@ -1,24 +1,24 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Worksheet } from './support/gridwell';
 
 describe('Translate the texts with setDictionary', () => {
     // The spreadsheet adds its event handlers after a promise
     const load = (columns?: { type: 'calendar' }[]) =>
         new Promise<Worksheet>((resolve) => {
-            const instance = jspreadsheet(root, { worksheets: [{ minDimensions: [2, 2], columns }], onload: () => resolve(instance[0]) });
+            const instance = gridwell(root, { worksheets: [{ minDimensions: [2, 2], columns }], onload: () => resolve(instance[0]) });
         });
 
     const titles = () => [...root.querySelectorAll('.jss_contextmenu > div:not(.header) a')].map((item) => item.textContent);
 
     afterEach(() => {
         // An empty translation shows the English text again
-        jspreadsheet.setDictionary({ 'Insert a new column before': '', 'Delete selected columns': '', Update: '', '(Blanks)': '' });
+        gridwell.setDictionary({ 'Insert a new column before': '', 'Delete selected columns': '', Update: '', '(Blanks)': '' });
     });
 
     it('translates the items of the context menu', async () => {
         const worksheet = await load();
-        jspreadsheet.setDictionary({ 'Insert a new column before': 'Neue Spalte davor einfügen' });
+        gridwell.setDictionary({ 'Insert a new column before': 'Neue Spalte davor einfügen' });
 
         worksheet.headers[0].dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
 
@@ -28,8 +28,8 @@ describe('Translate the texts with setDictionary', () => {
 
     it('keeps the translations of earlier calls', async () => {
         const worksheet = await load();
-        jspreadsheet.setDictionary({ 'Insert a new column before': 'Neue Spalte davor einfügen' });
-        jspreadsheet.setDictionary({ 'Delete selected columns': 'Ausgewählte Spalten löschen' });
+        gridwell.setDictionary({ 'Insert a new column before': 'Neue Spalte davor einfügen' });
+        gridwell.setDictionary({ 'Delete selected columns': 'Ausgewählte Spalten löschen' });
 
         worksheet.headers[0].dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
 
@@ -38,7 +38,7 @@ describe('Translate the texts with setDictionary', () => {
 
     it('translates the texts of the calendar', async () => {
         const worksheet = await load([{ type: 'calendar' }]);
-        jspreadsheet.setDictionary({ Update: 'Übernehmen' });
+        gridwell.setDictionary({ Update: 'Übernehmen' });
 
         worksheet.openEditor(worksheet.records[0][0].element);
 
@@ -48,8 +48,8 @@ describe('Translate the texts with setDictionary', () => {
     });
 
     it('translates the item of the empty cells in the filter of a column (issue #150)', async () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ filters: true, data: [['a'], ['']] }] })[0];
-        jspreadsheet.setDictionary({ '(Blanks)': '(Leer)' });
+        const worksheet = gridwell(root, { worksheets: [{ filters: true, data: [['a'], ['']] }] })[0];
+        gridwell.setDictionary({ '(Blanks)': '(Leer)' });
 
         worksheet.openFilter(0);
 

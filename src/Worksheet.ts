@@ -4,7 +4,7 @@ import libraryBase from './utils/libraryBase.js';
 import { parseCSV } from './utils/helpers.js';
 import { getIdFromColumnName } from './utils/internalHelpers.js';
 import { cutControls } from './events/clipboard.js';
-import type jspreadsheet from './jspreadsheet';
+import type gridwell from './gridwell';
 import { Accessibility } from './components/Accessibility.js';
 import { Cells } from './components/Cells.js';
 import { Clipboard } from './components/Clipboard.js';
@@ -25,7 +25,7 @@ import { View } from './components/View.js';
 import type { EventHandlers, EventName, Spreadsheet, WorksheetState } from './types/internal';
 
 /** The rows that persistence posts to the server, the data of onbeforesave */
-type SaveData = Parameters<NonNullable<jspreadsheet.SpreadsheetOptions['onbeforesave']>>[2];
+type SaveData = Parameters<NonNullable<gridwell.SpreadsheetOptions['onbeforesave']>>[2];
 
 /**
  * The fields of a worksheet and its public methods. The fields are in WorksheetState (src/types/internal.d.ts). The
@@ -42,7 +42,7 @@ export interface Worksheet extends WorksheetState {}
  */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class Worksheet {
-    constructor(spreadsheet: Spreadsheet, options: jspreadsheet.WorksheetOptions, element?: HTMLElement) {
+    constructor(spreadsheet: Spreadsheet, options: gridwell.WorksheetOptions, element?: HTMLElement) {
         this.parent = spreadsheet;
         // build fills in the options that the internal type says are always there
         this.options = options as Worksheet['options'];
@@ -87,14 +87,14 @@ export class Worksheet {
                 for (const plugin of Object.values(spreadsheet.plugins)) {
                     if (typeof plugin.persistence === 'function') {
                         // The changes of onafterchanges
-                        plugin.persistence(this, 'setValue', { data: args[1] as jspreadsheet.CellChange[] });
+                        plugin.persistence(this, 'setValue', { data: args[1] as gridwell.CellChange[] });
                     }
                 }
             }
 
             if (this.options.persistence) {
                 const url = this.options.persistence === true ? this.options.url : this.options.persistence;
-                const data = this.prepareJson(args[1] as jspreadsheet.CellChange[]);
+                const data = this.prepareJson(args[1] as gridwell.CellChange[]);
                 this.save(url, data);
             }
         }
@@ -107,7 +107,7 @@ export class Worksheet {
      * Prepare JSON in the correct format
      * @param data - The changed cells.
      */
-    private prepareJson(data: jspreadsheet.CellChange[]) {
+    private prepareJson(data: gridwell.CellChange[]) {
         const rows: SaveData = [];
         for (const change of data) {
             const x = change.x;
@@ -122,7 +122,7 @@ export class Worksheet {
                 };
             }
             // The value is undefined after setValue without a value, and the JSON leaves it out
-            rows[y].data[k] = change.value as jspreadsheet.CellValue;
+            rows[y].data[k] = change.value as gridwell.CellValue;
         }
 
         // Filter rows
@@ -171,9 +171,9 @@ export class Worksheet {
      * @param config - The options to change.
      * @param spreadsheetLevel - Change the options of the spreadsheet of the worksheet.
      */
-    setConfig(config: Partial<jspreadsheet.WorksheetOptions>, spreadsheetLevel?: false): void;
-    setConfig(config: Partial<jspreadsheet.SpreadsheetOptions>, spreadsheetLevel: true): void;
-    setConfig(config: Partial<jspreadsheet.SpreadsheetOptions> | Partial<jspreadsheet.WorksheetOptions>, spreadsheetLevel?: boolean) {
+    setConfig(config: Partial<gridwell.WorksheetOptions>, spreadsheetLevel?: false): void;
+    setConfig(config: Partial<gridwell.SpreadsheetOptions>, spreadsheetLevel: true): void;
+    setConfig(config: Partial<gridwell.SpreadsheetOptions> | Partial<gridwell.WorksheetOptions>, spreadsheetLevel?: boolean) {
         if (spreadsheetLevel) {
             this.parent.setConfig(config);
             return;
@@ -224,26 +224,21 @@ export class Worksheet {
         return this.selection.getSelectedRows(visibleOnly);
     }
 
-    getData(highlighted?: boolean, processed?: boolean, delimiter?: undefined | null | '', asJson?: false): jspreadsheet.CellValue[][];
-    getData(highlighted: boolean | undefined, processed: boolean | undefined, delimiter: '', asJson: true): Record<number, jspreadsheet.CellValue>[];
+    getData(highlighted?: boolean, processed?: boolean, delimiter?: undefined | null | '', asJson?: false): gridwell.CellValue[][];
+    getData(highlighted: boolean | undefined, processed: boolean | undefined, delimiter: '', asJson: true): Record<number, gridwell.CellValue>[];
     getData(highlighted: boolean | undefined, processed: boolean | undefined, delimiter: string, asJson?: boolean): string;
-    getData(
-        highlighted: boolean | undefined,
-        processed: boolean | undefined,
-        delimiter: undefined | null,
-        asJson: true
-    ): Record<number, jspreadsheet.CellValue>[];
+    getData(highlighted: boolean | undefined, processed: boolean | undefined, delimiter: undefined | null, asJson: true): Record<number, gridwell.CellValue>[];
     getData(
         highlighted?: boolean,
         processed?: boolean,
         delimiter?: string | null,
         asJson?: boolean
-    ): jspreadsheet.CellValue[][] | Record<number, jspreadsheet.CellValue>[] | string;
+    ): gridwell.CellValue[][] | Record<number, gridwell.CellValue>[] | string;
     getData(highlighted?: boolean, processed?: boolean, delimiter?: string | null, asJson?: boolean) {
         return this.data.get(highlighted, processed, delimiter, asJson);
     }
 
-    setData(data?: jspreadsheet.CellValue[][] | Record<string, jspreadsheet.CellValue>[]) {
+    setData(data?: gridwell.CellValue[][] | Record<string, gridwell.CellValue>[]) {
         return this.data.set(data);
     }
 
@@ -255,11 +250,11 @@ export class Worksheet {
         return this.data.getValueFromCoords(x, y, processedValue);
     }
 
-    setValue(cell: Parameters<jspreadsheet.WorksheetInstance['setValue']>[0], value?: jspreadsheet.CellValue, force?: boolean) {
+    setValue(cell: Parameters<gridwell.WorksheetInstance['setValue']>[0], value?: gridwell.CellValue, force?: boolean) {
         return this.data.setValue(cell, value, force);
     }
 
-    setValueFromCoords(x: number, y: number, value: jspreadsheet.CellValue, force?: boolean) {
+    setValueFromCoords(x: number, y: number, value: gridwell.CellValue, force?: boolean) {
         return this.data.setValueFromCoords(x, y, value, force);
     }
 
@@ -273,7 +268,7 @@ export class Worksheet {
         return this.columns.setWidth(column, width);
     }
 
-    insertRow(mixed?: number | jspreadsheet.CellValue[], rowNumber?: number, insertBefore?: boolean | number) {
+    insertRow(mixed?: number | gridwell.CellValue[], rowNumber?: number, insertBefore?: boolean | number) {
         return this.rowManager.insert(mixed, rowNumber, insertBefore);
     }
 
@@ -297,7 +292,7 @@ export class Worksheet {
         return this.rowManager.getData(rowNumber, processed);
     }
 
-    setRowData(rowNumber: number, data: (jspreadsheet.CellValue | null)[], force?: boolean) {
+    setRowData(rowNumber: number, data: (gridwell.CellValue | null)[], force?: boolean) {
         return this.rowManager.setData(rowNumber, data, force);
     }
 
@@ -323,7 +318,7 @@ export class Worksheet {
         return this.merges.destroy();
     }
 
-    removeMerge(cellName: string, data?: jspreadsheet.CellValue[]) {
+    removeMerge(cellName: string, data?: gridwell.CellValue[]) {
         return this.merges.remove(cellName, data);
     }
 
@@ -367,7 +362,7 @@ export class Worksheet {
         return this.styles.reset(o, ignoreHistoryAndEvents);
     }
 
-    insertColumn(mixed?: number | jspreadsheet.CellValue[], columnNumber?: number, insertBefore?: boolean | number, properties?: jspreadsheet.Column[]) {
+    insertColumn(mixed?: number | gridwell.CellValue[], columnNumber?: number, insertBefore?: boolean | number, properties?: gridwell.Column[]) {
         return this.columns.insert(mixed, columnNumber, insertBefore, properties);
     }
 
@@ -383,7 +378,7 @@ export class Worksheet {
         return this.columns.getData(columnNumber, processed);
     }
 
-    setColumnData(colNumber: number, data: (jspreadsheet.CellValue | null)[], force?: boolean) {
+    setColumnData(colNumber: number, data: (gridwell.CellValue | null)[], force?: boolean) {
         return this.columns.setData(colNumber, data, force);
     }
 
@@ -437,15 +432,15 @@ export class Worksheet {
         return this.cells.getLabel(x, y);
     }
 
-    getMeta(cell?: undefined): Record<string, jspreadsheet.MetaInformation> | undefined;
-    getMeta(cell: string): jspreadsheet.MetaInformation | null;
+    getMeta(cell?: undefined): Record<string, gridwell.MetaInformation> | undefined;
+    getMeta(cell: string): gridwell.MetaInformation | null;
     getMeta(cell?: string) {
         return this.meta.get(cell);
     }
 
     setMeta(o: string, k: string, v: string): void;
-    setMeta(o: Record<string, jspreadsheet.MetaInformation>): void;
-    setMeta(o: string | Record<string, jspreadsheet.MetaInformation>, k?: string, v?: string) {
+    setMeta(o: Record<string, gridwell.MetaInformation>): void;
+    setMeta(o: string | Record<string, gridwell.MetaInformation>, k?: string, v?: string) {
         return this.meta.set(o, k, v);
     }
 
@@ -554,7 +549,7 @@ export class Worksheet {
     /**
      * Add a worksheet to the spreadsheet, in a new tab.
      */
-    createWorksheet(options: jspreadsheet.WorksheetOptions) {
+    createWorksheet(options: gridwell.WorksheetOptions) {
         const spreadsheet = this.parent;
 
         spreadsheet.creationThroughJss = true;
@@ -887,7 +882,7 @@ export class Worksheet {
         this.element.classList.add('jss_container');
 
         this.element.jssWorksheet = this;
-        this.element.jspreadsheet = this;
+        this.element.gridwell = this;
 
         this.setLayout();
         this.loadContent();
@@ -899,7 +894,7 @@ export class Worksheet {
     private prepareTable() {
         // Lazy loading
         if (this.options.lazyLoading === true && this.options.tableOverflow !== true && this.parent.config.fullscreen !== true) {
-            console.error('Jspreadsheet: The lazyloading only works when tableOverflow = yes or fullscreen = yes');
+            console.error('Gridwell: The lazyloading only works when tableOverflow = yes or fullscreen = yes');
             this.options.lazyLoading = false;
         }
 
@@ -995,7 +990,7 @@ export class Worksheet {
             }
         }
 
-        libraryBase.jspreadsheet.current = this;
+        libraryBase.gridwell.current = this;
 
         const promises = [];
 
@@ -1039,7 +1034,7 @@ export class Worksheet {
                 request(this, this.options.url, 'json').then((response) => {
                     if (response) {
                         // The data, or an object with the data in its data property. setData changes rows of objects to arrays.
-                        this.options.data = (response.result as { data?: jspreadsheet.CellValue[][] }).data || (response.result as jspreadsheet.CellValue[][]);
+                        this.options.data = (response.result as { data?: gridwell.CellValue[][] }).data || (response.result as gridwell.CellValue[][]);
                     }
                     // Without the data, the worksheet is built with its other options
                     this.prepareTable();

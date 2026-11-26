@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
-import jspreadsheet from './support/jspreadsheet';
+import gridwell from './support/gridwell';
 
 describe('Sorting tests', () => {
     it('Default sorting', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -37,7 +37,7 @@ describe('Sorting tests', () => {
     });
 
     it('Custom sorting', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: [
@@ -88,7 +88,7 @@ describe('Sorting tests', () => {
     });
 
     it('orderBy history', () => {
-        const instance = jspreadsheet(root, {
+        const instance = gridwell(root, {
             worksheets: [
                 {
                     data: [

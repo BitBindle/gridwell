@@ -1,13 +1,13 @@
 import { expect } from 'chai';
 
 import { stubFetch } from './support/fetch';
-import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+import gridwell, { type Gridwell, type Worksheet } from './support/gridwell';
 
 describe('Events of the spreadsheet', () => {
     it('gives the handlers the worksheet or the spreadsheet that triggers the event as this', () => {
         const calls: unknown[][] = [];
-        let spreadsheet: Jspreadsheet.SpreadsheetInstance | undefined;
-        const worksheet = jspreadsheet(root, {
+        let spreadsheet: Gridwell.SpreadsheetInstance | undefined;
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [['a']] }],
             onevent(event) {
                 if (event === 'onchange' || event === 'onload') {
@@ -49,7 +49,7 @@ describe('Events of the spreadsheet', () => {
     });
 
     it('returns the result of the last handler from dispatch, and no handler runs while ignoreEvents is set', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             worksheets: [{ data: [['a']] }],
             onbeforechange() {
                 return 'replaced';
@@ -81,7 +81,7 @@ describe('Events of the spreadsheet', () => {
 
         it('posts the changed rows to the url and triggers onsave', async () => {
             const saved: unknown[] = [];
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [{ data: [{ first: 'a', second: 'b' }], columns: [{ name: 'first' }, { name: 'second' }], persistence: '/save' }],
                 onsave(spreadsheet, instance, data) {
                     saved.push(data);
@@ -102,7 +102,7 @@ describe('Events of the spreadsheet', () => {
 
         it('posts the data that onbeforesave returns, or nothing when it returns false', () => {
             let result: { replaced: boolean } | false = { replaced: true };
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [{ data: [['a']], persistence: '/other' }],
                 onbeforesave() {
                     return result;
@@ -124,7 +124,7 @@ describe('Events of the spreadsheet', () => {
         it('triggers onbeforesave and onsave for an undo and a redo, so that onbeforesave can cancel the post (issue #57)', async () => {
             const calls: unknown[][] = [];
             let result: false | undefined = undefined;
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [{ data: [['a', 'b']], persistence: '/save' }],
                 onbeforesave: (spreadsheet, instance, data) => {
                     calls.push(['onbeforesave', data]);
@@ -154,7 +154,7 @@ describe('Events of the spreadsheet', () => {
         });
 
         it('sends the headers that jSuites.ajax sent', async () => {
-            const worksheet = jspreadsheet(root, { worksheets: [{ data: [['a']], persistence: '/save' }] })[0];
+            const worksheet = gridwell(root, { worksheets: [{ data: [['a']], persistence: '/save' }] })[0];
 
             worksheet.setValue('A1', 'x');
             await server.settle();
@@ -171,7 +171,7 @@ describe('Events of the spreadsheet', () => {
             server.responses['/save'] = { status: 500 };
 
             try {
-                const worksheet = jspreadsheet(root, {
+                const worksheet = gridwell(root, {
                     worksheets: [{ data: [['a']], persistence: '/save' }],
                     onsave: (spreadsheet, instance, data) => saved.push(data),
                 })[0];
@@ -189,7 +189,7 @@ describe('Events of the spreadsheet', () => {
         it('triggers onbeforerequest for the post of an undo, and posts nothing when it returns false', async () => {
             const urls: string[] = [];
             let result: false | undefined = undefined;
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [{ data: [['a']], persistence: '/save' }],
                 onbeforerequest(instance, url) {
                     urls.push(url);
@@ -214,7 +214,7 @@ describe('Events of the spreadsheet', () => {
 
         it('gives the changes to the persistence of a plugin', () => {
             const changes: unknown[][] = [];
-            const worksheet = jspreadsheet(root, {
+            const worksheet = gridwell(root, {
                 worksheets: [{ data: [['a']] }],
                 plugins: {
                     test() {
@@ -237,7 +237,7 @@ describe('Events of the spreadsheet', () => {
 
 describe('Spreadsheet methods', () => {
     it('gets and sets the options of the spreadsheet and of a worksheet', () => {
-        const worksheet = jspreadsheet(root, {
+        const worksheet = gridwell(root, {
             toolbar: false,
             worksheets: [{ data: [['a']] }],
         })[0];
@@ -262,7 +262,7 @@ describe('Spreadsheet methods', () => {
     });
 
     it('adds plugins with setPlugins', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['a']] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: [['a']] }] })[0];
         const spreadsheet = worksheet.parent;
         const received: unknown[] = [];
 
@@ -270,16 +270,16 @@ describe('Spreadsheet methods', () => {
             test(instance, options, config) {
                 received.push(this, instance, options, config);
                 // The plugin is an object that the test finds again, without any method of a plugin
-                return { name: 'test' } as Jspreadsheet.Plugin;
+                return { name: 'test' } as Gridwell.Plugin;
             },
         });
 
         expect(spreadsheet.plugins.test).to.eql({ name: 'test' });
-        expect(received).to.eql([jspreadsheet, spreadsheet, {}, spreadsheet.config]);
+        expect(received).to.eql([gridwell, spreadsheet, {}, spreadsheet.config]);
     });
 
     it('turns the fullscreen on and off', () => {
-        const worksheet = jspreadsheet(root, { worksheets: [{ data: [['a']] }] })[0];
+        const worksheet = gridwell(root, { worksheets: [{ data: [['a']] }] })[0];
         const spreadsheet = worksheet.parent;
 
         spreadsheet.fullscreen();
@@ -296,7 +296,7 @@ describe('Spreadsheet methods', () => {
     it('gives the index of the worksheet that the spreadsheet shows', async () => {
         // The spreadsheet builds the second worksheet after the first
         const worksheets = await new Promise<Worksheet[]>((resolve) => {
-            const instance = jspreadsheet(root, { worksheets: [{ data: [['a']] }, { data: [['b']] }], onload: () => resolve(instance) });
+            const instance = gridwell(root, { worksheets: [{ data: [['a']] }, { data: [['b']] }], onload: () => resolve(instance) });
         });
 
         expect(worksheets[0].parent.getWorksheetActive()).to.equal(0);

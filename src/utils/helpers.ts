@@ -4,7 +4,7 @@ import type { Spreadsheet } from '../types/internal';
  * Get carret position for one element
  */
 export function getCaretIndex(this: Spreadsheet, e: Node) {
-    // Applications call it as jspreadsheet.helpers.getCaretIndex, so this is a spreadsheet only when the caller sets it.
+    // Applications call it as gridwell.helpers.getCaretIndex, so this is a spreadsheet only when the caller sets it.
     // The root option can be a shadow root, which has getSelection only in some browsers, or an element, which never has
     // it. Without it, the selection of the window has the caret.
     const root = this?.config?.root as (Node & { getSelection?: () => Selection | null }) | undefined;
@@ -71,7 +71,7 @@ export function getCoordsFromCellName(columnName: string): [number, number | nul
             code += parseInt(t[0].charCodeAt(i) - 64) * Math.pow(26, t[0].length - 1 - i);
         }
         code--;
-        // Make sure jspreadsheet starts on zero
+        // Make sure gridwell starts on zero
         if (code < 0) {
             code = 0;
         }
@@ -171,7 +171,7 @@ export function parseCSV(str: string, delimiter?: string) {
 }
 
 // The options are optional here: factory.ts passes the first worksheet of the options, which can be missing
-export function createFromTable(el: HTMLElement, options?: jspreadsheet.WorksheetOptions) {
+export function createFromTable(el: HTMLElement, options?: gridwell.WorksheetOptions) {
     if (el.tagName !== 'TABLE') {
         console.log('Element is not a table');
     } else {
@@ -181,7 +181,7 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
         }
 
         // The columns and the rows of the table are added to these arrays
-        const columns: jspreadsheet.Column[] = [];
+        const columns: gridwell.Column[] = [];
         const data: string[][] = [];
         options.columns = columns;
         options.data = data;
@@ -216,14 +216,14 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
                 columns[i] = {};
             }
             if (header.getAttribute('data-celltype')) {
-                columns[i].type = header.getAttribute('data-celltype') as jspreadsheet.Column['type'];
+                columns[i].type = header.getAttribute('data-celltype') as gridwell.Column['type'];
             } else {
                 columns[i].type = 'text';
             }
             columns[i].width = `${width}px`;
             columns[i].title = header.innerHTML;
             if (header.style.textAlign) {
-                columns[i].align = header.style.textAlign as jspreadsheet.HorizontalAlign;
+                columns[i].align = header.style.textAlign as gridwell.HorizontalAlign;
             }
 
             let info;
@@ -266,7 +266,7 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
         // Content
         let rowNumber = 0;
         const mergeCells: Record<string, [number, number]> = {};
-        const rows: Record<number, jspreadsheet.Row> = {};
+        const rows: Record<number, gridwell.Row> = {};
         const style: Record<string, string> = {};
         const classes: Record<string, string> = {};
 
@@ -404,7 +404,7 @@ export function createFromTable(el: HTMLElement, options?: jspreadsheet.Workshee
                     columns[i].type = 'calendar';
                 } else if (test === true && keys > 1 && keys <= parseInt(data.length * 0.1)) {
                     columns[i].type = 'dropdown';
-                    (columns[i] as jspreadsheet.DropdownColumn).source = Object.keys(pattern[i]);
+                    (columns[i] as gridwell.DropdownColumn).source = Object.keys(pattern[i]);
                 }
             }
         }

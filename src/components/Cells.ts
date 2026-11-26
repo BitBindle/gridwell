@@ -4,10 +4,10 @@ import { getMask, isFormula } from '../utils/values.js';
 import { formatDate, parseDate } from '../utils/dates.js';
 import { render } from '../utils/mask.js';
 import type { HistoryCellChange, Worksheet } from '../types/internal';
-import type jspreadsheet from '../jspreadsheet';
+import type gridwell from '../gridwell';
 
 // The date, then the date as text, then its parts
-function validDate(date: jspreadsheet.CellValue | string[] | undefined) {
+function validDate(date: gridwell.CellValue | string[] | undefined) {
     date = `${date}`;
     if (date.substr(4, 1) === '-' && date.substr(7, 1) === '-') {
         return true;
@@ -25,7 +25,7 @@ function validDate(date: jspreadsheet.CellValue | string[] | undefined) {
 /**
  * Strip tags. a is the HTML, then the scripts in it. The DOM converts a number, a boolean or undefined to text.
  */
-function stripScript(a: jspreadsheet.CellValue | undefined | HTMLCollectionOf<HTMLScriptElement>) {
+function stripScript(a: gridwell.CellValue | undefined | HTMLCollectionOf<HTMLScriptElement>) {
     const b = new Option();
     b.innerHTML = a as string;
     let c;
@@ -209,7 +209,7 @@ export class Cells {
             element.style.textAlign = td.style.textAlign;
         }
         // create wraps the text with the wordWrap options, or when it is longer than 200 characters
-        function wraps(options: jspreadsheet.Column, cell: HTMLElement) {
+        function wraps(options: gridwell.Column, cell: HTMLElement) {
             return options.wordWrap !== false && (worksheet.options.wordWrap === true || options.wordWrap === true || cell.innerHTML.length > 200);
         }
         if (wraps(before, element) !== wraps(after, td)) {
@@ -279,7 +279,7 @@ export class Cells {
     }
 
     // The DOM converts a number or a boolean value to text, so value is cast to text where the DOM takes text
-    create(i: number, j: number, value: jspreadsheet.CellValue, silent?: boolean) {
+    create(i: number, j: number, value: gridwell.CellValue, silent?: boolean) {
         const worksheet = this.worksheet;
 
         // Column options
@@ -421,7 +421,7 @@ export class Cells {
      */
     // setValue without a value clears the cell, and the data keeps undefined. The DOM converts a number, a boolean or
     // undefined to text, so value is cast to text where the DOM takes text.
-    update(x: number, y: number, value: jspreadsheet.CellValue | undefined, force?: boolean) {
+    update(x: number, y: number, value: gridwell.CellValue | undefined, force?: boolean) {
         const worksheet = this.worksheet;
 
         // Column options
@@ -475,10 +475,10 @@ export class Cells {
 
             // A custom editor can have setValue, which is not in the public typings
             const editor = (column && typeof column.type === 'object' ? column.type : null) as
-                (jspreadsheet.CustomEditor & { setValue?: (cell: HTMLTableCellElement, value: jspreadsheet.CellValue | undefined) => void }) | null;
+                (gridwell.CustomEditor & { setValue?: (cell: HTMLTableCellElement, value: gridwell.CellValue | undefined) => void }) | null;
             if (editor) {
                 // Update data and cell
-                worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
+                worksheet.options.data[y][x] = value as gridwell.CellValue;
                 if (typeof editor.setValue === 'function') {
                     editor.setValue(worksheet.records[y][x].element, value);
                 }
@@ -499,15 +499,15 @@ export class Cells {
                     worksheet.options.data[y][x] = (worksheet.records[y][x].element.children[0] as HTMLInputElement).checked;
                 } else if (column?.type === 'dropdown') {
                     // Update data and cell
-                    worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
+                    worksheet.options.data[y][x] = value as gridwell.CellValue;
                     worksheet.records[y][x].element.textContent = this.getDropDownValue(c, value);
                 } else if (column?.type === 'calendar') {
                     // Update data and cell
-                    worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
+                    worksheet.options.data[y][x] = value as gridwell.CellValue;
                     worksheet.records[y][x].element.textContent = this.formatCalendarValue(value, column.options?.format);
                 } else if (column?.type === 'color') {
                     // Update color
-                    worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
+                    worksheet.options.data[y][x] = value as gridwell.CellValue;
                     // Render
                     if (column.render === 'square') {
                         const color = document.createElement('div');
@@ -530,7 +530,7 @@ export class Cells {
                     }
                 } else {
                     // Update data and cell
-                    worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
+                    worksheet.options.data[y][x] = value as gridwell.CellValue;
                     // Label
                     if (column?.type === 'html') {
                         worksheet.records[y][x].element.innerHTML = stripScript(this.parseValue(x, y, value));
@@ -630,7 +630,7 @@ export class Cells {
      * @param value - The value of the cell.
      * @param format - The format of the column, such as "DD/MM/YYYY".
      */
-    formatCalendarValue(value: jspreadsheet.CellValue | undefined, format: string | undefined) {
+    formatCalendarValue(value: gridwell.CellValue | undefined, format: string | undefined) {
         const date = validDate(value) ? value : parseDate(`${value ?? ''}`, format || 'YYYY-MM-DD');
         // A value that is not a date shows as it is
         return formatDate(date || value, format) || `${value ?? ''}`;
@@ -640,12 +640,12 @@ export class Cells {
      * The value that a cell shows: the result of a formula, or the value with the mask of the column. The DOM converts a
      * number, a boolean or undefined to text.
      */
-    parseValue(i: number, j: number, value: jspreadsheet.CellValue | undefined, cell?: HTMLElement) {
+    parseValue(i: number, j: number, value: gridwell.CellValue | undefined, cell?: HTMLElement) {
         const worksheet = this.worksheet;
 
         if (`${value}`.substr(0, 1) === '=' && worksheet.parent.config.parseFormulas !== false) {
             // The cell shows the result as text, as the DOM converts it. An array from a range shows its items with commas.
-            value = worksheet.formulas.execute(value as string, i, j) as jspreadsheet.CellValue;
+            value = worksheet.formulas.execute(value as string, i, j) as gridwell.CellValue;
         }
 
         // Column options
