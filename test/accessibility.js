@@ -821,3 +821,15 @@ describe('Keyboard focus', () => {
         expect(getTabStops(lazy)).to.deep.equal([lazy.tbody.firstChild.children[1]]);
     });
 });
+
+describe('Ids', () => {
+    it('gives no two elements of a spreadsheet with two worksheets the same id (issue #68)', async () => {
+        jspreadsheet(root, { tabs: true, worksheets: [{ minDimensions: [2, 2] }, { minDimensions: [2, 2] }] });
+        await new Promise((resolve) => setTimeout(resolve));
+
+        const ids = Array.from(root.querySelectorAll('[id]')).map((element) => element.id);
+
+        expect(ids.filter((id, index) => ids.indexOf(id) !== index)).to.eql([]);
+        expect(root.querySelectorAll('.jss_textarea').length).to.equal(2);
+    });
+});

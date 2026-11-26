@@ -303,3 +303,9 @@ Tab on the last column and Shift+Tab on the first column keep their default acti
 after or before the grid, as the WAI-ARIA grid pattern asks (#28). Version 5 kept the focus in the grid, and Tab on the
 last column inserted a column. The option `allowManualInsertColumn` has no effect any more. To add a column with the
 keyboard, an application handles a key itself and calls `insertColumn`.
+
+## The clipboard textarea has no id
+
+The hidden textarea that a worksheet uses for the clipboard has no `id` any more. Version 5 gave the textarea of every
+worksheet the id `jss_textarea`, so a page with two worksheets had duplicate ids (#68). Select it by its class,
+`.jss_textarea`, or through `worksheet.clipboard.textarea`.
