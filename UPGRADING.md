@@ -242,3 +242,10 @@ checkbox, and a text that is a number equals the number.
 `getValue` and `getValueFromCoords` return `null` for a cell outside the data, also when the row exists and the column
 does not. Version 5 returned `undefined` for a column that the row did not have, and `null` for a cell that held the
 text `undefined` (#36, #49). An application that checked the result with `=== undefined` checks it with `== null`.
+
+## Any handler can cancel an action
+
+An event calls the `onevent` option, then the handler of the event in the options, then the `onevent` of each plugin.
+Version 5 returned the result of the last one, so a plugin whose `onevent` returned nothing made an `onbefore…` handler
+that returned `false` cancel nothing (#37). The result of an event is now `false` when any of them returns `false`, and
+otherwise the last result that is not `undefined`. A plugin's `onevent` that returns `false` cancels the action too.

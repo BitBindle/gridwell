@@ -273,6 +273,36 @@ describe('Dispatch events', () => {
         expect(worksheet.getData()).to.eql([['a']]);
     });
 
+    it('keeps a false of the handler when a plugin with onevent returns nothing or another value (issue #37)', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a']] }],
+            onbeforeinsertrow: () => false,
+            plugins: {
+                logger: () => ({ onevent: () => {} }),
+                other: () => ({ onevent: (event) => (event === 'onbeforeinsertrow' ? true : undefined) }),
+            },
+        })[0];
+
+        worksheet.insertRow();
+
+        expect(worksheet.getData()).to.eql([['a']]);
+    });
+
+    it('lets a plugin cancel an action, and keeps the result of the handler when onevent returns nothing (issue #37)', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a']] }],
+            onevent: () => {},
+            onbeforechange: (instance, cell, x, y, value) => `${value}!`,
+            plugins: { guard: () => ({ onevent: (event) => (event === 'onbeforedeleterow' ? false : undefined) }) },
+        })[0];
+
+        worksheet.setValue('A1', 'b');
+        worksheet.insertRow();
+        worksheet.deleteRow(0);
+
+        expect(worksheet.getData()).to.eql([['b!'], ['']]);
+    });
+
     it('gives oncreateworksheet the options of the new worksheet', async () => {
         let createdOptions = null;
         const worksheet = await load({

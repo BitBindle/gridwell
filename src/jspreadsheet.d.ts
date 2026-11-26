@@ -1029,7 +1029,9 @@ declare namespace jspreadsheet {
         /**
          * Event fired when any other event fires. It runs before the event that was called.
          *
-         * If the called event has not been defined, the jss considers the value returned by onevent as the value returned by the called event.
+         * Its result counts as a result of the called event. When onevent, the handler of the event or the onevent of a
+         * plugin returns false, the result of the event is false, so any of them can cancel an `onbefore…` action. Otherwise
+         * the result is the last one that is not undefined.
          * @param args - The name of the event that was called, then the arguments of the event. A test of the name in
          * `args[0]` narrows the other arguments.
          */
@@ -1646,10 +1648,13 @@ declare namespace jspreadsheet {
         init?: (instance: WorksheetInstance) => void;
 
         /**
-         * Event fired when any other event fires.
+         * Event fired when any other event fires, after the handlers of the spreadsheet options.
+         *
+         * Returning false cancels an `onbefore…` action, as the handler in the options does. Returning nothing keeps the
+         * result of the handlers before it, and returning another value replaces it.
          * @param args - The name of the event that was called, then the arguments of the event.
          */
-        onevent?: (...args: EventArguments) => void;
+        onevent?: (...args: EventArguments) => unknown;
 
         /**
          * This method is called before the spreadsheet sends data to the server.
