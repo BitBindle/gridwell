@@ -1480,6 +1480,13 @@ declare namespace jspreadsheet {
          */
         freezeColumns?: number;
 
+        /**
+         * Number of rows frozen at the top of the worksheet. The frozen rows stay below the header row when the content
+         * scrolls. Lazy loading keeps them in the table. With pagination, a search or the filters, a frozen row stays at the
+         * top only while it is in the rows that show.
+         */
+        freezeRows?: number;
+
         /** Activate the table lazyloading. */
         lazyLoading?: boolean;
 

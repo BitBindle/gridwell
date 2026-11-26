@@ -92,6 +92,11 @@ libraryBase.jspreadsheet.destroy = (
             }
         }
 
+        // The size observer of the frozen rows holds the worksheet
+        for (const worksheet of (element.spreadsheet as Spreadsheet).worksheets) {
+            worksheet.rowManager.stopFreeze();
+        }
+
         element.spreadsheet = null;
         element.innerHTML = '';
 

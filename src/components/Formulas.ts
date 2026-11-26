@@ -434,6 +434,9 @@ export class Formulas {
             }
         }
 
+        // The frozen rows are the first rows
+        worksheet.rowManager.updateFreeze();
+
         // Regular cells affected by this change: the new cell name by the old one
         const affectedTokens: Record<string, string> = {};
         // The merged cells affected by this change: false, or the new cell name and the column and row offsets

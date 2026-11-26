@@ -12,8 +12,130 @@ import type { Worksheet } from '../types/internal';
 export class Rows {
     readonly worksheet: Worksheet;
 
+    /** The elements of the frozen rows, in their order. */
+    private frozen: HTMLTableRowElement[] = [];
+
+    /** Places the frozen rows again when the header row or a frozen row changes its height. */
+    private freezeObserver: ResizeObserver | null = null;
+
     constructor(worksheet: Worksheet) {
         this.worksheet = worksheet;
+    }
+
+    /**
+     * The number of frozen rows: the freezeRows option, but not more than the rows of the worksheet.
+     */
+    getFreezeCount() {
+        const worksheet = this.worksheet;
+        return Math.max(0, Math.min(worksheet.options.freezeRows || 0, worksheet.rows.length));
+    }
+
+    /**
+     * The height that the sticky header covers at the top of the content. Each header row sticks at the top, so the
+     * header covers the height of its highest row.
+     */
+    getHeaderHeight() {
+        let height = 0;
+        for (const row of Array.from(this.worksheet.thead.children) as HTMLElement[]) {
+            height = Math.max(height, row.offsetHeight);
+        }
+        return height;
+    }
+
+    /**
+     * The height of the frozen rows that show.
+     */
+    getFreezeHeight() {
+        let height = 0;
+        for (const row of this.frozen) {
+            if (row.parentNode === this.worksheet.tbody) {
+                height += row.offsetHeight;
+            }
+        }
+        return height;
+    }
+
+    /**
+     * Make the first freezeRows rows stick below the header row. Each frozen row gets the class jss_frozen_row and its
+     * distance from the top of the content in the custom property --jss-frozen-top, so its cells keep their own style.
+     * Call it after the order or the number of the rows changes.
+     */
+    updateFreeze() {
+        const worksheet = this.worksheet;
+
+        const frozen: HTMLTableRowElement[] = [];
+        for (let j = 0; j < this.getFreezeCount(); j++) {
+            frozen.push(worksheet.rows[j].element);
+        }
+
+        // A row that is not in the first rows any more is not frozen
+        for (const row of this.frozen) {
+            if (!frozen.includes(row)) {
+                row.classList.remove('jss_frozen_row', 'jss_frozen_last');
+                row.style.removeProperty('--jss-frozen-top');
+            }
+        }
+        for (const row of frozen) {
+            row.classList.add('jss_frozen_row');
+        }
+        this.frozen = frozen;
+
+        this.placeFrozen();
+        this.observeFrozen();
+
+        // A cell of a frozen row and a frozen column sticks on both axes
+        if (worksheet.options.freezeColumns) {
+            worksheet.columns.updateFreezePosition();
+        }
+    }
+
+    /**
+     * Give each frozen row its distance from the top of the content. The last frozen row that shows gets the class
+     * jss_frozen_last, which draws the line of the frozen pane.
+     */
+    placeFrozen() {
+        let top = this.getHeaderHeight();
+        let last: HTMLTableRowElement | null = null;
+        for (const row of this.frozen) {
+            row.style.setProperty('--jss-frozen-top', `${top}px`);
+            if (row.style.display !== 'none' && row.parentNode === this.worksheet.tbody) {
+                top += row.offsetHeight;
+                last = row;
+            }
+        }
+        for (const row of this.frozen) {
+            row.classList.toggle('jss_frozen_last', row === last);
+        }
+    }
+
+    /**
+     * Observe the size of the header row and of the frozen rows. A hidden worksheet has no layout, and the observer places
+     * the rows when the worksheet shows. The callback observes no new element, so it cannot run in a loop.
+     */
+    private observeFrozen() {
+        if (typeof ResizeObserver !== 'function') {
+            return;
+        }
+        if (!this.freezeObserver) {
+            this.freezeObserver = new ResizeObserver(() => {
+                this.placeFrozen();
+            });
+        }
+        this.freezeObserver.disconnect();
+        if (this.frozen.length) {
+            this.freezeObserver.observe(this.worksheet.thead);
+            for (const row of this.frozen) {
+                this.freezeObserver.observe(row);
+            }
+        }
+    }
+
+    /**
+     * Stop the size observer of the frozen rows, for example when the spreadsheet is destroyed.
+     */
+    stopFreeze() {
+        this.freezeObserver?.disconnect();
+        this.freezeObserver = null;
     }
 
     /**
@@ -610,6 +732,11 @@ export class Rows {
         rowNumber.forEach((rowIndex) => {
             worksheet.rows[rowIndex].element.style.display = '';
         });
+
+        // The rows after a frozen row move
+        if (rowNumber.some((rowIndex) => rowIndex < this.getFreezeCount())) {
+            this.placeFrozen();
+        }
     }
 
     /**
@@ -625,6 +752,11 @@ export class Rows {
         rowNumber.forEach((rowIndex) => {
             worksheet.rows[rowIndex].element.style.display = 'none';
         });
+
+        // The rows after a frozen row move
+        if (rowNumber.some((rowIndex) => rowIndex < this.getFreezeCount())) {
+            this.placeFrozen();
+        }
 
         // The tab stop of the grid can be in a hidden row
         worksheet.selection.updateTabStop();

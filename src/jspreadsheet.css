@@ -1184,6 +1184,36 @@
     -moz-box-shadow: 2px 4px 4px 0.1px #ccc !important;
 }
 
+/* The frozen rows stick below the header. --jss-frozen-top is the distance from the top of the content. */
+.jss_worksheet > tbody > tr.jss_frozen_row > td {
+    position: sticky;
+    top: var(--jss-frozen-top, 0);
+    z-index: 1;
+    background-color: #fff;
+}
+
+/* A cell of a frozen row and a frozen column sticks on both axes, over the other frozen cells */
+.jss_worksheet > tbody > tr.jss_frozen_row > td.jss_freezed {
+    z-index: 2;
+}
+
+/* The line under the last frozen row. It is transparent by default, and a forced-colors mode shows it in the text color */
+.jss_worksheet > tbody > tr.jss_frozen_last > td::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    box-sizing: border-box;
+    border-bottom: 2px solid var(--jss-frozen-line-color, transparent);
+    pointer-events: none;
+}
+
+.jss_worksheet > tbody > tr.jss_frozen_last > td {
+    box-shadow: 0px 2px 2px 0px #ccc;
+}
+
 /* The line of the frozen pane. It is transparent by default, and a forced-colors mode shows it in the text color */
 .jss_worksheet .jss_freezed_last::after {
     content: '';

@@ -8,13 +8,14 @@ import type { Worksheet } from '../types/internal';
 
 /**
  * The row that a load of the lazy loading keeps in place, and its offsetTop: the last row that shows for a load at the
- * bottom, the first row that shows for a load at the top. A hidden row has no offsetParent. Without a row that shows,
- * the result is null.
+ * bottom, the first row after the frozen rows that shows for a load at the top. A hidden row has no offsetParent. Without
+ * a row that shows, the result is null.
  */
-function anchorRow(tbody: HTMLTableSectionElement, last: boolean) {
+function anchorRow(tbody: HTMLTableSectionElement, last: boolean, frozen: number) {
     const rows = tbody.children as HTMLCollectionOf<HTMLTableRowElement>;
-    for (let k = 0; k < rows.length; k++) {
-        const row = rows[last ? rows.length - 1 - k : k];
+    // A frozen row sticks at the top, so it does not move with the other rows
+    for (let k = 0; k < rows.length - frozen; k++) {
+        const row = rows[last ? rows.length - 1 - k : frozen + k];
         if (row.offsetParent !== null) {
             return { row, top: row.offsetTop };
         }
@@ -686,6 +687,26 @@ export class View {
     }
 
     /**
+     * The number of frozen rows that lazy loading keeps first in the table body. With the results of a search or the
+     * filters, the body holds only the results, so it keeps no frozen row.
+     */
+    private frozenRows() {
+        const worksheet = this.worksheet;
+        if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
+            return 0;
+        }
+        return worksheet.rowManager.getFreezeCount();
+    }
+
+    /**
+     * The first row of the table body that lazy loading can remove or insert before: the row after the frozen rows.
+     */
+    firstScrollRow() {
+        const tbody = this.worksheet.tbody;
+        return (tbody.children[this.frozenRows()] || tbody.lastChild) as HTMLTableRowElement;
+    }
+
+    /**
      * Remove a row from the table. If the row holds the open editor, save and close the editor first.
      */
     // The callers remove a row when the body has more than a page of rows, so it has a first and a last row
@@ -732,8 +753,16 @@ export class View {
             startRow = 0;
         }
 
+        // The frozen rows stay first
+        const frozen = this.frozenRows();
+        for (let j = 0; j < frozen; j++) {
+            if (worksheet.tbody.children[j] !== worksheet.rows[j].element) {
+                worksheet.tbody.insertBefore(worksheet.rows[j].element, worksheet.tbody.children[j] || null);
+            }
+        }
+
         // Appeding items
-        for (let j = startRow; j < finalRow; j++) {
+        for (let j = Math.max(startRow, frozen); j < finalRow; j++) {
             if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
                 worksheet.tbody.appendChild(worksheet.rows[results[j] as number].element);
             } else {
@@ -742,7 +771,7 @@ export class View {
 
             // More than one page can be attached, for example after an insert next to the attached rows
             while (worksheet.tbody.children.length > quantityPerPage) {
-                this.removeRow(worksheet.tbody.firstChild!);
+                this.removeRow(this.firstScrollRow());
             }
         }
 
@@ -754,7 +783,7 @@ export class View {
         const worksheet = this.worksheet;
 
         if (worksheet.selection.range) {
-            let currentRow = parseInt((worksheet.tbody.firstChild as HTMLElement).getAttribute('data-y'));
+            let currentRow = parseInt(this.firstScrollRow().getAttribute('data-y'));
             let selectedRow = parseInt(worksheet.selection.range[3]);
             let total = worksheet.rows.length;
 
@@ -797,20 +826,21 @@ export class View {
         }
         let test = 0;
         if (results.length > 100) {
-            // Get the first element in the page
-            let item = parseInt((worksheet.tbody.firstChild as HTMLElement).getAttribute('data-y'));
+            // Get the first element in the page, after the frozen rows
+            const frozen = this.frozenRows();
+            let item = parseInt(this.firstScrollRow().getAttribute('data-y'));
             if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
                 item = (results as number[]).indexOf(item);
             }
-            if (item > 0) {
-                const anchor = anchorRow(worksheet.tbody, false);
+            if (item > frozen) {
+                const anchor = anchorRow(worksheet.tbody, false, frozen);
                 for (let j = 0; j < 30; j++) {
                     item = item - 1;
-                    if (item > -1) {
+                    if (item >= frozen) {
                         if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
-                            worksheet.tbody.insertBefore(worksheet.rows[results[item] as number].element, worksheet.tbody.firstChild);
+                            worksheet.tbody.insertBefore(worksheet.rows[results[item] as number].element, this.firstScrollRow());
                         } else {
-                            worksheet.tbody.insertBefore(worksheet.rows[item].element, worksheet.tbody.firstChild);
+                            worksheet.tbody.insertBefore(worksheet.rows[item].element, this.firstScrollRow());
                         }
                         if (worksheet.tbody.children.length > 100) {
                             this.removeRow(worksheet.tbody.lastChild!);
@@ -847,7 +877,7 @@ export class View {
                 item = (results as number[]).indexOf(item);
             }
             if (item < worksheet.rows.length - 1) {
-                const anchor = anchorRow(worksheet.tbody, true);
+                const anchor = anchorRow(worksheet.tbody, true, this.frozenRows());
                 for (let j = 0; j <= 30; j++) {
                     if (item < results.length) {
                         if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
@@ -856,7 +886,7 @@ export class View {
                             worksheet.tbody.appendChild(worksheet.rows[item].element);
                         }
                         if (worksheet.tbody.children.length > 100) {
-                            this.removeRow(worksheet.tbody.firstChild!);
+                            this.removeRow(this.firstScrollRow());
                             test = 1;
                         }
                     }

@@ -136,6 +136,9 @@ export class Data {
         // The rows are new, so the tab stop of the grid is new
         worksheet.selection.updateTabStop();
 
+        // The frozen rows are new
+        worksheet.rowManager.updateFreeze();
+
         // Updata table with custom configurations if applicable
         this.updateTable();
     }
