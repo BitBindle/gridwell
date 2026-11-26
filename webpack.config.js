@@ -1,5 +1,4 @@
 const path = require('path');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 
 class MyPlugin {
@@ -36,101 +35,101 @@ if (! formula && typeof(require) === 'function') {
     }
 }
 
-let isProduction = process.env.NODE_ENV === 'production';
+// npm run build passes --mode production, and npm start builds the page of the dev server. npm run coverage also passes
+// --env coverage, which builds the bundle without minifying it, with a source map that names the files in src.
+module.exports = (env, argv) => {
+    const isProduction = argv.mode === 'production';
+    const isCoverage = env.coverage === true;
 
-// npm run coverage builds the bundle without minifying it, with a source map that names the files in src
-const isCoverage = process.env.COVERAGE === 'true';
-
-const webpack = {
-    target: ['web', 'es5'],
-    entry: isProduction ? './src/index' : './src/test.js',
-    mode: isProduction ? 'production' : 'development',
-    externals: {},
-    output: {
-        filename: 'index.js',
-        path: path.resolve(__dirname, 'dist'),
-        library: 'jspreadsheet',
-        libraryExport: 'default',
-        devtoolModuleFilenameTemplate: isCoverage ? (info) => info.absoluteResourcePath : undefined,
-    },
-    devtool: isCoverage ? 'source-map' : false,
-    optimization: {
-        minimize: !isCoverage,
-    },
-    devServer: {
-        static: {
-            directory: path.join(__dirname, '/public'),
+    const webpack = {
+        target: ['web', 'es5'],
+        entry: isProduction ? './src/index' : './src/test.js',
+        mode: isProduction ? 'production' : 'development',
+        externals: {},
+        output: {
+            filename: 'index.js',
+            path: path.resolve(__dirname, 'dist'),
+            library: 'jspreadsheet',
+            libraryExport: 'default',
+            // Remove the files of the last build, such as the source map of a coverage build
+            clean: true,
+            devtoolModuleFilenameTemplate: isCoverage ? (info) => info.absoluteResourcePath : undefined,
         },
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-            'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization',
+        devtool: isCoverage ? 'source-map' : false,
+        optimization: {
+            minimize: !isCoverage,
         },
-        port: 8000,
-        devMiddleware: {
-            publicPath: 'https://localhost:3000/',
+        devServer: {
+            static: {
+                directory: path.join(__dirname, '/public'),
+            },
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+                'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization',
+            },
+            port: 8000,
+            devMiddleware: {
+                publicPath: 'https://localhost:3000/',
+            },
+            hot: 'only',
         },
-        hot: 'only',
-    },
-    plugins: [],
-    resolve: {
-        extensions: ['.ts', '.js'],
-        // The modules import each other with the .js extension, also when the file is a .ts file
-        extensionAlias: {
-            '.js': ['.ts', '.js'],
+        plugins: [],
+        resolve: {
+            extensions: ['.ts', '.js'],
+            // The modules import each other with the .js extension, also when the file is a .ts file
+            extensionAlias: {
+                '.js': ['.ts', '.js'],
+            },
         },
-    },
-    module: {
-        rules: [
-            isProduction
-                ? {
-                      test: /\.[jt]s$/,
-                      use: [
-                          {
-                              loader: path.resolve('build.cjs'),
-                              options: {},
-                          },
-                      ],
-                  }
-                : null,
-            // Remove the types. TypeScript checks them separately (npm run typecheck).
-            {
-                test: /\.ts$/,
-                loader: 'esbuild-loader',
-                options: {
-                    loader: 'ts',
-                    // Keep the syntax as it is, as for the .js files
-                    target: 'esnext',
+        module: {
+            rules: [
+                isProduction
+                    ? {
+                          test: /\.[jt]s$/,
+                          use: [
+                              {
+                                  loader: path.resolve('build.cjs'),
+                                  options: {},
+                              },
+                          ],
+                      }
+                    : null,
+                // Remove the types. TypeScript checks them separately (npm run typecheck).
+                {
+                    test: /\.ts$/,
+                    loader: 'esbuild-loader',
+                    options: {
+                        loader: 'ts',
+                        // Keep the syntax as it is, as for the .js files
+                        target: 'esnext',
+                    },
                 },
-            },
-            {
-                test: /\.css$/,
-                use: [isProduction ? MiniCssExtractPlugin.loader : 'style-loader', 'css-loader'],
-            },
-        ],
-    },
-    stats: {
-        warnings: false,
-    },
-};
-
-if (isProduction) {
-    webpack.plugins.push(new MyPlugin());
-    // The type definitions and stylesheets are maintained by hand in src and shipped next to the bundle
-    webpack.plugins.push(
-        new CopyPlugin({
-            patterns: [
-                { from: 'src/jspreadsheet.d.ts', to: 'index.d.ts' },
-                { from: 'src/jspreadsheet.css', to: 'jspreadsheet.css' },
-                { from: 'src/jspreadsheet.themes.css', to: 'jspreadsheet.themes.css' },
+                // Only the page of the dev server imports the stylesheets
+                {
+                    test: /\.css$/,
+                    use: ['style-loader', 'css-loader'],
+                },
             ],
-        })
-    );
-    webpack.plugins.push(
-        new MiniCssExtractPlugin({
-            filename: 'jspreadsheet.css',
-        })
-    );
-}
+        },
+        stats: {
+            warnings: false,
+        },
+    };
 
-module.exports = webpack;
+    if (isProduction) {
+        webpack.plugins.push(new MyPlugin());
+        // The type definitions and stylesheets are maintained by hand in src and shipped next to the bundle
+        webpack.plugins.push(
+            new CopyPlugin({
+                patterns: [
+                    { from: 'src/jspreadsheet.d.ts', to: 'index.d.ts' },
+                    { from: 'src/jspreadsheet.css', to: 'jspreadsheet.css' },
+                    { from: 'src/jspreadsheet.themes.css', to: 'jspreadsheet.themes.css' },
+                ],
+            })
+        );
+    }
+
+    return webpack;
+};
