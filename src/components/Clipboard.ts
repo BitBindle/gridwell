@@ -1,8 +1,6 @@
 import jSuites from 'jsuites';
 import { parseCSV } from '../utils/helpers.js';
 import dispatch from '../utils/dispatch.js';
-import { updateCell } from '../utils/render.js';
-import { updateTable } from '../utils/table.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
@@ -406,7 +404,7 @@ export class Clipboard {
                 }
 
                 // Update and keep history
-                const record = updateCell.call(obj, colIndex, rowIndex, value);
+                const record = obj.cells.update(colIndex, rowIndex, value);
                 // Keep history
                 records.push(record);
                 // Update all formulas in the chain
@@ -533,7 +531,7 @@ export class Clipboard {
             });
 
             // Update table
-            updateTable.call(obj);
+            obj.data.updateTable();
 
             // Paste event
             const eventRecords = [];

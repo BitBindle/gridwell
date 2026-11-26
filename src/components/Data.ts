@@ -1,5 +1,3 @@
-import { updateCell } from '../utils/render.js';
-import { updateTable } from '../utils/table.js';
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import dispatch from '../utils/dispatch.js';
 import { getCoordsFromRange } from '../utils/helpers.js';
@@ -9,7 +7,7 @@ import type { CellChange, CellValue } from '../jspreadsheet';
 
 /**
  * The data of a worksheet: it gets and sets all the data, the data of a range, and the value of a cell by its name or
- * its coordinates.
+ * its coordinates, and updates the table after the cells change.
  *
  * Each worksheet has one, as worksheet.data. The data itself stays in worksheet.options.data.
  */
@@ -144,7 +142,7 @@ export class Data {
         obj.selection.updateTabStop();
 
         // Updata table with custom configurations if applicable
-        updateTable.call(obj);
+        this.updateTable();
     }
 
     /**
@@ -223,7 +221,7 @@ export class Data {
             const y = columnId[1];
 
             // Update cell
-            records.push(updateCell.call(obj, x, y, value, force));
+            records.push(obj.cells.update(x, y, value, force));
 
             // Update all formulas in the chain
             obj.formulas.updateChain(x, y, records);
@@ -237,7 +235,7 @@ export class Data {
 
             // Update cell
             if (x != null && y != null) {
-                records.push(updateCell.call(obj, x, y, value, force));
+                records.push(obj.cells.update(x, y, value, force));
 
                 // Update all formulas in the chain
                 obj.formulas.updateChain(x, y, records);
@@ -269,7 +267,7 @@ export class Data {
 
                         // Update cell
                         if (x != null && y != null) {
-                            records.push(updateCell.call(obj, x, y, cellValue, force));
+                            records.push(obj.cells.update(x, y, cellValue, force));
 
                             // Update all formulas in the chain
                             obj.formulas.updateChain(x, y, records);
@@ -287,7 +285,7 @@ export class Data {
         });
 
         // Update table with custom configurations if applicable
-        updateTable.call(obj);
+        this.updateTable();
 
         // On after changes
         const onafterchangesRecords = records.map(function (record) {
@@ -315,7 +313,7 @@ export class Data {
         const obj = this.worksheet;
 
         const records = [];
-        records.push(updateCell.call(obj, x, y, value, force));
+        records.push(obj.cells.update(x, y, value, force));
 
         // Update all formulas in the chain
         obj.formulas.updateChain(x, y, records);
@@ -328,7 +326,7 @@ export class Data {
         });
 
         // Update table with custom configurations if applicable
-        updateTable.call(obj);
+        this.updateTable();
 
         // On after changes
         const onafterchangesRecords = records.map(function (record) {
@@ -435,5 +433,70 @@ export class Data {
         }
 
         return dataset;
+    }
+
+    /**
+     * Run after the cells change: add the spare rows and columns that minSpareRows and minSpareCols ask for, update the
+     * footers and place the selection corner again.
+     */
+    updateTable() {
+        const obj = this.worksheet;
+
+        // Check for spare
+        if (obj.options.minSpareRows! > 0) {
+            let numBlankRows = 0;
+            for (let j = obj.rows.length - 1; j >= 0; j--) {
+                let test = false;
+                for (let i = 0; i < obj.headers.length; i++) {
+                    if (obj.options.data[j][i]) {
+                        test = true;
+                    }
+                }
+                if (test) {
+                    break;
+                } else {
+                    numBlankRows++;
+                }
+            }
+
+            if (obj.options.minSpareRows! - numBlankRows > 0) {
+                obj.insertRow(obj.options.minSpareRows! - numBlankRows);
+            }
+        }
+
+        if (obj.options.minSpareCols! > 0) {
+            let numBlankCols = 0;
+            for (let i = obj.headers.length - 1; i >= 0; i--) {
+                let test = false;
+                for (let j = 0; j < obj.rows.length; j++) {
+                    if (obj.options.data[j][i]) {
+                        test = true;
+                    }
+                }
+                if (test) {
+                    break;
+                } else {
+                    numBlankCols++;
+                }
+            }
+
+            if (obj.options.minSpareCols! - numBlankCols > 0) {
+                obj.insertColumn(obj.options.minSpareCols! - numBlankCols);
+            }
+        }
+
+        // Update footers
+        if (obj.options.footers) {
+            obj.formulas.setFooter();
+        }
+
+        if (obj.options.columns.length < obj.options.minDimensions[0]) {
+            obj.options.minDimensions[0] = obj.options.columns.length;
+        }
+
+        // Update corner position
+        setTimeout(function () {
+            obj.selection.updateCorner();
+        }, 0);
     }
 }

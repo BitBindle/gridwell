@@ -1,6 +1,4 @@
 import dispatch from '../utils/dispatch.js';
-import { updateCell } from '../utils/render.js';
-import { updateTable } from '../utils/table.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import type { DragColumnInfo, DragRowInfo, ResizeColumnInfo, ResizeRowInfo, CellChange, CellValue } from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
@@ -184,7 +182,7 @@ export class Pointer {
                         }
                     }
 
-                    records.push(updateCell.call(obj, i, j, value));
+                    records.push(obj.cells.update(i, j, value));
 
                     // Update all formulas in the chain
                     obj.formulas.updateChain(i, j, records);
@@ -206,7 +204,7 @@ export class Pointer {
         });
 
         // Update table with custom configuration if applicable
-        updateTable.call(obj);
+        obj.data.updateTable();
 
         // On after changes
         const onafterchangesRecords = records.map(function (record) {

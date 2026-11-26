@@ -1,5 +1,4 @@
 import jSuites from 'jsuites';
-import { createCell } from '../utils/render.js';
 import dispatch from '../utils/dispatch.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import { setRowRole } from '../utils/accessibility.js';
@@ -76,7 +75,7 @@ export class Rows {
         for (let i = 0; i < numberOfColumns; i++) {
             // New column of data to be append in the line
             obj.records[j][i] = {
-                element: createCell.call(obj, i, j, data[i]),
+                element: obj.cells.create(i, j, data[i]),
                 x: i,
                 y: j,
             };

@@ -1,7 +1,6 @@
 import jSuites from 'jsuites';
 import dispatch from '../utils/dispatch.js';
 import { getColumnName } from '../utils/helpers.js';
-import { createCell } from '../utils/render.js';
 import { getColumnNameFromId, injectArray } from '../utils/internalHelpers.js';
 import { setHeaderRole } from '../utils/accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
@@ -189,7 +188,7 @@ export class Columns {
                 const value = data[row] ? data[row] : '';
                 obj.options.data[row][col] = value;
                 // New cell
-                const td = createCell.call(obj, col, row, obj.options.data[row][col]);
+                const td = obj.cells.create(col, row, obj.options.data[row][col]);
                 // updateTableReferences adds x
                 obj.records[row][col] = {
                     element: td,

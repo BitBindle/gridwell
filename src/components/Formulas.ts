@@ -3,9 +3,6 @@ import dispatch from '../utils/dispatch.js';
 import { getColumnName } from '../utils/helpers.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import { updateGridSize, updateRowIndex } from '../utils/accessibility.js';
-import { updateCell } from '../utils/render.js';
-import { updateTable } from '../utils/table.js';
-import { parseValue } from '../utils/values.js';
 import type { HistoryCellChange, MergeInfo, Worksheet } from '../types/internal';
 
 // The cells in progress of updateChain, by cell name
@@ -301,7 +298,7 @@ export class Formulas {
                     // Update cell
                     const value = '' + obj.options.data[cell[1]][cell[0]];
                     if (value.substr(0, 1) == '=') {
-                        records.push(updateCell.call(obj, cell[0], cell[1], value, true));
+                        records.push(obj.cells.update(cell[0], cell[1], value, true));
                     } else {
                         // No longer a formula, remove from the chain
                         // This changes nothing: Object.keys returns a new array (issue #43)
@@ -517,7 +514,7 @@ export class Formulas {
         obj.selection.refresh();
 
         // Update table with custom configuration if applicable
-        updateTable.call(obj);
+        obj.data.updateTable();
     }
 
     /**
@@ -566,7 +563,7 @@ export class Formulas {
                         td.style.textAlign = colAlign;
                     }
                     // The DOM converts a number or a boolean to text
-                    td.textContent = parseValue.call(obj, +obj.records.length + i, j, obj.options.footers[j][i]) as string;
+                    td.textContent = obj.cells.parseValue(+obj.records.length + i, j, obj.options.footers[j][i]) as string;
 
                     // Hide/Show with hideColumn()/showColumn()
                     td.style.display = obj.cols[i].colElement.style.display;
