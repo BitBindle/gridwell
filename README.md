@@ -142,6 +142,10 @@ npm run lint       # ESLint and the import cycle check
 npm run typecheck
 ```
 
+The repository also has a dev container (`.devcontainer/`) with Node 24, pnpm, the GitHub CLI and Claude Code. It
+installs the packages with `pnpm install`, so run the scripts with `pnpm` there (`pnpm start`, `pnpm test`, …). The
+logins of `gh` and `claude` are kept in volumes when the container is rebuilt.
+
 The tests run in jsdom and cover 96% of the lines. CI fails when a file has less than 85% of its lines or 75% of its
 branches covered.
 
