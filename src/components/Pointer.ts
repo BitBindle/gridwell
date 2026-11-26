@@ -101,7 +101,7 @@ export class Pointer {
 
         for (let j = y1; j <= y2; j++) {
             // Skip hidden rows
-            if (worksheet.rows[j] && worksheet.rows[j].element.style.display === 'none') {
+            if (worksheet.rows[j]?.element.style.display === 'none') {
                 continue;
             }
 
@@ -149,8 +149,7 @@ export class Pointer {
 
                     if (value && !data[1] && worksheet.parent.config.autoIncrement !== false) {
                         if (
-                            worksheet.options.columns &&
-                            worksheet.options.columns[i] &&
+                            worksheet.options.columns?.[i] &&
                             (!worksheet.options.columns[i].type ||
                                 worksheet.options.columns[i].type === 'text' ||
                                 (worksheet.options.columns[i].type as string) === 'number')
@@ -185,7 +184,7 @@ export class Pointer {
                                     value = Number(value) + rowNumber;
                                 }
                             }
-                        } else if (worksheet.options.columns && worksheet.options.columns[i] && worksheet.options.columns[i].type === 'calendar') {
+                        } else if (worksheet.options.columns?.[i]?.type === 'calendar') {
                             // A calendar cell has a date as text
                             const date = new Date(value as string);
                             date.setDate(date.getDate() + rowNumber);
@@ -666,10 +665,9 @@ export class Pointer {
     }
 
     /**
-     * Update copy selection
-     *
-     * @param int x, y
-     * @return void
+     * Update the cells that the drag of the selection corner fills.
+     * @param x3 - The column under the mouse.
+     * @param y3 - The row under the mouse.
      */
     private updateCopySelection(x3: number, y3: number) {
         const worksheet = this.worksheet;

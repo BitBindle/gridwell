@@ -59,6 +59,7 @@ export default tseslint.config(
         },
         rules: {
             '@typescript-eslint/prefer-includes': 'error',
+            '@typescript-eslint/prefer-optional-chain': 'error',
         },
     },
     {

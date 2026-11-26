@@ -532,7 +532,7 @@ export class View {
         worksheet.formulas.updateTableReferences();
 
         // Redo search
-        if (worksheet.view.results && worksheet.view.results.length) {
+        if (worksheet.view.results?.length) {
             if (worksheet.searchInput.value) {
                 worksheet.search(worksheet.searchInput.value);
             } else {
@@ -585,8 +585,7 @@ export class View {
             // The row and the value to sort by
             let temp: jspreadsheet.SortingItem[] = [];
             if (
-                worksheet.options.columns &&
-                worksheet.options.columns[column] &&
+                worksheet.options.columns?.[column] &&
                 ((worksheet.options.columns[column].type as string) === 'number' ||
                     worksheet.options.columns[column].type === 'numeric' ||
                     (worksheet.options.columns[column].type as string) === 'percentage' ||
@@ -597,8 +596,7 @@ export class View {
                     temp[j] = [j, Number(worksheet.options.data[j][column])];
                 }
             } else if (
-                worksheet.options.columns &&
-                worksheet.options.columns[column] &&
+                worksheet.options.columns?.[column] &&
                 (worksheet.options.columns[column].type === 'calendar' ||
                     worksheet.options.columns[column].type === 'checkbox' ||
                     worksheet.options.columns[column].type === 'radio')
@@ -902,8 +900,8 @@ export class View {
     private hasFloatingEditor(x: number) {
         const worksheet = this.worksheet;
 
-        const column = worksheet.options.columns && worksheet.options.columns[x];
-        if (!column || !column.type) {
+        const column = worksheet.options.columns?.[x];
+        if (!column?.type) {
             return false;
         }
 

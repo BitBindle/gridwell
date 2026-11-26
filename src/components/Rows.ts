@@ -48,7 +48,7 @@ export class Rows {
         }
 
         // Definitions
-        if (worksheet.options.rows && worksheet.options.rows[j]) {
+        if (worksheet.options.rows?.[j]) {
             if (worksheet.options.rows[j].height) {
                 row.element.style.height = worksheet.options.rows[j].height as string;
             }
@@ -80,7 +80,7 @@ export class Rows {
             // Add column to the row
             row.element.appendChild(worksheet.records[j][i].element);
 
-            if (worksheet.options.columns && worksheet.options.columns[i] && typeof worksheet.options.columns[i].render === 'function') {
+            if (worksheet.options.columns?.[i] && typeof worksheet.options.columns[i].render === 'function') {
                 // The test above makes it a function, which TypeScript does not narrow through the index
                 (worksheet.options.columns[i].render as NonNullable<jspreadsheet.BaseColumn['render']>)(
                     worksheet.records[j][i].element,
@@ -163,12 +163,10 @@ export class Rows {
     }
 
     /**
-     * Insert a new row
-     *
-     * @param mixed - number of blank lines to be insert or a single array with the data of the new row
-     * @param rowNumber
-     * @param insertBefore
-     * @return void
+     * Insert rows.
+     * @param mixed - The number of rows, or the data of one new row.
+     * @param rowNumber - The row next to which the rows go. The last row by default.
+     * @param insertBefore - Put the rows before that row instead of after it.
      */
     insert(mixed?: number | jspreadsheet.CellValue[], rowNumber?: number, insertBefore?: boolean | number): false | undefined {
         const worksheet = this.worksheet;
@@ -283,9 +281,10 @@ export class Rows {
     }
 
     /**
-     * Move row
-     *
-     * @return void
+     * Move a row.
+     * @param o - The row to move.
+     * @param d - The position it goes to.
+     * @param ignoreDom - Move only the data, not the tr.
      */
     move(o: number, d: number, ignoreDom?: boolean) {
         const worksheet = this.worksheet;
@@ -370,11 +369,9 @@ export class Rows {
     }
 
     /**
-     * Delete a row by number
-     *
-     * @param integer rowNumber - row number to be excluded
-     * @param integer numOfRows - number of lines
-     * @return void
+     * Delete rows.
+     * @param rowNumber - The first row to delete. Without it, the selected rows, or the last row.
+     * @param numOfRows - The number of rows to delete.
      */
     delete(rowNumber?: number, numOfRows?: number): false | undefined {
         const worksheet = this.worksheet;

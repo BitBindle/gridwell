@@ -4,16 +4,16 @@ import type { TargetEvent } from '../types/internal';
 
 export function pasteControls(e?: TargetEvent<ClipboardEvent>) {
     // A paste on a control with the class jss_object outside the worksheet goes to that control
-    if (e && e.target && typeof e.target.closest === 'function' && !getElement(e.target)[0] && e.target.closest('.jss_object')) {
+    if (e?.target && typeof e.target.closest === 'function' && !getElement(e.target)[0] && e.target.closest('.jss_object')) {
         return;
     }
 
     const current = libraryBase.jspreadsheet.current;
 
-    if (current && current.selection.range) {
+    if (current?.selection.range) {
         if (!current.editor.isOpen()) {
             if (current.options.editable !== false) {
-                if (e && e.clipboardData) {
+                if (e?.clipboardData) {
                     current.clipboard.paste(current.selection.range[0], current.selection.range[1], e.clipboardData.getData('text'));
                     e.preventDefault();
                 } else if ((window as Window & { clipboardData?: DataTransfer }).clipboardData) {

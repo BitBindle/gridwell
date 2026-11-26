@@ -62,7 +62,7 @@ export class Formulas {
 
         // Decimal point. Column 0 has one too.
         const column = worksheet.options.columns[columnNumber];
-        const decimal = column && column.decimal ? column.decimal : '.';
+        const decimal = column?.decimal ? column.decimal : '.';
 
         // Parse both parts of the number
         // Text, then its parts, then the digits of the integer part, then the digits as text
@@ -164,7 +164,7 @@ export class Formulas {
             });
 
             let tokens = expression.match(/([A-Z]+[0-9]+):([A-Z]+[0-9]+)/g);
-            if (tokens && tokens.length) {
+            if (tokens?.length) {
                 tokensUpdate(tokens);
             }
 
@@ -172,7 +172,7 @@ export class Formulas {
             tokens = expression.match(/([A-Z]+[0-9]+)/g);
 
             // Direct self-reference protection
-            if (tokens && tokens.includes(parentId)) {
+            if (tokens?.includes(parentId)) {
                 console.error('Self Reference detected');
                 return '#ERROR';
             } else {
@@ -191,10 +191,7 @@ export class Formulas {
                             // Get value
                             let value: unknown;
 
-                            if (
-                                typeof worksheet.options.data[position[1]] !== 'undefined' &&
-                                typeof worksheet.options.data[position[1]][position[0]] !== 'undefined'
-                            ) {
+                            if (typeof worksheet.options.data[position[1]]?.[position[0]] !== 'undefined') {
                                 value = worksheet.options.data[position[1]][position[0]];
                             } else {
                                 value = '';
@@ -384,9 +381,7 @@ export class Formulas {
     }
 
     /**
-     * Update cell references
-     *
-     * @return void
+     * Update the references of the formulas after rows or columns move.
      */
     updateTableReferences() {
         const worksheet = this.worksheet;

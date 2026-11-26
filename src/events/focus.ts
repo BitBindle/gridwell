@@ -10,7 +10,7 @@ import type { TargetEvent, Worksheet } from '../types/internal';
  */
 export function focusInControls(e: TargetEvent<FocusEvent>) {
     // The target can be a node without classList, such as the document
-    if (!e.target || e.target.nodeType !== 1) {
+    if (e.target?.nodeType !== 1) {
         return;
     }
 

@@ -190,11 +190,11 @@ export class Editor {
                 worksheet.editor.close(cell, true);
             },
         };
-        if (column.options && column.options.type) {
+        if (column.options?.type) {
             options.type = column.options.type;
         }
         const dropdown = jSuites.dropdown(editor, options);
-        if (dropdown && dropdown.header) {
+        if (dropdown?.header) {
             dropdown.header.setAttribute('aria-label', label);
             // The editor is the focus target, as the other editors
             if (!editor.contains(document.activeElement)) {
@@ -276,7 +276,7 @@ export class Editor {
             value: value as string,
         }) as ReturnType<typeof jSuites.editor> & { editor?: HTMLElement };
         // Accessible role and name of the rich text editor
-        if (richText && richText.editor) {
+        if (richText?.editor) {
             richText.editor.setAttribute('role', 'textbox');
             richText.editor.setAttribute('aria-multiline', 'true');
             richText.editor.setAttribute('aria-label', label);
@@ -312,7 +312,7 @@ export class Editor {
         editor.style.position = 'relative';
         const div = document.createElement('div');
         div.classList.add('jclose');
-        if (img && img.src) {
+        if (img?.src) {
             div.appendChild(img);
         }
         editor.appendChild(div);
@@ -349,7 +349,7 @@ export class Editor {
         // Basic editor
         let editor;
 
-        if ((!column || column.wordWrap !== false) && (worksheet.options.wordWrap === true || (column && column.wordWrap === true))) {
+        if (column?.wordWrap !== false && (worksheet.options.wordWrap === true || column?.wordWrap === true)) {
             editor = createEditor(cell, 'textarea', label);
         } else {
             editor = createEditor(cell, 'input', label);
@@ -400,9 +400,9 @@ export class Editor {
     /**
      * Open the editor of a cell: the editor of its column type, or of the custom type. A read-only cell, a hidden column and
      * a custom type without openEditor have no editor, and a checkbox or a radio toggles.
-     *
-     * @param object cell
-     * @return void
+     * @param cell - The td of the cell.
+     * @param empty - Open the editor without the value of the cell.
+     * @param e - The event that opens the editor.
      */
     open(cell: HTMLTableCellElement, empty?: boolean, e?: KeyboardEvent | MouseEvent | TouchEvent) {
         const worksheet = this.worksheet;
@@ -414,7 +414,7 @@ export class Editor {
         const x = parseInt(xText);
 
         // Column options
-        const column = worksheet.options.columns && worksheet.options.columns[worksheet.cells.getColumnIndex(x, y)];
+        const column = worksheet.options.columns?.[worksheet.cells.getColumnIndex(x, y)];
 
         // On edition start
         worksheet.dispatch('oneditionstart', worksheet, cell, x, y);
@@ -440,18 +440,18 @@ export class Editor {
                 this.openCustom(cell, x, y, column as ColumnOptions & { type: jspreadsheet.CustomEditor }, e);
             } else {
                 // Native functions
-                if (column && column.type === 'hidden') {
+                if (column?.type === 'hidden') {
                     // A hidden column has no editor: do not keep edition open
                     worksheet.editor.end();
                 } else if (column && (column.type === 'checkbox' || column.type === 'radio')) {
                     this.toggleCheckbox(cell);
-                } else if (column && column.type === 'dropdown') {
+                } else if (column?.type === 'dropdown') {
                     this.openDropdown(cell, x, y, xText, yText, column, label);
                 } else if (column && (column.type === 'calendar' || column.type === 'color')) {
                     this.openPicker(cell, x, y, column, label);
-                } else if (column && column.type === 'html') {
+                } else if (column?.type === 'html') {
                     this.openHtml(cell, x, y, column, label);
-                } else if (column && column.type === 'image') {
+                } else if (column?.type === 'image') {
                     this.openImage(cell, x, y, column, label);
                 } else {
                     this.openText(cell, x, y, column, label, empty);
@@ -461,11 +461,9 @@ export class Editor {
     }
 
     /**
-     * Close the editor and save the information
-     *
-     * @param object cell
-     * @param boolean save
-     * @return void
+     * Close the editor of a cell.
+     * @param cell - The td of the cell.
+     * @param save - Save the value of the editor in the cell.
      */
     close(cell: HTMLTableCellElement, save: boolean) {
         const worksheet = this.worksheet;
@@ -479,7 +477,7 @@ export class Editor {
         const y = parseInt(cell.getAttribute('data-y'));
 
         // Column options
-        const column = worksheet.options.columns && worksheet.options.columns[worksheet.cells.getColumnIndex(x, y)];
+        const column = worksheet.options.columns?.[worksheet.cells.getColumnIndex(x, y)];
 
         // The editor element has the jsuites control as a property
         let value;
@@ -499,22 +497,22 @@ export class Editor {
                 // Native functions
                 if (column && (column.type === 'checkbox' || column.type === 'radio' || column.type === 'hidden')) {
                     // Do nothing
-                } else if (column && column.type === 'dropdown') {
+                } else if (column?.type === 'dropdown') {
                     const dropdown = (cell.children[0] as EditorElement).dropdown;
                     const delimiter = column.delimiter;
                     dropdown.close(true);
                     value = delimiter && column.multiple ? dropdown.getValue(true).join(delimiter) : dropdown.getValue();
-                } else if (column && column.type === 'calendar') {
+                } else if (column?.type === 'calendar') {
                     value = (cell.children[0] as EditorElement).calendar.close(true);
-                } else if (column && column.type === 'color') {
+                } else if (column?.type === 'color') {
                     value = (cell.children[0] as EditorElement).color.close(true);
-                } else if (column && column.type === 'html') {
+                } else if (column?.type === 'html') {
                     // The rich text editor keeps its jsuites control on its element
                     value = (cell.children[0].children[0] as HTMLElement & { editor: { getData(): string } }).editor.getData();
-                } else if (column && column.type === 'image') {
+                } else if (column?.type === 'image') {
                     const img = cell.children[0].children[0].children[0] as HTMLImageElement | undefined;
-                    value = img && img.tagName === 'IMG' ? img.src : '';
-                } else if (column && column.type === 'numeric') {
+                    value = img?.tagName === 'IMG' ? img.src : '';
+                } else if (column?.type === 'numeric') {
                     value = (cell.children[0] as EditorElement).value;
                     if (`${value}`.substr(0, 1) !== '=') {
                         if (value === '') {
@@ -559,11 +557,11 @@ export class Editor {
                     column.type.closeEditor(cell, save, parseInt(x), parseInt(y), worksheet, column);
                 }
             } else {
-                if (column && column.type === 'dropdown') {
+                if (column?.type === 'dropdown') {
                     (cell.children[0] as EditorElement).dropdown.close(true);
-                } else if (column && column.type === 'calendar') {
+                } else if (column?.type === 'calendar') {
                     (cell.children[0] as EditorElement).calendar.close(true);
-                } else if (column && column.type === 'color') {
+                } else if (column?.type === 'color') {
                     (cell.children[0] as EditorElement).color.close(true);
                 } else {
                     (cell.children[0] as EditorElement).onblur = null;

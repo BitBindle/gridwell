@@ -26,9 +26,9 @@ export class Meta {
             return worksheet.options.meta;
         } else {
             if (key) {
-                return worksheet.options.meta && worksheet.options.meta[cell] && worksheet.options.meta[cell][key] ? worksheet.options.meta[cell][key] : null;
+                return worksheet.options.meta?.[cell]?.[key] ? worksheet.options.meta[cell][key] : null;
             } else {
-                return worksheet.options.meta && worksheet.options.meta[cell] ? worksheet.options.meta[cell] : null;
+                return worksheet.options.meta?.[cell] ? worksheet.options.meta[cell] : null;
             }
         }
     }

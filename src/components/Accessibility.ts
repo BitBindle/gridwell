@@ -55,7 +55,7 @@ export class Accessibility {
     getLabelText(key: keyof typeof defaultLabels, value?: string) {
         const spreadsheet = this.worksheet.parent;
 
-        const labels = spreadsheet && spreadsheet.config && spreadsheet.config.labels;
+        const labels = spreadsheet?.config?.labels;
         const text = labels && typeof labels[key] === 'string' ? labels[key] : jSuites.translate(defaultLabels[key]);
 
         return value === undefined ? text : text.split('{0}').join(value);

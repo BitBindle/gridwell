@@ -215,12 +215,7 @@ export class History {
         }
 
         // Adjust nested headers
-        if (
-            worksheet.options.nestedHeaders &&
-            worksheet.options.nestedHeaders.length > 0 &&
-            worksheet.options.nestedHeaders[0] &&
-            worksheet.options.nestedHeaders[0][0]
-        ) {
+        if (worksheet.options.nestedHeaders && worksheet.options.nestedHeaders.length > 0 && worksheet.options.nestedHeaders[0]?.[0]) {
             for (let j = 0; j < worksheet.options.nestedHeaders.length; j++) {
                 let colspan;
 
