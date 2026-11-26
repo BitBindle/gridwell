@@ -296,6 +296,19 @@ describe('Worksheet tabs', () => {
         expect(worksheets.length).to.eq(3);
     });
 
+    it('deleteWorksheet removes the options of the worksheet from the options of the spreadsheet', async () => {
+        const worksheets = await create({ tabs: true });
+
+        worksheets[0].deleteWorksheet(1);
+
+        expect(worksheets[0].parent.getConfig().worksheets.map((options) => options.worksheetName)).to.eql(['First', 'Third']);
+        expect(worksheets[0].parent.config.worksheets).to.have.ordered.members(worksheets.map((worksheet) => worksheet.options));
+
+        // A position without a worksheet changes nothing
+        worksheets[0].deleteWorksheet(5);
+        expect(worksheets[0].parent.getConfig().worksheets.map((options) => options.worksheetName)).to.eql(['First', 'Third']);
+    });
+
     it('createWorksheet adds a worksheet at a position, and oncreateworksheet gets that position', async () => {
         const created: [string, number][] = [];
         const worksheets = await create({
@@ -306,13 +319,14 @@ describe('Worksheet tabs', () => {
         });
 
         worksheets[0].createWorksheet({ minDimensions: [2, 2], worksheetName: 'Between' }, 1);
-        // The new worksheet is built after an await in buildWorksheet
+        // The new worksheet is built after an await in Worksheet.build
         await wait(10);
 
         expect(getTabs().map((tab) => tab.textContent)).to.eql(['First', 'Between', 'Second', 'Third']);
         expect(worksheets.map((worksheet) => worksheet.options.worksheetName)).to.eql(['First', 'Between', 'Second', 'Third']);
         expect(worksheets[0].parent.config.worksheets.map((options) => options.worksheetName)).to.eql(['First', 'Between', 'Second', 'Third']);
-        expect(worksheets[1].element.parentNode!.children[1]).to.equal(worksheets[1].element);
+        expect(Array.from(worksheets[1].element.parentNode!.children)).to.have.ordered.members(worksheets.map((worksheet) => worksheet.element));
+        expect(getTabs().map((tab) => tab.getAttribute('aria-controls'))).to.eql(worksheets.map((worksheet) => worksheet.element.id));
         expect(created).to.eql([['Between', 1]]);
     });
 
@@ -331,15 +345,40 @@ describe('Worksheet tabs', () => {
         expect(getTabs().map((tab) => tab.textContent)).to.eql(['Second', 'Third', 'First']);
         expect(worksheets.map((worksheet) => worksheet.options.worksheetName)).to.eql(['Second', 'Third', 'First']);
         expect(worksheets[0].parent.config.worksheets.map((options) => options.worksheetName)).to.eql(['Second', 'Third', 'First']);
-        expect(Array.from(worksheets[0].element.parentNode!.children)).to.eql(worksheets.map((worksheet) => worksheet.element));
+        expect(Array.from(worksheets[0].element.parentNode!.children)).to.have.ordered.members(worksheets.map((worksheet) => worksheet.element));
+        expect(getTabs().map((tab) => tab.getAttribute('aria-controls'))).to.eql(worksheets.map((worksheet) => worksheet.element.id));
         expect(worksheets[0].getWorksheetActive()).to.eq(0);
         expect(getTabs()[0].getAttribute('aria-selected')).to.eq('true');
         expect(moves).to.eql([['First', 0, 2]]);
 
         // A position outside the worksheets moves nothing
-        worksheets[0].moveWorksheet(0, 3);
-        worksheets[0].moveWorksheet(1, 1);
+        expect(worksheets[0].moveWorksheet(0, 3)).to.equal(false);
+        expect(worksheets[0].moveWorksheet(1, 1)).to.equal(undefined);
         expect(moves.length).to.eq(1);
+    });
+
+    it('moveWorksheet moves the options of the worksheet after a delete', async () => {
+        const worksheets = await create({ tabs: true });
+
+        worksheets[0].deleteWorksheet(1);
+        worksheets[0].moveWorksheet(1, 0);
+
+        expect(worksheets.map((worksheet) => worksheet.options.worksheetName)).to.eql(['Third', 'First']);
+        expect(worksheets[0].parent.config.worksheets).to.have.ordered.members(worksheets.map((worksheet) => worksheet.options));
+    });
+
+    it('moveWorksheet keeps the focus on the tab or the cell of the moved worksheet', async () => {
+        const worksheets = await create({ tabs: true });
+
+        getTabs()[0].focus();
+        worksheets[0].moveWorksheet(0, 2);
+        expect(document.activeElement).to.equal(getTabs()[2]);
+
+        const cell = worksheets[2].records[0][0].element;
+        cell.tabIndex = 0;
+        cell.focus();
+        worksheets[0].moveWorksheet(2, 0);
+        expect(document.activeElement).to.equal(cell);
     });
 
     it('renameWorksheet renames a worksheet, its tab and its table, and refuses an empty or a used name', async () => {
@@ -361,6 +400,7 @@ describe('Worksheet tabs', () => {
         expect(renames).to.eql([[1, 'Costs', 'Second']]);
 
         expect(worksheets[0].renameWorksheet(1, '')).to.equal(false);
+        expect(worksheets[0].renameWorksheet(1, '   ')).to.equal(false);
         expect(worksheets[0].renameWorksheet(1, 'First')).to.equal(false);
         expect(worksheets[0].renameWorksheet(5, 'Other')).to.equal(false);
         expect(getTabs()[1].textContent).to.eq('Costs');

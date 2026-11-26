@@ -565,19 +565,8 @@ export class Worksheet {
 
         const last = spreadsheet.worksheets.length - 1;
         if (Number.isInteger(position) && position! >= 0 && position! < last) {
-            this.placeWorksheet(last, position!);
+            spreadsheet.placeWorksheet(last, position!);
         }
-    }
-
-    /**
-     * Move a worksheet, its options and its tab to another position. The open tab stays open.
-     */
-    private placeWorksheet(from: number, to: number) {
-        const spreadsheet = this.parent;
-
-        spreadsheet.worksheets.splice(to, 0, spreadsheet.worksheets.splice(from, 1)[0]);
-        spreadsheet.config.worksheets.splice(to, 0, spreadsheet.config.worksheets.splice(from, 1)[0]);
-        spreadsheet.element.tabs!.move(from, to, true, false);
     }
 
     /**
@@ -587,12 +576,15 @@ export class Worksheet {
         const spreadsheet = this.parent;
         const count = spreadsheet.worksheets.length;
 
-        if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to < 0 || from >= count || to >= count || from === to) {
+        if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to < 0 || from >= count || to >= count) {
+            return false;
+        }
+        if (from === to) {
             return;
         }
 
         const worksheet = spreadsheet.worksheets[from];
-        this.placeWorksheet(from, to);
+        spreadsheet.placeWorksheet(from, to);
 
         worksheet.dispatch('onmoveworksheet', worksheet, from, to);
     }
@@ -604,7 +596,8 @@ export class Worksheet {
         const spreadsheet = this.parent;
         const worksheet = spreadsheet.worksheets[position];
 
-        if (!worksheet || typeof name !== 'string' || !name) {
+        // A name of spaces would give the tab and the table no accessible name
+        if (!worksheet || typeof name !== 'string' || !name.trim()) {
             return false;
         }
         if (spreadsheet.worksheets.some((other) => other !== worksheet && other.options.worksheetName === name)) {
@@ -637,6 +630,12 @@ export class Worksheet {
         this.parent.element.tabs!.remove(position);
 
         const removedWorksheet = this.parent.worksheets.splice(position, 1)[0];
+
+        // getConfig gives the options of the worksheets that the spreadsheet has. A position without a worksheet removes none.
+        const index = removedWorksheet ? this.parent.config.worksheets.indexOf(removedWorksheet.options) : -1;
+        if (index >= 0) {
+            this.parent.config.worksheets.splice(index, 1);
+        }
 
         this.parent.dispatch('ondeleteworksheet', removedWorksheet, position);
     }

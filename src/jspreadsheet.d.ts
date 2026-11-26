@@ -1907,7 +1907,7 @@ declare namespace jspreadsheet {
         /**
          * Create a new worksheet.
          * @param options - Worksheet options.
-         * @param position - Index of the new worksheet. Without it, the new worksheet is the last one.
+         * @param position - Index of the new worksheet. Without it, or outside the worksheets, the new worksheet is the last one.
          */
         createWorksheet: (options: WorksheetOptions, position?: number) => void;
 
@@ -2318,18 +2318,21 @@ declare namespace jspreadsheet {
         openWorksheet: (position: number) => void;
 
         /**
-         * Move a worksheet and its tab to another position. The open worksheet stays open. The method writes no history entry.
+         * Move a worksheet and its tab to another position. The open worksheet stays open, and the focus stays where it is.
+         * The method writes no history entry.
          * @param from - Index of the worksheet.
          * @param to - New index of the worksheet.
+         * @returns False when an index is outside the worksheets.
          */
-        moveWorksheet: (from: number, to: number) => void;
+        moveWorksheet: (from: number, to: number) => false | undefined;
 
         /**
          * Rename a worksheet, its tab and the accessible name of its table. Formulas that refer to the old name keep it.
          * The method writes no history entry.
          * @param position - Index of the worksheet.
-         * @param name - New name. It must not be empty or the name of another worksheet of the spreadsheet.
-         * @returns False when the name is not valid.
+         * @param name - New name. It must have a character that is not a space, and must not be the name of another
+         * worksheet of the spreadsheet. The names are compared with their letter case, as `getWorksheetInstanceByName` does.
+         * @returns False when the position is outside the worksheets or the name is not valid.
          */
         renameWorksheet: (position: number, name: string) => false | undefined;
 
