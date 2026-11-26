@@ -66,6 +66,10 @@ export class Pointer {
         // Selected cells. The corner is only there when cells are selected.
         const h = worksheet.selection.bounds!;
 
+        // The first column of the selection. The borders leave out the hidden columns, but a merged cell over a hidden first
+        // column starts in it, and fillDown fills from there.
+        const left = worksheet.selection.highlighted.reduce((x, cell) => Math.min(x, parseInt(cell.element.getAttribute('data-x'))), h[0]);
+
         // Cells
         const x1 = parseInt(o.getAttribute('data-x'));
         const y1 = parseInt(o.getAttribute('data-y'));
@@ -78,7 +82,7 @@ export class Pointer {
 
         let rowNumber, colNumber;
 
-        if (h[0] === x1) {
+        if (left === x1) {
             // Vertical copy
             if (y1 < h[1]) {
                 rowNumber = y1 - h[1];
@@ -87,8 +91,8 @@ export class Pointer {
             }
             colNumber = 0;
         } else {
-            if (x1 < h[0]) {
-                colNumber = x1 - h[0];
+            if (x1 < left) {
+                colNumber = x1 - left;
             } else {
                 colNumber = 1;
             }
@@ -112,9 +116,9 @@ export class Pointer {
             posx = 0;
 
             // Data columns
-            if (h[0] !== x1) {
-                if (x1 < h[0]) {
-                    colNumber = x1 - h[0];
+            if (left !== x1) {
+                if (x1 < left) {
+                    colNumber = x1 - left;
                 } else {
                     colNumber = 1;
                 }
@@ -201,7 +205,7 @@ export class Pointer {
                     }
                 }
                 posx++;
-                if (h[0] !== x1) {
+                if (left !== x1) {
                     colNumber++;
                 }
             }

@@ -916,6 +916,26 @@ describe('The first cell of a merged range over a hidden column (issue #20)', ()
         expect(worksheet.getValueFromCoords(1, 0)).to.equal('=D2');
     });
 
+    it('fills down from a merged range over a hidden first column with a double click on the corner (issue #127)', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '', ''],
+                        ['', '', ''],
+                    ],
+                    columns: [{ type: 'hidden' }, { type: 'text' }, { type: 'text' }],
+                    mergeCells: { A1: [2, 1], A2: [2, 1] },
+                },
+            ],
+        })[0];
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.pointer.fillDown();
+
+        expect(worksheet.getValueFromCoords(0, 1)).to.equal(2);
+    });
+
     it('wraps a long text when hideColumn renders the first cell with the options of another column', () => {
         const long = 'a'.repeat(250);
         const worksheet = jspreadsheet(root, {
