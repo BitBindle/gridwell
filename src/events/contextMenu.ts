@@ -43,12 +43,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
             items.push({
                 title: jSuites.translate('Rename this column'),
                 onclick() {
-                    const oldValue = worksheet.getHeader(x);
-
-                    const newValue = prompt(jSuites.translate('Column name'), oldValue);
-
-                    // A cancelled prompt gives null, and setHeader then uses the default name (issue #42)
-                    worksheet.setHeader(x, newValue!);
+                    worksheet.columns.rename(x);
                 },
             });
         }

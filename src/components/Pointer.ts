@@ -408,11 +408,11 @@ export class Pointer {
                     o = worksheet.selection.column;
                     d = columnId;
                 } else {
-                    // Press to rename
+                    // Hold the press on the selected header to rename the column. A move or the mouseup stops the timer.
                     if (worksheet.selection.column === columnId && worksheet.options.allowRenameColumn !== false) {
                         // The active worksheet when the timer runs
                         libraryBase.jspreadsheet.timeControl = setTimeout(() => {
-                            libraryBase.jspreadsheet.current!.setHeader(columnId);
+                            libraryBase.jspreadsheet.current!.columns.rename(columnId);
                         }, 800);
                     }
 

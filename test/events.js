@@ -534,3 +534,81 @@ describe('Context menu', () => {
         expect(worksheet.selection.range).to.eql([2, 0, 2, 2]);
     });
 });
+
+describe('Rename a column (issue #42)', () => {
+    const load = (options) =>
+        new Promise((resolve) => {
+            const instance = jspreadsheet(root, { ...options, onload: () => resolve(instance[0]) });
+        });
+
+    const mouse = (element, type) => element.dispatchEvent(new window.MouseEvent(type, { bubbles: true, cancelable: true, buttons: 1 }));
+
+    let prompt;
+    let answers;
+    let questions;
+
+    beforeEach(() => {
+        prompt = window.prompt;
+        answers = [];
+        questions = [];
+        window.prompt = global.prompt = (text, value) => {
+            questions.push([text, value]);
+            return answers.shift();
+        };
+    });
+
+    afterEach(() => {
+        window.prompt = global.prompt = prompt;
+    });
+
+    const renameItem = async () => {
+        let items;
+        const worksheet = await load({
+            worksheets: [{ data: [['a', 'b']], columns: [{ title: 'Name' }, { title: 'Age' }] }],
+            contextMenu: (instance, x, y, e, defaultItems) => {
+                items = defaultItems;
+                return false;
+            },
+        });
+
+        worksheet.headers[0].dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+
+        return { worksheet, item: items.find((item) => item.title === 'Rename this column') };
+    };
+
+    it('keeps the title when the prompt of "Rename this column" is cancelled', async () => {
+        const { worksheet, item } = await renameItem();
+
+        answers.push(null);
+        item.onclick();
+
+        expect(questions).to.eql([['Column name', 'Name']]);
+        expect(worksheet.getHeader(0)).to.equal('Name');
+    });
+
+    it('sets the title that the prompt of "Rename this column" gives', async () => {
+        const { worksheet, item } = await renameItem();
+
+        answers.push('Surname');
+        item.onclick();
+
+        expect(worksheet.getHeader(0)).to.equal('Surname');
+    });
+
+    it('asks for the title when the press on the selected header is held', async () => {
+        const worksheet = await load({
+            worksheets: [{ data: [['a', 'b']], columns: [{ title: 'Name' }, { title: 'Age' }], columnResize: false, columnDrag: false }],
+        });
+
+        mouse(worksheet.headers[1], 'mousedown');
+        mouse(document, 'mouseup');
+
+        answers.push(null);
+        mouse(worksheet.headers[1], 'mousedown');
+        await new Promise((resolve) => setTimeout(resolve, 850));
+        mouse(document, 'mouseup');
+
+        expect(questions).to.eql([['Column name', 'Age']]);
+        expect(worksheet.getHeader(1)).to.equal('Age');
+    });
+});

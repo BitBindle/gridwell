@@ -900,6 +900,21 @@ export class Columns {
     }
 
     /**
+     * Ask the user for the title of a column, and set it. A cancelled prompt keeps the title. An empty title is the
+     * column name, as with setHeader.
+     * @param column - The column, from 0.
+     */
+    rename(column: number) {
+        const worksheet = this.worksheet;
+
+        const newValue = prompt(jSuites.translate('Column name'), worksheet.getHeader(column));
+
+        if (newValue !== null) {
+            worksheet.setHeader(column, newValue);
+        }
+    }
+
+    /**
      * Create a nested header object
      */
     // The row of nested headers keeps its element
