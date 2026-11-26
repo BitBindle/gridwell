@@ -356,3 +356,28 @@ describe('The options of the worksheet table', () => {
         expect(worksheet.getCell('A2').classList.contains('marked')).to.equal(true);
     });
 });
+
+describe('Destroy all spreadsheets', () => {
+    it('destroys each spreadsheet (issue #114)', async () => {
+        const elements = [0, 1, 2].map(() => document.body.appendChild(document.createElement('div')));
+
+        try {
+            for (const element of elements) {
+                jspreadsheet(element, { worksheets: [{ minDimensions: [1, 1] }] });
+            }
+            await new Promise((resolve) => setTimeout(resolve));
+            const spreadsheets = elements.map((element) => element.spreadsheet);
+
+            jspreadsheet.destroyAll();
+
+            // The other tests reuse root, so the list can keep spreadsheets whose element has a newer one
+            expect(spreadsheets.filter((spreadsheet) => jspreadsheet.spreadsheet.includes(spreadsheet))).to.eql([]);
+            expect(elements.map((element) => Boolean(element.spreadsheet))).to.eql([false, false, false]);
+            expect(elements.map((element) => element.innerHTML)).to.eql(['', '', '']);
+        } finally {
+            for (const element of elements) {
+                element.remove();
+            }
+        }
+    });
+});
