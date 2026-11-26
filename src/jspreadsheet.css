@@ -592,6 +592,19 @@
     user-drag: none;
 }
 
+/* The live region of announce: hidden on the screen, read by assistive technology */
+.jss_live {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
 .jss_textarea {
     position: absolute;
     top: -999px;
