@@ -84,7 +84,7 @@ export class Worksheet {
 
         const ret = spreadsheet.callHandlers(this, event, args);
 
-        if (event == 'onafterchanges') {
+        if (event === 'onafterchanges') {
             if (typeof spreadsheet.plugins === 'object') {
                 for (const plugin of Object.values(spreadsheet.plugins)) {
                     if (typeof plugin.persistence === 'function') {
@@ -95,7 +95,7 @@ export class Worksheet {
             }
 
             if (this.options.persistence) {
-                const url = this.options.persistence == true ? this.options.url : this.options.persistence;
+                const url = this.options.persistence === true ? this.options.url : this.options.persistence;
                 const data = this.prepareJson(args[1] as ChangeRecord[]);
                 this.save(url, data);
             }
@@ -690,7 +690,7 @@ export class Worksheet {
         this.thead.appendChild(this.headerContainer);
 
         // Filters
-        if (this.options.filters == true) {
+        if (this.options.filters === true) {
             this.filter = document.createElement('tr');
             const td = document.createElement('td');
             this.filter.appendChild(td);
@@ -700,7 +700,7 @@ export class Worksheet {
                 td.innerHTML = '&nbsp;';
                 td.setAttribute('data-x', i);
                 td.className = 'jss_column_filter';
-                if (this.options.columns[i].type == 'hidden') {
+                if (this.options.columns[i].type === 'hidden') {
                     td.style.display = 'none';
                 }
                 this.filter.appendChild(td);
@@ -742,7 +742,7 @@ export class Worksheet {
         this.corner.setAttribute('unselectable', 'on');
         this.corner.setAttribute('onselectstart', 'return false');
 
-        if (this.options.selectionCopy == false) {
+        if (this.options.selectionCopy === false) {
             this.corner.style.display = 'none';
         }
     }
@@ -786,7 +786,7 @@ export class Worksheet {
      */
     private setLayout() {
         // Overflow
-        if (this.options.tableOverflow == true) {
+        if (this.options.tableOverflow === true) {
             if (this.options.tableHeight) {
                 (this.content.style as unknown as Record<string, string>)['overflow-y'] = 'auto';
                 (this.content.style as unknown as Record<string, string>)['box-shadow'] = 'rgb(221 221 221) 2px 2px 5px 0.1px';
@@ -799,21 +799,21 @@ export class Worksheet {
         }
 
         // With toolbars
-        if (this.options.tableOverflow != true && this.parent.config.toolbar) {
+        if (this.options.tableOverflow !== true && this.parent.config.toolbar) {
             this.element.classList.add('with-toolbar');
         }
 
         // Actions
-        if (this.options.columnDrag != false) {
+        if (this.options.columnDrag !== false) {
             this.thead.classList.add('draggable');
         }
-        if (this.options.columnResize != false) {
+        if (this.options.columnResize !== false) {
             this.thead.classList.add('resizable');
         }
-        if (this.options.rowDrag != false) {
+        if (this.options.rowDrag !== false) {
             this.tbody.classList.add('draggable');
         }
-        if (this.options.rowResize != false) {
+        if (this.options.rowResize !== false) {
             this.tbody.classList.add('resizable');
         }
     }
@@ -872,7 +872,7 @@ export class Worksheet {
         this.createPagination();
 
         // Append containers to the table
-        if (this.options.search == true) {
+        if (this.options.search === true) {
             this.element.appendChild(filter);
         }
 
@@ -901,7 +901,7 @@ export class Worksheet {
      */
     private prepareTable() {
         // Lazy loading
-        if (this.options.lazyLoading == true && this.options.tableOverflow != true && this.parent.config.fullscreen != true) {
+        if (this.options.lazyLoading === true && this.options.tableOverflow !== true && this.parent.config.fullscreen !== true) {
             console.error('Jspreadsheet: The lazyloading only works when tableOverflow = yes or fullscreen = yes');
             this.options.lazyLoading = false;
         }
@@ -954,7 +954,7 @@ export class Worksheet {
             }
 
             // Pre-load initial source for json dropdown
-            if (this.options.columns[i].type == 'dropdown') {
+            if (this.options.columns[i].type === 'dropdown') {
                 // if remote content
                 if (this.options.columns[i].url) {
                     multiple.push({
@@ -1016,7 +1016,7 @@ export class Worksheet {
                         const newData = parseCSV(result, this.options.csvDelimiter);
 
                         // Headers
-                        if (this.options.csvHeaders == true && newData.length > 0) {
+                        if (this.options.csvHeaders === true && newData.length > 0) {
                             const headers = newData.shift()!;
 
                             if (headers.length > 0) {

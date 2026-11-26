@@ -192,15 +192,15 @@ export class Formulas {
                             let value: unknown;
 
                             if (
-                                typeof worksheet.options.data[position[1]] != 'undefined' &&
-                                typeof worksheet.options.data[position[1]][position[0]] != 'undefined'
+                                typeof worksheet.options.data[position[1]] !== 'undefined' &&
+                                typeof worksheet.options.data[position[1]][position[0]] !== 'undefined'
                             ) {
                                 value = worksheet.options.data[position[1]][position[0]];
                             } else {
                                 value = '';
                             }
                             // Get column data
-                            if (`${value}`.substr(0, 1) == '=') {
+                            if (`${value}`.substr(0, 1) === '=') {
                                 if (typeof formulaResults[reference] !== 'undefined') {
                                     value = formulaResults[reference];
                                 } else {
@@ -209,17 +209,18 @@ export class Formulas {
                                 }
                             }
                             // Type!
-                            if (`${value}`.trim() == '') {
+                            if (`${value}`.trim() === '') {
                                 // Null
                                 formulaExpressions[reference] = null;
                             } else {
-                                if (value == Number(value) && worksheet.parent.config.autoCasting != false) {
+                                // eslint-disable-next-line eqeqeq -- a text that is a number equals the number
+                                if (value == Number(value) && worksheet.parent.config.autoCasting !== false) {
                                     // Number
                                     formulaExpressions[reference] = Number(value);
                                 } else {
                                     // Trying any formatted number
                                     const number = worksheet.formulas.parseNumber(value, position[0]);
-                                    if (worksheet.parent.config.autoCasting != false && number) {
+                                    if (worksheet.parent.config.autoCasting !== false && number) {
                                         formulaExpressions[reference] = number;
                                     } else {
                                         // Text as a string literal, with its quotes and backslashes escaped
@@ -298,7 +299,7 @@ export class Formulas {
                     const cell = getIdFromColumnName(worksheet.formulas.chain[cellId][i], true);
                     // Update cell
                     const value = `${worksheet.options.data[cell[1]][cell[0]]}`;
-                    if (value.substr(0, 1) == '=') {
+                    if (value.substr(0, 1) === '=') {
                         records.push(worksheet.cells.update(cell[0], cell[1], value, true));
                     } else {
                         // No longer a formula, remove from the chain
@@ -368,10 +369,10 @@ export class Formulas {
             for (let i = 0; i < worksheet.options.data[0].length; i++) {
                 const value = `${row[i]}`;
                 // Is formula
-                if (value.substr(0, 1) == '=') {
+                if (value.substr(0, 1) === '=') {
                     // Replace tokens
                     const newFormula = this.updateFormula(value, referencesToUpdate);
-                    if (newFormula != value) {
+                    if (newFormula !== value) {
                         row[i] = newFormula;
                     }
                 }
@@ -397,7 +398,7 @@ export class Formulas {
         for (let i = 0; i < worksheet.headers.length; i++) {
             const x = parseInt(worksheet.headers[i].getAttribute('data-x'));
 
-            if (x != i) {
+            if (x !== i) {
                 // Update coords
                 worksheet.headers[i].setAttribute('data-x', i);
                 worksheet.headers[i].setAttribute('aria-colindex', i + 2);
@@ -413,7 +414,7 @@ export class Formulas {
             if (worksheet.rows[j]) {
                 const y = parseInt(worksheet.rows[j].element.getAttribute('data-y'));
 
-                if (y != j) {
+                if (y !== j) {
                     // Update coords
                     worksheet.rows[j].element.setAttribute('data-y', j);
                     worksheet.rows[j].element.children[0].setAttribute('data-y', j);
@@ -431,16 +432,16 @@ export class Formulas {
 
         // Update cell
         function updatePosition(x: number, y: number, i: number, j: number) {
-            if (x != i) {
+            if (x !== i) {
                 worksheet.records[j][i].element.setAttribute('data-x', i);
                 worksheet.records[j][i].element.setAttribute('aria-colindex', i + 2);
             }
-            if (y != j) {
+            if (y !== j) {
                 worksheet.records[j][i].element.setAttribute('data-y', j);
             }
 
             // Other updates
-            if (x != i || y != j) {
+            if (x !== i || y !== j) {
                 const columnIdFrom = getColumnNameFromId([x, y]);
                 const columnIdTo = getColumnNameFromId([i, j]);
                 affectedTokens[columnIdFrom] = columnIdTo;
@@ -459,7 +460,7 @@ export class Formulas {
                         const columnIdFrom = getColumnNameFromId([x, y]);
                         const columnIdTo = getColumnNameFromId([i, j]);
                         if (mergeCellUpdates[columnIdFrom] == null) {
-                            if (columnIdFrom == columnIdTo) {
+                            if (columnIdFrom === columnIdTo) {
                                 mergeCellUpdates[columnIdFrom] = false;
                             } else {
                                 const totalX = i - x;

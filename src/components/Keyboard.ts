@@ -26,24 +26,24 @@ export class Keyboard {
         const worksheet = this.worksheet as EditingWorksheet;
         const column = worksheet.options.columns && worksheet.options.columns[worksheet.cells.getColumnIndex(worksheet.editor.x, worksheet.editor.y)];
 
-        if (e.which == 27) {
+        if (e.which === 27) {
             // Escape
             if (worksheet.editor.isOpen()) {
                 // Exit without saving
                 worksheet.editor.close(worksheet.editor.cell, false);
             }
             e.preventDefault();
-        } else if (e.which == 13) {
+        } else if (e.which === 13) {
             // Enter
-            if (column && column.type == 'calendar') {
+            if (column && column.type === 'calendar') {
                 worksheet.editor.close(worksheet.editor.cell, true);
-            } else if (column && column.type == 'dropdown') {
+            } else if (column && column.type === 'dropdown') {
                 // Do nothing
             } else {
                 // Alt enter -> do not close editor
                 if (
-                    (worksheet.options.wordWrap == true ||
-                        (column && column.wordWrap == true) ||
+                    (worksheet.options.wordWrap === true ||
+                        (column && column.wordWrap === true) ||
                         (worksheet.options.data[worksheet.editor.y][worksheet.editor.x] &&
                             (worksheet.options.data[worksheet.editor.y][worksheet.editor.x] as string).length > 200)) &&
                     e.altKey
@@ -61,7 +61,7 @@ export class Keyboard {
                     (worksheet.editor.cell.children[0] as HTMLElement).blur();
                 }
             }
-        } else if (e.which == 9) {
+        } else if (e.which === 9) {
             // Tab
             if (column && ['calendar', 'html'].includes(column.type as string)) {
                 worksheet.editor.close(worksheet.editor.cell, true);
@@ -78,15 +78,15 @@ export class Keyboard {
         // gridKeys calls it, when the worksheet has a selection
         const worksheet = this.worksheet as SelectedWorksheet;
 
-        if (worksheet.options.editable != false) {
+        if (worksheet.options.editable !== false) {
             if (worksheet.selection.row != null) {
-                if (worksheet.options.allowDeleteRow != false) {
+                if (worksheet.options.allowDeleteRow !== false) {
                     if (confirm(jSuites.translate('Are you sure to delete the selected rows?'))) {
                         worksheet.deleteRow();
                     }
                 }
             } else if (worksheet.selection.column != null) {
-                if (worksheet.options.allowDeleteColumn != false) {
+                if (worksheet.options.allowDeleteColumn !== false) {
                     if (confirm(jSuites.translate('Are you sure to delete the selected columns?'))) {
                         worksheet.deleteColumn();
                     }
@@ -114,9 +114,9 @@ export class Keyboard {
         if (e.shiftKey) {
             worksheet.selection.up();
         } else {
-            if (worksheet.options.allowInsertRow != false) {
-                if (worksheet.options.allowManualInsertRow != false) {
-                    if (worksheet.selection.range[1] == worksheet.options.data.length - 1) {
+            if (worksheet.options.allowInsertRow !== false) {
+                if (worksheet.options.allowManualInsertRow !== false) {
+                    if (worksheet.selection.range[1] === worksheet.options.data.length - 1) {
                         // New record in case the selection is in the last row
                         worksheet.insertRow();
                     }
@@ -139,9 +139,9 @@ export class Keyboard {
         if (e.shiftKey) {
             worksheet.selection.left();
         } else {
-            if (worksheet.options.allowInsertColumn != false) {
-                if (worksheet.options.allowManualInsertColumn != false) {
-                    if (worksheet.selection.range[0] == worksheet.options.data[0].length - 1) {
+            if (worksheet.options.allowInsertColumn !== false) {
+                if (worksheet.options.allowManualInsertColumn !== false) {
+                    if (worksheet.selection.range[0] === worksheet.options.data[0].length - 1) {
                         // New record in case the selection is in the last column
                         worksheet.insertColumn();
                     }
@@ -160,35 +160,35 @@ export class Keyboard {
         // gridKeys calls it, when the worksheet has a selection
         const worksheet = this.worksheet as SelectedWorksheet;
 
-        if (e.which == 65) {
+        if (e.which === 65) {
             // Ctrl + A
             worksheet.selection.selectAll();
             e.preventDefault();
-        } else if (e.which == 83) {
+        } else if (e.which === 83) {
             // Ctrl + S
             worksheet.download();
             e.preventDefault();
-        } else if (e.which == 89) {
+        } else if (e.which === 89) {
             // Ctrl + Y
             worksheet.redo();
             e.preventDefault();
-        } else if (e.which == 90) {
+        } else if (e.which === 90) {
             // Ctrl + Z
             worksheet.undo();
             e.preventDefault();
-        } else if (e.which == 67) {
+        } else if (e.which === 67) {
             // Ctrl + C
             worksheet.clipboard.copy(true);
             e.preventDefault();
-        } else if (e.which == 88) {
+        } else if (e.which === 88) {
             // Ctrl + X
-            if (worksheet.options.editable != false) {
+            if (worksheet.options.editable !== false) {
                 cutControls();
             } else {
                 copyControls();
             }
             e.preventDefault();
-        } else if (e.which == 86) {
+        } else if (e.which === 86) {
             // Ctrl + V
             pasteControls();
         }
@@ -202,29 +202,29 @@ export class Keyboard {
         // gridKeys calls it, when the worksheet has a selection
         const worksheet = this.worksheet as SelectedWorksheet;
 
-        if (worksheet.options.editable != false) {
+        if (worksheet.options.editable !== false) {
             const rowId = worksheet.selection.range[1];
             const columnId = worksheet.selection.range[0];
             const column = worksheet.options.columns[worksheet.cells.getColumnIndex(columnId, rowId)];
 
             // Characters able to start a edition
-            if (e.keyCode == 32) {
+            if (e.keyCode === 32) {
                 // Space
                 e.preventDefault();
-                if (column.type == 'checkbox' || column.type == 'radio') {
+                if (column.type === 'checkbox' || column.type === 'radio') {
                     worksheet.editor.setCheckRadioValue();
                 } else {
                     // Start edition
                     worksheet.editor.open(worksheet.records[rowId][columnId].element, true, e);
                 }
-            } else if (e.keyCode == 113) {
+            } else if (e.keyCode === 113) {
                 // Start edition with current content F2
                 worksheet.editor.open(worksheet.records[rowId][columnId].element, false, e);
             } else if ((e.key.length === 1 || e.key === 'Process') && !(e.altKey || isCtrl(e))) {
                 // Start edition
                 worksheet.editor.open(worksheet.records[rowId][columnId].element, true, e);
                 // Prevent entries in the calendar
-                if (column && column.type == 'calendar') {
+                if (column && column.type === 'calendar') {
                     e.preventDefault();
                 }
             }
@@ -240,30 +240,30 @@ export class Keyboard {
         const worksheet = this.worksheet as SelectedWorksheet;
 
         // Which key
-        if (e.which == 37) {
+        if (e.which === 37) {
             worksheet.selection.left(e.shiftKey, e.ctrlKey);
             e.preventDefault();
-        } else if (e.which == 39) {
+        } else if (e.which === 39) {
             worksheet.selection.right(e.shiftKey, e.ctrlKey);
             e.preventDefault();
-        } else if (e.which == 38) {
+        } else if (e.which === 38) {
             worksheet.selection.up(e.shiftKey, e.ctrlKey);
             e.preventDefault();
-        } else if (e.which == 40) {
+        } else if (e.which === 40) {
             worksheet.selection.down(e.shiftKey, e.ctrlKey);
             e.preventDefault();
-        } else if (e.which == 36) {
+        } else if (e.which === 36) {
             worksheet.selection.first(e.shiftKey, e.ctrlKey);
             e.preventDefault();
-        } else if (e.which == 35) {
+        } else if (e.which === 35) {
             worksheet.selection.last(e.shiftKey, e.ctrlKey);
             e.preventDefault();
-        } else if (e.which == 46 || e.which == 8) {
+        } else if (e.which === 46 || e.which === 8) {
             // Delete
             this.deleteKey();
-        } else if (e.which == 13) {
+        } else if (e.which === 13) {
             this.enterKey(e);
-        } else if (e.which == 9) {
+        } else if (e.which === 9) {
             this.tabKey(e);
         } else {
             if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {

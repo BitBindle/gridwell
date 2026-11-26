@@ -8,12 +8,13 @@ import type jspreadsheet from '../jspreadsheet';
 // The date, then the date as text, then its parts
 function validDate(date: jspreadsheet.CellValue | string[] | undefined) {
     date = `${date}`;
-    if (date.substr(4, 1) == '-' && date.substr(7, 1) == '-') {
+    if (date.substr(4, 1) === '-' && date.substr(7, 1) === '-') {
         return true;
     } else {
         date = date.split('-');
         // A text without a dash, such as a year, has one part. A part with only digits equals its number.
-        if (date[0].length == 4 && (date[0] as unknown) == Number(date[0]) && date[1] && date[1].length == 2 && (date[1] as unknown) == Number(date[1])) {
+        // eslint-disable-next-line eqeqeq -- a text with only digits equals its number
+        if (date[0].length === 4 && (date[0] as unknown) == Number(date[0]) && date[1] && date[1].length === 2 && (date[1] as unknown) == Number(date[1])) {
             return true;
         }
     }
@@ -42,15 +43,15 @@ function secureFormula(oldValue: string) {
     // for...of would read the string by code points, and this loop reads its UTF-16 code units
     // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < oldValue.length; i++) {
-        if (oldValue[i] == '"') {
-            if (inside == 0) {
+        if (oldValue[i] === '"') {
+            if (inside === 0) {
                 inside = 1;
             } else {
                 inside = 0;
             }
         }
 
-        if (inside == 1) {
+        if (inside === 1) {
             newValue += oldValue[i];
         } else {
             newValue += oldValue[i].toUpperCase();
@@ -191,7 +192,7 @@ export class Cells {
         const element = worksheet.records[y][x].element;
         const previous = x + (cellColumns.get(element) || 0);
         const c = this.getColumnIndex(x, y);
-        if (c == previous) {
+        if (c === previous) {
             return;
         }
 
@@ -203,16 +204,16 @@ export class Cells {
         const before = getOptions(previous);
         const after = getOptions(c);
 
-        if ((before.readOnly == true) != (after.readOnly == true)) {
-            element.classList.toggle('readonly', after.readOnly == true);
+        if ((before.readOnly === true) !== (after.readOnly === true)) {
+            element.classList.toggle('readonly', after.readOnly === true);
         }
-        if (before.align != after.align) {
+        if (before.align !== after.align) {
             element.style.textAlign = td.style.textAlign;
         }
-        if (before.wordWrap != after.wordWrap) {
+        if (before.wordWrap !== after.wordWrap) {
             element.style.whiteSpace = td.style.whiteSpace;
         }
-        if (before.type == 'color' || after.type == 'color') {
+        if (before.type === 'color' || after.type === 'color') {
             element.style.color = td.style.color;
         }
         element.classList.toggle('red', td.classList.contains('red'));
@@ -223,7 +224,7 @@ export class Cells {
             element.appendChild(td.firstChild);
         }
 
-        if (c == x) {
+        if (c === x) {
             cellColumns.delete(element);
         } else {
             cellColumns.set(element, c - x);
@@ -244,7 +245,7 @@ export class Cells {
             const source = worksheet.options.columns[column].source;
 
             for (const option of source) {
-                if (typeof option == 'object') {
+                if (typeof option === 'object') {
                     combo[option.id] = option.name;
                 } else {
                     combo[option] = option;
@@ -282,7 +283,7 @@ export class Cells {
 
         // Create cell and properties
         const td = document.createElement('td');
-        if (c != i) {
+        if (c !== i) {
             cellColumns.set(td, c - parseInt(i));
         }
         td.setAttribute('data-x', i);
@@ -293,9 +294,9 @@ export class Cells {
             td.style.display = 'none';
         }
         // Security
-        if (`${value}`.substr(0, 1) == '=' && worksheet.options.secureFormulas == true) {
+        if (`${value}`.substr(0, 1) === '=' && worksheet.options.secureFormulas === true) {
             const val = secureFormula(value as string);
-            if (val != value) {
+            if (val !== value) {
                 // Update the data container
                 value = val;
             }
@@ -308,25 +309,26 @@ export class Cells {
             } else {
                 td.textContent = value as string;
             }
-            if (typeof column.type.createCell == 'function') {
+            if (typeof column.type.createCell === 'function') {
                 column.type.createCell(td, value, parseInt(i), parseInt(j), worksheet, column);
             }
         } else {
             // Hidden column
-            if (column && column.type == 'hidden') {
+            if (column && column.type === 'hidden') {
                 td.style.display = 'none';
                 td.textContent = value as string;
-            } else if (column && (column.type == 'checkbox' || column.type == 'radio')) {
+            } else if (column && (column.type === 'checkbox' || column.type === 'radio')) {
                 // Create input
                 const element = document.createElement('input');
                 element.type = column.type;
                 element.name = `c${c}`;
+                // eslint-disable-next-line eqeqeq -- a checkbox is checked by 1, true and the texts "1" and "true"
                 element.checked = value == 1 || value == true || value == 'true' ? true : false;
                 element.onclick = () => {
                     worksheet.setValue(td, element.checked);
                 };
 
-                if (column.readOnly == true || worksheet.options.editable == false) {
+                if (column.readOnly === true || worksheet.options.editable === false) {
                     element.setAttribute('disabled', 'disabled');
                 }
 
@@ -334,7 +336,7 @@ export class Cells {
                 td.appendChild(element);
                 // Make sure the values are correct
                 worksheet.options.data[j][i] = element.checked;
-            } else if (column && column.type == 'calendar') {
+            } else if (column && column.type === 'calendar') {
                 // Try formatted date
                 let formatted = null;
                 if (!validDate(value)) {
@@ -346,12 +348,12 @@ export class Cells {
                 // Create calendar cell
                 // textContent converts a number of hours to text
                 td.textContent = jSuites.calendar.getDateString(formatted ? formatted : value, column.options && column.options.format) as string;
-            } else if (column && column.type == 'dropdown') {
+            } else if (column && column.type === 'dropdown') {
                 // Create dropdown cell
                 td.classList.add('jss_dropdown');
                 td.textContent = this.getDropDownValue(c, value);
-            } else if (column && column.type == 'color') {
-                if (column.render == 'square') {
+            } else if (column && column.type === 'color') {
+                if (column.render === 'square') {
                     const color = document.createElement('div');
                     color.className = 'color';
                     color.style.backgroundColor = value as string;
@@ -360,15 +362,15 @@ export class Cells {
                     td.style.color = value as string;
                     td.textContent = value as string;
                 }
-            } else if (column && column.type == 'image') {
+            } else if (column && column.type === 'image') {
                 // The value can be a number or a boolean
-                if (value && `${value}`.substr(0, 10) == 'data:image') {
+                if (value && `${value}`.substr(0, 10) === 'data:image') {
                     const img = document.createElement('img');
                     img.src = value as string;
                     td.appendChild(img);
                 }
             } else {
-                if (column && column.type == 'html') {
+                if (column && column.type === 'html') {
                     td.innerHTML = stripScript(this.parseValue(i, j, value, td));
                 } else {
                     if (worksheet.parent.config.parseHTML === true) {
@@ -381,7 +383,7 @@ export class Cells {
         }
 
         // Readonly
-        if (column && column.readOnly == true) {
+        if (column && column.readOnly === true) {
             td.className = 'readonly';
         }
 
@@ -390,17 +392,20 @@ export class Cells {
         td.style.textAlign = colAlign;
 
         // Wrap option
-        if ((!column || column.wordWrap != false) && (worksheet.options.wordWrap == true || (column && column.wordWrap == true) || td.innerHTML.length > 200)) {
+        if (
+            (!column || column.wordWrap !== false) &&
+            (worksheet.options.wordWrap === true || (column && column.wordWrap === true) || td.innerHTML.length > 200)
+        ) {
             td.style.whiteSpace = 'pre-wrap';
         }
 
         // Overflow
         if (i > 0) {
-            if (worksheet.options.textOverflow == true) {
+            if (worksheet.options.textOverflow === true) {
                 if (value || td.innerHTML) {
                     worksheet.records[j][i - 1].element.style.overflow = 'hidden';
                 } else {
-                    if (i == worksheet.options.columns.length - 1) {
+                    if (i === worksheet.options.columns.length - 1) {
                         td.style.overflow = 'hidden';
                     }
                 }
@@ -435,7 +440,7 @@ export class Cells {
         let record;
 
         // Changing value depending on the column type
-        if (worksheet.records[y][x].element.classList.contains('readonly') == true && !force) {
+        if (worksheet.records[y][x].element.classList.contains('readonly') === true && !force) {
             // Do nothing
             record = {
                 x,
@@ -445,9 +450,9 @@ export class Cells {
             };
         } else {
             // Security
-            if (`${value}`.substr(0, 1) == '=' && worksheet.options.secureFormulas == true) {
+            if (`${value}`.substr(0, 1) === '=' && worksheet.options.secureFormulas === true) {
                 const val = secureFormula(value as string);
-                if (val != value) {
+                if (val !== value) {
                     // Update the data container
                     value = val;
                 }
@@ -457,7 +462,7 @@ export class Cells {
             const val = worksheet.dispatch('onbeforechange', worksheet, worksheet.records[y][x].element, x, y, value);
 
             // If you return something this will overwrite the value
-            if (val != undefined) {
+            if (val != null) {
                 value = val;
             }
 
@@ -491,9 +496,9 @@ export class Cells {
                 }
             } else {
                 // Native functions
-                if (column && (column.type == 'checkbox' || column.type == 'radio')) {
+                if (column && (column.type === 'checkbox' || column.type === 'radio')) {
                     // Unchecked all options
-                    if (column.type == 'radio') {
+                    if (column.type === 'radio') {
                         for (const dataRow of worksheet.options.data) {
                             dataRow[c] = false;
                         }
@@ -501,13 +506,14 @@ export class Cells {
 
                     // Update data and cell
                     (worksheet.records[y][x].element.children[0] as HTMLInputElement).checked =
+                        // eslint-disable-next-line eqeqeq -- a checkbox is checked by 1, true and the texts "1", "true" and "TRUE"
                         value == 1 || value == true || value == 'true' || value == 'TRUE' ? true : false;
                     worksheet.options.data[y][x] = (worksheet.records[y][x].element.children[0] as HTMLInputElement).checked;
-                } else if (column && column.type == 'dropdown') {
+                } else if (column && column.type === 'dropdown') {
                     // Update data and cell
                     worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
                     worksheet.records[y][x].element.textContent = this.getDropDownValue(c, value);
-                } else if (column && column.type == 'calendar') {
+                } else if (column && column.type === 'calendar') {
                     // Try formatted date
                     let formatted = null;
                     if (!validDate(value)) {
@@ -523,11 +529,11 @@ export class Cells {
                         formatted ? formatted : value,
                         column.options && column.options.format
                     ) as string;
-                } else if (column && column.type == 'color') {
+                } else if (column && column.type === 'color') {
                     // Update color
                     worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
                     // Render
-                    if (column.render == 'square') {
+                    if (column.render === 'square') {
                         const color = document.createElement('div');
                         color.className = 'color';
                         color.style.backgroundColor = value as string;
@@ -537,11 +543,11 @@ export class Cells {
                         worksheet.records[y][x].element.style.color = value as string;
                         worksheet.records[y][x].element.textContent = value as string;
                     }
-                } else if (column && column.type == 'image') {
+                } else if (column && column.type === 'image') {
                     value = `${value}`;
                     worksheet.options.data[y][x] = value;
                     worksheet.records[y][x].element.innerHTML = '';
-                    if (value && value.substr(0, 10) == 'data:image') {
+                    if (value && value.substr(0, 10) === 'data:image') {
                         const img = document.createElement('img');
                         img.src = value;
                         worksheet.records[y][x].element.appendChild(img);
@@ -550,7 +556,7 @@ export class Cells {
                     // Update data and cell
                     worksheet.options.data[y][x] = value as jspreadsheet.CellValue;
                     // Label
-                    if (column && column.type == 'html') {
+                    if (column && column.type === 'html') {
                         worksheet.records[y][x].element.innerHTML = stripScript(this.parseValue(x, y, value));
                     } else {
                         if (worksheet.parent.config.parseHTML === true) {
@@ -561,8 +567,8 @@ export class Cells {
                     }
                     // Handle big text inside a cell
                     if (
-                        (!column || column.wordWrap != false) &&
-                        (worksheet.options.wordWrap == true || (column && column.wordWrap == true) || worksheet.records[y][x].element.innerHTML.length > 200)
+                        (!column || column.wordWrap !== false) &&
+                        (worksheet.options.wordWrap === true || (column && column.wordWrap === true) || worksheet.records[y][x].element.innerHTML.length > 200)
                     ) {
                         worksheet.records[y][x].element.style.whiteSpace = 'pre-wrap';
                     } else {
@@ -627,16 +633,19 @@ export class Cells {
 
         x = parseInt(x);
 
-        if (worksheet.options.columns && worksheet.options.columns[x] && worksheet.options.columns[x].type == 'hidden' && worksheet.options.mergeCells) {
+        if (worksheet.options.columns && worksheet.options.columns[x] && worksheet.options.columns[x].type === 'hidden' && worksheet.options.mergeCells) {
             const merged = worksheet.options.mergeCells[getColumnNameFromId([x, y])];
             if (merged) {
                 for (let i = x + 1; i < x + merged[0]; i++) {
                     if (
                         worksheet.headers[i] &&
-                        worksheet.headers[i].style.display != 'none' &&
-                        (!worksheet.options.columns[i] || worksheet.options.columns[i].type != 'hidden')
+                        worksheet.headers[i].style.display !== 'none' &&
+                        (!worksheet.options.columns[i] || worksheet.options.columns[i].type !== 'hidden')
                     ) {
-                        if (worksheet.options.columns[i] && (worksheet.options.columns[i].type == 'checkbox' || worksheet.options.columns[i].type == 'radio')) {
+                        if (
+                            worksheet.options.columns[i] &&
+                            (worksheet.options.columns[i].type === 'checkbox' || worksheet.options.columns[i].type === 'radio')
+                        ) {
                             break;
                         }
                         return i;
@@ -655,7 +664,7 @@ export class Cells {
     parseValue(i: number, j: number, value: jspreadsheet.CellValue | undefined, cell?: HTMLElement) {
         const worksheet = this.worksheet;
 
-        if (`${value}`.substr(0, 1) == '=' && worksheet.parent.config.parseFormulas != false) {
+        if (`${value}`.substr(0, 1) === '=' && worksheet.parent.config.parseFormulas !== false) {
             // The cell shows the result as text, as the DOM converts it. An array from a range shows its items with commas.
             value = worksheet.formulas.execute(value as string, i, j) as jspreadsheet.CellValue;
         }
@@ -666,6 +675,7 @@ export class Cells {
             // Mask options
             let opt = null;
             if ((opt = getMask(options))) {
+                // eslint-disable-next-line eqeqeq -- a text that is a number equals the number
                 if (value && value == Number(value)) {
                     value = Number(value);
                 }

@@ -54,7 +54,7 @@ export class Comments {
 
         let commentsObj;
 
-        if (typeof cellId == 'string') {
+        if (typeof cellId === 'string') {
             commentsObj = { [cellId]: comments };
         } else {
             commentsObj = cellId;

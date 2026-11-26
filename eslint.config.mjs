@@ -44,6 +44,8 @@ export default tseslint.config(
             '@typescript-eslint/prefer-for-of': 'error',
             // Strings are built with template literals
             'prefer-template': 'error',
+            // Comparisons are strict, except x == null, which is true for null and undefined
+            eqeqeq: ['error', 'always', { null: 'ignore' }],
         },
     },
     {

@@ -31,7 +31,7 @@ export class History {
      * can no longer be redone.
      */
     add(record: WorksheetHistoryRecord) {
-        if (this.ignore != true) {
+        if (this.ignore !== true) {
             // Increment and get the current history index
             const index = ++this.index;
 
@@ -83,14 +83,14 @@ export class History {
 
         const rowIndex = !historyRecord.insertBefore ? historyRecord.rowNumber + 1 : +historyRecord.rowNumber;
 
-        if (worksheet.options.search == true) {
-            if (worksheet.view.results && worksheet.view.results.length != worksheet.rows.length) {
+        if (worksheet.options.search === true) {
+            if (worksheet.view.results && worksheet.view.results.length !== worksheet.rows.length) {
                 worksheet.resetSearch();
             }
         }
 
         // Remove row
-        if (type == 1) {
+        if (type === 1) {
             const numOfRows = historyRecord.numOfRows;
             // Remove nodes
             for (let j = rowIndex; j < numOfRows + rowIndex; j++) {
@@ -150,7 +150,7 @@ export class History {
         const columnIndex = !historyRecord.insertBefore ? historyRecord.columnNumber + 1 : historyRecord.columnNumber;
 
         // Remove column
-        if (type == 1) {
+        if (type === 1) {
             const numOfColumns = historyRecord.numOfColumns;
 
             worksheet.options.columns.splice(columnIndex, numOfColumns);
@@ -224,7 +224,7 @@ export class History {
             for (let j = 0; j < worksheet.options.nestedHeaders.length; j++) {
                 let colspan;
 
-                if (type == 1) {
+                if (type === 1) {
                     colspan = parseInt(worksheet.options.nestedHeaders[j][worksheet.options.nestedHeaders[j].length - 1].colspan) - historyRecord.numOfColumns;
                 } else {
                     colspan = parseInt(worksheet.options.nestedHeaders[j][worksheet.options.nestedHeaders[j].length - 1].colspan) + historyRecord.numOfColumns;
@@ -257,39 +257,39 @@ export class History {
         const historyRecord = worksheet.history.back();
 
         if (historyRecord) {
-            if (historyRecord.action == 'insertRow') {
+            if (historyRecord.action === 'insertRow') {
                 this.processRow(1, historyRecord);
-            } else if (historyRecord.action == 'deleteRow') {
+            } else if (historyRecord.action === 'deleteRow') {
                 this.processRow(0, historyRecord);
-            } else if (historyRecord.action == 'insertColumn') {
+            } else if (historyRecord.action === 'insertColumn') {
                 this.processColumn(1, historyRecord);
-            } else if (historyRecord.action == 'deleteColumn') {
+            } else if (historyRecord.action === 'deleteColumn') {
                 this.processColumn(0, historyRecord);
-            } else if (historyRecord.action == 'moveRow') {
+            } else if (historyRecord.action === 'moveRow') {
                 worksheet.moveRow(historyRecord.newValue, historyRecord.oldValue);
-            } else if (historyRecord.action == 'moveColumn') {
+            } else if (historyRecord.action === 'moveColumn') {
                 worksheet.moveColumn(historyRecord.newValue, historyRecord.oldValue);
-            } else if (historyRecord.action == 'setMerge') {
+            } else if (historyRecord.action === 'setMerge') {
                 worksheet.removeMerge(historyRecord.column, historyRecord.data);
-            } else if (historyRecord.action == 'setStyle') {
+            } else if (historyRecord.action === 'setStyle') {
                 worksheet.setStyle(historyRecord.oldValue, null, null, true); // true means force
-            } else if (historyRecord.action == 'setWidth') {
+            } else if (historyRecord.action === 'setWidth') {
                 // The public overloads take one column or a list, not either
                 (worksheet.setWidth as (column: number | number[], width: number | number[]) => void)(historyRecord.column, historyRecord.oldValue);
-            } else if (historyRecord.action == 'setHeight') {
+            } else if (historyRecord.action === 'setHeight') {
                 worksheet.setHeight(historyRecord.row, historyRecord.oldValue);
-            } else if (historyRecord.action == 'setHeader') {
+            } else if (historyRecord.action === 'setHeader') {
                 worksheet.setHeader(historyRecord.column, historyRecord.oldValue);
-            } else if (historyRecord.action == 'setComments') {
+            } else if (historyRecord.action === 'setComments') {
                 worksheet.setComments(historyRecord.oldValue);
-            } else if (historyRecord.action == 'orderBy') {
+            } else if (historyRecord.action === 'orderBy') {
                 const rows = [];
                 for (let j = 0; j < historyRecord.rows.length; j++) {
                     rows[historyRecord.rows[j]] = j;
                 }
                 worksheet.view.updateOrderArrow(historyRecord.column, historyRecord.order ? 0 : 1);
                 worksheet.view.updateOrder(rows);
-            } else if (historyRecord.action == 'setValue') {
+            } else if (historyRecord.action === 'setValue') {
                 // Redo for changes in cells
                 for (const record of historyRecord.records) {
                     records.push({
@@ -340,34 +340,34 @@ export class History {
         const historyRecord = worksheet.history.forward();
 
         if (historyRecord) {
-            if (historyRecord.action == 'insertRow') {
+            if (historyRecord.action === 'insertRow') {
                 this.processRow(0, historyRecord);
-            } else if (historyRecord.action == 'deleteRow') {
+            } else if (historyRecord.action === 'deleteRow') {
                 this.processRow(1, historyRecord);
-            } else if (historyRecord.action == 'insertColumn') {
+            } else if (historyRecord.action === 'insertColumn') {
                 this.processColumn(0, historyRecord);
-            } else if (historyRecord.action == 'deleteColumn') {
+            } else if (historyRecord.action === 'deleteColumn') {
                 this.processColumn(1, historyRecord);
-            } else if (historyRecord.action == 'moveRow') {
+            } else if (historyRecord.action === 'moveRow') {
                 worksheet.moveRow(historyRecord.oldValue, historyRecord.newValue);
-            } else if (historyRecord.action == 'moveColumn') {
+            } else if (historyRecord.action === 'moveColumn') {
                 worksheet.moveColumn(historyRecord.oldValue, historyRecord.newValue);
-            } else if (historyRecord.action == 'setMerge') {
+            } else if (historyRecord.action === 'setMerge') {
                 worksheet.merges.set(historyRecord.column, historyRecord.colspan, historyRecord.rowspan, 1);
-            } else if (historyRecord.action == 'setStyle') {
+            } else if (historyRecord.action === 'setStyle') {
                 worksheet.setStyle(historyRecord.newValue, null, null, true); // true means force
-            } else if (historyRecord.action == 'setWidth') {
+            } else if (historyRecord.action === 'setWidth') {
                 (worksheet.setWidth as (column: number | number[], width: number | number[]) => void)(historyRecord.column, historyRecord.newValue);
-            } else if (historyRecord.action == 'setHeight') {
+            } else if (historyRecord.action === 'setHeight') {
                 worksheet.setHeight(historyRecord.row, historyRecord.newValue);
-            } else if (historyRecord.action == 'setHeader') {
+            } else if (historyRecord.action === 'setHeader') {
                 worksheet.setHeader(historyRecord.column, historyRecord.newValue);
-            } else if (historyRecord.action == 'setComments') {
+            } else if (historyRecord.action === 'setComments') {
                 worksheet.setComments(historyRecord.newValue);
-            } else if (historyRecord.action == 'orderBy') {
+            } else if (historyRecord.action === 'orderBy') {
                 worksheet.view.updateOrderArrow(historyRecord.column, historyRecord.order);
                 worksheet.view.updateOrder(historyRecord.rows);
-            } else if (historyRecord.action == 'setValue') {
+            } else if (historyRecord.action === 'setValue') {
                 worksheet.setValue(historyRecord.records);
                 // Redo for changes in cells
                 for (const record of historyRecord.records) {

@@ -6,7 +6,7 @@ import type { Worksheet, TargetEvent } from '../types/internal';
 
 function doubleDigitFormat(v: number | string) {
     v = `${v}`;
-    if (v.length == 1) {
+    if (v.length === 1) {
         v = `0${v}`;
     }
     return v;
@@ -78,7 +78,7 @@ export class Pointer {
 
         let rowNumber, colNumber;
 
-        if (h[0] == x1) {
+        if (h[0] === x1) {
             // Vertical copy
             if (y1 < h[1]) {
                 rowNumber = y1 - h[1];
@@ -101,18 +101,18 @@ export class Pointer {
 
         for (let j = y1; j <= y2; j++) {
             // Skip hidden rows
-            if (worksheet.rows[j] && worksheet.rows[j].element.style.display == 'none') {
+            if (worksheet.rows[j] && worksheet.rows[j].element.style.display === 'none') {
                 continue;
             }
 
             // Controls
-            if (data[posy] == undefined) {
+            if (data[posy] == null) {
                 posy = 0;
             }
             posx = 0;
 
             // Data columns
-            if (h[0] != x1) {
+            if (h[0] !== x1) {
                 if (x1 < h[0]) {
                     colNumber = x1 - h[0];
                 } else {
@@ -125,11 +125,12 @@ export class Pointer {
                 if (
                     worksheet.records[j][i] &&
                     !worksheet.records[j][i].element.classList.contains('readonly') &&
-                    worksheet.records[j][i].element.style.display != 'none' &&
-                    breakControl == false
+                    worksheet.records[j][i].element.style.display !== 'none' &&
+                    breakControl === false
                 ) {
                     // Stop if contains value
                     if (!worksheet.selection.fill.length) {
+                        // eslint-disable-next-line eqeqeq -- 0 and false count as empty here (issue #117)
                         if (worksheet.options.data[j][i] != '') {
                             breakControl = true;
                             continue;
@@ -137,24 +138,24 @@ export class Pointer {
                     }
 
                     // Column
-                    if (data[posy] == undefined) {
+                    if (data[posy] == null) {
                         posx = 0;
-                    } else if (data[posy][posx] == undefined) {
+                    } else if (data[posy][posx] == null) {
                         posx = 0;
                     }
 
                     // Value
                     let value: CellValue = data[posy][posx];
 
-                    if (value && !data[1] && worksheet.parent.config.autoIncrement != false) {
+                    if (value && !data[1] && worksheet.parent.config.autoIncrement !== false) {
                         if (
                             worksheet.options.columns &&
                             worksheet.options.columns[i] &&
                             (!worksheet.options.columns[i].type ||
-                                worksheet.options.columns[i].type == 'text' ||
-                                (worksheet.options.columns[i].type as string) == 'number')
+                                worksheet.options.columns[i].type === 'text' ||
+                                (worksheet.options.columns[i].type as string) === 'number')
                         ) {
-                            if (`${value}`.substr(0, 1) == '=') {
+                            if (`${value}`.substr(0, 1) === '=') {
                                 const tokens = (value as string).match(/([A-Z]+[0-9]+)/g);
 
                                 if (tokens) {
@@ -169,7 +170,7 @@ export class Pointer {
                                         }
                                         const token = getColumnNameFromId([position[0], position[1]]);
 
-                                        if (token != reference) {
+                                        if (token !== reference) {
                                             affectedTokens[reference] = token;
                                         }
                                     }
@@ -179,11 +180,12 @@ export class Pointer {
                                     }
                                 }
                             } else {
+                                // eslint-disable-next-line eqeqeq -- a text that is a number equals the number
                                 if (value == Number(value)) {
                                     value = Number(value) + rowNumber;
                                 }
                             }
-                        } else if (worksheet.options.columns && worksheet.options.columns[i] && worksheet.options.columns[i].type == 'calendar') {
+                        } else if (worksheet.options.columns && worksheet.options.columns[i] && worksheet.options.columns[i].type === 'calendar') {
                             // A calendar cell has a date as text
                             const date = new Date(value as string);
                             date.setDate(date.getDate() + rowNumber);
@@ -197,7 +199,7 @@ export class Pointer {
                     worksheet.formulas.updateChain(i, j, records);
                 }
                 posx++;
-                if (h[0] != x1) {
+                if (h[0] !== x1) {
                     colNumber++;
                 }
             }
@@ -297,13 +299,13 @@ export class Pointer {
             }
             // Update position
             if (columnId != null) {
-                if (dragging.column != dragging.destination) {
+                if (dragging.column !== dragging.destination) {
                     worksheet.moveColumn(dragging.column, dragging.destination);
                 }
             }
         } else {
             // A row that moved has a sibling. A row that did not move can be the only row.
-            if (dragging.row != dragging.destination) {
+            if (dragging.row !== dragging.destination) {
                 let position;
 
                 if (dragging.element.nextSibling) {
@@ -356,7 +358,7 @@ export class Pointer {
             const columnId = parseInt(columnText);
             // Update cursor
             const info = e.target.getBoundingClientRect();
-            if (worksheet.options.columnResize != false && info.width - e.offsetX < 6) {
+            if (worksheet.options.columnResize !== false && info.width - e.offsetX < 6) {
                 // Resize helper
                 worksheet.pointer.resizing = {
                     mousePosition: e.pageX,
@@ -371,7 +373,7 @@ export class Pointer {
                         record[columnId].element.classList.add('resizing');
                     }
                 }
-            } else if (worksheet.options.columnDrag != false && info.height - e.offsetY < 6) {
+            } else if (worksheet.options.columnDrag !== false && info.height - e.offsetY < 6) {
                 if (worksheet.merges.isColMerged(columnId).length) {
                     console.error('Jspreadsheet: This column is part of a merged cell.');
                 } else {
@@ -399,7 +401,7 @@ export class Pointer {
                     d = columnId;
                 } else {
                     // Press to rename
-                    if (worksheet.selection.column == columnId && worksheet.options.allowRenameColumn != false) {
+                    if (worksheet.selection.column === columnId && worksheet.options.allowRenameColumn !== false) {
                         // The active worksheet when the timer runs
                         libraryBase.jspreadsheet.timeControl = setTimeout(() => {
                             libraryBase.jspreadsheet.current!.setHeader(columnId);
@@ -443,7 +445,7 @@ export class Pointer {
 
         const rowId = parseInt(e.target.getAttribute('data-y'));
         const info = e.target.getBoundingClientRect();
-        if (worksheet.options.rowResize != false && info.height - e.offsetY < 6) {
+        if (worksheet.options.rowResize !== false && info.height - e.offsetY < 6) {
             // Resize helper
             worksheet.pointer.resizing = {
                 element: e.target.parentNode as HTMLTableRowElement,
@@ -453,10 +455,10 @@ export class Pointer {
             };
             // Border indication
             (e.target.parentNode as HTMLElement).classList.add('resizing');
-        } else if (worksheet.options.rowDrag != false && info.width - e.offsetX < 6) {
+        } else if (worksheet.options.rowDrag !== false && info.width - e.offsetX < 6) {
             if (worksheet.merges.isRowMerged(rowId).length) {
                 console.error('Jspreadsheet: This row is part of a merged cell');
-            } else if (worksheet.options.search == true && worksheet.view.results) {
+            } else if (worksheet.options.search === true && worksheet.view.results) {
                 console.error('Jspreadsheet: Please clear your search before perform this action');
             } else {
                 // Reset selection
@@ -506,7 +508,7 @@ export class Pointer {
                 const rowId = position[1];
                 // Close edition
                 if (worksheet.editor.isOpen()) {
-                    if (worksheet.editor.x != columnId || worksheet.editor.y != rowId) {
+                    if (worksheet.editor.x !== columnId || worksheet.editor.y !== rowId) {
                         worksheet.editor.close(worksheet.editor.cell, true);
                     }
                 }
@@ -531,9 +533,9 @@ export class Pointer {
     pressPage(e: TargetEvent<MouseEvent>) {
         const worksheet = this.worksheet;
 
-        if (e.target.textContent == '<') {
+        if (e.target.textContent === '<') {
             worksheet.page(0);
-        } else if (e.target.textContent == '>') {
+        } else if (e.target.textContent === '>') {
             worksheet.page(parseInt(e.target.getAttribute('title')) - 1);
         } else {
             worksheet.page(parseInt(e.target.textContent) - 1);
@@ -587,7 +589,7 @@ export class Pointer {
                         header.classList.remove('dragging-right');
                     }
 
-                    if (dragging.column == columnId) {
+                    if (dragging.column === columnId) {
                         dragging.destination = columnId;
                     } else {
                         if (e.target.clientWidth / 2 > e.offsetX) {
@@ -615,7 +617,7 @@ export class Pointer {
                     console.error('Jspreadsheet: This row is part of a merged cell.');
                 } else {
                     const target = e.target.clientHeight / 2 > e.offsetY ? e.target.parentNode!.nextSibling : e.target.parentNode;
-                    if (dragging.element != target) {
+                    if (dragging.element !== target) {
                         e.target.parentNode!.parentNode!.insertBefore(dragging.element, target);
                         dragging.destination = Array.from(dragging.element.parentNode!.children).indexOf(dragging.element);
                     }
@@ -714,8 +716,8 @@ export class Pointer {
                 for (let i = px; i <= ux; i++) {
                     if (
                         worksheet.records[j][i] &&
-                        worksheet.rows[j].element.style.display != 'none' &&
-                        worksheet.records[j][i].element.style.display != 'none'
+                        worksheet.rows[j].element.style.display !== 'none' &&
+                        worksheet.records[j][i].element.style.display !== 'none'
                     ) {
                         worksheet.records[j][i].element.classList.add('selection');
                         worksheet.records[py][i].element.classList.add('selection-top');
@@ -744,7 +746,7 @@ export class Pointer {
             // ignore
         } else {
             // Header found
-            if (section == 1) {
+            if (section === 1) {
                 if (worksheet.selection.column != null) {
                     columnId = getIndex(e.target, 'data-x');
                     const o = worksheet.selection.column;
@@ -755,7 +757,7 @@ export class Pointer {
             }
 
             // Body found
-            if (section == 2) {
+            if (section === 2) {
                 if (e.target.classList.contains('jss_row')) {
                     if (worksheet.selection.row != null) {
                         const o = worksheet.selection.row;

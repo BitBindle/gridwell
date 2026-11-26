@@ -10,7 +10,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
 
     if (role === 'header') {
         // Insert a new column
-        if (worksheet.options.allowInsertColumn != false) {
+        if (worksheet.options.allowInsertColumn !== false) {
             items.push({
                 title: jSuites.translate('Insert a new column before'),
                 onclick() {
@@ -19,7 +19,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
             });
         }
 
-        if (worksheet.options.allowInsertColumn != false) {
+        if (worksheet.options.allowInsertColumn !== false) {
             items.push({
                 title: jSuites.translate('Insert a new column after'),
                 onclick() {
@@ -29,7 +29,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
         }
 
         // Delete a column
-        if (worksheet.options.allowDeleteColumn != false) {
+        if (worksheet.options.allowDeleteColumn !== false) {
             items.push({
                 title: jSuites.translate('Delete selected columns'),
                 onclick() {
@@ -39,7 +39,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
         }
 
         // Rename column
-        if (worksheet.options.allowRenameColumn != false) {
+        if (worksheet.options.allowRenameColumn !== false) {
             items.push({
                 title: jSuites.translate('Rename this column'),
                 onclick() {
@@ -54,7 +54,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
         }
 
         // Sorting
-        if (worksheet.options.columnSorting != false) {
+        if (worksheet.options.columnSorting !== false) {
             // Line
             items.push({ type: 'line' });
 
@@ -75,7 +75,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
 
     if (role === 'row' || role === 'cell') {
         // Insert new row
-        if (worksheet.options.allowInsertRow != false) {
+        if (worksheet.options.allowInsertRow !== false) {
             items.push({
                 title: jSuites.translate('Insert a new row before'),
                 onclick() {
@@ -91,7 +91,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
             });
         }
 
-        if (worksheet.options.allowDeleteRow != false) {
+        if (worksheet.options.allowDeleteRow !== false) {
             items.push({
                 title: jSuites.translate('Delete selected rows'),
                 onclick() {
@@ -102,7 +102,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
     }
 
     if (role === 'cell') {
-        if (worksheet.options.allowComments != false) {
+        if (worksheet.options.allowComments !== false) {
             items.push({ type: 'line' });
 
             const title = worksheet.records[y][x].element.getAttribute('title') || '';
@@ -162,7 +162,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
     }
 
     // Save
-    if (worksheet.parent.config.allowExport != false) {
+    if (worksheet.parent.config.allowExport !== false) {
         items.push({
             title: `${jSuites.translate('Save as')}...`,
             shortcut: 'Ctrl + S',
@@ -173,7 +173,7 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
     }
 
     // About
-    if (worksheet.parent.config.about != false) {
+    if (worksheet.parent.config.about !== false) {
         items.push({
             title: jSuites.translate('About'),
             onclick() {
@@ -257,8 +257,8 @@ export function contextMenuControls(e: TargetEvent<PointerEvent>) {
 
                 if (
                     !current.selection.range ||
-                    columns[0] != parseInt(current.selection.range[0]) ||
-                    columns[columns.length - 1] != parseInt(current.selection.range[2]) ||
+                    columns[0] !== parseInt(current.selection.range[0]) ||
+                    columns[columns.length - 1] !== parseInt(current.selection.range[2]) ||
                     current.selection.range[1] != null ||
                     current.selection.range[3] != null
                 ) {

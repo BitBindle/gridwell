@@ -131,12 +131,12 @@ export class Selection {
                 if (lastX > worksheet.options.freezeColumns - 1 && x2 - x1 + w2 < width) {
                     worksheet.corner.style.display = 'none';
                 } else {
-                    if (worksheet.options.selectionCopy != false) {
+                    if (worksheet.options.selectionCopy !== false) {
                         worksheet.corner.style.display = '';
                     }
                 }
             } else {
-                if (worksheet.options.selectionCopy != false) {
+                if (worksheet.options.selectionCopy !== false) {
                     worksheet.corner.style.display = '';
                 }
             }
@@ -212,7 +212,7 @@ export class Selection {
         worksheet.corner.style.top = '-2000px';
         worksheet.corner.style.left = '-2000px';
 
-        if (blur == true && previousStatus == 1) {
+        if (blur === true && previousStatus === 1) {
             worksheet.dispatch('onblur', worksheet);
         }
 
@@ -346,7 +346,7 @@ export class Selection {
 
         // Vertical limits
         for (let j = py; j <= uy; j++) {
-            if (worksheet.rows[j].element.style.display != 'none') {
+            if (worksheet.rows[j].element.style.display !== 'none') {
                 if (borderTop == null) {
                     borderTop = j;
                 }
@@ -357,7 +357,7 @@ export class Selection {
         for (let i = px; i <= ux; i++) {
             for (let j = py; j <= uy; j++) {
                 // Horizontal limits
-                if (!worksheet.options.columns || !worksheet.options.columns[i] || worksheet.options.columns[i].type != 'hidden') {
+                if (!worksheet.options.columns || !worksheet.options.columns[i] || worksheet.options.columns[i].type !== 'hidden') {
                     if (borderLeft == null) {
                         borderLeft = i;
                     }
@@ -394,7 +394,7 @@ export class Selection {
         // Redefining styles
         for (let i = px; i <= ux; i++) {
             for (let j = py; j <= uy; j++) {
-                if (worksheet.rows[j].element.style.display != 'none' && worksheet.records[j][i].element.style.display != 'none') {
+                if (worksheet.rows[j].element.style.display !== 'none' && worksheet.records[j][i].element.style.display !== 'none') {
                     worksheet.records[j][i].element.classList.add('highlight');
                     worksheet.records[j][i].element.setAttribute('aria-selected', 'true');
                     worksheet.selection.highlighted.push(worksheet.records[j][i]);
@@ -404,9 +404,9 @@ export class Selection {
 
         for (let i = borderLeft; i <= borderRight; i++) {
             if (
-                (!worksheet.options.columns || !worksheet.options.columns[i] || worksheet.options.columns[i].type != 'hidden') &&
+                (!worksheet.options.columns || !worksheet.options.columns[i] || worksheet.options.columns[i].type !== 'hidden') &&
                 worksheet.cols[i].colElement.style &&
-                worksheet.cols[i].colElement.style.display != 'none'
+                worksheet.cols[i].colElement.style.display !== 'none'
             ) {
                 // Top border. The borders are null when each row of the range is hidden.
                 if (worksheet.records[borderTop!] && worksheet.records[borderTop!][i]) {
@@ -422,7 +422,7 @@ export class Selection {
         }
 
         for (let j = borderTop!; j <= borderBottom!; j++) {
-            if (worksheet.rows[j] && worksheet.rows[j].element.style.display != 'none') {
+            if (worksheet.rows[j] && worksheet.rows[j].element.style.display !== 'none') {
                 // Left border
                 worksheet.records[j][borderLeft].element.classList.add('highlight-left');
                 // Right border
@@ -438,7 +438,7 @@ export class Selection {
         this.updateActiveCell(x1, y1, origin);
 
         // Handle events
-        if (previousState == 0) {
+        if (previousState === 0) {
             worksheet.dispatch('onfocus', worksheet);
 
             worksheet.clipboard.clearBorder();
@@ -470,7 +470,7 @@ export class Selection {
             i <= Math.max(worksheet.selection.range[0], worksheet.selection.range[2]);
             i++
         ) {
-            if (!visibleOnly || worksheet.headers[i].style.display != 'none') {
+            if (!visibleOnly || worksheet.headers[i].style.display !== 'none') {
                 result.push(i);
             }
         }
@@ -501,7 +501,7 @@ export class Selection {
     conditionalUpdate(type: 0 | 1, o: number, d: number) {
         const worksheet = this.worksheet;
 
-        if (type == 1) {
+        if (type === 1) {
             if (
                 worksheet.selection.range &&
                 ((o >= worksheet.selection.range[1] && o <= worksheet.selection.range[3]) ||
@@ -541,7 +541,7 @@ export class Selection {
             i <= Math.max(worksheet.selection.range[1], worksheet.selection.range[3]);
             i++
         ) {
-            if (!visibleOnly || worksheet.rows[i].element.style.display != 'none') {
+            if (!visibleOnly || worksheet.rows[i].element.style.display !== 'none') {
                 result.push(i);
             }
         }
@@ -835,9 +835,9 @@ export class Selection {
         x = parseInt(x);
         y = parseInt(y);
         for (let j = y - 1; j >= 0; j--) {
-            if (worksheet.records[j][x].element.style.display != 'none' && worksheet.rows[j].element.style.display != 'none') {
+            if (worksheet.records[j][x].element.style.display !== 'none' && worksheet.rows[j].element.style.display !== 'none') {
                 if (worksheet.records[j][x].element.getAttribute('data-merged')) {
-                    if (worksheet.records[j][x].element == worksheet.records[y][x].element) {
+                    if (worksheet.records[j][x].element === worksheet.records[y][x].element) {
                         continue;
                     }
                 }
@@ -855,7 +855,7 @@ export class Selection {
 
         let x, y;
 
-        if (group == 0) {
+        if (group === 0) {
             x = parseInt(worksheet.selection.range[0]);
             y = parseInt(worksheet.selection.range[1]);
         } else {
@@ -863,9 +863,9 @@ export class Selection {
             y = parseInt(worksheet.selection.range[3]);
         }
 
-        if (direction == 0) {
+        if (direction === 0) {
             for (let j = 0; j < y; j++) {
-                if (worksheet.records[j][x].element.style.display != 'none' && worksheet.rows[j].element.style.display != 'none') {
+                if (worksheet.records[j][x].element.style.display !== 'none' && worksheet.rows[j].element.style.display !== 'none') {
                     y = j;
                     break;
                 }
@@ -874,7 +874,7 @@ export class Selection {
             y = this.upGet(x, y);
         }
 
-        if (group == 0) {
+        if (group === 0) {
             worksheet.selection.range[0] = x;
             worksheet.selection.range[1] = y;
         } else {
@@ -913,8 +913,8 @@ export class Selection {
         );
 
         // Change page
-        if (worksheet.options.lazyLoading == true) {
-            if (worksheet.selection.range[1] == 0 || worksheet.selection.range[3] == 0) {
+        if (worksheet.options.lazyLoading === true) {
+            if (worksheet.selection.range[1] === 0 || worksheet.selection.range[3] === 0) {
                 worksheet.view.loadPage(0);
                 worksheet.updateSelectionFromCoords(
                     worksheet.selection.range[0],
@@ -945,7 +945,7 @@ export class Selection {
             }
         } else if (worksheet.options.pagination! > 0) {
             const pageNumber = worksheet.whichPage(worksheet.selection.range[3]);
-            if (pageNumber != worksheet.view.pageNumber) {
+            if (pageNumber !== worksheet.view.pageNumber) {
                 worksheet.page(pageNumber);
             }
         }
@@ -960,9 +960,9 @@ export class Selection {
         y = parseInt(y);
 
         for (let i = x + 1; i < worksheet.headers.length; i++) {
-            if (worksheet.records[y][i].element.style.display != 'none') {
+            if (worksheet.records[y][i].element.style.display !== 'none') {
                 if (worksheet.records[y][i].element.getAttribute('data-merged')) {
-                    if (worksheet.records[y][i].element == worksheet.records[y][x].element) {
+                    if (worksheet.records[y][i].element === worksheet.records[y][x].element) {
                         continue;
                     }
                 }
@@ -980,7 +980,7 @@ export class Selection {
 
         let x, y;
 
-        if (group == 0) {
+        if (group === 0) {
             x = parseInt(worksheet.selection.range[0]);
             y = parseInt(worksheet.selection.range[1]);
         } else {
@@ -988,9 +988,9 @@ export class Selection {
             y = parseInt(worksheet.selection.range[3]);
         }
 
-        if (direction == 0) {
+        if (direction === 0) {
             for (let i = worksheet.headers.length - 1; i > x; i--) {
-                if (worksheet.records[y][i].element.style.display != 'none') {
+                if (worksheet.records[y][i].element.style.display !== 'none') {
                     x = i;
                     break;
                 }
@@ -999,7 +999,7 @@ export class Selection {
             x = this.rightGet(x, y);
         }
 
-        if (group == 0) {
+        if (group === 0) {
             worksheet.selection.range[0] = x;
             worksheet.selection.range[1] = y;
         } else {
@@ -1044,9 +1044,9 @@ export class Selection {
         x = parseInt(x);
         y = parseInt(y);
         for (let j = y + 1; j < worksheet.rows.length; j++) {
-            if (worksheet.records[j][x].element.style.display != 'none' && worksheet.rows[j].element.style.display != 'none') {
+            if (worksheet.records[j][x].element.style.display !== 'none' && worksheet.rows[j].element.style.display !== 'none') {
                 if (worksheet.records[j][x].element.getAttribute('data-merged')) {
-                    if (worksheet.records[j][x].element == worksheet.records[y][x].element) {
+                    if (worksheet.records[j][x].element === worksheet.records[y][x].element) {
                         continue;
                     }
                 }
@@ -1064,7 +1064,7 @@ export class Selection {
 
         let x, y;
 
-        if (group == 0) {
+        if (group === 0) {
             x = parseInt(worksheet.selection.range[0]);
             y = parseInt(worksheet.selection.range[1]);
         } else {
@@ -1072,9 +1072,9 @@ export class Selection {
             y = parseInt(worksheet.selection.range[3]);
         }
 
-        if (direction == 0) {
+        if (direction === 0) {
             for (let j = worksheet.rows.length - 1; j > y; j--) {
-                if (worksheet.records[j][x].element.style.display != 'none' && worksheet.rows[j].element.style.display != 'none') {
+                if (worksheet.records[j][x].element.style.display !== 'none' && worksheet.rows[j].element.style.display !== 'none') {
                     y = j;
                     break;
                 }
@@ -1083,7 +1083,7 @@ export class Selection {
             y = this.downGet(x, y);
         }
 
-        if (group == 0) {
+        if (group === 0) {
             worksheet.selection.range[0] = x;
             worksheet.selection.range[1] = y;
         } else {
@@ -1121,8 +1121,8 @@ export class Selection {
         );
 
         // Change page
-        if (worksheet.options.lazyLoading == true) {
-            if (worksheet.selection.range[1] == worksheet.records.length - 1 || worksheet.selection.range[3] == worksheet.records.length - 1) {
+        if (worksheet.options.lazyLoading === true) {
+            if (worksheet.selection.range[1] === worksheet.records.length - 1 || worksheet.selection.range[3] === worksheet.records.length - 1) {
                 worksheet.view.loadPage(-1);
                 worksheet.updateSelectionFromCoords(
                     worksheet.selection.range[0],
@@ -1153,7 +1153,7 @@ export class Selection {
             }
         } else if (worksheet.options.pagination! > 0) {
             const pageNumber = worksheet.whichPage(worksheet.selection.range[3]);
-            if (pageNumber != worksheet.view.pageNumber) {
+            if (pageNumber !== worksheet.view.pageNumber) {
                 worksheet.page(pageNumber);
             }
         }
@@ -1167,9 +1167,9 @@ export class Selection {
         x = parseInt(x);
         y = parseInt(y);
         for (let i = x - 1; i >= 0; i--) {
-            if (worksheet.records[y][i].element.style.display != 'none') {
+            if (worksheet.records[y][i].element.style.display !== 'none') {
                 if (worksheet.records[y][i].element.getAttribute('data-merged')) {
-                    if (worksheet.records[y][i].element == worksheet.records[y][x].element) {
+                    if (worksheet.records[y][i].element === worksheet.records[y][x].element) {
                         continue;
                     }
                 }
@@ -1187,7 +1187,7 @@ export class Selection {
 
         let x, y;
 
-        if (group == 0) {
+        if (group === 0) {
             x = parseInt(worksheet.selection.range[0]);
             y = parseInt(worksheet.selection.range[1]);
         } else {
@@ -1195,9 +1195,9 @@ export class Selection {
             y = parseInt(worksheet.selection.range[3]);
         }
 
-        if (direction == 0) {
+        if (direction === 0) {
             for (let i = 0; i < x; i++) {
-                if (worksheet.records[y][i].element.style.display != 'none') {
+                if (worksheet.records[y][i].element.style.display !== 'none') {
                     x = i;
                     break;
                 }
@@ -1206,7 +1206,7 @@ export class Selection {
             x = this.leftGet(x, y);
         }
 
-        if (group == 0) {
+        if (group === 0) {
             worksheet.selection.range[0] = x;
             worksheet.selection.range[1] = y;
         } else {
@@ -1271,11 +1271,11 @@ export class Selection {
         }
 
         // Change page
-        if (worksheet.options.lazyLoading == true && (worksheet.selection.range[1] == 0 || worksheet.selection.range[3] == 0)) {
+        if (worksheet.options.lazyLoading === true && (worksheet.selection.range[1] === 0 || worksheet.selection.range[3] === 0)) {
             worksheet.view.loadPage(0);
         } else if (worksheet.options.pagination! > 0) {
             const pageNumber = worksheet.whichPage(worksheet.selection.range[3]);
-            if (pageNumber != worksheet.view.pageNumber) {
+            if (pageNumber !== worksheet.view.pageNumber) {
                 worksheet.page(pageNumber);
             }
         }
@@ -1316,13 +1316,13 @@ export class Selection {
 
         // Change page
         if (
-            worksheet.options.lazyLoading == true &&
-            (worksheet.selection.range[1] == worksheet.records.length - 1 || worksheet.selection.range[3] == worksheet.records.length - 1)
+            worksheet.options.lazyLoading === true &&
+            (worksheet.selection.range[1] === worksheet.records.length - 1 || worksheet.selection.range[3] === worksheet.records.length - 1)
         ) {
             worksheet.view.loadPage(-1);
         } else if (worksheet.options.pagination! > 0) {
             const pageNumber = worksheet.whichPage(worksheet.selection.range[3]);
-            if (pageNumber != worksheet.view.pageNumber) {
+            if (pageNumber !== worksheet.view.pageNumber) {
                 worksheet.page(pageNumber);
             }
         }
@@ -1362,7 +1362,7 @@ export class Selection {
         let x, y;
 
         // Direction
-        if (direction == 0 || direction == 1) {
+        if (direction === 0 || direction === 1) {
             x = x2 - x1 + worksheet.content.scrollLeft;
             y = y2 - y1 + worksheet.content.scrollTop - 2;
         } else {

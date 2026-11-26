@@ -62,7 +62,7 @@ export class Spreadsheet {
         });
 
         // Fullscreen
-        if (this.config.fullscreen == true) {
+        if (this.config.fullscreen === true) {
             this.element.classList.add('fullscreen');
         }
 
@@ -116,18 +116,18 @@ export class Spreadsheet {
                     });
                 },
                 onchange: (element: HTMLElement, instance: Tabs, tabIndex: number) => {
-                    if (this.worksheets.length != 0 && this.worksheets[tabIndex]) {
+                    if (this.worksheets.length !== 0 && this.worksheets[tabIndex]) {
                         this.toolbarManager.update(this.worksheets[tabIndex]);
                     }
                 },
             };
 
-            if (options.tabs == true) {
+            if (options.tabs === true) {
                 tabsOptions.allowCreate = true;
             }
 
             // Hide the tab headers with any number of worksheets, for example when the application shows its own tabs
-            if (options.hideTabs == true) {
+            if (options.hideTabs === true) {
                 tabsOptions.hideHeaders = true;
             }
 
@@ -230,13 +230,13 @@ export class Spreadsheet {
         // Dispatch events
         if (!this.ignoreEvents) {
             // Call global event
-            if (typeof this.config.onevent == 'function') {
+            if (typeof this.config.onevent === 'function') {
                 // The arguments match the handler of the event, as the type of dispatch says
                 ret = (this.config.onevent as (...args: unknown[]) => unknown).call(source, event, ...args);
             }
             // Call specific events
             const config = this.config;
-            if (typeof config[event] == 'function') {
+            if (typeof config[event] === 'function') {
                 // The arguments match the handler of the event, as the type of dispatch says
                 ret = (config[event] as (...args: unknown[]) => unknown).apply(source, args);
             }
@@ -286,11 +286,11 @@ export class Spreadsheet {
         }
 
         // If change
-        if (this.config.fullscreen != activate) {
+        if (this.config.fullscreen !== activate) {
             this.config.fullscreen = activate;
 
             // Test LazyLoading conflict
-            if (activate == true) {
+            if (activate === true) {
                 this.element.classList.add('fullscreen');
             } else {
                 this.element.classList.remove('fullscreen');
@@ -340,7 +340,7 @@ export class Spreadsheet {
             this.plugins = {};
         }
 
-        if (typeof newPlugins == 'object') {
+        if (typeof newPlugins === 'object') {
             for (const [pluginName, plugin] of Object.entries(newPlugins)) {
                 this.plugins[pluginName] = plugin.call(libraryBase.jspreadsheet, this, {}, this.config);
             }

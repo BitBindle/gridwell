@@ -370,6 +370,15 @@ behaviour, and turns on the ESLint rule that keeps the new style, so that new co
     type, so that the result is the same; `x == null` stays, as the one loose comparison that is clearer. The other
     loose comparisons, where the two sides can have different types, are listed in the pull request and changed one by
     one, with a test where the conversion matters. Rule: `eqeqeq` with `null: 'ignore'`.
+    Done. A script with the type checker sorted the 565 loose comparisons. 247 had both sides of the same type (string,
+    number, boolean or object) and became strict. 154 compared a boolean option with `true` or `false`: they are strict,
+    and a non-boolean value such as `1` no longer counts as `true` (UPGRADING.md). 71 compared a column type, which is a
+    text or the object of a custom editor, with a text, and 3 others compared a value whose type the checker does not
+    know with a text; an object equals a text only through its `toString`, so they are strict too. 12 `x == undefined`
+    are `x == null`, which means the same, and the 57 `x == null` stay. Of the rest, 7 became strict after a look at
+    their values, and 14 stay loose on purpose, with a comment that says why: the checkbox reads `1`, `true`, `'1'` and
+    `'true'`, a text that is a number equals the number, the editor saves only a value that changed, and the fill of
+    the corner stops at a value (#117, `0` and `false` count as empty).
 42. **The rest.** Optional chaining and `??` where they mean the same as the `&&` chain they replace, the code for
     Internet Explorer (which cannot run the classes of the bundle) goes, and the JSDoc comments left from the old code
     (`@Param`, `@return string value`) describe their parameters.

@@ -130,7 +130,7 @@ export class View {
             worksheet.resetSelection();
             // Load options
             let optionsFiltered = [];
-            if (worksheet.options.columns[columnId].type == 'checkbox') {
+            if (worksheet.options.columns[columnId].type === 'checkbox') {
                 optionsFiltered.push({ id: 'true', name: 'True' });
                 optionsFiltered.push({ id: 'false', name: 'False' });
             } else {
@@ -171,7 +171,7 @@ export class View {
                 opened: true,
                 value: worksheet.view.filters[columnId] !== undefined ? worksheet.view.filters[columnId] : null,
                 width: '100%',
-                position: worksheet.options.tableOverflow == true || worksheet.parent.config.fullscreen == true ? true : false,
+                position: worksheet.options.tableOverflow === true || worksheet.parent.config.fullscreen === true ? true : false,
                 // The element of the dropdown, which holds the dropdown
                 onclose(o: HTMLElement & { dropdown: ReturnType<typeof jSuites.dropdown> }) {
                     worksheet.view.resetFilters();
@@ -207,7 +207,7 @@ export class View {
             for (const term of query) {
                 const value = `${worksheet.options.data[y][x]}`;
                 const label = `${worksheet.records[y][x].element.innerHTML}`;
-                if (term == value || term == label) {
+                if (term === value || term === label) {
                     return true;
                 }
             }
@@ -250,7 +250,7 @@ export class View {
         const worksheet = this.worksheet;
 
         // Search
-        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+        if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
             row = worksheet.view.results.indexOf(row);
         }
 
@@ -272,7 +272,7 @@ export class View {
             // Searchable
             let results: number;
 
-            if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+            if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
                 results = worksheet.view.results.length;
             } else {
                 results = worksheet.rows.length;
@@ -317,7 +317,7 @@ export class View {
                     paginationItem.innerHTML = String(i);
                     worksheet.pagination.children[1].appendChild(paginationItem);
 
-                    if (worksheet.view.pageNumber == i - 1) {
+                    if (worksheet.view.pageNumber === i - 1) {
                         paginationItem.classList.add('jss_page_selected');
                     }
                 }
@@ -334,7 +334,7 @@ export class View {
                 // Text
                 function format(format: string, ...args: number[]): string {
                     return format.replace(/{(\d+)}/g, (match: string, number: number) => {
-                        return typeof args[number] != 'undefined' ? String(args[number]) : match;
+                        return typeof args[number] !== 'undefined' ? String(args[number]) : match;
                     });
                 }
 
@@ -358,7 +358,7 @@ export class View {
         // Search: the indexes of the rows found, or the rows
         let results: number[] | Worksheet['rows'];
 
-        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+        if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
             results = worksheet.view.results;
         } else {
             results = worksheet.rows;
@@ -368,7 +368,7 @@ export class View {
         const quantityPerPage = parseInt(worksheet.options.pagination);
 
         // pageNumber
-        if (pageNumber == null || pageNumber == -1) {
+        if (pageNumber == null || pageNumber === -1) {
             // Last page
             pageNumber = Math.ceil(results.length / quantityPerPage) - 1;
         }
@@ -392,7 +392,7 @@ export class View {
 
         // Appeding items
         for (let j = startRow; j < finalRow; j++) {
-            if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+            if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
                 worksheet.tbody.appendChild(worksheet.rows[results[j] as number].element);
             } else {
                 worksheet.tbody.appendChild(worksheet.rows[j].element);
@@ -417,7 +417,7 @@ export class View {
         const worksheet = this.worksheet;
 
         let results: number;
-        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+        if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
             results = worksheet.view.results.length;
         } else {
             results = worksheet.rows.length;
@@ -433,7 +433,7 @@ export class View {
         let index = 0;
 
         // Page 1
-        if (worksheet.options.lazyLoading == true) {
+        if (worksheet.options.lazyLoading === true) {
             total = 100;
         } else if (worksheet.options.pagination! > 0) {
             total = worksheet.options.pagination!;
@@ -545,7 +545,7 @@ export class View {
 
             if (worksheet.options.pagination! > 0) {
                 worksheet.page(0);
-            } else if (worksheet.options.lazyLoading == true) {
+            } else if (worksheet.options.lazyLoading === true) {
                 this.loadPage(0);
             } else {
                 for (const row of worksheet.rows) {
@@ -587,11 +587,11 @@ export class View {
             if (
                 worksheet.options.columns &&
                 worksheet.options.columns[column] &&
-                ((worksheet.options.columns[column].type as string) == 'number' ||
-                    worksheet.options.columns[column].type == 'numeric' ||
-                    (worksheet.options.columns[column].type as string) == 'percentage' ||
-                    (worksheet.options.columns[column].type as string) == 'autonumber' ||
-                    worksheet.options.columns[column].type == 'color')
+                ((worksheet.options.columns[column].type as string) === 'number' ||
+                    worksheet.options.columns[column].type === 'numeric' ||
+                    (worksheet.options.columns[column].type as string) === 'percentage' ||
+                    (worksheet.options.columns[column].type as string) === 'autonumber' ||
+                    worksheet.options.columns[column].type === 'color')
             ) {
                 for (let j = 0; j < worksheet.options.data.length; j++) {
                     temp[j] = [j, Number(worksheet.options.data[j][column])];
@@ -599,9 +599,9 @@ export class View {
             } else if (
                 worksheet.options.columns &&
                 worksheet.options.columns[column] &&
-                (worksheet.options.columns[column].type == 'calendar' ||
-                    worksheet.options.columns[column].type == 'checkbox' ||
-                    worksheet.options.columns[column].type == 'radio')
+                (worksheet.options.columns[column].type === 'calendar' ||
+                    worksheet.options.columns[column].type === 'checkbox' ||
+                    worksheet.options.columns[column].type === 'radio')
             ) {
                 for (let j = 0; j < worksheet.options.data.length; j++) {
                     temp[j] = [j, worksheet.options.data[j][column]];
@@ -684,7 +684,7 @@ export class View {
         // Search: the indexes of the rows found, or the rows
         let results: number[] | Worksheet['rows'];
 
-        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+        if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
             results = worksheet.view.results;
         } else {
             results = worksheet.rows;
@@ -694,7 +694,7 @@ export class View {
         const quantityPerPage = 100;
 
         // pageNumber
-        if (pageNumber == null || pageNumber == -1) {
+        if (pageNumber == null || pageNumber === -1) {
             // Last page
             pageNumber = Math.ceil(results.length / quantityPerPage) - 1;
         }
@@ -711,7 +711,7 @@ export class View {
 
         // Appeding items
         for (let j = startRow; j < finalRow; j++) {
-            if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+            if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
                 worksheet.tbody.appendChild(worksheet.rows[results[j] as number].element);
             } else {
                 worksheet.tbody.appendChild(worksheet.rows[j].element);
@@ -735,7 +735,7 @@ export class View {
             let total = worksheet.rows.length;
 
             // With search or filters, the pages are pages of the results
-            if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+            if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
                 currentRow = worksheet.view.results.indexOf(currentRow);
                 selectedRow = worksheet.view.results.indexOf(selectedRow);
                 total = worksheet.view.results.length;
@@ -749,7 +749,7 @@ export class View {
             const selectedPage = parseInt(selectedRow / 100);
             const totalPages = parseInt(total / 100);
 
-            if (currentPage != selectedPage && selectedPage <= totalPages) {
+            if (currentPage !== selectedPage && selectedPage <= totalPages) {
                 if (worksheet.rows[worksheet.selection.range[3] as number].element.parentNode !== worksheet.tbody) {
                     this.loadPage(selectedPage);
                     return true;
@@ -766,7 +766,7 @@ export class View {
         // Search: the indexes of the rows found, or the rows
         let results: number[] | Worksheet['rows'];
 
-        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+        if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
             results = worksheet.view.results;
         } else {
             results = worksheet.rows;
@@ -775,14 +775,14 @@ export class View {
         if (results.length > 100) {
             // Get the first element in the page
             let item = parseInt((worksheet.tbody.firstChild as HTMLElement).getAttribute('data-y'));
-            if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+            if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
                 item = (results as number[]).indexOf(item);
             }
             if (item > 0) {
                 for (let j = 0; j < 30; j++) {
                     item = item - 1;
                     if (item > -1) {
-                        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+                        if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
                             worksheet.tbody.insertBefore(worksheet.rows[results[item] as number].element, worksheet.tbody.firstChild);
                         } else {
                             worksheet.tbody.insertBefore(worksheet.rows[item].element, worksheet.tbody.firstChild);
@@ -808,7 +808,7 @@ export class View {
         // Search: the indexes of the rows found, or the rows
         let results: number[] | Worksheet['rows'];
 
-        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+        if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
             results = worksheet.view.results;
         } else {
             results = worksheet.rows;
@@ -817,13 +817,13 @@ export class View {
         if (results.length > 100) {
             // Get the last element in the page
             let item = parseInt((worksheet.tbody.lastChild as HTMLElement).getAttribute('data-y'));
-            if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+            if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
                 item = (results as number[]).indexOf(item);
             }
             if (item < worksheet.rows.length - 1) {
                 for (let j = 0; j <= 30; j++) {
                     if (item < results.length) {
-                        if ((worksheet.options.search == true || worksheet.options.filters == true) && worksheet.view.results) {
+                        if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
                             worksheet.tbody.appendChild(worksheet.rows[results[item] as number].element);
                         } else {
                             worksheet.tbody.appendChild(worksheet.rows[item].element);
@@ -850,7 +850,7 @@ export class View {
     wheel(e?: WheelEvent) {
         const worksheet = this.worksheet;
 
-        if (worksheet.options.lazyLoading == true) {
+        if (worksheet.options.lazyLoading === true) {
             if (libraryBase.jspreadsheet.timeControlLoading == null) {
                 libraryBase.jspreadsheet.timeControlLoading = setTimeout(() => {
                     if (worksheet.content.scrollTop + worksheet.content.clientHeight >= worksheet.content.scrollHeight - 10) {
@@ -883,14 +883,14 @@ export class View {
 
         this.wheel();
 
-        if (worksheet.options.freezeColumns! > 0 && worksheet.content.scrollLeft != worksheet.lastScrollLeft) {
+        if (worksheet.options.freezeColumns! > 0 && worksheet.content.scrollLeft !== worksheet.lastScrollLeft) {
             worksheet.lastScrollLeft = worksheet.content.scrollLeft;
             worksheet.columns.updateFreezePosition();
         }
 
         // Close a floating editor. The text editor is inside the cell and scrolls with it.
-        if (worksheet.options.lazyLoading == true || worksheet.options.tableOverflow == true) {
-            if (worksheet.editor.isOpen() && this.hasFloatingEditor(worksheet.editor.x) && (e.target as HTMLElement).className.substr(0, 9) != 'jdropdown') {
+        if (worksheet.options.lazyLoading === true || worksheet.options.tableOverflow === true) {
+            if (worksheet.editor.isOpen() && this.hasFloatingEditor(worksheet.editor.x) && (e.target as HTMLElement).className.substr(0, 9) !== 'jdropdown') {
                 worksheet.editor.close(worksheet.editor.cell, true);
             }
         }

@@ -106,7 +106,7 @@ export class Clipboard {
 
     /** Whether text is the text of the last copy, so that a paste of it can use the data and the styles of the copy. */
     matches(text: string) {
-        return hashText(text) == this.hash;
+        return hashText(text) === this.hash;
     }
 
     /** Put text on the system clipboard. */
@@ -205,7 +205,7 @@ export class Clipboard {
             for (let i = 0; i < x; i++) {
                 // If cell is highlighted
                 if (!highlighted || worksheet.records[j][i].element.classList.contains('highlight')) {
-                    if (copyHeader == true) {
+                    if (copyHeader === true) {
                         header.push(worksheet.headers[i].textContent);
                     }
                     // Values
@@ -218,7 +218,7 @@ export class Clipboard {
                     if (
                         worksheet.options.columns &&
                         worksheet.options.columns[i] &&
-                        (worksheet.options.columns[i].type == 'checkbox' || worksheet.options.columns[i].type == 'radio')
+                        (worksheet.options.columns[i].type === 'checkbox' || worksheet.options.columns[i].type === 'radio')
                     ) {
                         label = value;
                     } else {
@@ -276,7 +276,7 @@ export class Clipboard {
         let headers = '';
         let nestedHeaders = '';
 
-        if (download && (worksheet.parent.config.includeHeadersOnDownload == true || includeHeaders)) {
+        if (download && (worksheet.parent.config.includeHeadersOnDownload === true || includeHeaders)) {
             // Nested headers
             nestedHeaders = this.getNestedHeadersText(delimiter);
 
@@ -285,7 +285,7 @@ export class Clipboard {
 
         const { row, rowLabel, style, numOfCols, numOfRows } = this.getCopiedRows(highlighted, delimiter, div, copyHeader);
 
-        if (x == numOfCols && y == numOfRows) {
+        if (x === numOfCols && y === numOfRows) {
             headers = nestedHeaders;
         }
 
@@ -319,7 +319,7 @@ export class Clipboard {
             worksheet.clipboard.write(strLabel);
         }
 
-        const data = processed == true ? strLabel : str;
+        const data = processed === true ? strLabel : str;
 
         // A copy to the clipboard keeps the data, so that a paste of the same text gets the styles too. A cancelled copy or a
         // download keeps what was copied before.
@@ -394,7 +394,7 @@ export class Clipboard {
             while (row[i] != null) {
                 let value = row[i];
 
-                if (worksheet.options.columns && worksheet.options.columns[i] && worksheet.options.columns[i].type == 'calendar') {
+                if (worksheet.options.columns && worksheet.options.columns[i] && worksheet.options.columns[i].type === 'calendar') {
                     // The jsuites typings miss extractDateFromString
                     value = jSuites.calendar.extractDateFromString(
                         value,
@@ -421,7 +421,7 @@ export class Clipboard {
                 if (row[i] != null) {
                     if (colIndex >= worksheet.headers.length - 1) {
                         // If the pasted column is out of range, create it if possible
-                        if (worksheet.options.allowInsertColumn != false) {
+                        if (worksheet.options.allowInsertColumn !== false) {
                             worksheet.insertColumn();
                             // Otherwise skip the pasted data that overflows
                         } else {
@@ -436,7 +436,7 @@ export class Clipboard {
             if (rows[j]) {
                 if (rowIndex >= worksheet.rows.length - 1) {
                     // If the pasted row is out of range, create it if possible
-                    if (worksheet.options.allowInsertRow != false) {
+                    if (worksheet.options.allowInsertRow !== false) {
                         worksheet.insertRow();
                         // Otherwise skip the pasted data that overflows
                     } else {
@@ -498,7 +498,7 @@ export class Clipboard {
 
         if (ret === false) {
             return false;
-        } else if (typeof ret == 'string') {
+        } else if (typeof ret === 'string') {
             // The text to paste instead
             rows = parseCSV(ret, '\t');
         } else if (ret && ret !== true) {
@@ -571,7 +571,7 @@ export class Clipboard {
     download(includeHeaders?: boolean, processed?: boolean) {
         const worksheet = this.worksheet;
 
-        if (worksheet.parent.config.allowExport == false) {
+        if (worksheet.parent.config.allowExport === false) {
             console.error('Export not allowed');
         } else {
             // Data

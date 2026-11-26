@@ -59,11 +59,11 @@ export class Data {
 
         for (j = 0; j < max_j; j++) {
             for (i = 0; i < max_i; i++) {
-                if (worksheet.options.data[j] == undefined) {
+                if (worksheet.options.data[j] == null) {
                     worksheet.options.data[j] = [];
                 }
 
-                if (worksheet.options.data[j][i] == undefined) {
+                if (worksheet.options.data[j][i] == null) {
                     worksheet.options.data[j][i] = '';
                 }
             }
@@ -82,7 +82,7 @@ export class Data {
         let finalNumber;
 
         // Lazy loading
-        if (worksheet.options.lazyLoading == true) {
+        if (worksheet.options.lazyLoading === true) {
             // Load only 100 records
             startNumber = 0;
             finalNumber = worksheet.options.data.length < 100 ? worksheet.options.data.length : 100;
@@ -118,7 +118,7 @@ export class Data {
             }
         }
 
-        if (worksheet.options.lazyLoading == true) {
+        if (worksheet.options.lazyLoading === true) {
             // Do not create pagination with lazyloading activated
         } else if (worksheet.options.pagination) {
             worksheet.view.updatePagination();
@@ -165,7 +165,7 @@ export class Data {
             if (worksheet.records[y] && worksheet.records[y][x] && processedValue) {
                 value = worksheet.records[y][x].element.innerHTML;
             } else {
-                if (worksheet.options.data[y] && worksheet.options.data[y][x] != 'undefined') {
+                if (worksheet.options.data[y] && worksheet.options.data[y][x] !== 'undefined') {
                     value = worksheet.options.data[y][x];
                 }
             }
@@ -190,7 +190,7 @@ export class Data {
             if (worksheet.records[y] && worksheet.records[y][x] && processedValue) {
                 value = worksheet.records[y][x].element.innerHTML;
             } else {
-                if (worksheet.options.data[y] && worksheet.options.data[y][x] != 'undefined') {
+                if (worksheet.options.data[y] && worksheet.options.data[y][x] !== 'undefined') {
                     value = worksheet.options.data[y][x];
                 }
             }
@@ -212,7 +212,7 @@ export class Data {
 
         const records = [];
 
-        if (typeof cell == 'string') {
+        if (typeof cell === 'string') {
             const columnId = getIdFromColumnName(cell, true);
             const x = columnId[0];
             const y = columnId[1];
@@ -244,7 +244,7 @@ export class Data {
                         // An item without its own value gets the value argument
                         let cellValue = value;
 
-                        if (typeof cell[i] == 'string') {
+                        if (typeof cell[i] === 'string') {
                             const columnId = getIdFromColumnName(cell[i], true);
                             x = columnId[0];
                             y = columnId[1];

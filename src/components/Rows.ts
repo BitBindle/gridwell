@@ -174,7 +174,7 @@ export class Rows {
         const worksheet = this.worksheet;
 
         // Configuration
-        if (worksheet.options.allowInsertRow != false) {
+        if (worksheet.options.allowInsertRow !== false) {
             // Data to be insert
             let data: jspreadsheet.CellValue[] = [];
 
@@ -197,7 +197,7 @@ export class Rows {
             // Current column number
             const lastRow = worksheet.options.data.length - 1;
 
-            if (rowNumber == undefined || rowNumber >= parseInt(lastRow) || rowNumber < 0) {
+            if (rowNumber == null || rowNumber >= parseInt(lastRow) || rowNumber < 0) {
                 rowNumber = lastRow;
             }
 
@@ -220,8 +220,8 @@ export class Rows {
             }
 
             // Clear any search
-            if (worksheet.options.search == true) {
-                if (worksheet.view.results && worksheet.view.results.length != worksheet.rows.length) {
+            if (worksheet.options.search === true) {
+                if (worksheet.view.results && worksheet.view.results.length !== worksheet.rows.length) {
                     if (confirm(jSuites.translate('This action will clear your search results. Are you sure?'))) {
                         worksheet.resetSearch();
                     } else {
@@ -308,8 +308,8 @@ export class Rows {
             }
         }
 
-        if (worksheet.options.search == true) {
-            if (worksheet.view.results && worksheet.view.results.length != worksheet.rows.length) {
+        if (worksheet.options.search === true) {
+            if (worksheet.view.results && worksheet.view.results.length !== worksheet.rows.length) {
                 if (confirm(jSuites.translate('This action will clear your search results. Are you sure?'))) {
                     worksheet.resetSearch();
                 } else {
@@ -351,7 +351,7 @@ export class Rows {
         }
 
         // Respect pagination
-        if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length != worksheet.options.pagination) {
+        if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
             worksheet.page(worksheet.view.pageNumber);
         }
 
@@ -380,10 +380,10 @@ export class Rows {
         const worksheet = this.worksheet;
 
         // Global Configuration
-        if (worksheet.options.allowDeleteRow != false) {
-            if (worksheet.options.allowDeletingAllRows == true || worksheet.options.data.length > 1) {
+        if (worksheet.options.allowDeleteRow !== false) {
+            if (worksheet.options.allowDeletingAllRows === true || worksheet.options.data.length > 1) {
                 // Delete row definitions
-                if (rowNumber == undefined) {
+                if (rowNumber == null) {
                     const number = worksheet.selection.getSelectedRows();
 
                     if (number.length === 0) {
@@ -398,7 +398,7 @@ export class Rows {
                 // Last column
                 const lastRow = worksheet.options.data.length - 1;
 
-                if (rowNumber == undefined || rowNumber > lastRow || rowNumber < 0) {
+                if (rowNumber == null || rowNumber > lastRow || rowNumber < 0) {
                     rowNumber = lastRow;
                 }
 
@@ -440,8 +440,8 @@ export class Rows {
                     }
 
                     // Clear any search
-                    if (worksheet.options.search == true) {
-                        if (worksheet.view.results && worksheet.view.results.length != worksheet.rows.length) {
+                    if (worksheet.options.search === true) {
+                        if (worksheet.view.results && worksheet.view.results.length !== worksheet.rows.length) {
                             if (confirm(jSuites.translate('This action will clear your search results. Are you sure?'))) {
                                 worksheet.resetSearch();
                             } else {
@@ -453,7 +453,7 @@ export class Rows {
                     }
 
                     // If delete all rows, and set allowDeletingAllRows false, will stay one row
-                    if (worksheet.options.allowDeletingAllRows != true && lastRow + 1 === numOfRows) {
+                    if (worksheet.options.allowDeletingAllRows !== true && lastRow + 1 === numOfRows) {
                         numOfRows--;
                         console.error('Jspreadsheet: It is not possible to delete the last row');
                     }
@@ -482,7 +482,7 @@ export class Rows {
                     }
 
                     // Respect pagination
-                    if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length != worksheet.options.pagination) {
+                    if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
                         worksheet.page(worksheet.view.pageNumber);
                     }
 
@@ -534,7 +534,7 @@ export class Rows {
             }
         } else {
             // In case the row is an object
-            if (typeof row == 'object') {
+            if (typeof row === 'object') {
                 row = row.getAttribute('data-y')!;
             }
 

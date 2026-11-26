@@ -158,7 +158,7 @@ export class Editor {
         // Create dropdown
         let source;
 
-        if (typeof column.filter == 'function') {
+        if (typeof column.filter === 'function') {
             source = column.filter(worksheet.element, cell, xText, yText, column.source);
         } else {
             source = column.source;
@@ -185,7 +185,7 @@ export class Editor {
             opened: true,
             value,
             width: '100%',
-            position: worksheet.options.tableOverflow == true || worksheet.parent.config.fullscreen == true ? true : false,
+            position: worksheet.options.tableOverflow === true || worksheet.parent.config.fullscreen === true ? true : false,
             onclose() {
                 worksheet.editor.close(cell, true);
             },
@@ -222,7 +222,7 @@ export class Editor {
         // The options of the calendar or the color picker
         const options: CalendarOptions & ColorOptions = column.options ? { ...column.options } : {};
 
-        if (worksheet.options.tableOverflow == true || worksheet.parent.config.fullscreen == true) {
+        if (worksheet.options.tableOverflow === true || worksheet.parent.config.fullscreen === true) {
             options.position = true;
         }
         // The value of a calendar or a color cell is text
@@ -233,7 +233,7 @@ export class Editor {
             worksheet.editor.close(cell, true);
         };
         // Current value
-        if (column.type == 'color') {
+        if (column.type === 'color') {
             jSuites.color(editor, options);
 
             const rect = cell.getBoundingClientRect();
@@ -344,12 +344,12 @@ export class Editor {
         const worksheet = this.worksheet;
 
         // Value
-        const value = empty == true ? '' : worksheet.options.data[y][x];
+        const value = empty === true ? '' : worksheet.options.data[y][x];
 
         // Basic editor
         let editor;
 
-        if ((!column || column.wordWrap != false) && (worksheet.options.wordWrap == true || (column && column.wordWrap == true))) {
+        if ((!column || column.wordWrap !== false) && (worksheet.options.wordWrap === true || (column && column.wordWrap === true))) {
             editor = createEditor(cell, 'textarea', label);
         } else {
             editor = createEditor(cell, 'input', label);
@@ -428,7 +428,7 @@ export class Editor {
         }
 
         // Readonly
-        if (cell.classList.contains('readonly') == true) {
+        if (cell.classList.contains('readonly') === true) {
             // Do nothing
         } else {
             // Holder
@@ -440,18 +440,18 @@ export class Editor {
                 this.openCustom(cell, x, y, column as ColumnOptions & { type: jspreadsheet.CustomEditor }, e);
             } else {
                 // Native functions
-                if (column && column.type == 'hidden') {
+                if (column && column.type === 'hidden') {
                     // A hidden column has no editor: do not keep edition open
                     worksheet.editor.end();
-                } else if (column && (column.type == 'checkbox' || column.type == 'radio')) {
+                } else if (column && (column.type === 'checkbox' || column.type === 'radio')) {
                     this.toggleCheckbox(cell);
-                } else if (column && column.type == 'dropdown') {
+                } else if (column && column.type === 'dropdown') {
                     this.openDropdown(cell, x, y, xText, yText, column, label);
-                } else if (column && (column.type == 'calendar' || column.type == 'color')) {
+                } else if (column && (column.type === 'calendar' || column.type === 'color')) {
                     this.openPicker(cell, x, y, column, label);
-                } else if (column && column.type == 'html') {
+                } else if (column && column.type === 'html') {
                     this.openHtml(cell, x, y, column, label);
-                } else if (column && column.type == 'image') {
+                } else if (column && column.type === 'image') {
                     this.openImage(cell, x, y, column, label);
                 } else {
                     this.openText(cell, x, y, column, label, empty);
@@ -485,7 +485,7 @@ export class Editor {
         let value;
 
         // Get cell properties
-        if (save == true) {
+        if (save === true) {
             // If custom editor
             if (column && typeof column.type === 'object') {
                 if (typeof column.type.closeEditor === 'function') {
@@ -497,27 +497,27 @@ export class Editor {
                 }
             } else {
                 // Native functions
-                if (column && (column.type == 'checkbox' || column.type == 'radio' || column.type == 'hidden')) {
+                if (column && (column.type === 'checkbox' || column.type === 'radio' || column.type === 'hidden')) {
                     // Do nothing
-                } else if (column && column.type == 'dropdown') {
+                } else if (column && column.type === 'dropdown') {
                     const dropdown = (cell.children[0] as EditorElement).dropdown;
                     const delimiter = column.delimiter;
                     dropdown.close(true);
                     value = delimiter && column.multiple ? dropdown.getValue(true).join(delimiter) : dropdown.getValue();
-                } else if (column && column.type == 'calendar') {
+                } else if (column && column.type === 'calendar') {
                     value = (cell.children[0] as EditorElement).calendar.close(true);
-                } else if (column && column.type == 'color') {
+                } else if (column && column.type === 'color') {
                     value = (cell.children[0] as EditorElement).color.close(true);
-                } else if (column && column.type == 'html') {
+                } else if (column && column.type === 'html') {
                     // The rich text editor keeps its jsuites control on its element
                     value = (cell.children[0].children[0] as HTMLElement & { editor: { getData(): string } }).editor.getData();
-                } else if (column && column.type == 'image') {
+                } else if (column && column.type === 'image') {
                     const img = cell.children[0].children[0].children[0] as HTMLImageElement | undefined;
-                    value = img && img.tagName == 'IMG' ? img.src : '';
-                } else if (column && column.type == 'numeric') {
+                    value = img && img.tagName === 'IMG' ? img.src : '';
+                } else if (column && column.type === 'numeric') {
                     value = (cell.children[0] as EditorElement).value;
-                    if (`${value}`.substr(0, 1) != '=') {
-                        if (value == '') {
+                    if (`${value}`.substr(0, 1) !== '=') {
+                        if (value === '') {
                             value = column.allowEmpty ? '' : 0;
                         }
                     }
@@ -546,6 +546,7 @@ export class Editor {
             }
 
             // Ignore changes if the value is the same
+            // eslint-disable-next-line eqeqeq -- a value equals its text, for example 1 and "1"
             if (worksheet.options.data[y][x] == value) {
                 cell.innerHTML = worksheet.editor.html;
             } else {
@@ -558,11 +559,11 @@ export class Editor {
                     column.type.closeEditor(cell, save, parseInt(x), parseInt(y), worksheet, column);
                 }
             } else {
-                if (column && column.type == 'dropdown') {
+                if (column && column.type === 'dropdown') {
                     (cell.children[0] as EditorElement).dropdown.close(true);
-                } else if (column && column.type == 'calendar') {
+                } else if (column && column.type === 'calendar') {
                     (cell.children[0] as EditorElement).calendar.close(true);
-                } else if (column && column.type == 'color') {
+                } else if (column && column.type === 'color') {
                     (cell.children[0] as EditorElement).color.close(true);
                 } else {
                     (cell.children[0] as EditorElement).onblur = null;
@@ -598,7 +599,7 @@ export class Editor {
             const y = parseInt(cell.element.getAttribute('data-y'));
 
             const column = worksheet.options.columns[worksheet.cells.getColumnIndex(x, y)];
-            if (column.type == 'checkbox' || column.type == 'radio') {
+            if (column.type === 'checkbox' || column.type === 'radio') {
                 // Update cell
                 records.push(worksheet.cells.update(x, y, !worksheet.options.data[y][x]));
             }
