@@ -126,7 +126,8 @@ export class Cells {
      * @param object cell
      * @return string value
      */
-    get(x: number, y: number) {
+    // A cell name, or the coordinates of the cell
+    get(x: number | string, y?: number) {
         const obj = this.worksheet;
 
         if (typeof x === 'string') {
@@ -137,7 +138,8 @@ export class Cells {
             y = cell[1];
         }
 
-        return obj.records[y][x].element;
+        // y is set with the coordinates, and from the name
+        return obj.records[y!][x].element;
     }
 
     /**
@@ -158,7 +160,8 @@ export class Cells {
      * @param object cell
      * @return string value
      */
-    getLabel(x: number, y: number) {
+    // A cell name, or the coordinates of the cell
+    getLabel(x: number | string, y?: number) {
         const obj = this.worksheet;
 
         if (typeof x === 'string') {
@@ -169,7 +172,8 @@ export class Cells {
             y = cell[1];
         }
 
-        return obj.records[y][x].element.innerHTML;
+        // y is set with the coordinates, and from the name
+        return obj.records[y!][x].element.innerHTML;
     }
 
     /**

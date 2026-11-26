@@ -307,6 +307,13 @@ on the prototypes. The next steps move each of them into a class, so that no fun
     `Worksheet.ts` imports and puts on the prototype.
 36. **The public methods.** `Worksheet` declares its public methods, and `worksheetPublicMethods` goes (step 34 already
     removed `spreadsheetPublicMethods`).
+    Done. The 78 entries of the list are methods of `Worksheet`, each with the parameters of its entry; `worksheets.ts`
+    goes. The list typed its functions loosely, so the type check now compares each method with its declaration: the
+    methods with overloads in `jspreadsheet.d.ts` (`getData`, `getSelected`, `getCell`, `getLabel`, `getHeight`,
+    `getMeta`, `isReadOnly`, `setStyle`, `setMeta`, `setComments`, `setWidth`) repeat the overloads, and the parameters
+    of `copy`, `setMerge` and `updateSelectionFromCoords` became optional or nullable as declared. `cells.get` and
+    `cells.getLabel` take a cell name as declared, `data.get` a null delimiter, and `selection.reset` returns `0 | 1`.
+    `WorksheetMethod` goes. Apart from `jspreadsheet.helpers.getCaretIndex`, no function outside a class reads `this`.
 
 ## Rules for each step
 
