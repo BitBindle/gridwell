@@ -22,6 +22,13 @@ function placed() {
     });
 }
 
+// The spreadsheet joins jspreadsheet.spreadsheet, which the scroll of the page reads, after it builds its worksheets
+function built() {
+    return new Promise((resolve) => {
+        setTimeout(resolve, 10);
+    });
+}
+
 // jsdom has no layout. Each row, also each header row, is 20 pixels high, and a hidden row has no height.
 function withRowHeight(test: () => void | Promise<void>) {
     return async () => {
@@ -707,7 +714,7 @@ describe('The fill handle under the header and the frozen rows (issue #185)', ()
         'hides the fill handle while a scroll of the page moves its cell under the header rows',
         withRowHeight(async () => {
             const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(40), filters: true }] });
-            await placed();
+            await built();
             // The header row and the filter row stick at the top of the window, and cover 40 pixels
             stick(worksheet.thead.lastElementChild!, 40);
 
@@ -721,6 +728,57 @@ describe('The fill handle under the header and the frozen rows (issue #185)', ()
             worksheet.records[10][1].element.getBoundingClientRect = rect(150, 280, 100, 20);
             document.dispatchEvent(new Event('scroll'));
             expect(worksheet.corner.style.display).to.equal('');
+        })
+    );
+
+    it(
+        'hides the fill handle under the last frozen row that shows when the last frozen row is hidden',
+        withRowHeight(async () => {
+            const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(40), tableOverflow: true, freezeRows: 3 }] });
+            await placed();
+            worksheet.hideRow(2);
+            await placed();
+            // The header row and the two frozen rows that show cover 60 pixels. The hidden row has no size on the screen.
+            stick(worksheet.thead.lastElementChild!, 20);
+            stick(worksheet.rows[1].element, 60);
+
+            select(worksheet, 1, 5, 55);
+            expect(worksheet.corner.style.display).to.equal('none');
+        })
+    );
+
+    it(
+        'checks the fill handle of each worksheet in the scrolled element, also of a worksheet that is not current',
+        withRowHeight(async () => {
+            const first = document.createElement('div');
+            const second = document.createElement('div');
+            root.appendChild(first);
+            root.appendChild(second);
+            const a = jspreadsheet(first, { worksheets: [{ data: rows(40) }] })[0];
+            const b = jspreadsheet(second, { worksheets: [{ data: rows(40) }] })[0];
+            await built();
+            stick(a.thead.lastElementChild!, 40);
+            stick(b.thead.lastElementChild!, 40);
+            select(a, 1, 10, 300);
+            select(b, 1, 10, 300);
+            jspreadsheet.current = b;
+
+            // A scroll of the element around the first worksheet reads no layout of the second worksheet
+            let reads = 0;
+            b.records[10][1].element.getBoundingClientRect = () => {
+                reads++;
+                return rect(150, 10, 100, 20)();
+            };
+            a.records[10][1].element.getBoundingClientRect = rect(150, 10, 100, 20);
+            first.dispatchEvent(new Event('scroll'));
+            expect(a.corner.style.display).to.equal('none');
+            expect(b.corner.style.display).to.equal('');
+            expect(reads).to.equal(0);
+
+            a.records[10][1].element.getBoundingClientRect = rect(150, 280, 100, 20);
+            document.dispatchEvent(new Event('scroll'));
+            expect(a.corner.style.display).to.equal('');
+            expect(b.corner.style.display).to.equal('none');
         })
     );
 

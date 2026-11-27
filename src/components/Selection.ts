@@ -177,10 +177,16 @@ export class Selection {
         let covered = header ? stickyBottom(header) : null;
         const frozen = worksheet.rowManager.getFreezeCount();
         if (frozen > 0 && parseInt(cell.getAttribute('data-y')!) >= frozen) {
-            const row = worksheet.rows[frozen - 1]?.element;
-            const rowBottom = row ? stickyBottom(row) : null;
-            if (rowBottom !== null && (covered === null || rowBottom > covered)) {
-                covered = rowBottom;
+            // The last frozen row that shows. A hidden row has no size on the screen.
+            for (let y = frozen - 1; y >= 0; y--) {
+                const row = worksheet.rows[y]?.element;
+                const rowBottom = row ? stickyBottom(row) : null;
+                if (rowBottom !== null) {
+                    if (covered === null || rowBottom > covered) {
+                        covered = rowBottom;
+                    }
+                    break;
+                }
             }
         }
         // The fill handle starts 4 pixels above the bottom of the cell
