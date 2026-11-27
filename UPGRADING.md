@@ -721,13 +721,12 @@ of one row, or the last row of a taller range. Version 5 did not ask. It kept th
 No option keeps the old behavior, because the removal of ranges that the action does not touch lost data. The dialog
 text stays the same, so that the translations of applications still apply.
 
-## The formulas of new rows and columns keep their texts
+## The undo of a delete keeps the formula texts of the cells that it adds
 
-A formula in the values of `insertRow` or `insertColumn` names the cells at their positions after the insert, and keeps
-its text. Version 5 moved its references with the cells after the insert, so `insertRow(['9', '=A3'], 0, true)` gave
-`=A4`. The undo of a delete and the redo of an insert also keep the formula texts of the rows and columns that they add.
-Version 5 moved their references too, so the undo of a delete gave the formula other references.
+The undo of a row or column delete gives the cells that it adds the formula texts that they had before the delete.
+Version 5 moved their references again, so the restored formulas named other cells. A formula in the values of
+`insertRow` or `insertColumn` still moves its references with the cells, but it now shows the value of its new text.
 
 A formula cell that a delete removes leaves the formula chain. Version 5 kept its name, so a later change of a cell that
 the formula named threw a TypeError, or calculated the cell that then had the name. No option keeps the old behavior,
-because the old behavior changed formulas that the application or the history gave.
+because the old behavior changed the formulas that the history gave back.

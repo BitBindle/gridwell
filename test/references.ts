@@ -241,7 +241,7 @@ describe('The formulas and the chain after an insert, a delete, and their undo (
         expect(worksheet.getValue('A1', true)).to.equal('15');
     });
 
-    it('keeps the formula text of a new row, which names the cells at their new positions', () => {
+    it('moves the references of the formula of a new row once, and shows the value and keeps the chain of the moved text', () => {
         const [worksheet] = jspreadsheet(root, {
             worksheets: [
                 {
@@ -256,14 +256,19 @@ describe('The formulas and the chain after an insert, a delete, and their undo (
 
         worksheet.insertRow(['9', '=A3*2'], 0, true);
 
+        // As in version 5, the formula names the cells at their positions before the insert
         expect(worksheet.getData()).to.eql([
-            ['9', '=A3*2'],
+            ['9', '=A4*2'],
             ['1', ''],
             ['2', '=A2'],
             ['3', ''],
         ]);
-        expect(worksheet.getValue('B1', true)).to.equal('4');
-        worksheet.setValue('A3', '7');
+        expect(worksheet.getValue('B1', true)).to.equal('6');
+        expect(worksheet.formulas.chain).to.eql({ A2: ['B3'], A4: ['B1'] });
+        worksheet.undo();
+        worksheet.redo();
+        expect(worksheet.getValue('B1')).to.equal('=A4*2');
+        worksheet.setValue('A4', '7');
         expect(worksheet.getValue('B1', true)).to.equal('14');
         expect(worksheet.getValue('B3', true)).to.equal('1');
     });
@@ -330,7 +335,7 @@ describe('The formulas and the chain after an insert, a delete, and their undo (
         expect([worksheet.getValue('B1', true), worksheet.getValue('B2', true)]).to.eql(['8', '8']);
     });
 
-    it('keeps the formula of a new column, also when the redo adds it again', () => {
+    it('moves the references of the formula of a new column once, also when the redo adds the column again', () => {
         const [worksheet] = jspreadsheet(root, {
             worksheets: [
                 {
@@ -342,7 +347,8 @@ describe('The formulas and the chain after an insert, a delete, and their undo (
             ],
         });
 
-        worksheet.insertColumn(['=C2*2', ''], 0, true);
+        worksheet.insertColumn(['=B2*2', ''], 0, true);
+        expect(worksheet.getValue('A1')).to.equal('=C2*2');
         expect(worksheet.getValue('A1', true)).to.equal('8');
         worksheet.undo();
         worksheet.redo();

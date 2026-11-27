@@ -50,8 +50,14 @@ export class Formulas {
         this.worksheet = worksheet;
     }
 
+    /** True while keepChain runs a change: add does not change the chain then. */
+    private paused = false;
+
     /** Keep that the formula of the cell `dependent` refers to the cell `cell`. Both are cell names, such as A1. */
     add(cell: string, dependent: string) {
+        if (this.paused) {
+            return;
+        }
         if (!this.chain[cell]) {
             this.chain[cell] = [];
         }
@@ -71,7 +77,7 @@ export class Formulas {
 
         for (const name of Object.keys(this.chain)) {
             // A name that a delete removed can get the same new name as a cell that moved, as the formula texts do. The
-            // dependents of both stay.
+            // dependents of both stay, and a name without dependents leaves the chain.
             const key = (keys && references[name]) || name;
             for (const dependent of this.chain[name]) {
                 const renamed = references[dependent] || dependent;
@@ -93,14 +99,12 @@ export class Formulas {
      * updateTableReferences adds the new cells to the chain after the move.
      */
     keepChain<T>(change: () => T): T {
-        const chain: Record<string, string[]> = {};
-        for (const [name, dependents] of Object.entries(this.chain)) {
-            chain[name] = [...dependents];
-        }
+        const paused = this.paused;
+        this.paused = true;
         try {
             return change();
         } finally {
-            this.chain = chain;
+            this.paused = paused;
         }
     }
 
@@ -462,14 +466,14 @@ export class Formulas {
     /**
      * Update formulas
      */
-    private updateFormulas(referencesToUpdate: Record<string, string>, inserted: (x: number, y: number) => boolean) {
+    private updateFormulas(referencesToUpdate: Record<string, string>, keepText: (x: number, y: number) => boolean) {
         const worksheet = this.worksheet;
 
-        // Update formulas. The formula of a new cell already names the cells at their new positions.
+        // Update formulas. The formula of a cell that an undo or a redo adds already names the cells at their new positions.
         for (let j = 0; j < worksheet.options.data.length; j++) {
             const row = worksheet.options.data[j];
             for (let i = 0; i < worksheet.options.data[0].length; i++) {
-                if (inserted(i, j)) {
+                if (keepText(i, j)) {
                     continue;
                 }
                 const value = `${row[i]}`;
@@ -493,10 +497,10 @@ export class Formulas {
      * columns move.
      * @param from - The first row or column that moved. The rows or columns before it keep their positions, so the update
      * starts there. Without it, the update reads each row and each column. `inserted` gives the rows (axis 1) or the
-     * columns (axis 0) that an insert or an undo added: their formulas keep their texts, and they get their place in the
-     * chain after the other cells moved.
+     * columns (axis 0) that an insert, an undo or a redo added: they get their place in the chain after the other cells
+     * moved. With `keepTexts`, their formulas keep their texts, else their references move as the other references do.
      */
-    updateTableReferences(from: { row?: number; column?: number; inserted?: { axis: 0 | 1; index: number; count: number } } = {}) {
+    updateTableReferences(from: { row?: number; column?: number; inserted?: { axis: 0 | 1; index: number; count: number; keepTexts?: boolean } } = {}) {
         const worksheet = this.worksheet;
         if (worksheet.skipUpdateTableReferences) {
             return;
@@ -537,12 +541,22 @@ export class Formulas {
             return position >= inserted.index && position < inserted.index + inserted.count;
         }
 
-        // The old names of the cells that are still in the worksheet, in the part that the update reads
-        const kept = new Set<string>();
+        function keepsText(x: number, y: number) {
+            return !!inserted?.keepTexts && isInserted(x, y);
+        }
+
+        // The old positions of the rows and the columns that are still in the worksheet, in the part that the update reads
+        const keptRows = new Set<number>();
+        const keptColumns = new Set<number>();
+        // A row without an object gives no old position, so the rows are not checked then
+        let allRows = true;
 
         // Update headers
         for (let i = firstColumn; i < worksheet.headers.length; i++) {
             const x = parseInt(worksheet.headers[i].getAttribute('data-x'));
+            if (references && !(inserted?.axis === 0 && isInserted(i, 0))) {
+                keptColumns.add(x);
+            }
 
             if (x !== i) {
                 // Update coords
@@ -559,6 +573,9 @@ export class Formulas {
         for (let j = firstRow; j < worksheet.rows.length; j++) {
             if (worksheet.rows[j]) {
                 const y = parseInt(worksheet.rows[j].element.getAttribute('data-y'));
+                if (references && !(inserted?.axis === 1 && isInserted(0, j))) {
+                    keptRows.add(y);
+                }
 
                 if (y !== j) {
                     // Update coords
@@ -568,6 +585,8 @@ export class Formulas {
                     // Row number
                     worksheet.rows[j].element.children[0].innerHTML = String(j + 1);
                 }
+            } else {
+                allRows = false;
             }
         }
 
@@ -590,7 +609,6 @@ export class Formulas {
             if (isInserted(i, j)) {
                 return;
             }
-            kept.add(getColumnNameFromId([x, y]));
             if (references && (x !== i || y !== j)) {
                 const columnIdFrom = getColumnNameFromId([x, y]);
                 const columnIdTo = getColumnNameFromId([i, j]);
@@ -610,13 +628,6 @@ export class Formulas {
                         const columnIdFrom = getColumnNameFromId([x, y]);
                         const columnIdTo = getColumnNameFromId([i, j]);
                         if (mergeCellUpdates[columnIdFrom] == null) {
-                            // The covered cells of the range are still in the worksheet too
-                            const span = worksheet.options.mergeCells?.[columnIdFrom];
-                            for (let r = 0; r < (span?.[1] || 1); r++) {
-                                for (let c = 0; c < (span?.[0] || 1); c++) {
-                                    kept.add(getColumnNameFromId([x + c, y + r]));
-                                }
-                            }
                             if (columnIdFrom === columnIdTo) {
                                 mergeCellUpdates[columnIdFrom] = false;
                             } else {
@@ -665,10 +676,15 @@ export class Formulas {
             // calculated the cell that then had its name.
             function gone(name: string) {
                 const [x, y] = getIdFromColumnName(name);
-                return x >= firstColumn && y >= firstRow && !kept.has(name) && !affectedTokens[name];
+                return (x >= firstColumn && !keptColumns.has(x)) || (allRows && y >= firstRow && !keptRows.has(y));
             }
-            for (const name of Object.keys(this.chain)) {
-                this.chain[name] = this.chain[name].filter((dependent) => !gone(dependent));
+            // An insert removes no cell
+            if (!inserted) {
+                for (const [name, dependents] of Object.entries(this.chain)) {
+                    if (dependents.some(gone)) {
+                        this.chain[name] = dependents.filter((dependent) => !gone(dependent));
+                    }
+                }
             }
 
             if (worksheet.parent.config.updateReferences === false) {
@@ -677,7 +693,7 @@ export class Formulas {
                 this.showResults(firstColumn, firstRow);
             } else {
                 // Update formulas
-                this.updateFormulas(affectedTokens, isInserted);
+                this.updateFormulas(affectedTokens, keepsText);
             }
 
             // The formulas of the new cells calculate again at their positions, and get their place in the chain

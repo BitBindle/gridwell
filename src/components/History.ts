@@ -143,8 +143,11 @@ export class History {
         worksheet.editor.shift(1, rowIndex, count);
         worksheet.selection.shift(1, rowIndex, count);
 
-        // The rows that the undo or the redo adds keep their formulas
-        worksheet.formulas.updateTableReferences(type === 1 ? {} : { inserted: { axis: 1, index: rowIndex, count: historyRecord.numOfRows } });
+        // The rows that the undo of a delete adds keep their formula texts, which name the cells at their positions after
+        // the undo. The redo of an insert moves the references of its formulas, as the insert did.
+        worksheet.formulas.updateTableReferences(
+            type === 1 ? {} : { inserted: { axis: 1, index: rowIndex, count: historyRecord.numOfRows, keepTexts: historyRecord.action === 'deleteRow' } }
+        );
     }
 
     /**
@@ -245,8 +248,13 @@ export class History {
         worksheet.editor.shift(0, columnIndex, count);
         worksheet.selection.shift(0, columnIndex, count);
 
-        // The columns that the undo or the redo adds keep their formulas
-        worksheet.formulas.updateTableReferences(type === 1 ? {} : { inserted: { axis: 0, index: columnIndex, count: historyRecord.numOfColumns } });
+        // The columns that the undo of a delete adds keep their formula texts. The redo of an insert moves the references
+        // of its formulas, as the insert did.
+        worksheet.formulas.updateTableReferences(
+            type === 1
+                ? {}
+                : { inserted: { axis: 0, index: columnIndex, count: historyRecord.numOfColumns, keepTexts: historyRecord.action === 'deleteColumn' } }
+        );
     }
 
     /**
