@@ -287,18 +287,26 @@ export class Spreadsheet {
         // build makes the worksheet the active worksheet. While its data or the sources of its dropdown columns load, the
         // worksheet has no table, so another worksheet stays active, or no worksheet is active. The user can make another
         // worksheet active during the load, and that worksheet stays active.
-        const building = worksheet.build();
+        const building = worksheet.build(true);
         if (libraryBase.jspreadsheet.current === worksheet) {
             libraryBase.jspreadsheet.current = current === worksheet ? null : current;
         }
-        await building;
+        try {
+            await building;
+        } finally {
+            // The last load gives back the active worksheet, also when the build fails, but not after destroy
+            if (worksheet.generation === generation) {
+                delete worksheet.pendingLoad;
+                const active = libraryBase.jspreadsheet.current;
+                // destroy empties the spreadsheet property of the element
+                const destroyed = this.element.spreadsheet === null;
+                if (!destroyed && (active === worksheet || (active == null && current === worksheet))) {
+                    libraryBase.jspreadsheet.current = current;
+                }
+            }
+        }
         if (worksheet.generation !== generation) {
             return worksheet;
-        }
-        delete worksheet.pendingLoad;
-        const active = libraryBase.jspreadsheet.current;
-        if (active === worksheet || (active == null && current === worksheet)) {
-            libraryBase.jspreadsheet.current = current;
         }
 
         // The focus moves only when no other element took it during the load

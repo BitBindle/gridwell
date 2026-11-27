@@ -1071,7 +1071,11 @@ export class Worksheet {
             });
     }
 
-    async build() {
+    /**
+     * Build the worksheet from its options. With waitForSources, the promise also waits for the sources of the dropdown
+     * columns, as loadWorksheet needs. The first build of a spreadsheet does not wait for them.
+     */
+    async build(waitForSources = false) {
         const el = this.element;
 
         const spreadsheet = this.parent;
@@ -1127,7 +1131,8 @@ export class Worksheet {
                         this.options.data = newData;
                     }
                     // Without the file, the worksheet is built with its other options
-                    return this.prepareTable(replaced);
+                    const prepared = this.prepareTable(replaced);
+                    return waitForSources ? prepared : undefined;
                 })
             );
         } else if (this.options.url) {
@@ -1141,13 +1146,14 @@ export class Worksheet {
                         this.options.data = (response.result as { data?: jspreadsheet.CellValue[][] }).data || (response.result as jspreadsheet.CellValue[][]);
                     }
                     // Without the data, the worksheet is built with its other options
-                    return this.prepareTable(replaced);
+                    const prepared = this.prepareTable(replaced);
+                    return waitForSources ? prepared : undefined;
                 })
             );
         } else {
             // Prepare table. The sources of the dropdown columns can load before the table is created.
             const prepared = this.prepareTable(replaced);
-            if (prepared) {
+            if (prepared && waitForSources) {
                 promises.push(prepared);
             }
         }

@@ -330,6 +330,50 @@ describe('loadWorksheet', () => {
             }
         });
 
+        it('gives back no active worksheet after destroy during the load', async () => {
+            const [one] = await create();
+            jspreadsheet.current = one;
+            server.responses['/rows'] = { body: [['u']] };
+
+            const loading = one.loadWorksheet(0, { url: '/rows' });
+            jspreadsheet.destroy(root as Jspreadsheet.JspreadsheetInstanceElement);
+            await loading;
+
+            expect(jspreadsheet.current).to.equal(null);
+        });
+
+        it('stops the search timer of the active worksheet', async () => {
+            const [one] = await create({ worksheets: [{ worksheetName: 'One', data: [['1'], ['2']], search: true }] });
+            jspreadsheet.current = one;
+            server.responses['/rows'] = { body: [['u'], ['1']] };
+            one.resetSelection();
+
+            // A key in the search input starts the search of the active worksheet 200 ms later
+            one.searchInput.value = '1';
+            one.searchInput.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, key: '1', keyCode: 49, which: 49 }));
+            await one.loadWorksheet(0, { url: '/rows', search: true });
+            await new Promise((resolve) => setTimeout(resolve, 250));
+
+            expect(one.view.results).to.equal(null);
+        });
+
+        it('gives back the active worksheet when the build fails', async () => {
+            const [one] = await create();
+            jspreadsheet.current = one;
+            server.responses['/rows'] = { body: 'null' };
+
+            let failed = false;
+            try {
+                await one.loadWorksheet(0, { url: '/rows' });
+            } catch {
+                failed = true;
+            }
+
+            expect(failed).to.equal(true);
+            expect(jspreadsheet.current).to.equal(one);
+            expect(one.pendingLoad).to.equal(undefined);
+        });
+
         it('dispatches onrenameworksheet for a load that a later load replaces', async () => {
             const events: unknown[][] = [];
             const [one] = await create({
