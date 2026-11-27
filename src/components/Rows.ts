@@ -557,11 +557,11 @@ export class Rows {
 
         // The rows that a filter shows keep their place in the results
         if (worksheet.view.results) {
-            worksheet.view.results = worksheet.view.results
+            const shown = worksheet.view.results;
+            // The other rows keep their order, so only the moved row needs a new place in the results
+            const results = shown
+                .filter((row) => row !== from)
                 .map((row) => {
-                    if (row === from) {
-                        return to;
-                    }
                     if (from < to && row > from && row <= to) {
                         return row - 1;
                     }
@@ -569,8 +569,12 @@ export class Rows {
                         return row + 1;
                     }
                     return row;
-                })
-                .sort((a, b) => a - b);
+                });
+            if (results.length < shown.length) {
+                const place = results.findIndex((row) => row > to);
+                results.splice(place < 0 ? results.length : place, 0, to);
+            }
+            worksheet.view.results = results;
         }
 
         // With pagination, lazy loading or filters, the table body has only some rows. The row goes next to a neighbour
@@ -592,7 +596,7 @@ export class Rows {
 
         // The page shows the rows of its positions again
         if (worksheet.options.pagination! > 0) {
-            worksheet.page(worksheet.view.pageNumber);
+            worksheet.view.refreshPage();
         }
 
         // Keeping history of changes
@@ -733,7 +737,7 @@ export class Rows {
 
                     // The page shows the rows of its positions again, also after a delete on an earlier page
                     if (worksheet.options.pagination! > 0) {
-                        worksheet.page(worksheet.view.pageNumber);
+                        worksheet.view.refreshPage();
                     }
 
                     // Keep history

@@ -104,6 +104,26 @@ describe('Row changes show the rows of the page again (#223, #224)', () => {
         return Array.from(worksheet.tbody.children).map((tr) => tr.children[1].textContent);
     }
 
+    it('shows the last page when a delete removes the current page', () => {
+        const worksheet = create(2);
+
+        worksheet.deleteRow(0, 3);
+
+        expect(worksheet.view.pageNumber).to.equal(1);
+        expect(shown(worksheet)).to.eql(['A7', 'A8', 'A9']);
+    });
+
+    it('shows the last page when the undo of an insert removes the current page', () => {
+        const worksheet = create(2);
+        worksheet.insertRow(3, 8);
+        worksheet.page(3);
+
+        worksheet.undo();
+
+        expect(worksheet.view.pageNumber).to.equal(2);
+        expect(shown(worksheet)).to.eql(['A7', 'A8', 'A9']);
+    });
+
     it('shows the next rows after a delete of rows on an earlier page (#223)', () => {
         const worksheet = create(1);
 

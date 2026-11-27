@@ -117,14 +117,16 @@ export class History {
             worksheet.options.data = injectArray(worksheet.options.data, rowIndex, data);
 
             worksheet.rows = injectArray(worksheet.rows, rowIndex, historyRecord.rowNode);
-            // Insert nodes before the next row, or after the previous row at the end, when that row is in the table body.
-            // With pagination or lazy loading, the rows next to the others can be outside the body.
+            // Insert nodes before the next row when it is in the table body, else after the previous row when it is. With
+            // pagination or lazy loading, the rows next to the others can be outside the body.
             const next = worksheet.rows[rowIndex + historyRecord.numOfRows];
             const previous = worksheet.rows[rowIndex - 1];
-            const attached = next ? next.element.parentNode === worksheet.tbody : !previous || previous.element.parentNode === worksheet.tbody;
-            if (attached) {
+            const before = next?.element.parentNode === worksheet.tbody ? next.element : null;
+            const after = !before && previous?.element.parentNode === worksheet.tbody ? previous.element : null;
+            if (before || after || (!next && !previous)) {
+                const reference = before || after?.nextSibling || null;
                 for (const row of historyRecord.rowNode) {
-                    worksheet.tbody.insertBefore(row.element, next ? next.element : null);
+                    worksheet.tbody.insertBefore(row.element, reference);
                 }
             }
         }
@@ -139,9 +141,9 @@ export class History {
             }
         }
 
-        // Respect pagination
+        // Respect pagination. An undo of an insert can remove the current page.
         if (worksheet.options.pagination! > 0) {
-            worksheet.page(worksheet.view.pageNumber);
+            worksheet.view.refreshPage();
         }
 
         // The selection and the editor stay on their cells. A selection with a removed cell is removed.

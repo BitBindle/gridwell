@@ -296,6 +296,17 @@ describe('Row changes of rows that lazy loading did not attach (#188, #189)', ()
         return Array.from(worksheet.tbody.children).map((tr) => Number(tr.getAttribute('data-y')));
     }
 
+    it('attaches the rows that the undo of a delete brings back after the last attached row', () => {
+        const worksheet = create();
+
+        worksheet.deleteRow(95, 5);
+        worksheet.undo();
+
+        const rows = attached(worksheet);
+        expect(rows).to.have.length(100);
+        expect(rows[rows.length - 1]).to.equal(99);
+    });
+
     it('undoes and redoes an insert of rows that are not attached (#188)', () => {
         const worksheet = create();
 

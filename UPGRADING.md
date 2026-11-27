@@ -773,4 +773,9 @@ With `filters`, `moveRow` keeps the rows that the filter shows: the moved row sh
 keep their place. A row that the filter hides stays hidden. Version 5 kept the old row numbers in the results of the
 filter, so the filter then showed other rows.
 
-No option keeps the old behavior, because it showed rows that the page or the filter did not have.
+With `pagination`, `onchangepage` occurs after each `deleteRow` and `moveRow`, and after their undo and redo, also when
+the page number does not change. `insertRow` already did this in version 5. When a delete removes the current page, the
+last page shows. Version 5 showed a page after the last page, with no rows.
+
+No option keeps the old behavior, because it showed rows that the page or the filter did not have. An application that
+uses `onchangepage` to load data can compare the new and the old page number.
