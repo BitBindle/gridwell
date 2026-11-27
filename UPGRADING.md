@@ -858,3 +858,16 @@ last page shows. Version 5 showed a page after the last page, with no rows.
 
 No option keeps the old behavior, because it showed rows that the page or the filter did not have. An application that
 uses `onchangepage` to load data can compare the new and the old page number.
+
+## A cell that shows the text of a merged range in the column window has the style of the first column
+
+In the row source mode with `columnWindow`, a merged range that starts left of the window shows its text in its first
+cell in the window. That cell now takes the alignment of the first column when the two columns have different
+alignments, and the color of the text when one of them is a color column. It already took the wrap.
+
+While the cell shows the text, `getStyle` of the cell gives these values, and a `setStyle` of the same value turns it
+off, as for any cell. When the merged range is removed or leaves the window, the cell gets its own values back. A value
+that `setStyle` gave while the cell showed the text stays.
+
+No option keeps the old style, because the cell showed the text with a style that the first column did not have. Code
+that saves `getStyle()` can save the style while no merged range starts left of the window.

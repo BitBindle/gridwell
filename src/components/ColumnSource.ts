@@ -7,6 +7,12 @@ import type { Worksheet } from '../types/internal';
 /** The style of a cell that moveText changes. */
 type OwnStyle = Pick<CSSStyleDeclaration, 'whiteSpace' | 'textAlign' | 'color'>;
 
+/** The style of a cell that moveText changes, as the cell has it now. */
+function styleOf(element: HTMLElement): OwnStyle {
+    const { whiteSpace, textAlign, color } = element.style;
+    return { whiteSpace, textAlign, color };
+}
+
 /** The columns left and right of the view that the window holds. */
 const defaultBuffer = 10;
 
@@ -108,9 +114,10 @@ export class ColumnSource {
     private readonly moved = new Map<string, number | null>();
     /**
      * The own white-space, text-align and color of the cells that show the text of a merged range, from before moveText
-     * gave them the style of the text. A value can come from setStyle. rebuild puts them back.
+     * gave them the style of the text, and the values that moveText gave. A value can come from setStyle. rebuild puts
+     * back each value that still is the value of moveText, so a setStyle after moveText stays.
      */
-    private readonly ownStyle = new Map<string, OwnStyle>();
+    private readonly ownStyle = new Map<string, { own: OwnStyle; shown: OwnStyle }>();
 
     constructor(worksheet: Worksheet, source: jspreadsheet.RowSource) {
         this.worksheet = worksheet;
@@ -512,21 +519,21 @@ export class ColumnSource {
         const element = worksheet.records[y][to].element;
         const td = worksheet.cells.create(from, y, value, true);
         element.innerHTML = td.innerHTML;
-        if (!this.ownStyle.has(name)) {
-            const { whiteSpace, textAlign, color } = element.style;
-            this.ownStyle.set(name, { whiteSpace, textAlign, color });
-        }
+        const own = this.ownStyle.get(name)?.own ?? styleOf(element);
         element.style.whiteSpace = td.style.whiteSpace;
-        const first = worksheet.options.columns?.[from] || {};
-        const own = worksheet.options.columns?.[to] || {};
-        if (first.align !== own.align) {
+        // The options of the columns that the two cells use, as Cells.render and create read them
+        const columns = worksheet.options.columns;
+        const first = columns?.[worksheet.cells.getColumnIndex(from, y)] || {};
+        const other = columns?.[worksheet.cells.getColumnIndex(to, y)] || {};
+        if (first.align !== other.align) {
             element.style.textAlign = td.style.textAlign;
         }
-        if (first.type === 'color' || own.type === 'color') {
+        if (first.type === 'color' || other.type === 'color') {
             element.style.color = td.style.color;
         }
+        this.ownStyle.set(name, { own, shown: styleOf(element) });
         // The text goes through the render of the first column, as createRecord does
-        const column = worksheet.options.columns?.[from];
+        const column = columns?.[from];
         if (column && typeof column.render === 'function') {
             column.render(element, value, from, y, worksheet, column);
         }
@@ -573,11 +580,14 @@ export class ColumnSource {
         const element = worksheet.records[y][x].element;
         element.innerHTML = worksheet.cells.create(x, y, worksheet.options.data[y][x], true).innerHTML;
         const name = getColumnNameFromId([x, y]);
-        const own = this.ownStyle.get(name);
-        if (own) {
-            element.style.whiteSpace = own.whiteSpace;
-            element.style.textAlign = own.textAlign;
-            element.style.color = own.color;
+        const saved = this.ownStyle.get(name);
+        if (saved) {
+            for (const property of ['whiteSpace', 'textAlign', 'color'] as const) {
+                // A value from setStyle after moveText stays
+                if (element.style[property] === saved.shown[property]) {
+                    element.style[property] = saved.own[property];
+                }
+            }
             this.ownStyle.delete(name);
         }
     }
