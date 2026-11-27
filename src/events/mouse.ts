@@ -100,11 +100,10 @@ export function mouseDownControls(e: TargetEvent<MouseEvent>) {
                 current.pointer.corner = true;
             }
         } else {
-            // Header found
+            // Header found. A press that selects clears the row number of a selection of whole rows, and a press that
+            // starts a resize or that a check refuses keeps the selection with its first row number or header.
             if (jssTable[1] === 1) {
                 current.pointer.pressHeader(e);
-            } else {
-                current.selection.column = null;
             }
 
             // Body found
@@ -114,8 +113,6 @@ export function mouseDownControls(e: TargetEvent<MouseEvent>) {
                 } else {
                     current.pointer.pressCell(e);
                 }
-            } else {
-                current.selection.row = null;
             }
 
             // Pagination

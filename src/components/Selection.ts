@@ -1293,6 +1293,26 @@ export class Selection {
     }
 
     /**
+     * A copy of the selected range, where a move of the keys starts. When the selection is one cell that does not show,
+     * in a hidden row or in a column of width 0, the active cell took the tab stop, and a move without Shift starts from
+     * the active cell. The selection keeps the cell that the application selected.
+     */
+    private moveStart(shiftKey?: boolean): Range {
+        const worksheet = this.worksheet;
+        const range = [...worksheet.selection.range!] as Range;
+        const active = worksheet.selection.activeCell;
+        if (!shiftKey && active && range[0] === range[2] && range[1] === range[3]) {
+            const td = worksheet.records[range[1]]?.[range[0]]?.element;
+            if (td && td !== active && td.parentNode?.parentNode === worksheet.tbody && td.style.display !== 'none' && !this.isVisibleCell(td)) {
+                const x = parseInt(active.getAttribute('data-x')!);
+                const y = parseInt(active.getAttribute('data-y')!);
+                return [x, y, x, y];
+            }
+        }
+        return range;
+    }
+
+    /**
      * Move the selection from a cell that a merged range hides to the first cell of the range
      */
     private toFirstCell(range: Range) {
@@ -1383,7 +1403,7 @@ export class Selection {
         }
 
         // Work out the new range in a copy: the selection changes only when onbeforeselection does not cancel it
-        const range = [...worksheet.selection.range] as Range;
+        const range = this.moveStart(shiftKey);
 
         if (shiftKey) {
             if (range[3] > 0) {
@@ -1501,7 +1521,7 @@ export class Selection {
         }
 
         // Work out the new range in a copy: the selection changes only when onbeforeselection does not cancel it
-        const range = [...worksheet.selection.range] as Range;
+        const range = this.moveStart(shiftKey);
 
         if (shiftKey) {
             if (range[2] < worksheet.headers.length - 1) {
@@ -1591,7 +1611,7 @@ export class Selection {
         }
 
         // Work out the new range in a copy: the selection changes only when onbeforeselection does not cancel it
-        const range = [...worksheet.selection.range] as Range;
+        const range = this.moveStart(shiftKey);
 
         if (shiftKey) {
             if (range[3] < worksheet.records.length - 1) {
@@ -1704,7 +1724,7 @@ export class Selection {
         }
 
         // Work out the new range in a copy: the selection changes only when onbeforeselection does not cancel it
-        const range = [...worksheet.selection.range] as Range;
+        const range = this.moveStart(shiftKey);
 
         if (shiftKey) {
             if (range[2] > 0) {
@@ -1735,7 +1755,7 @@ export class Selection {
         }
 
         // Work out the new range in a copy: the selection changes only when onbeforeselection does not cancel it
-        const range = [...worksheet.selection.range] as Range;
+        const range = this.moveStart(shiftKey);
 
         if (shiftKey) {
             if (ctrlKey) {
@@ -1777,7 +1797,7 @@ export class Selection {
         }
 
         // Work out the new range in a copy: the selection changes only when onbeforeselection does not cancel it
-        const range = [...worksheet.selection.range] as Range;
+        const range = this.moveStart(shiftKey);
 
         if (shiftKey) {
             if (ctrlKey) {
