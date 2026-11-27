@@ -578,18 +578,6 @@ export class Rows {
         // After the questions, so that a cancel keeps the ranges
         const merges = worksheet.merges.removeCrossed(crossed);
 
-        if (!ignoreDom) {
-            if (worksheet.rows[d].element.parentNode === worksheet.tbody) {
-                if (o > d) {
-                    worksheet.tbody.insertBefore(worksheet.rows[o].element, worksheet.rows[d].element);
-                } else {
-                    worksheet.tbody.insertBefore(worksheet.rows[o].element, worksheet.rows[d].element.nextSibling);
-                }
-            } else {
-                worksheet.tbody.removeChild(worksheet.rows[o].element);
-            }
-        }
-
         // Place references in the correct position
         worksheet.rows.splice(d, 0, worksheet.rows.splice(o, 1)[0]);
         worksheet.records.splice(d, 0, worksheet.records.splice(o, 1)[0]);
@@ -608,6 +596,49 @@ export class Rows {
             }
         }
 
+        // The arguments can be texts
+        const from = Number(o);
+        const to = Number(d);
+
+        // The rows that a filter shows keep their place in the results
+        if (worksheet.view.results) {
+            const shown = worksheet.view.results;
+            // The other rows keep their order, so only the moved row needs a new place in the results
+            const results = shown
+                .filter((row) => row !== from)
+                .map((row) => {
+                    if (from < to && row > from && row <= to) {
+                        return row - 1;
+                    }
+                    if (from > to && row >= to && row < from) {
+                        return row + 1;
+                    }
+                    return row;
+                });
+            if (results.length < shown.length) {
+                const place = results.findIndex((row) => row > to);
+                results.splice(place < 0 ? results.length : place, 0, to);
+            }
+            worksheet.view.results = results;
+        }
+
+        // With pagination, lazy loading or filters, the table body has only some rows. The row goes next to a neighbour
+        // that the body shows, and leaves the body when it has none there.
+        if (!ignoreDom) {
+            const moved = worksheet.rows[to].element;
+            const shown = worksheet.view.results || null;
+            const k = shown ? shown.indexOf(to) : to;
+            const next = k < 0 ? undefined : worksheet.rows[shown ? shown[k + 1] : to + 1]?.element;
+            const previous = k < 1 ? undefined : worksheet.rows[shown ? shown[k - 1] : to - 1]?.element;
+            if (next?.parentNode === worksheet.tbody) {
+                worksheet.tbody.insertBefore(moved, next);
+            } else if (previous?.parentNode === worksheet.tbody) {
+                worksheet.tbody.insertBefore(moved, previous.nextSibling);
+            } else if (moved.parentNode === worksheet.tbody) {
+                worksheet.tbody.removeChild(moved);
+            }
+        }
+
         // Keeping history of changes
         worksheet.history.add({
             action: 'moveRow',
@@ -623,9 +654,10 @@ export class Rows {
         // Update table references
         worksheet.formulas.updateTableReferences({ row: Math.min(Number(o), Number(d)) });
 
-        // Respect pagination
-        if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
-            worksheet.page(worksheet.view.pageNumber);
+        // The page shows the rows of its positions again. The positions of the cells are up to date, for the editor of a
+        // row that leaves the page.
+        if (worksheet.options.pagination! > 0) {
+            worksheet.view.refreshPage();
         }
 
         // A row that leaves the table body takes its editor with it. The positions of the cells are up to date.
@@ -773,9 +805,10 @@ export class Rows {
                     // Remove table references
                     worksheet.formulas.updateTableReferences({ row: Number(rowNumber) });
 
-                    // Respect pagination. The positions of the cells are up to date, for the editor of a row that leaves the page.
-                    if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
-                        worksheet.page(worksheet.view.pageNumber);
+                    // The page shows the rows of its positions again, also after a delete on an earlier page. The positions
+                    // of the cells are up to date, for the editor of a row that leaves the page.
+                    if (worksheet.options.pagination! > 0) {
+                        worksheet.view.refreshPage();
                     }
 
                     // Events

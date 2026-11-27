@@ -94,9 +94,11 @@ export class History {
             const numOfRows = historyRecord.numOfRows;
             // An editor in a removed row closes without a save
             worksheet.editor.closeIn(1, rowIndex, rowIndex + numOfRows - 1);
-            // Remove nodes
+            // Remove nodes. With pagination or lazy loading, a row can be outside the table body.
             for (let j = rowIndex; j < numOfRows + rowIndex; j++) {
-                worksheet.rows[j].element.parentNode!.removeChild(worksheet.rows[j].element);
+                if (worksheet.rows[j].element.parentNode === worksheet.tbody) {
+                    worksheet.tbody.removeChild(worksheet.rows[j].element);
+                }
             }
             // Remove references
             worksheet.records.splice(rowIndex, numOfRows);
@@ -115,11 +117,17 @@ export class History {
             worksheet.options.data = injectArray(worksheet.options.data, rowIndex, data);
 
             worksheet.rows = injectArray(worksheet.rows, rowIndex, historyRecord.rowNode);
-            // Insert nodes
-            let index = 0;
-            for (let j = rowIndex; j < historyRecord.numOfRows + rowIndex; j++) {
-                worksheet.tbody.insertBefore(historyRecord.rowNode[index].element, worksheet.tbody.children[j]);
-                index++;
+            // Insert nodes before the next row when it is in the table body, else after the previous row when it is. With
+            // pagination or lazy loading, the rows next to the others can be outside the body.
+            const next = worksheet.rows[rowIndex + historyRecord.numOfRows];
+            const previous = worksheet.rows[rowIndex - 1];
+            const before = next?.element.parentNode === worksheet.tbody ? next.element : null;
+            const after = !before && previous?.element.parentNode === worksheet.tbody ? previous.element : null;
+            if (before || after || (!next && !previous)) {
+                const reference = before || after?.nextSibling || null;
+                for (const row of historyRecord.rowNode) {
+                    worksheet.tbody.insertBefore(row.element, reference);
+                }
             }
         }
 
@@ -140,9 +148,10 @@ export class History {
 
         worksheet.formulas.updateTableReferences();
 
-        // Respect pagination. The positions of the cells are up to date, for the editor of a row that leaves the page.
+        // Respect pagination. An undo of an insert can remove the current page. The positions of the cells are up to date,
+        // for the editor of a row that leaves the page.
         if (worksheet.options.pagination! > 0) {
-            worksheet.page(worksheet.view.pageNumber);
+            worksheet.view.refreshPage();
         }
     }
 
