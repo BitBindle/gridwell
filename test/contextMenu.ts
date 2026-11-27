@@ -146,6 +146,57 @@ describe('The default context menu', () => {
             expect(worksheet.getColumnData(0)).to.eql(['', 'b', '']);
         });
 
+        // The rows or columns that Delete removes after the menu closes, with the questions that it asks
+        function deleteKey(worksheet: Worksheet) {
+            const questions: (string | undefined)[] = [];
+            const confirm = global.confirm;
+            global.confirm = (message) => {
+                questions.push(message);
+                return true;
+            };
+            try {
+                worksheet.parent.contextMenu.contextmenu.close();
+                document.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, key: 'Delete', keyCode: 46, which: 46 }));
+            } finally {
+                global.confirm = confirm;
+            }
+            return questions;
+        }
+
+        it('starts a selection of whole rows, so that Delete deletes the row as after a left press (issue #229)', async () => {
+            const [worksheet] = await load({ worksheets: [{ data: [['a'], ['b'], ['c']] }] });
+
+            contextmenu(worksheet.rows[1].element.children[0]);
+            expect(worksheet.selection.rowAnchor()).to.equal(1);
+
+            expect(deleteKey(worksheet)).to.eql(['Are you sure to delete the selected rows?']);
+            expect(worksheet.getColumnData(0)).to.eql(['a', 'c']);
+        });
+
+        it('starts a selection of whole columns on a header, so that Delete deletes the column (issue #229)', async () => {
+            const [worksheet] = await load({ worksheets: [{ data: [['a', 'b', 'c']] }] });
+
+            contextmenu(worksheet.headers[1]);
+            expect(worksheet.selection.columnAnchor()).to.equal(1);
+
+            expect(deleteKey(worksheet)).to.eql(['Are you sure to delete the selected columns?']);
+            expect(worksheet.getData()).to.eql([['a', 'c']]);
+        });
+
+        it('lets a press with Shift on another row number extend the selection from the row of the menu (issue #229)', async () => {
+            // jsdom gives the row numbers no size, so a press is at their edge, which resizes or drags unless that is off
+            const [worksheet] = await load({ worksheets: [{ data: [['a'], ['b'], ['c'], ['d']], rowResize: false, rowDrag: false }] });
+            worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+
+            contextmenu(worksheet.rows[2].element.children[0]);
+            worksheet.parent.contextMenu.contextmenu.close();
+            const rowNumber = worksheet.rows[3].element.children[0];
+            rowNumber.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, shiftKey: true, buttons: 1 }));
+            rowNumber.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true }));
+
+            expect(worksheet.selection.range!.map(Number)).to.eql([0, 2, 0, 3]);
+        });
+
         it('leaves out the row items that the options turn off', async () => {
             const [worksheet] = await load({ worksheets: [{ data: [['a'], ['b']], allowInsertRow: false, allowDeleteRow: false }], about: false });
 
