@@ -328,14 +328,10 @@ export class Columns {
 
             // The merged ranges that the new columns split are removed. The other ranges stay and move with their cells.
             const crossed = worksheet.merges.isColMerged(columnNumber, insertBefore);
-            if (crossed.length) {
-                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                    return false;
-                }
-                for (const key of crossed) {
-                    worksheet.merges.remove(key);
-                }
+            if (crossed.length && !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                return false;
             }
+            const merges = worksheet.merges.removeCrossed(crossed);
 
             // Insert before
             const columnIndex = !insertBefore ? columnNumber + 1 : columnNumber;
@@ -382,6 +378,7 @@ export class Columns {
                 records: historyRecords,
                 footers: historyFooters,
                 data: historyData,
+                ...(merges && { merges }),
             });
 
             // The selection and the editor stay on their cells
@@ -412,39 +409,32 @@ export class Columns {
             return false;
         }
 
-        if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
-            let insertBefore: 0 | 1;
-            if (o > d) {
-                insertBefore = 1;
-            } else {
-                insertBefore = 0;
-            }
-
-            if (worksheet.merges.isColMerged(o).length || worksheet.merges.isColMerged(d, insertBefore).length) {
-                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                    return false;
-                } else {
-                    worksheet.destroyMerge();
-                }
-            }
+        // The merged ranges that have the column, or that the column goes into, are removed. The other ranges stay and move
+        // with their cells.
+        const crossed = [...new Set([...worksheet.merges.isColMerged(o), ...worksheet.merges.isColMerged(d, Number(o) > Number(d) ? 1 : 0)])];
+        if (crossed.length && !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
+            return false;
         }
+        const merges = worksheet.merges.removeCrossed(crossed);
 
         o = parseInt(o);
         d = parseInt(d);
 
+        // The td of each column by its place in the row: the record of a cell that a merged range hides that stays has the td
+        // of the first cell of the range, in another row
         if (o > d) {
             worksheet.headerContainer.insertBefore(worksheet.headers[o], worksheet.headers[d]);
             worksheet.colgroupContainer.insertBefore(worksheet.cols[o].colElement, worksheet.cols[d].colElement);
 
-            for (let j = 0; j < worksheet.rows.length; j++) {
-                worksheet.rows[j].element.insertBefore(worksheet.records[j][o].element, worksheet.records[j][d].element);
+            for (const row of worksheet.rows) {
+                row.element.insertBefore(row.element.children[o + 1], row.element.children[d + 1]);
             }
         } else {
             worksheet.headerContainer.insertBefore(worksheet.headers[o], worksheet.headers[d].nextSibling);
             worksheet.colgroupContainer.insertBefore(worksheet.cols[o].colElement, worksheet.cols[d].colElement.nextSibling);
 
-            for (let j = 0; j < worksheet.rows.length; j++) {
-                worksheet.rows[j].element.insertBefore(worksheet.records[j][o].element, worksheet.records[j][d].element.nextSibling);
+            for (const row of worksheet.rows) {
+                row.element.insertBefore(row.element.children[o + 1], row.element.children[d + 1].nextSibling);
             }
         }
 
@@ -482,6 +472,7 @@ export class Columns {
             action: 'moveColumn',
             oldValue: o,
             newValue: d,
+            ...(merges && { merges }),
         });
         // The selection and the editor stay on their cells
         worksheet.editor.move(0, Number(o), Number(d));
@@ -559,14 +550,13 @@ export class Columns {
                 if (parseInt(columnNumber) > -1) {
                     // The merged ranges that have a cell in the deleted columns are removed. The other ranges stay and move with their cells.
                     const crossed = worksheet.merges.inColumns(columnNumber, columnNumber + numOfColumns - 1);
-                    if (crossed.length) {
-                        if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                            return false;
-                        }
-                        for (const key of crossed) {
-                            worksheet.merges.remove(key);
-                        }
+                    if (
+                        crossed.length &&
+                        !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))
+                    ) {
+                        return false;
                     }
+                    const merges = worksheet.merges.removeCrossed(crossed);
 
                     // An editor in a deleted column closes without a save
                     worksheet.editor.closeIn(0, columnNumber, columnNumber + numOfColumns - 1);
@@ -639,6 +629,7 @@ export class Columns {
                         records: historyRecords,
                         footers: historyFooters,
                         data: historyData,
+                        ...(merges && { merges }),
                     });
 
                     // The selection and the editor stay on their cells. A selection with a deleted cell is removed.

@@ -413,13 +413,8 @@ export class Rows {
 
             // The merged ranges that the new rows split are removed. The other ranges stay and move with their cells.
             const crossed = worksheet.merges.isRowMerged(rowNumber, insertBefore);
-            if (crossed.length) {
-                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                    return false;
-                }
-                for (const key of crossed) {
-                    worksheet.merges.remove(key);
-                }
+            if (crossed.length && !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                return false;
             }
 
             // Clear any search
@@ -434,6 +429,9 @@ export class Rows {
 
                 worksheet.view.results = null;
             }
+
+            // After the questions, so that a cancel keeps the ranges
+            const merges = worksheet.merges.removeCrossed(crossed);
 
             // Insertbefore
             const rowIndex = !insertBefore ? rowNumber + 1 : rowNumber;
@@ -470,6 +468,7 @@ export class Rows {
                 rowRecords,
                 rowData,
                 rowNode,
+                ...(merges && { merges }),
             });
 
             // The selection and the editor stay on their cells
@@ -503,22 +502,11 @@ export class Rows {
             return;
         }
 
-        if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
-            let insertBefore: 0 | 1;
-
-            if (o > d) {
-                insertBefore = 1;
-            } else {
-                insertBefore = 0;
-            }
-
-            if (worksheet.merges.isRowMerged(o).length || worksheet.merges.isRowMerged(d, insertBefore).length) {
-                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                    return false;
-                } else {
-                    worksheet.destroyMerge();
-                }
-            }
+        // The merged ranges that have the row, or that the row goes into, are removed. The other ranges stay and move with
+        // their cells.
+        const crossed = [...new Set([...worksheet.merges.isRowMerged(o), ...worksheet.merges.isRowMerged(d, Number(o) > Number(d) ? 1 : 0)])];
+        if (crossed.length && !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
+            return false;
         }
 
         if (worksheet.options.search === true) {
@@ -532,6 +520,9 @@ export class Rows {
 
             worksheet.view.results = null;
         }
+
+        // After the questions, so that a cancel keeps the ranges
+        const merges = worksheet.merges.removeCrossed(crossed);
 
         if (!ignoreDom) {
             if (worksheet.rows[d].element.parentNode === worksheet.tbody) {
@@ -568,6 +559,7 @@ export class Rows {
             action: 'moveRow',
             oldValue: o,
             newValue: d,
+            ...(merges && { merges }),
         });
 
         // The selection and the editor stay on their cells
@@ -654,13 +646,11 @@ export class Rows {
 
                     // The merged ranges that have a cell in the deleted rows are removed. The other ranges stay and move with their cells.
                     const crossed = worksheet.merges.inRows(rowNumber, rowNumber + numOfRows - 1);
-                    if (crossed.length) {
-                        if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                            return false;
-                        }
-                        for (const key of crossed) {
-                            worksheet.merges.remove(key);
-                        }
+                    if (
+                        crossed.length &&
+                        !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))
+                    ) {
+                        return false;
                     }
 
                     // Clear any search
@@ -675,6 +665,9 @@ export class Rows {
 
                         worksheet.view.results = null;
                     }
+
+                    // After the questions, so that a cancel keeps the ranges
+                    const merges = worksheet.merges.removeCrossed(crossed);
 
                     // After the questions, so that a cancel logs nothing
                     if (keepsLastRow) {
@@ -716,6 +709,7 @@ export class Rows {
                         rowRecords,
                         rowData,
                         rowNode,
+                        ...(merges && { merges }),
                     });
 
                     // The selection and the editor stay on their cells. A selection with a deleted cell is removed.
