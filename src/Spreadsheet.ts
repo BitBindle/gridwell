@@ -8,6 +8,9 @@ import type jspreadsheet from './jspreadsheet';
 import type { EventHandlers, EventName, SpreadsheetState } from './types/internal';
 import type { TabsOptions } from './utils/tabs.js';
 
+/** The events that occur also while the events are ignored. dispatch tells why. */
+const alwaysDispatched: readonly EventName[] = ['onbeforerequest', 'onbeforesave', 'onsave', 'oneditordetach', 'onrowsattached'];
+
 /**
  * The fields of a spreadsheet and its public methods. The fields are in SpreadsheetState (src/types/internal.d.ts).
  */
@@ -266,8 +269,9 @@ export class Spreadsheet {
 
         // Dispatch events. The persistence still saves while the events are ignored, for example the changes of an undo,
         // so its events, and the event of its request, occur too. The application can take the edit of an editor whose cell
-        // leaves the table, also during an undo, so oneditordetach occurs too.
-        if (!this.ignoreEvents || event === 'onbeforerequest' || event === 'onbeforesave' || event === 'onsave' || event === 'oneditordetach') {
+        // leaves the table, also during an undo, so oneditordetach occurs too. The rows that lazy loading puts in the table,
+        // for example during the undo of a sort, need the work of the application, so onrowsattached occurs too.
+        if (!this.ignoreEvents || alwaysDispatched.includes(event)) {
             // Call global event
             if (typeof this.config.onevent === 'function') {
                 // The arguments match the handler of the event, as the type of dispatch says

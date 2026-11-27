@@ -505,6 +505,10 @@ export class Worksheet {
         return this.selection.getRange();
     }
 
+    loadRow(y: number) {
+        this.view.loadRow(y);
+    }
+
     isSelected(x: number, y: number) {
         return this.selection.isSelected(x, y);
     }

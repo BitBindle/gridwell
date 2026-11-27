@@ -456,6 +456,7 @@ export class View {
 
     updateResult() {
         const worksheet = this.worksheet;
+        const before = worksheet.options.lazyLoading === true ? this.attachedRows() : null;
 
         let total;
         let index = 0;
@@ -502,6 +503,10 @@ export class View {
         worksheet.selection.updateCorner();
 
         worksheet.dispatch('onupdateresult', worksheet, worksheet.view.results);
+
+        if (before) {
+            this.attached(before);
+        }
 
         return total;
     }
@@ -716,6 +721,7 @@ export class View {
         if (worksheet.options.lazyLoading !== true || this.showsResults() || (!frozen && !left.length)) {
             return;
         }
+        const before = this.attachedRows();
 
         const tbody = worksheet.tbody;
         function y(row: Element) {
@@ -760,6 +766,8 @@ export class View {
                 tbody.insertBefore(wanted[k], tbody.children[k] || null);
             }
         }
+
+        this.attached(before);
     }
 
     /**
@@ -786,10 +794,97 @@ export class View {
     }
 
     /**
+     * The rows in the table body, before a load of the lazy loading.
+     */
+    private attachedRows() {
+        return new Set<Element>(this.worksheet.tbody.children);
+    }
+
+    /**
+     * Tell the application the rows that a load of the lazy loading put in the table body, and that were not in it before
+     * the load, as [from, to] pairs of row indexes, with onrowsattached.
+     * @param before - The rows in the table body before the load.
+     */
+    private attached(before: Set<Element>) {
+        const worksheet = this.worksheet;
+        const indexes = Array.from(worksheet.tbody.children)
+            .filter((row) => !before.has(row))
+            .map((row) => parseInt(row.getAttribute('data-y')!))
+            .sort((a, b) => a - b);
+        const ranges: [number, number][] = [];
+        for (const y of indexes) {
+            const last = ranges[ranges.length - 1];
+            if (last && last[1] + 1 >= y) {
+                last[1] = Math.max(last[1], y);
+            } else {
+                ranges.push([y, y]);
+            }
+        }
+        if (ranges.length) {
+            worksheet.dispatch('onrowsattached', worksheet, ranges);
+        }
+    }
+
+    /**
+     * Fill the table body with the frozen rows and the rows from 10 rows above a row, up to a page of 100 rows, or with
+     * the last rows. With a search or the filters, the rows are rows of the results, from the first result at or after the
+     * row. The scroll position does not change. Without lazy loading, nothing occurs.
+     * @param y - Index of the row.
+     */
+    loadRow(y: number) {
+        const worksheet = this.worksheet;
+        if (worksheet.options.lazyLoading !== true || typeof y !== 'number' || !Number.isFinite(y)) {
+            return;
+        }
+        const before = this.attachedRows();
+
+        const quantityPerPage = 100;
+        const results = (worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results ? worksheet.view.results : null;
+        const total = results ? results.length : worksheet.rows.length;
+        const frozen = this.frozenRows();
+        let position = Math.floor(y);
+        if (results) {
+            position = results.findIndex((row) => row >= position);
+            if (position < 0) {
+                position = total;
+            }
+        }
+        const start = Math.max(frozen, Math.min(position - 10, total - (quantityPerPage - frozen)));
+        const end = Math.min(total, start + quantityPerPage - frozen);
+
+        const wanted: HTMLTableRowElement[] = [];
+        for (let j = 0; j < frozen; j++) {
+            wanted.push(worksheet.rows[j].element);
+        }
+        for (let j = start; j < end; j++) {
+            wanted.push(worksheet.rows[results ? results[j] : j].element);
+        }
+
+        const keep = new Set<Element>(wanted);
+        for (const row of Array.from(worksheet.tbody.children)) {
+            if (!keep.has(row)) {
+                this.removeRow(row);
+            }
+        }
+        for (let k = 0; k < wanted.length; k++) {
+            if (worksheet.tbody.children[k] !== wanted[k]) {
+                worksheet.tbody.insertBefore(wanted[k], worksheet.tbody.children[k] || null);
+            }
+        }
+
+        // The tab stop of the grid can be in a removed row, and the selection corner can be in another place
+        worksheet.selection.updateTabStop();
+        worksheet.selection.updateCorner();
+
+        this.attached(before);
+    }
+
+    /**
      * Go to a page in a lazyLoading
      */
     loadPage(pageNumber: number) {
         const worksheet = this.worksheet;
+        const before = this.attachedRows();
 
         // Search: the indexes of the rows found, or the rows
         let results: number[] | Worksheet['rows'];
@@ -842,6 +937,8 @@ export class View {
 
         // The tab stop of the grid can be in a removed row
         worksheet.selection.updateTabStop();
+
+        this.attached(before);
     }
 
     loadValidation() {
@@ -880,6 +977,7 @@ export class View {
 
     loadUp() {
         const worksheet = this.worksheet;
+        const before = this.attachedRows();
 
         // Search: the indexes of the rows found, or the rows
         let results: number[] | Worksheet['rows'];
@@ -920,11 +1018,14 @@ export class View {
         // The tab stop of the grid can be in a removed row
         worksheet.selection.updateTabStop();
 
+        this.attached(before);
+
         return test;
     }
 
     loadDown() {
         const worksheet = this.worksheet;
+        const before = this.attachedRows();
 
         // Search: the indexes of the rows found, or the rows
         let results: number[] | Worksheet['rows'];
@@ -963,6 +1064,8 @@ export class View {
 
         // The tab stop of the grid can be in a removed row
         worksheet.selection.updateTabStop();
+
+        this.attached(before);
 
         return test;
     }
