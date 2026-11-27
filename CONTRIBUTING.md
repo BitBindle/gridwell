@@ -32,9 +32,9 @@ sets it up once on npmjs.com:
    workflow still publishes, and a stolen token cannot.
 
 Trusted publishing needs npm 11.5.1 or later, which the workflow installs, and a runner hosted by GitHub. The
-`repository` in `package.json` must stay `https://github.com/BitBindle/gridwell`, the repository that the
-provenance names. If the repository gets a new name, change `repository` and the trusted publisher on npmjs.com before
-the next publish.
+`repository` in `package.json` must name the repository that runs the workflow, `https://github.com/BitBindle/gridwell`.
+If the repository gets a new name, change the links in `package.json` and the trusted publisher on npmjs.com before the
+next publish.
 
 # Code of Conduct
 
