@@ -317,18 +317,19 @@ export class Merges {
         const span: [number, number] = [x2 - x1 + 1, y2 - y1 + 1];
         source.replaceMerges({ ...source.merges, [cellName]: span });
         // The first cell of the new range is selected, as in the other modes
-        this.settleInRowSource({ [cellName]: span }, {}, [x1, y1]);
+        this.settleSelection({ [cellName]: span }, {}, [x1, y1]);
         if (!ignoreEvents) {
             worksheet.dispatch('onmerge', worksheet, { [cellName]: span });
         }
     }
 
     /**
-     * After a change of the merged ranges in the row source mode: an editor in a cell that a new range hides closes
-     * without a save, and the selection and the tab stop leave the hidden cells, as in replace for the other modes.
+     * After a change of the merged ranges in the row source mode, or after an undo merges ranges again: an editor in a
+     * cell that a new range hides closes without a save, and the selection and the tab stop leave the hidden cells, as in
+     * replace for the other modes.
      * @param select - A cell to select in all cases, as setMerge does.
      */
-    private settleInRowSource(added: Record<string, [number, number]>, removed: Record<string, [number, number]>, select?: [number, number]) {
+    private settleSelection(added: Record<string, [number, number]>, removed: Record<string, [number, number]>, select?: [number, number]) {
         const worksheet = this.worksheet;
         function hides(ranges: Record<string, [number, number]>, x: number, y: number, first: boolean) {
             return Object.entries(ranges).find(([name, [colspan, rowspan]]) => {
@@ -487,8 +488,10 @@ export class Merges {
      * @param cellName - The first cell of the range.
      * @param data - The values of the other cells of the range, which the history kept.
      * @param keepOptions - Keep the range in the options.
+     * @param keepSelection - Do not select the former range. An insert, a delete, a move or a sort that crosses the range
+     * keeps the selection of the user: an insert, a delete or a move moves it with the cells, a sort keeps its position.
      */
-    remove(cellName: string, data?: jspreadsheet.CellValue[] | null, keepOptions?: boolean) {
+    remove(cellName: string, data?: jspreadsheet.CellValue[] | null, keepOptions?: boolean, keepSelection?: boolean) {
         const worksheet = this.worksheet;
 
         if (worksheet.rowSource) {
@@ -499,7 +502,8 @@ export class Merges {
                 const [colspan, rowspan] = merges[cellName];
                 delete merges[cellName];
                 worksheet.rowSource.replaceMerges(merges);
-                // As in the other modes, the selection holds the former range
+                // As in the other modes, the selection holds the former range. The actions that keep the selection do
+                // not run in this mode.
                 worksheet.selection.updateFromCoords(x, y, x + colspan - 1, y + rowspan - 1);
                 worksheet.dispatch('onunmerge', worksheet, cellName, beforeMerges);
             }
@@ -514,12 +518,59 @@ export class Merges {
             this.unmerge(cellName, data);
 
             // Update selection. The selection events still see the range.
-            worksheet.selection.update(worksheet.records[cell[1]][cell[0]].element, worksheet.records[cell[1] + rowspan - 1][cell[0] + colspan - 1].element);
+            if (!keepSelection) {
+                worksheet.selection.update(
+                    worksheet.records[cell[1]][cell[0]].element,
+                    worksheet.records[cell[1] + rowspan - 1][cell[0] + colspan - 1].element
+                );
+            }
 
             this.forget(cellName, keepOptions);
 
             worksheet.dispatch('onunmerge', worksheet, cellName, beforeMerges);
         }
+    }
+
+    /**
+     * Split the merged ranges that an insert, a delete or a move crosses, as removeMerge does, but keep the selection.
+     * @returns The spans of the ranges by first cell, for the history, or undefined when there are none.
+     */
+    removeCrossed(cellNames: string[]) {
+        const mergeCells = this.worksheet.options.mergeCells;
+        if (!cellNames.length || !mergeCells) {
+            return undefined;
+        }
+        const removed: Record<string, [number, number]> = {};
+        for (const cellName of cellNames) {
+            removed[cellName] = [mergeCells[cellName][0], mergeCells[cellName][1]];
+            this.remove(cellName, undefined, false, true);
+        }
+        return removed;
+    }
+
+    /**
+     * Split again the ranges that removeCrossed gave, before a redo of the action. No event, history entry or change of
+     * the selection.
+     */
+    dropCrossed(removed: Record<string, [number, number]>) {
+        for (const cellName of Object.keys(removed)) {
+            if (this.worksheet.options.mergeCells?.[cellName]) {
+                this.unmerge(cellName);
+                this.forget(cellName);
+            }
+        }
+    }
+
+    /**
+     * Merge again the ranges that removeCrossed gave, after an undo of the action. The other cells keep their values, as
+     * the split left them. No event or history entry. An editor in a hidden cell closes without a save, and a selection
+     * that starts in a hidden cell goes to the first cell of its range.
+     */
+    restoreCrossed(removed: Record<string, [number, number]>) {
+        for (const [cellName, [colspan, rowspan]] of Object.entries(removed)) {
+            this.merge(cellName, colspan, rowspan, true);
+        }
+        this.settleSelection(removed, {});
     }
 
     /**
@@ -592,7 +643,7 @@ export class Merges {
             const added = Object.fromEntries(Object.entries(after).filter(([name, span]) => before[name]?.[0] !== span[0] || before[name]?.[1] !== span[1]));
             const removed = Object.fromEntries(Object.entries(before).filter(([name, span]) => after[name]?.[0] !== span[0] || after[name]?.[1] !== span[1]));
             // The order of the other modes: the selection moves, then onunmerge for each range that goes, and onmerge once for the new ranges
-            this.settleInRowSource(added, removed);
+            this.settleSelection(added, removed);
             for (const [name, span] of Object.entries(removed)) {
                 worksheet.dispatch('onunmerge', worksheet, name, { [name]: span });
             }
@@ -712,15 +763,18 @@ export class Merges {
 
     /**
      * Remove all merged cells
+     * @param keepOptions - Keep the ranges in the options.
+     * @param keepSelection - Do not select the former ranges. A sort keeps the selection of the user. The row source mode
+     * has no sort, so it ignores this argument.
      */
-    destroy(keepOptions?: boolean) {
+    destroy(keepOptions?: boolean, keepSelection?: boolean) {
         const worksheet = this.worksheet;
 
         // The row source mode removes the merged ranges of the sheet
         if (worksheet.rowSource) {
             const before = worksheet.rowSource.merges;
             worksheet.rowSource.replaceMerges({});
-            this.settleInRowSource({}, before);
+            this.settleSelection({}, before);
             for (const [key, span] of Object.entries(before)) {
                 worksheet.dispatch('onunmerge', worksheet, key, { [key]: span });
             }
@@ -730,7 +784,7 @@ export class Merges {
         // Remove any merged cells
         if (worksheet.options.mergeCells) {
             for (const key of Object.keys(worksheet.options.mergeCells)) {
-                this.remove(key, null, keepOptions);
+                this.remove(key, null, keepOptions, keepSelection);
             }
         }
     }

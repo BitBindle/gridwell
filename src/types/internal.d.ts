@@ -258,6 +258,8 @@ export type WorksheetHistoryRecord =
           records: Worksheet['records'];
           footers: (string | number)[][];
           data: jspreadsheet.CellValue[][];
+          /** The merged ranges that the action removed: the spans by first cell before the action. Undo merges them again. */
+          merges?: Record<string, [number, number]>;
       }
     | {
           action: 'insertRow' | 'deleteRow';
@@ -268,8 +270,16 @@ export type WorksheetHistoryRecord =
           rowRecords: Worksheet['records'];
           rowData: jspreadsheet.CellValue[][];
           rowNode: Worksheet['rows'];
+          /** The merged ranges that the action removed: the spans by first cell before the action. Undo merges them again. */
+          merges?: Record<string, [number, number]>;
       }
-    | { action: 'moveColumn' | 'moveRow'; oldValue: number; newValue: number }
+    | {
+          action: 'moveColumn' | 'moveRow';
+          oldValue: number;
+          newValue: number;
+          /** The merged ranges that the action removed: the spans by first cell before the action. Undo merges them again. */
+          merges?: Record<string, [number, number]>;
+      }
     | { action: 'setWidth'; column: number | number[]; oldValue: number | number[]; newValue: number | number[] }
     | {
           action: 'setHeight';

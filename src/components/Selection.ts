@@ -30,6 +30,20 @@ function hasSelection(worksheet: Worksheet): worksheet is SelectedWorksheet {
 }
 
 /**
+ * The bottom on the screen of a row of sticky cells, from its first cell that shows, or null when no cell shows, for
+ * example when the header is hidden.
+ */
+function stickyBottom(row: HTMLElement) {
+    for (const cell of row.children) {
+        const rect = cell.getBoundingClientRect();
+        if (rect.height > 0) {
+            return rect.bottom;
+        }
+    }
+    return null;
+}
+
+/**
  * The selection of a worksheet: the selected range, the highlighted cells, the cells that a drag of the corner fills,
  * and the cell that has the keyboard focus. It selects cells and updates their classes, the ARIA attributes, the corner
  * and the toolbar, keeps the selected cell the tab stop of the grid, and tells which cells are selected.
@@ -48,6 +62,9 @@ export class Selection {
 
     /** The selected range from left to right and top to bottom, or null before the first selection. */
     bounds: Range | null = null;
+
+    /** True when updateCorner found the bottom right corner of the selection under the frozen columns. */
+    private cornerUnderColumns = false;
 
     /** The records of the selected cells. */
     highlighted: WorksheetState['records'][number] = [];
@@ -124,6 +141,9 @@ export class Selection {
             const w2 = lastRect.width;
             const h2 = lastRect.height;
 
+            // Read the layout before the writes to the corner, so that the browser does not lay out the page twice
+            const underHeader = worksheet.options.selectionCopy !== false && this.isCornerUnderHeader(last, lastRect.bottom);
+
             // The corner is in the zoomed wrapper, so its place is in grid pixels
             const x = toGrid(worksheet, x2 - x1 + worksheet.content.scrollLeft + w2) - 4;
             const y = toGrid(worksheet, y2 - y1 + worksheet.content.scrollTop + h2) - 4;
@@ -132,25 +152,72 @@ export class Selection {
             worksheet.corner.style.top = `${y}px`;
             worksheet.corner.style.left = `${x}px`;
 
+            this.cornerUnderColumns = false;
             if (worksheet.options.freezeColumns) {
                 // The width of the frozen columns on the screen, as the place of the cell
                 const width = toScreen(worksheet, worksheet.columns.getFreezeWidth());
                 // Only check if the last column is not part of the merged cells
-                if (lastX > worksheet.options.freezeColumns - 1 && x2 - x1 + w2 < width) {
-                    worksheet.corner.style.display = 'none';
-                } else {
-                    if (worksheet.options.selectionCopy !== false) {
-                        worksheet.corner.style.display = '';
-                    }
-                }
-            } else {
-                if (worksheet.options.selectionCopy !== false) {
-                    worksheet.corner.style.display = '';
-                }
+                this.cornerUnderColumns = lastX > worksheet.options.freezeColumns - 1 && x2 - x1 + w2 < width;
             }
+            this.showCorner(!this.cornerUnderColumns && !underHeader);
         }
 
         worksheet.parent.toolbarManager.update(worksheet);
+    }
+
+    /**
+     * Check if the sticky header rows, or the frozen rows, cover the fill handle at the bottom of the cell. `bottom` is the
+     * bottom of the cell on the screen. The cells of these rows are sticky, so their place on the screen tells where they
+     * stop, for a scroll of the content and for a scroll of the page. A cell of a frozen row is not under the frozen rows.
+     */
+    private isCornerUnderHeader(cell: HTMLElement, bottom: number) {
+        const worksheet = this.worksheet;
+
+        const header = worksheet.thead.lastElementChild as HTMLElement | null;
+        let covered = header ? stickyBottom(header) : null;
+        const frozen = worksheet.rowManager.getFreezeCount();
+        if (frozen > 0 && parseInt(cell.getAttribute('data-y')!) >= frozen) {
+            // The last frozen row that shows. A hidden row has no size on the screen.
+            for (let y = frozen - 1; y >= 0; y--) {
+                const row = worksheet.rows[y]?.element;
+                const rowBottom = row ? stickyBottom(row) : null;
+                if (rowBottom !== null) {
+                    if (covered === null || rowBottom > covered) {
+                        covered = rowBottom;
+                    }
+                    break;
+                }
+            }
+        }
+        // The fill handle starts 4 pixels above the bottom of the cell
+        return covered !== null && bottom - toScreen(worksheet, 4) < covered;
+    }
+
+    /**
+     * Show or hide the fill handle. A worksheet with selectionCopy false has no fill handle.
+     */
+    private showCorner(show: boolean) {
+        const worksheet = this.worksheet;
+        if (!show) {
+            worksheet.corner.style.display = 'none';
+        } else if (worksheet.options.selectionCopy !== false) {
+            worksheet.corner.style.display = '';
+        }
+    }
+
+    /**
+     * Hide the fill handle while the sticky header or the frozen rows cover the bottom of its cell, and show it again
+     * when the cell scrolls out from under them. A scroll up or down of the content, of the page or of an element around
+     * the worksheet calls it.
+     */
+    updateCornerCover() {
+        const worksheet = this.worksheet;
+        if (!worksheet.corner || worksheet.options.selectionCopy === false || !worksheet.selection.highlighted?.length) {
+            return;
+        }
+        const last = worksheet.selection.highlighted[worksheet.selection.highlighted.length - 1].element;
+        // The frozen columns keep the result of updateCorner, which runs after each scroll to the left or to the right
+        this.showCorner(!this.cornerUnderColumns && !this.isCornerUnderHeader(last, last.getBoundingClientRect().bottom));
     }
 
     reset(blur?: boolean) {
@@ -871,18 +938,38 @@ export class Selection {
     }
 
     /**
-     * A cell can be the tab stop when its row is in the table and the cell and its row are not hidden
+     * A cell can be the tab stop when its row is in the table, the cell and its row are not hidden, and its column has a
+     * width or it is a merged range that shows in another column
      */
-    private isVisibleCell(td: HTMLTableCellElement | null | undefined) {
+    isVisibleCell(td: HTMLTableCellElement | null | undefined) {
         const worksheet = this.worksheet;
 
-        return (
-            !!td &&
-            !!td.parentNode &&
-            td.parentNode.parentNode === worksheet.tbody &&
-            td.style.display !== 'none' &&
-            (td.parentNode as HTMLElement).style.display !== 'none'
-        );
+        if (td?.parentNode?.parentNode !== worksheet.tbody || td.style.display === 'none' || (td.parentNode as HTMLElement).style.display === 'none') {
+            return false;
+        }
+        const x = parseInt(td.getAttribute('data-x'));
+        return !this.zeroWidth(x) || this.mergeShows(x, parseInt(td.getAttribute('data-y')));
+    }
+
+    /**
+     * The cell that shows in the column where up and down move from cell (x, y): in row y or the next row of the table
+     * that shows, else in the row before it.
+     */
+    private nextVisibleCell(x: number, y: number) {
+        const worksheet = this.worksheet;
+        const column = this.stopColumn(x, y);
+        let before: HTMLTableCellElement | null = null;
+        for (const tr of worksheet.tbody.children) {
+            const row = parseInt(tr.getAttribute('data-y')!);
+            const td = worksheet.records[row]?.[column]?.element;
+            if (this.isVisibleCell(td)) {
+                if (row >= y) {
+                    return td;
+                }
+                before = td;
+            }
+        }
+        return before;
     }
 
     /**
@@ -1010,9 +1097,15 @@ export class Selection {
     updateActiveCell(x: number, y: number, origin: Event | undefined) {
         const worksheet = this.worksheet;
 
-        const td = worksheet.records[y]?.[x]?.element;
+        let td = worksheet.records[y]?.[x]?.element;
         if (!td) {
             return;
+        }
+
+        // A cell in the table that does not show, in a hidden row or in a column of width 0, is not the tab stop. The next
+        // cell that shows takes it, in the column where up and down move.
+        if (td.parentNode?.parentNode === worksheet.tbody && !this.isVisibleCell(td)) {
+            td = this.nextVisibleCell(x, y) || this.getFirstVisibleCell() || td;
         }
 
         this.setActiveCell(td);
@@ -1113,6 +1206,33 @@ export class Selection {
     private zeroWidth(x: number) {
         const width = this.worksheet.cols[x]?.colElement.getAttribute('width');
         return width !== null && width !== undefined && parseFloat(width) === 0;
+    }
+
+    /**
+     * The column of a vertical move from column x of row y: x when the keyboard can stop in it, else the next column to
+     * the right, else to the left, where it can stop. A selection of all cells can start in a column of width 0.
+     */
+    private stopColumn(x: number, y: number) {
+        const columns = this.worksheet.headers.length;
+        x = parseInt(x);
+        y = parseInt(y);
+        if (!this.worksheet.rowSource && !this.worksheet.records[y]?.[x]) {
+            return x;
+        }
+        if (this.columnStop(x, y, true)) {
+            return x;
+        }
+        for (let i = x + 1; i < columns; i++) {
+            if (this.columnStop(i, y, true)) {
+                return i;
+            }
+        }
+        for (let i = x - 1; i >= 0; i--) {
+            if (this.columnStop(i, y, true)) {
+                return i;
+            }
+        }
+        return x;
     }
 
     /**
@@ -1270,6 +1390,7 @@ export class Selection {
                 this.upVisible(range, 1, ctrlKey ? 0 : 1);
             }
         } else {
+            range[0] = this.stopColumn(range[0], range[1]);
             if (range[1] > 0) {
                 this.upVisible(range, 0, ctrlKey ? 0 : 1);
             }
@@ -1477,6 +1598,7 @@ export class Selection {
                 this.downVisible(range, 1, ctrlKey ? 0 : 1);
             }
         } else {
+            range[0] = this.stopColumn(range[0], range[1]);
             if (range[1] < worksheet.records.length - 1) {
                 this.downVisible(range, 0, ctrlKey ? 0 : 1);
             }

@@ -501,8 +501,24 @@ export class Editor {
     }
 
     /**
-     * Close the editor when lazy loading removes its row. The application can take the edit in oneditordetach: when the
-     * handler returns true, the editor closes without a save. Else the editor saves and closes, as before.
+     * After a change of the rows or columns that show: an editor whose cell is not in the table body, or is hidden, or
+     * is in a column of width 0, detaches.
+     */
+    settle() {
+        if (!this.isOpen()) {
+            return;
+        }
+        // A cell of a column of width 0 does not show either, unless a merged range shows it in another column
+        if (!this.worksheet.selection.isVisibleCell(this.cell)) {
+            this.detach();
+        }
+    }
+
+    /**
+     * Close the editor when its row leaves the table body: lazy loading, a page change, a search, a filter, an insert or a
+     * move removes the row. hideRow and hideColumn also detach the editor of a cell that they hide. The application can
+     * take the edit in oneditordetach: when the handler returns true, the editor closes without a save. Else the editor
+     * saves and closes, as before.
      */
     detach() {
         if (!this.isOpen()) {

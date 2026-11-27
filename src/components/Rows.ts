@@ -23,6 +23,9 @@ export class Rows {
     /** True while a placement of the frozen rows waits for the end of the current task. */
     private placing = false;
 
+    /** Places the header rows again when a header row changes its height. Only a header of more than one row has it. */
+    private headerObserver: ResizeObserver | null = null;
+
     constructor(worksheet: Worksheet) {
         this.worksheet = worksheet;
     }
@@ -68,15 +71,64 @@ export class Rows {
     }
 
     /**
-     * The height that the sticky header covers at the top of the content. Each header row sticks at the top, so the
-     * header covers the height of its highest row.
+     * The height that the sticky header covers at the top of the content. Each header row sticks below the rows above
+     * it, so the header covers the height of all its rows.
      */
     getHeaderHeight() {
         let height = 0;
         for (const row of Array.from(this.worksheet.thead.children) as HTMLElement[]) {
-            height = Math.max(height, row.offsetHeight);
+            height += row.offsetHeight;
         }
         return height;
+    }
+
+    /**
+     * Give each header row its distance from the top of the content in the custom property --jss-header-top: the height
+     * of the header rows above it. The nested headers and the filters stick below each other, and do not cover each
+     * other. A header of one row needs no distance.
+     */
+    placeHeader() {
+        const rows = Array.from(this.worksheet.thead.children) as HTMLElement[];
+        if (rows.length < 2) {
+            return;
+        }
+
+        // All reads come before the writes, so the browser computes the layout once
+        const heights = rows.map((row) => row.offsetHeight);
+        let top = 0;
+        rows.forEach((row, j) => {
+            const value = `${top}px`;
+            if (row.style.getPropertyValue('--jss-header-top') !== value) {
+                row.style.setProperty('--jss-header-top', value);
+            }
+            top += heights[j];
+        });
+    }
+
+    /**
+     * Place the header rows when the worksheet shows, and again when a header row changes its height, for example after
+     * a web font loads. The frozen rows and the fill handle depend on the height of the header, so they follow.
+     */
+    observeHeader() {
+        const rows = Array.from(this.worksheet.thead.children);
+        if (rows.length < 2) {
+            return;
+        }
+        if (typeof ResizeObserver !== 'function') {
+            queueMicrotask(() => this.placeHeader());
+            return;
+        }
+        this.headerObserver?.disconnect();
+        this.headerObserver = new ResizeObserver(() => {
+            this.placeHeader();
+            if (this.frozen.length) {
+                this.placeFrozen();
+            }
+            this.worksheet.selection.updateCornerCover();
+        });
+        for (const row of rows) {
+            this.headerObserver.observe(row);
+        }
     }
 
     /**
@@ -210,11 +262,13 @@ export class Rows {
     }
 
     /**
-     * Stop the size observer of the frozen rows, for example when the spreadsheet is destroyed.
+     * Stop the size observers of the frozen rows and of the header rows, for example when the spreadsheet is destroyed.
      */
     stopFreeze() {
         this.freezeObserver?.disconnect();
         this.freezeObserver = null;
+        this.headerObserver?.disconnect();
+        this.headerObserver = null;
     }
 
     /**
@@ -413,13 +467,8 @@ export class Rows {
 
             // The merged ranges that the new rows split are removed. The other ranges stay and move with their cells.
             const crossed = worksheet.merges.isRowMerged(rowNumber, insertBefore);
-            if (crossed.length) {
-                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                    return false;
-                }
-                for (const key of crossed) {
-                    worksheet.merges.remove(key);
-                }
+            if (crossed.length && !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                return false;
             }
 
             // Clear any search
@@ -434,6 +483,9 @@ export class Rows {
 
                 worksheet.view.results = null;
             }
+
+            // After the questions, so that a cancel keeps the ranges
+            const merges = worksheet.merges.removeCrossed(crossed);
 
             // Insertbefore
             const rowIndex = !insertBefore ? rowNumber + 1 : rowNumber;
@@ -461,11 +513,6 @@ export class Rows {
                 }
             }
 
-            // Respect pagination
-            if (worksheet.options.pagination! > 0) {
-                worksheet.page(worksheet.view.pageNumber);
-            }
-
             // Keep history
             worksheet.history.add({
                 action: 'insertRow',
@@ -475,6 +522,7 @@ export class Rows {
                 rowRecords,
                 rowData,
                 rowNode,
+                ...(merges && { merges }),
             });
 
             // The selection and the editor stay on their cells
@@ -483,6 +531,11 @@ export class Rows {
 
             // Remove table references
             worksheet.formulas.updateTableReferences({ row: Number(rowNumber), inserted: { axis: 1, index: rowIndex, count: numOfRows } });
+
+            // Respect pagination. The positions of the cells are up to date, for the editor of a row that leaves the page.
+            if (worksheet.options.pagination! > 0) {
+                worksheet.page(worksheet.view.pageNumber);
+            }
 
             // Events
             worksheet.dispatch('oninsertrow', worksheet, onbeforeinsertrowRecords);
@@ -503,22 +556,11 @@ export class Rows {
             return;
         }
 
-        if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
-            let insertBefore: 0 | 1;
-
-            if (o > d) {
-                insertBefore = 1;
-            } else {
-                insertBefore = 0;
-            }
-
-            if (worksheet.merges.isRowMerged(o).length || worksheet.merges.isRowMerged(d, insertBefore).length) {
-                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                    return false;
-                } else {
-                    worksheet.destroyMerge();
-                }
-            }
+        // The merged ranges that have the row, or that the row goes into, are removed. The other ranges stay and move with
+        // their cells.
+        const crossed = [...new Set([...worksheet.merges.isRowMerged(o), ...worksheet.merges.isRowMerged(d, Number(o) > Number(d) ? 1 : 0)])];
+        if (crossed.length && !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
+            return false;
         }
 
         if (worksheet.options.search === true) {
@@ -532,6 +574,9 @@ export class Rows {
 
             worksheet.view.results = null;
         }
+
+        // After the questions, so that a cancel keeps the ranges
+        const merges = worksheet.merges.removeCrossed(crossed);
 
         if (!ignoreDom) {
             if (worksheet.rows[d].element.parentNode === worksheet.tbody) {
@@ -563,16 +608,12 @@ export class Rows {
             }
         }
 
-        // Respect pagination
-        if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
-            worksheet.page(worksheet.view.pageNumber);
-        }
-
         // Keeping history of changes
         worksheet.history.add({
             action: 'moveRow',
             oldValue: o,
             newValue: d,
+            ...(merges && { merges }),
         });
 
         // The selection and the editor stay on their cells
@@ -581,6 +622,14 @@ export class Rows {
 
         // Update table references
         worksheet.formulas.updateTableReferences({ row: Math.min(Number(o), Number(d)) });
+
+        // Respect pagination
+        if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
+            worksheet.page(worksheet.view.pageNumber);
+        }
+
+        // A row that leaves the table body takes its editor with it. The positions of the cells are up to date.
+        worksheet.editor.settle();
 
         // Events
         worksheet.dispatch('onmoverow', worksheet, parseInt(o), parseInt(d), 1);
@@ -651,13 +700,11 @@ export class Rows {
 
                     // The merged ranges that have a cell in the deleted rows are removed. The other ranges stay and move with their cells.
                     const crossed = worksheet.merges.inRows(rowNumber, rowNumber + numOfRows - 1);
-                    if (crossed.length) {
-                        if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                            return false;
-                        }
-                        for (const key of crossed) {
-                            worksheet.merges.remove(key);
-                        }
+                    if (
+                        crossed.length &&
+                        !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))
+                    ) {
+                        return false;
                     }
 
                     // Clear any search
@@ -672,6 +719,9 @@ export class Rows {
 
                         worksheet.view.results = null;
                     }
+
+                    // After the questions, so that a cancel keeps the ranges
+                    const merges = worksheet.merges.removeCrossed(crossed);
 
                     // After the questions, so that a cancel logs nothing
                     if (keepsLastRow) {
@@ -704,11 +754,6 @@ export class Rows {
                         }
                     }
 
-                    // Respect pagination
-                    if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
-                        worksheet.page(worksheet.view.pageNumber);
-                    }
-
                     // Keep history
                     worksheet.history.add({
                         action: 'deleteRow',
@@ -718,6 +763,7 @@ export class Rows {
                         rowRecords,
                         rowData,
                         rowNode,
+                        ...(merges && { merges }),
                     });
 
                     // The selection and the editor stay on their cells. A selection with a deleted cell is removed.
@@ -726,6 +772,11 @@ export class Rows {
 
                     // Remove table references
                     worksheet.formulas.updateTableReferences({ row: Number(rowNumber), removed: { axis: 1, index: Number(rowNumber), count: numOfRows } });
+
+                    // Respect pagination. The positions of the cells are up to date, for the editor of a row that leaves the page.
+                    if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
+                        worksheet.page(worksheet.view.pageNumber);
+                    }
 
                     // Events
                     worksheet.dispatch('ondeleterow', worksheet, onbeforedeleterowRecords);
@@ -894,6 +945,7 @@ export class Rows {
         if (worksheet.rowSource) {
             worksheet.rowSource.setLayout(rowNumber, { hidden: true });
             worksheet.selection.updateTabStop();
+            worksheet.editor.settle();
             return;
         }
 
@@ -906,8 +958,9 @@ export class Rows {
             this.schedulePlace();
         }
 
-        // The tab stop of the grid can be in a hidden row
+        // The tab stop of the grid can be in a hidden row, and the editor of a hidden row detaches
         worksheet.selection.updateTabStop();
+        worksheet.editor.settle();
     }
 
     /**

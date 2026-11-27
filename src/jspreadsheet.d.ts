@@ -1204,11 +1204,17 @@ declare namespace jspreadsheet {
         oneditionstart?: (instance: WorksheetInstance, td: HTMLTableCellElement, colIndex: number, rowIndex: number) => void;
 
         /**
-         * Occurs when lazy loading removes the row of the open editor, for example after a scroll, a sort, or a move of the
-         * selection with `down` or `last`. With `first` or a sort, the event can also occur for a row that the same load adds
-         * again. On a scroll, an editor that floats over the grid closes and saves before the row leaves, so only the text
-         * editor gets the event then. The event also occurs while `ignoreEvents` is set, for
-         * example during an undo, also for `onevent`.
+         * Occurs when the cell of the open editor leaves the table or no longer shows:
+         *
+         * - Lazy loading removes its row, for example after a scroll, a sort, or a move of the selection with `down` or
+         *   `last`. A row that is on the old page and on the new page stays, with its editor.
+         * - `page` goes to another page, or an insert, a delete, `moveRow` or an undo takes the row to another page.
+         * - A search or a filter hides the row, or `moveRow` takes the row out of the rows that show.
+         * - `hideRow` or `hideColumn` hides the cell, or `setWidth` gives its column the width 0.
+         *
+         * `setData` and the deletion of the cell close the editor without a save and without this event. On a scroll, an
+         * editor that floats over the grid closes and saves before the row leaves, so only the text editor gets the event
+         * then. The event also occurs while `ignoreEvents` is set, for example during an undo, also for `onevent`.
          * @param instance - Worksheet of the cell.
          * @param td - Element of the cell.
          * @param colIndex - Column index of the cell.
@@ -1718,7 +1724,7 @@ declare namespace jspreadsheet {
         freezeColumns?: number;
 
         /**
-         * Number of rows frozen at the top of the worksheet. The frozen rows stay below the header row when the content
+         * Number of rows frozen at the top of the worksheet. The frozen rows stay below the header rows when the content
          * scrolls. Lazy loading keeps them in the table, and freezes at most 40 rows. With pagination, a search or the
          * filters, a frozen row stays at the top only while it is in the rows that show. A merged cell that starts in a
          * frozen row and ends below the frozen rows sticks with its full height. With lazy loading, a change that takes the
@@ -2701,8 +2707,13 @@ declare namespace jspreadsheet {
          * inserted or deleted rows. All rows of the window are made again. The scroll position and the selection stay. When
          * a merged range hides the first selected cell, a selection inside the range selects its first cell, and a larger
          * selection grows to hold the range.
+         *
+         * A merged range is left out when it is not valid, does not fit the new row count, or crosses a range that stays. A
+         * current range with the same spans stays. When two new entries cross, the first one in the order of the keys stays.
+         * Without `merges`, the current ranges that do not fit the new row count are left out.
+         * @returns The first cells of the ranges that are left out, as for `replaceMerges`. In the other modes, an empty list.
          */
-        resetRows: (options?: { count?: number; runs?: RowRun[]; merges?: Record<string, [number, number]> }) => void;
+        resetRows: (options?: { count?: number; runs?: RowRun[]; merges?: Record<string, [number, number]> }) => string[];
 
         /**
          * In the row source mode, render the window of rows, and the column window, for the scroll position, for example
@@ -3207,7 +3218,7 @@ declare namespace jspreadsheet {
         current: null | WorksheetInstance;
 
         /**
-         * Destroy an instance of jss.
+         * Destroy an instance of jss. An open context menu of the spreadsheet closes.
          * @param element - Root element of jss instance.
          * @param destroyEventHandlers - Remove event listeners. Default: false.
          */
