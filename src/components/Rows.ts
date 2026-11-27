@@ -424,7 +424,10 @@ export class Rows {
             rowNode.push(newRow);
         }
 
-        this.placeNew(rowNode, currentRows[0], worksheet.rows[rowIndex - 1]);
+        // While a search or a filter gives results, insertRow puts the rows in the body after it changes the results
+        if (!worksheet.view.results) {
+            this.placeNew(rowNode, currentRows[0], worksheet.rows[rowIndex - 1]);
+        }
 
         return { rowRecords, rowData, rowNode };
     }
@@ -530,6 +533,12 @@ export class Rows {
                 for (const cell of worksheet.records[j]) {
                     cell.y = j;
                 }
+            }
+
+            // The rows that a filter shows keep their place in the results, and the new rows show
+            if (worksheet.view.results) {
+                worksheet.view.shiftResults(rowIndex, numOfRows);
+                worksheet.view.placeResultRows(rowIndex, numOfRows);
             }
 
             // Keep history
@@ -782,6 +791,9 @@ export class Rows {
                     // An editor in a deleted row closes without a save
                     worksheet.editor.closeIn(1, rowNumber, rowNumber + numOfRows - 1);
 
+                    // A row that the filter hides shows when an undo gives it back
+                    worksheet.view.releaseRows(rowNumber, numOfRows);
+
                     // Remove node
                     for (let row = rowNumber; row < rowNumber + numOfRows; row++) {
                         if (worksheet.rows[row].element.parentNode === worksheet.tbody) {
@@ -804,6 +816,9 @@ export class Rows {
                             cell.y = j;
                         }
                     }
+
+                    // The rows that a filter shows keep their place in the results
+                    worksheet.view.shiftResults(rowNumber, -numOfRows);
 
                     // Keep history
                     worksheet.history.add({

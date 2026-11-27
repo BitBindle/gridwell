@@ -94,6 +94,8 @@ export class History {
             const numOfRows = historyRecord.numOfRows;
             // An editor in a removed row closes without a save
             worksheet.editor.closeIn(1, rowIndex, rowIndex + numOfRows - 1);
+            // A row that the filter hides shows when a redo or an undo gives it back
+            worksheet.view.releaseRows(rowIndex, numOfRows);
             // Remove nodes. With pagination or lazy loading, a row can be outside the table body.
             for (let j = rowIndex; j < numOfRows + rowIndex; j++) {
                 if (worksheet.rows[j].element.parentNode === worksheet.tbody) {
@@ -104,6 +106,8 @@ export class History {
             worksheet.records.splice(rowIndex, numOfRows);
             worksheet.options.data.splice(rowIndex, numOfRows);
             worksheet.rows.splice(rowIndex, numOfRows);
+            // The rows that a filter shows keep their place in the results
+            worksheet.view.shiftResults(rowIndex, -numOfRows);
         } else {
             // Insert data
             const records = historyRecord.rowRecords.map((row) => {
@@ -117,8 +121,14 @@ export class History {
             worksheet.options.data = injectArray(worksheet.options.data, rowIndex, data);
 
             worksheet.rows = injectArray(worksheet.rows, rowIndex, historyRecord.rowNode);
-            // The same rule as insertRow
-            worksheet.rowManager.placeNew(historyRecord.rowNode, worksheet.rows[rowIndex + historyRecord.numOfRows], worksheet.rows[rowIndex - 1]);
+            if (worksheet.view.results) {
+                // The rows that a filter shows keep their place in the results, and the rows that come back show
+                worksheet.view.shiftResults(rowIndex, historyRecord.numOfRows);
+                worksheet.view.placeResultRows(rowIndex, historyRecord.numOfRows);
+            } else {
+                // The same rule as insertRow
+                worksheet.rowManager.placeNew(historyRecord.rowNode, worksheet.rows[rowIndex + historyRecord.numOfRows], worksheet.rows[rowIndex - 1]);
+            }
         }
 
         for (let j = rowIndex; j < worksheet.rows.length; j++) {

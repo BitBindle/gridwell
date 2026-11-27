@@ -859,6 +859,36 @@ last page shows. Version 5 showed a page after the last page, with no rows.
 No option keeps the old behavior, because it showed rows that the page or the filter did not have. An application that
 uses `onchangepage` to load data can compare the new and the old page number.
 
+## Insert and delete keep the rows of a filter
+
+With `filters`, `insertRow` and `deleteRow` keep the rows that the filter shows. The other rows keep their place in the
+results, and a deleted row leaves the results. A new row joins the results and shows at its place, also when the filter
+would hide it. An undo of `deleteRow` shows the rows that come back, also after a reset of the filter, and an undo of
+`insertRow` removes the rows from the results. When a delete removes all rows of the filter, `view.results` is `[]`: the
+table shows no rows, and with `pagination` it shows "No records found". Version 5 kept the old row numbers in the
+results, so the filter then showed other rows.
+
+`onupdateresult` does not occur when these actions change the results, as for `moveRow`.
+
+No option keeps the old behavior, because it showed rows that the filter did not have. To hide a new row again, apply
+the filter again.
+
+## A right press on a row number or a header selects as a left press
+
+A right press on a row number selects the whole row, and a right press on a header selects the whole column, as a left
+press does. A selection that has all columns and the pressed row stays, also a selection of cells, for example of
+`selectAll`, of `updateSelectionFromCoords` or in a worksheet with one column. The same applies to a selection that has
+all rows and a header. After the press, `selection.row` (or `selection.column`) is the first row (or column) of the
+selection, and the anchor of the other axis is null.
+
+So Delete then deletes the selected rows or columns, as the menu item "Delete selected rows" does: `onbeforedeleterow`
+and `ondeleterow` (or the column events) fire instead of `onchange`, and with the `confirm` option false Delete asks no
+question. When the right press changes the selection, a press with Shift on a row number extends the selection from the
+pressed row. Version 5 kept each selection that had the pressed row or column, also a selection of cells, and Delete
+cleared the cells.
+
+No option keeps the old behavior, because Delete did not act on the rows or columns that the menu names.
+
 ## An insert next to the rows in the table body shows the new rows
 
 With `lazyLoading` or `filters`, `insertRow` puts the new rows in the table body when the row after them or the row
