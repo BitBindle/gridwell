@@ -636,9 +636,9 @@ export class Rows {
                 if (parseInt(rowNumber) > -1) {
                     // If delete all rows, and set allowDeletingAllRows false, will stay one row. The merge check below needs
                     // the rows that go.
-                    if (worksheet.options.allowDeletingAllRows !== true && lastRow + 1 === numOfRows) {
+                    const keepsLastRow = worksheet.options.allowDeletingAllRows !== true && lastRow + 1 === numOfRows;
+                    if (keepsLastRow) {
                         numOfRows--;
-                        console.error('Jspreadsheet: It is not possible to delete the last row');
                     }
 
                     // The merged ranges that have a cell in the deleted rows are removed. The other ranges stay and move with their cells.
@@ -663,6 +663,11 @@ export class Rows {
                         }
 
                         worksheet.view.results = null;
+                    }
+
+                    // After the questions, so that a cancel logs nothing
+                    if (keepsLastRow) {
+                        console.error('Jspreadsheet: It is not possible to delete the last row');
                     }
 
                     // Remove node

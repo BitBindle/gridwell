@@ -529,6 +529,23 @@ describe('Merge tests', () => {
             expect(worksheet.rows.length).to.equal(6);
         });
 
+        it('logs nothing when the user cancels a delete of all rows', () => {
+            const worksheet = create({ A1: [2, 1] });
+            globalThis.confirm = () => false;
+            const error = console.error;
+            const errors: unknown[] = [];
+            console.error = (message: unknown) => errors.push(message);
+            try {
+                expect(worksheet.deleteRow(0, 6)).to.equal(false);
+            } finally {
+                console.error = error;
+            }
+
+            expect(errors).to.eql([]);
+            expect(worksheet.rows.length).to.equal(6);
+            expect(worksheet.getMerge()).to.eql({ A1: [2, 1] });
+        });
+
         it('removes a range of one row when deleteRow deletes its row (#214)', () => {
             const worksheet = create({ A1: [2, 1] });
 
