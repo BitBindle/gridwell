@@ -205,6 +205,18 @@ export class Merges {
             return null;
         }
 
+        // The row source mode keeps the merged ranges of the sheet, with no history entry
+        if (worksheet.rowSource) {
+            const source = worksheet.rowSource;
+            const merges = { ...source.merges };
+            merges[cellName] = [Math.max(1, colspan || 1), Math.max(1, rowspan || 1)];
+            source.replaceMerges(merges);
+            if (!ignoreHistoryAndEvents) {
+                worksheet.dispatch('onmerge', worksheet, { [cellName]: merges[cellName] });
+            }
+            return;
+        }
+
         const test = this.check(cellName, colspan, rowspan);
 
         if (test) {
@@ -350,6 +362,17 @@ export class Merges {
      */
     remove(cellName: string, data?: jspreadsheet.CellValue[] | null, keepOptions?: boolean) {
         const worksheet = this.worksheet;
+
+        if (worksheet.rowSource) {
+            const merges = { ...worksheet.rowSource.merges };
+            if (merges[cellName]) {
+                const beforeMerges = { [cellName]: merges[cellName] };
+                delete merges[cellName];
+                worksheet.rowSource.replaceMerges(merges);
+                worksheet.dispatch('onunmerge', worksheet, cellName, beforeMerges);
+            }
+            return;
+        }
 
         if (worksheet.options.mergeCells?.[cellName]) {
             const beforeMerges = { [cellName]: worksheet.options.mergeCells[cellName] };
@@ -547,6 +570,14 @@ export class Merges {
      */
     destroy(keepOptions?: boolean) {
         const worksheet = this.worksheet;
+
+        // The row source mode removes the merged ranges of the sheet
+        if (worksheet.rowSource) {
+            for (const key of Object.keys(worksheet.rowSource.merges)) {
+                this.remove(key);
+            }
+            return;
+        }
 
         // Remove any merged cells
         if (worksheet.options.mergeCells) {

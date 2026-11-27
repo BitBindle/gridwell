@@ -1029,6 +1029,8 @@ export class Columns {
         const indexWidth = this.getIndexWidth();
         // The worksheet can have fewer columns than freezeColumns, for example after deleteColumn
         const freezeColumns = Math.min(worksheet.options.freezeColumns!, worksheet.headers.length);
+        // The rows with a record, once for all frozen columns
+        const rows = freezeColumns > 0 ? this.rowIndexes() : [];
         let width = 0;
         // The scroll position is in screen pixels, and the widths and the left of a cell in grid pixels
         if (scrollLeft > toScreen(worksheet, indexWidth)) {
@@ -1062,7 +1064,7 @@ export class Columns {
                 // frozen row is sticky, as a header is, so it gets the same distance from the left as the header.
                 const shifted = `${toGrid(worksheet, scrollLeft) - indexWidth - 1}px`;
                 const frozenRows = worksheet.rowManager.getFreezeCount();
-                for (const j of this.rowIndexes()) {
+                for (const j of rows) {
                     if (worksheet.rows[j] && worksheet.records[j][i]) {
                         worksheet.records[j][i].element.classList.add('jss_freezed');
                         if (isLast || wasLast) {

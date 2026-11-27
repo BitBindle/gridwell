@@ -345,6 +345,10 @@ export class Formulas {
 
                 for (let i = 0; i < worksheet.formulas.chain[cellId].length; i++) {
                     const cell = getIdFromColumnName(worksheet.formulas.chain[cellId][i]);
+                    // A cell outside the window of the row source mode has no record, and calculates when it shows
+                    if (!worksheet.records[cell[1]]?.[cell[0]]) {
+                        continue;
+                    }
                     // Update cell
                     const value = `${worksheet.options.data[cell[1]][cell[0]]}`;
                     if (value.substr(0, 1) === '=') {
@@ -414,6 +418,10 @@ export class Formulas {
      */
     private hasFormulas() {
         for (const row of this.worksheet.options.data) {
+            // The row source mode has rows without values
+            if (!row) {
+                continue;
+            }
             for (const value of row) {
                 if (typeof value === 'string' && value[0] === '=') {
                     return true;
@@ -431,7 +439,10 @@ export class Formulas {
 
         // Update formulas
         for (const row of worksheet.options.data) {
-            for (let i = 0; i < worksheet.options.data[0].length; i++) {
+            if (!row) {
+                continue;
+            }
+            for (let i = 0; i < row.length; i++) {
                 const value = `${row[i]}`;
                 // Is formula
                 if (value.substr(0, 1) === '=') {

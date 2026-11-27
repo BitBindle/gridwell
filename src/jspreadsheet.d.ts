@@ -1670,13 +1670,22 @@ declare namespace jspreadsheet {
 
         /**
          * The row source mode, for a worksheet with many rows: the application gives the rows when the grid shows them.
-         * With it, `data` is not read, and lazy loading, pagination, search and filters are off. An insert, a delete, a
-         * move or a sort of rows does nothing: the application changes its rows and calls `resetRows`. `mergeCells` and
-         * `freezeRows` work. `style`, `comments`, `classes` and `meta` apply only to the rows of the first window. Each row
-         * of the window has its row number in `aria-rowindex`, and the table has the row count in `aria-rowcount`. A copy
-         * dispatches `oncopy` with an empty text: the application writes the clipboard from its own values. `getData`,
-         * `getStyle` and `getComments` give only the rows of the window, and a change of a cell outside the window does
-         * nothing.
+         * The grid has records only for the frozen rows and a window of rows around the view. Each row of the window has
+         * its row number in `aria-rowindex`, and the table has the row count in `aria-rowcount`. `mergeCells`,
+         * `freezeRows`, `freezeColumns`, `setFreeze`, `setHeight`, `hideRow`, `showRow` and the merge methods work. Limits:
+         *
+         * - `data` is not read. Lazy loading, pagination, search, filters, footers, `minSpareRows`, `minSpareCols`, the
+         *   fill handle (`selectionCopy`), column and row drag, and the insert, delete and sort items are off.
+         * - An insert, a delete, a move or a sort of rows or columns does nothing: the application changes its rows and
+         *   calls `resetRows`.
+         * - A row outside the window has no cell: `getCell` and the other calls that read a cell need a row of the
+         *   window, a change of a cell outside it does nothing, and an undo or a redo of such a change does nothing.
+         *   `getData`, `getStyle`, `getComments` and a copy with `returnData` give only the rows of the window.
+         * - A formula sees only the values of the window. `style`, `comments`, `classes` and `meta`, and `setStyle` and
+         *   `setComments`, apply only while the row is in the window. A merge, an unmerge and a destroy of merged ranges
+         *   write no history entry.
+         * - A copy dispatches `oncopy` with an empty text: the application writes the clipboard from its own values. A cut
+         *   clears only the cells of the window. `download` does nothing.
          */
         rowSource?: RowSource;
 

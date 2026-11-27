@@ -795,6 +795,11 @@ export class Pointer {
     fillDown() {
         const worksheet = this.worksheet;
 
+        // The row source mode has no fill handle
+        if (worksheet.rowSource) {
+            return;
+        }
+
         // Any selected cells
         if (worksheet.selection.highlighted.length > 0) {
             const last = worksheet.selection.highlighted[worksheet.selection.highlighted.length - 1].element;

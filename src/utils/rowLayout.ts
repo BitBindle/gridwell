@@ -15,8 +15,9 @@ interface LayoutRun {
 }
 
 /**
- * Sort the runs, remove the rows outside the sheet and the runs of rows with the default height that show, and join
- * runs that are next to each other and equal. A run that overlaps a run before it wins for its own rows.
+ * Sort the runs by their first row, remove the rows outside the sheet and the runs of rows with the default height that
+ * show, and join runs that are next to each other and equal. Of two runs that overlap, the run later in that order wins
+ * for its own rows.
  */
 function normalRuns(runs: RowRun[], count: number, defaultHeight: number) {
     const sorted: LayoutRun[] = runs
@@ -27,29 +28,43 @@ function normalRuns(runs: RowRun[], count: number, defaultHeight: number) {
         .filter((run) => run.first <= run.last && (run.height !== undefined || run.hidden))
         .sort((a, b) => a.first - b.first);
 
+    // The result is sorted and has no overlaps. A run after the last run of the result keeps the order. A run that
+    // overlaps runs of the result cuts each of them, and wins for its own rows. A sort after each run made 50,000 runs
+    // of hidden rows take seconds, so only an overlap sorts.
     const result: LayoutRun[] = [];
     for (const run of sorted) {
-        const previous = result[result.length - 1];
-        // The runs of the result do not overlap, so only an overlap needs a sort. A sort after each run made 50,000 runs
-        // of hidden rows take seconds.
-        const overlap = previous !== undefined && run.first <= previous.last;
-        if (overlap) {
-            if (previous.last > run.last) {
-                result.push({ first: run.last + 1, last: previous.last, height: previous.height, hidden: previous.hidden });
-            }
-            previous.last = run.first - 1;
-            if (previous.last < previous.first) {
-                result.splice(result.indexOf(previous), 1);
-            }
-        }
         const last = result[result.length - 1];
-        if (last && last.last + 1 === run.first && last.height === run.height && last.hidden === run.hidden) {
-            last.last = run.last;
-        } else {
-            result.push(run);
+        if (!last || run.first > last.last) {
+            if (last && last.last + 1 === run.first && last.height === run.height && last.hidden === run.hidden) {
+                last.last = run.last;
+            } else {
+                result.push(run);
+            }
+            continue;
         }
-        if (overlap) {
-            result.sort((a, b) => a.first - b.first);
+        const pieces: LayoutRun[] = [];
+        for (const item of result) {
+            if (item.last < run.first || item.first > run.last) {
+                pieces.push(item);
+                continue;
+            }
+            if (item.first < run.first) {
+                pieces.push({ first: item.first, last: run.first - 1, height: item.height, hidden: item.hidden });
+            }
+            if (item.last > run.last) {
+                pieces.push({ first: run.last + 1, last: item.last, height: item.height, hidden: item.hidden });
+            }
+        }
+        pieces.push(run);
+        pieces.sort((x, y) => x.first - y.first);
+        result.length = 0;
+        for (const piece of pieces) {
+            const previous = result[result.length - 1];
+            if (previous && previous.last + 1 === piece.first && previous.height === piece.height && previous.hidden === piece.hidden) {
+                previous.last = piece.last;
+            } else {
+                result.push(piece);
+            }
         }
     }
     return result;

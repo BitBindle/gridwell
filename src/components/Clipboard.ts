@@ -265,7 +265,11 @@ export class Clipboard {
 
         // In the row source mode, rows outside the window have no values. The application writes the clipboard from its
         // own values in oncopy, which gets an empty text.
-        if (worksheet.rowSource && !returnData && worksheet.selection.range) {
+        if (worksheet.rowSource && returnData) {
+            // The values of the rows of the window
+            return worksheet.data.get(highlighted, processed, delimiter) as string;
+        }
+        if (worksheet.rowSource && worksheet.selection.range) {
             const range = worksheet.selection.range;
             const selectedRange: [number, number, number, number] = [
                 Math.min(range[0], range[2]),
@@ -280,6 +284,8 @@ export class Clipboard {
             const text = result ? result : '';
             worksheet.clipboard.write(text);
             worksheet.clipboard.keep(text, []);
+            worksheet.clipboard.clearBorder();
+            worksheet.clipboard.showBorder(worksheet.selection.highlighted);
             return text;
         }
 
@@ -360,6 +366,11 @@ export class Clipboard {
      */
     private insertSpaceForPaste(colIndex: number, rowIndex: number, rows: jspreadsheet.CellValue[][]) {
         const worksheet = this.worksheet;
+
+        // The row source mode keeps its rows and columns
+        if (worksheet.rowSource) {
+            return;
+        }
 
         const hiddenColCount = worksheet.headers.slice(colIndex).filter((x) => x.style.display === 'none').length;
         const expandedColCount = colIndex + hiddenColCount + rows[0].length;
@@ -536,6 +547,11 @@ export class Clipboard {
             const colIndex = parseInt(x);
             const rowIndex = parseInt(y);
 
+            // The row source mode pastes up to its last row
+            if (worksheet.rowSource) {
+                rows = rows.slice(0, Math.max(1, worksheet.rowSource.count - rowIndex));
+            }
+
             this.insertSpaceForPaste(colIndex, rowIndex, rows);
 
             // Go through the columns to get the data
@@ -596,6 +612,11 @@ export class Clipboard {
      */
     download(includeHeaders?: boolean, processed?: boolean) {
         const worksheet = this.worksheet;
+
+        // The application has the values of the row source mode, and makes the file
+        if (worksheet.rowSource) {
+            return;
+        }
 
         if (worksheet.parent.config.allowExport === false) {
             console.error('Export not allowed');

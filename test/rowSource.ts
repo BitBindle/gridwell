@@ -348,4 +348,123 @@ describe('The row source mode', () => {
         expect(worksheet.getCell('B3').getAttribute('rowspan')).to.equal('3');
         expect(worksheet.rows[4].element.style.display).to.equal('none');
     });
+
+    it('turns off the options that read or change all rows', () => {
+        const { worksheet } = build({}, { minSpareRows: 2, minSpareCols: 1, footers: [['=SUM(A1:A3)', '', '']], columnDrag: true, rowDrag: true });
+
+        worksheet.setValueFromCoords(0, 3, 'x');
+
+        expect(worksheet.options.minSpareRows).to.equal(0);
+        expect(worksheet.options.selectionCopy).to.equal(false);
+        expect(worksheet.options.columnDrag).to.equal(false);
+        expect(worksheet.options.allowInsertRow).to.equal(false);
+        expect(worksheet.tfoot ?? null).to.equal(null);
+        expect(worksheet.headers.length).to.equal(3);
+    });
+
+    it('calculates a formula of the window, and drops the formula cells of rows that leave it', () => {
+        const { worksheet } = build({ row: (y) => (y === 10 ? ['', '=A1*2', ''] : [y === 0 ? 5 : '', '', '']) }, { freezeRows: 1 });
+        expect(worksheet.getValueFromCoords(1, 10, true)).to.equal('10');
+
+        worksheet.scrollToRow(80000);
+        expect(Object.keys(worksheet.formulas.chain)).to.eql([]);
+        worksheet.setValueFromCoords(0, 0, 7);
+
+        worksheet.scrollToRow(10);
+        expect(worksheet.getValueFromCoords(1, 10, true)).to.equal('14');
+    });
+
+    it('pastes up to the last row, and gives the values of the window to a copy with returnData', () => {
+        const { worksheet } = build({ count: 100 });
+        worksheet.scrollToRow(99);
+
+        worksheet.paste(0, 98, 'p\nq\nr');
+        expect([worksheet.getValueFromCoords(0, 98), worksheet.getValueFromCoords(0, 99)]).to.eql(['p', 'q']);
+        expect(worksheet.rows.length).to.equal(100);
+
+        worksheet.updateSelectionFromCoords(0, 98, 1, 99);
+        expect(worksheet.clipboard.copy(true, ',', true)).to.equal('p,b98\r\nq,b99\r\n');
+        worksheet.download();
+        worksheet.pointer.fillDown();
+        expect(worksheet.getSelected().length).to.equal(4);
+        worksheet.updateSelectionFromCoords(0, 2, 1, 60);
+        expect(worksheet.getSelected().every(Boolean)).to.equal(true);
+    });
+
+    it('changes the frozen rows with setFreeze', () => {
+        const { worksheet } = build();
+        worksheet.scrollToRow(80000);
+
+        worksheet.setFreeze(3);
+
+        expect(attached(worksheet).slice(0, 3)).to.eql([0, 1, 2]);
+        expect(worksheet.rows[2].element.classList.contains('jss_frozen_row')).to.equal(true);
+        expect(worksheet.records[80000]).to.not.equal(undefined);
+    });
+
+    it('keeps the merged ranges of setMerge, removeMerge and destroyMerge when the window moves', () => {
+        const { worksheet } = build({}, { mergeCells: { B5: [2, 2] } });
+
+        worksheet.setMerge('A10', 2, 2);
+        worksheet.removeMerge('B5');
+        worksheet.scrollToRow(80000);
+        worksheet.scrollToRow(0);
+
+        expect(worksheet.getMerge()).to.eql({ A10: [2, 2] });
+        expect(worksheet.getCell('B5').getAttribute('colspan')).to.equal(null);
+
+        worksheet.destroyMerge();
+        worksheet.scrollToRow(80000);
+        worksheet.scrollToRow(0);
+        expect(worksheet.getMerge()).to.eql({});
+    });
+
+    it('has one tab stop: the active cell, or the table while the active cell is outside the window', () => {
+        const { worksheet } = build();
+        const stops = () => Array.from(root.querySelectorAll('[tabindex="0"]')).filter((element) => worksheet.element.contains(element));
+
+        worksheet.updateSelectionFromCoords(0, 3, 0, 3);
+        expect(stops()).to.eql([worksheet.getCell('A4')]);
+
+        worksheet.scrollToRow(80000);
+        expect(stops()).to.eql([worksheet.table]);
+    });
+
+    it('gives the focus of an open editor to the table when its row leaves the window', () => {
+        const { worksheet } = build();
+        worksheet.updateSelectionFromCoords(0, 1, 0, 1);
+        const cell = worksheet.getCell('A2');
+        worksheet.openEditor(cell);
+        (cell.children[0] as HTMLTextAreaElement).focus();
+
+        worksheet.scrollToRow(80000);
+        expect(document.activeElement).to.equal(worksheet.table);
+
+        worksheet.scrollToRow(1);
+        expect(document.activeElement).to.equal(worksheet.getCell('A2'));
+    });
+
+    it('lets a run that starts inside an earlier run win for its rows', () => {
+        const { worksheet } = build({
+            count: 10,
+            defaultHeight: 20,
+            runs: [
+                { first: 0, last: 4, height: 30 },
+                { first: 0, last: 1, height: 40 },
+                { first: 0, last: 1, height: 50 },
+            ],
+        });
+
+        expect(worksheet.rowOffset(2)).to.equal(100);
+        expect(worksheet.rowOffset(5)).to.equal(190);
+        expect(worksheet.rowOffset(10)).to.equal(290);
+    });
+
+    it('keeps the scroll area below the limit of sticky positioning in Firefox', () => {
+        const { worksheet } = build({ count: 1048576, defaultHeight: 20, maxScrollHeight: 50000000 });
+
+        worksheet.scrollToRow(1048575);
+
+        expect(worksheet.content.scrollTop).to.be.below(8000000);
+    });
 });

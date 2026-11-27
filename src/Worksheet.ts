@@ -24,7 +24,7 @@ import { Selection } from './components/Selection.js';
 import { Styles } from './components/Styles.js';
 import { View } from './components/View.js';
 import type { EventHandlers, EventName, Spreadsheet, WorksheetState } from './types/internal';
-import type { RowSource } from './components/RowSource';
+import type { RowSource } from './components/RowSource.js';
 
 /** The rows that persistence posts to the server, the data of onbeforesave */
 type SaveData = Parameters<NonNullable<jspreadsheet.SpreadsheetOptions['onbeforesave']>>[2];
@@ -1037,6 +1037,18 @@ export class Worksheet {
             this.options.pagination = 0;
             this.options.search = false;
             this.options.filters = false;
+            // These read or change all rows, and the rows outside the window have no record
+            this.options.minSpareRows = 0;
+            this.options.minSpareCols = 0;
+            this.options.footers = undefined;
+            this.options.selectionCopy = false;
+            this.options.columnDrag = false;
+            this.options.rowDrag = false;
+            this.options.allowInsertRow = false;
+            this.options.allowDeleteRow = false;
+            this.options.allowInsertColumn = false;
+            this.options.allowDeleteColumn = false;
+            this.options.columnSorting = false;
         }
 
         // Lazy loading

@@ -1,5 +1,5 @@
 import { getCellNameFromCoords } from '../utils/helpers.js';
-import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
+import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import libraryBase from '../utils/libraryBase.js';
 import { toGrid, toScreen } from '../utils/zoom.js';
 import type { WorksheetState, Worksheet, SelectedWorksheet } from '../types/internal';
@@ -499,16 +499,13 @@ export class Selection {
         let grown = true;
         while (grown) {
             grown = false;
-            for (const name of Object.keys(source.merges)) {
-                const [mx, my] = getIdFromColumnName(name);
-                const [colspan, rowspan] = source.merges[name];
-                const range = [mx, my, mx + colspan - 1, my + rowspan - 1];
-                if (range[0] <= ux && range[2] >= px && range[1] <= uy && range[3] >= py) {
-                    if (range[0] < px || range[2] > ux || range[1] < py || range[3] > uy) {
-                        px = Math.min(px, range[0]);
-                        ux = Math.max(ux, range[2]);
-                        py = Math.min(py, range[1]);
-                        uy = Math.max(uy, range[3]);
+            for (const range of source.mergesIn(py, uy)) {
+                if (range.x1 <= ux && range.x2 >= px) {
+                    if (range.x1 < px || range.x2 > ux || range.y1 < py || range.y2 > uy) {
+                        px = Math.min(px, range.x1);
+                        ux = Math.max(ux, range.x2);
+                        py = Math.min(py, range.y1);
+                        uy = Math.max(uy, range.y2);
                         grown = true;
                     }
                 }
@@ -703,6 +700,10 @@ export class Selection {
         const cells = [];
 
         for (let y = selectedRange[1]; y <= selectedRange[3]; y++) {
+            // A row outside the window of the row source mode has no record
+            if (!columnNameOnly && !worksheet.records[y]) {
+                continue;
+            }
             for (let x = selectedRange[0]; x <= selectedRange[2]; x++) {
                 if (columnNameOnly) {
                     cells.push(getCellNameFromCoords(x, y));
@@ -801,6 +802,11 @@ export class Selection {
      */
     setActiveCell(td: HTMLTableCellElement | null | undefined) {
         const worksheet = this.worksheet;
+
+        // In the row source mode, the table is the tab stop only while the active cell is outside the window
+        if (worksheet.rowSource && td) {
+            worksheet.table.tabIndex = -1;
+        }
 
         const previous = worksheet.selection.activeCell;
         if (previous && previous !== td) {

@@ -43,6 +43,10 @@ export class Rows {
         if (columns !== undefined) {
             worksheet.options.freezeColumns = count(columns);
         }
+        // The row source mode makes its rows again, with the new frozen rows first
+        if (rows !== undefined && worksheet.rowSource) {
+            worksheet.rowSource.reset();
+        }
         this.updateFreeze();
         // The scroll handler keeps this value only while columns are frozen, so it can be old
         worksheet.lastScrollLeft = worksheet.content.scrollLeft;

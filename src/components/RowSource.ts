@@ -1,4 +1,4 @@
-import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
+import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import { RowLayout } from '../utils/rowLayout.js';
 import { toGrid, toScreen, zoomOf } from '../utils/zoom.js';
 import type jspreadsheet from '../jspreadsheet';
@@ -13,8 +13,11 @@ const farScrollBuffer = 20;
 /** The time in milliseconds without a far scroll after which the window gets all rows of the buffer. */
 const fillDelay = 100;
 
-/** The largest height of the scroll area in screen pixels, below the limit of Firefox (about 17,800,000 px). */
-const defaultMaxScrollHeight = 15000000;
+/**
+ * The largest height of the scroll area in screen pixels. Firefox stops sticky positioning at about 8,947,848 px, so the
+ * header row and the frozen rows would scroll out of the view above it.
+ */
+const defaultMaxScrollHeight = 8000000;
 
 /** The most rows above the window that the window adds to show the first cell of a merged range. */
 const maxMergeReach = 1000;
@@ -80,6 +83,10 @@ export class RowSource {
     /** The merged ranges of the sheet. The window merges the part of a range that it holds. */
     merges: Record<string, [number, number]>;
 
+    /** The merged ranges sorted by their first row, and the largest last row up to each range, for a fast lookup. */
+    private mergeList: { name: string; x1: number; y1: number; x2: number; y2: number }[] = [];
+    private mergeEnds: number[] = [];
+
     /** The first and the last row of the window after the frozen rows. The window is empty when to is below from. */
     from = 0;
     to = -1;
@@ -105,8 +112,9 @@ export class RowSource {
         this.count = Math.max(1, Math.floor(source.count) || 0);
         this.layout = new RowLayout(this.count, source.defaultHeight || Number(worksheet.options.defaultRowHeight) || 20, source.runs);
         this.buffer = source.buffer! > 0 ? source.buffer! : defaultBuffer;
-        this.maxScrollHeight = source.maxScrollHeight! > 0 ? source.maxScrollHeight! : defaultMaxScrollHeight;
+        this.maxScrollHeight = source.maxScrollHeight! > 0 ? Math.min(source.maxScrollHeight!, defaultMaxScrollHeight) : defaultMaxScrollHeight;
         this.merges = copyMerges(worksheet.options.mergeCells as Record<string, unknown[]> | undefined);
+        this.indexMerges();
         this.top = this.spacer();
         this.bottom = this.spacer();
     }
@@ -465,14 +473,49 @@ export class RowSource {
         this.setSpacer(this.bottom, Math.max(0, g.flow - corrected - height));
     }
 
+    /** Sort the merged ranges by their first row for mergesIn. */
+    private indexMerges() {
+        this.mergeList = Object.entries(this.merges)
+            .map(([name, [colspan, rowspan]]) => {
+                const [x1, y1] = getIdFromColumnName(name);
+                return { name, x1, y1, x2: x1 + colspan - 1, y2: y1 + rowspan - 1 };
+            })
+            .sort((a, b) => a.y1 - b.y1);
+        let end = -1;
+        this.mergeEnds = this.mergeList.map((range) => (end = Math.max(end, range.y2)));
+    }
+
+    /** The merged ranges that cross the rows `from` to `to`, without a loop over all ranges. */
+    mergesIn(from: number, to: number) {
+        const list = this.mergeList;
+        // The last range whose first row is at most `to`
+        let low = 0;
+        let high = list.length - 1;
+        let last = -1;
+        while (low <= high) {
+            const middle = (low + high) >> 1;
+            if (list[middle].y1 <= to) {
+                last = middle;
+                low = middle + 1;
+            } else {
+                high = middle - 1;
+            }
+        }
+        const result = [];
+        for (let i = last; i >= 0 && this.mergeEnds[i] >= from; i--) {
+            if (list[i].y2 >= from) {
+                result.push(list[i]);
+            }
+        }
+        return result;
+    }
+
     /** Move the start of the window up to the first row of each merged range that covers its first row. */
     private mergeReach(from: number, to: number) {
         let result = from;
-        for (const [name, span] of Object.entries(this.merges)) {
-            const y1 = getIdFromColumnName(name)[1];
-            const y2 = y1 + span[1] - 1;
-            if (y1 < result && y2 >= from && y1 <= to && from - y1 <= maxMergeReach) {
-                result = y1;
+        for (const range of this.mergesIn(from, to)) {
+            if (range.y1 < result && from - range.y1 <= maxMergeReach) {
+                result = range.y1;
             }
         }
         return Math.max(this.frozenCount(), result);
@@ -527,11 +570,9 @@ export class RowSource {
     /** The rows of the merged ranges that cross the rows `from` to `to`, as [first, last] pairs. */
     private mergedRows(from: number, to: number) {
         const result: [number, number][] = [];
-        for (const [name, span] of Object.entries(this.merges)) {
-            const y1 = getIdFromColumnName(name)[1];
-            const y2 = y1 + span[1] - 1;
-            if (y2 > y1 && y1 <= to && y2 >= from) {
-                result.push([Math.max(from, y1), Math.min(to, y2)]);
+        for (const range of this.mergesIn(from, to)) {
+            if (range.y2 > range.y1) {
+                result.push([Math.max(from, range.y1), Math.min(to, range.y2)]);
             }
         }
         return result;
@@ -541,21 +582,27 @@ export class RowSource {
     private moveWindow(from: number, to: number) {
         const worksheet = this.worksheet;
         this.clearMerges();
-        let removed = false;
+        const removed = new Set<number>();
         for (let y = this.from; y <= this.to; y++) {
             if ((y < from || y > to) && worksheet.rows[y]) {
-                removed = true;
-                // The application takes the edit before the focus moves, so the blur of the editor does not save it
-                if (worksheet.editor.isOpen() && worksheet.rows[y].element.contains(worksheet.editor.cell)) {
+                removed.add(y);
+                // The focus in the row, also in its editor, goes to the table. The application takes the edit before the
+                // editor closes, so the blur of the editor does not save it.
+                const element = worksheet.rows[y].element;
+                const focused = !!document.activeElement && element.contains(document.activeElement);
+                if (worksheet.editor.isOpen() && element.contains(worksheet.editor.cell)) {
                     worksheet.editor.detach();
                 }
-                this.keepFocus(worksheet.rows[y].element);
+                if (focused) {
+                    this.focusTable();
+                }
                 this.detachRow(y);
             }
         }
-        if (removed && worksheet.selection.highlighted.length) {
+        if (removed.size && worksheet.selection.highlighted.length) {
             worksheet.selection.highlighted = worksheet.selection.highlighted.filter((record) => record.element.isConnected);
         }
+        this.dropChain(removed);
         const added = this.missingRows(from, to);
         // Each new row goes before the next row of the window with a record, else before the bottom spacer
         let next: HTMLTableRowElement = this.bottom;
@@ -581,6 +628,20 @@ export class RowSource {
             this.decorate(ranges(added));
         }
         this.updateTabStop();
+    }
+
+    /** Remove the formula cells of removed rows from the formula chain. Their formulas add them again when they show. */
+    private dropChain(rows: Set<number>) {
+        if (!rows.size) {
+            return;
+        }
+        const chain = this.worksheet.formulas.chain;
+        for (const name of Object.keys(chain)) {
+            chain[name] = chain[name].filter((dependent) => !rows.has(getIdFromColumnName(dependent)[1]));
+            if (!chain[name].length) {
+                delete chain[name];
+            }
+        }
     }
 
     /** The table is the tab stop while the row of the active cell is outside the window, so the keys reach the grid. */
@@ -638,11 +699,15 @@ export class RowSource {
     private applyMerges() {
         const worksheet = this.worksheet;
         const frozen = this.frozenCount();
-        for (const [name, span] of Object.entries(this.merges)) {
-            const [x, y] = getIdFromColumnName(name);
-            if (!worksheet.rows[y]) {
+        // The ranges whose first row can have a record: in the frozen rows or in the window
+        const ranges = [...(frozen ? this.mergesIn(0, frozen - 1) : []), ...(this.to >= this.from ? this.mergesIn(this.from, this.to) : [])];
+        const done = new Set<string>();
+        for (const { name, x1: x, y1: y } of ranges) {
+            if (done.has(name) || !worksheet.rows[y]) {
                 continue;
             }
+            done.add(name);
+            const span = this.merges[name];
             let end = Math.min(y + span[1] - 1, y < frozen && this.from > frozen ? frozen - 1 : this.to);
             if (y < frozen && this.to < this.from) {
                 end = Math.min(end, frozen - 1);
@@ -714,15 +779,19 @@ export class RowSource {
 
     /** The focus in an element that the window removes goes to the table, so that the keys keep working. */
     private keepFocus(element: HTMLElement) {
-        const worksheet = this.worksheet;
         const active = document.activeElement;
         if (active && element.contains(active)) {
-            if (!worksheet.table.hasAttribute('tabindex')) {
-                worksheet.table.tabIndex = -1;
-            }
-            worksheet.table.focus({ preventScroll: true });
-            this.focusLost = true;
+            this.focusTable();
         }
+    }
+
+    private focusTable() {
+        const worksheet = this.worksheet;
+        if (!worksheet.table.hasAttribute('tabindex')) {
+            worksheet.table.tabIndex = -1;
+        }
+        worksheet.table.focus({ preventScroll: true });
+        this.focusLost = true;
     }
 
     /** Give the focus back to the active cell when its row is in the window again. */
@@ -795,10 +864,13 @@ export class RowSource {
         this.clearMerges();
         for (const y of rows) {
             const old = worksheet.rows[y].element;
+            const focused = !!document.activeElement && old.contains(document.activeElement);
             if (worksheet.editor.isOpen() && old.contains(worksheet.editor.cell)) {
                 worksheet.editor.detach();
             }
-            this.keepFocus(old);
+            if (focused) {
+                this.focusTable();
+            }
             delete worksheet.records[y];
             this.attachRow(y);
             old.replaceWith(worksheet.rows[y].element);
@@ -849,6 +921,9 @@ export class RowSource {
         const worksheet = this.worksheet;
         const view = this.viewRow();
         this.clearMerges();
+        if (document.activeElement && worksheet.tbody.contains(document.activeElement)) {
+            this.focusTable();
+        }
         if (worksheet.editor.isOpen()) {
             worksheet.editor.detach();
         }
@@ -862,6 +937,7 @@ export class RowSource {
         this.layout = new RowLayout(count, this.layout.givenHeight, options?.runs ?? this.layout.runs, this.layout.minHeight);
         if (options?.merges) {
             this.merges = copyMerges(options.merges);
+            this.indexMerges();
         }
         worksheet.rows = new Array(count);
         worksheet.records = new Array(count);
@@ -916,10 +992,9 @@ export class RowSource {
 
     /** The merged range that holds cell (x, y), as [x1, y1, x2, y2], or null. */
     mergeAt(x: number, y: number): [number, number, number, number] | null {
-        for (const [name, span] of Object.entries(this.merges)) {
-            const [x1, y1] = getIdFromColumnName(name);
-            if (x >= x1 && x < x1 + span[0] && y >= y1 && y < y1 + span[1]) {
-                return [x1, y1, x1 + span[0] - 1, y1 + span[1] - 1];
+        for (const range of this.mergesIn(y, y)) {
+            if (x >= range.x1 && x <= range.x2) {
+                return [range.x1, range.y1, range.x2, range.y2];
             }
         }
         return null;
@@ -929,16 +1004,12 @@ export class RowSource {
     replaceMerges(merges: Record<string, [number, number]>) {
         this.clearMerges();
         this.merges = copyMerges(merges);
+        this.indexMerges();
         // A new range can hold hidden rows of the window without a record. The window adds them.
         if (this.to >= this.from && this.missingRows(this.from, this.to).length > 0) {
             this.moveWindow(this.from, this.to);
         } else {
             this.applyMerges();
         }
-    }
-
-    /** The name of cell (x, y). */
-    static cellName(x: number, y: number) {
-        return getColumnNameFromId([x, y]);
     }
 }
