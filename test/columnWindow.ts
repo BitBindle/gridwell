@@ -39,6 +39,15 @@ function build(
     return { worksheet, calls };
 }
 
+/** The row of the source where column 0 has the value red. */
+function redFirst(y: number, columns?: number[]) {
+    const values: Jspreadsheet.CellValue[] = [];
+    for (const x of columns || range(0, columnCount - 1)) {
+        values[x] = x === 0 ? 'red' : `${x}:${y}`;
+    }
+    return values;
+}
+
 /** The columns with a cell in row y, in the order of the table. */
 function cellColumns(worksheet: Worksheet, y: number) {
     return Array.from(worksheet.rows[y].element.querySelectorAll('td[data-x]')).map((td) => Number(td.getAttribute('data-x')));
@@ -279,6 +288,163 @@ describe('The column window of the row source mode', () => {
 
         worksheet.removeMerge('A5');
         expect(cell.style.whiteSpace).to.equal('');
+    });
+
+    it('gives a cell that shows the text of a merged range the alignment and the color of the first column, and its own again when the range goes (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { align: 'left', type: 'color' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.scrollToColumn(145);
+
+        const cell = worksheet.records[4][135].element;
+        expect(cell.textContent).to.equal('red');
+        expect(cell.style.textAlign).to.equal('left');
+        expect(cell.style.color).to.equal('red');
+
+        worksheet.removeMerge('A5');
+        expect(cell.textContent).to.equal('135:4');
+        expect(cell.style.textAlign).to.equal('center');
+        expect(cell.style.color).to.equal('');
+    });
+
+    it('keeps the alignment from setStyle when the columns have the same alignment, and gives back the color from setStyle (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { type: 'color' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.scrollToColumn(145);
+        worksheet.setStyle('EF5', 'text-align', 'right');
+        worksheet.setStyle('EF5', 'color', 'blue');
+        worksheet.setMerge('A5', 150, 1);
+
+        const cell = worksheet.records[4][135].element;
+        expect(cell.textContent).to.equal('red');
+        expect(cell.style.textAlign).to.equal('right');
+        expect(cell.style.color).to.equal('red');
+
+        worksheet.removeMerge('A5');
+        expect(cell.style.textAlign).to.equal('right');
+        expect(cell.style.color).to.equal('blue');
+    });
+
+    it('keeps the alignment and the color from a setStyle while the cell shows the text of a merged range (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { align: 'left', type: 'color' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.scrollToColumn(145);
+        worksheet.setStyle('EF5', 'text-align', 'right');
+        worksheet.setStyle('EF5', 'color', 'blue');
+
+        worksheet.removeMerge('A5');
+
+        const cell = worksheet.records[4][135].element;
+        expect(cell.textContent).to.equal('135:4');
+        expect(cell.style.textAlign).to.equal('right');
+        expect(cell.style.color).to.equal('blue');
+    });
+
+    it('keeps a value from setStyle that is the same as the value of the first column (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { type: 'color' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.scrollToColumn(145);
+        worksheet.setStyle('EF5', 'color', 'blue');
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.setStyle('EF5', 'color', 'green');
+        worksheet.setStyle('EF5', 'color', 'red');
+
+        const cell = worksheet.records[4][135].element;
+        expect(cell.style.color).to.equal('red');
+
+        worksheet.removeMerge('A5');
+        expect(cell.textContent).to.equal('135:4');
+        expect(cell.style.color).to.equal('red');
+    });
+
+    it('gives the cell its own color after the undo of a setStyle while the cell shows the text of a merged range (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { align: 'left', type: 'color' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.scrollToColumn(145);
+        worksheet.setStyle('EF5', 'color', 'blue');
+        worksheet.undo();
+
+        worksheet.removeMerge('A5');
+        const cell = worksheet.records[4][135].element;
+        expect(cell.style.color).to.equal('');
+        expect(worksheet.getStyle('EF5', 'color')).to.equal('');
+    });
+
+    it('keeps a resetStyle while the cell shows the text of a merged range (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { type: 'color', render: 'square' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.scrollToColumn(145);
+        worksheet.setStyle('EF5', 'color', 'blue');
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.resetStyle({ EF5: '' });
+
+        worksheet.removeMerge('A5');
+        expect(worksheet.records[4][135].element.style.color).to.equal('');
+    });
+
+    it('keeps a pasted style while the cell shows the text of a merged range, and gives back its own style on undo (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { align: 'left', type: 'color' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.scrollToColumn(145);
+        worksheet.clipboard.keep('x', ['text-align: left; color: red;']);
+        worksheet.paste(135, 4, 'x');
+
+        const cell = worksheet.records[4][135].element;
+        worksheet.removeMerge('A5');
+        expect(cell.style.textAlign).to.equal('left');
+        expect(cell.style.color).to.equal('red');
+
+        worksheet.undo();
+        worksheet.undo();
+        expect(cell.textContent).to.equal('135:4');
+        expect(cell.style.textAlign).to.equal('center');
+        expect(cell.style.color).to.equal('');
+    });
+
+    it('gives the cell the style of the first column again when the merged ranges apply again, and the value from setStyle after (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { align: 'left', type: 'color' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.scrollToColumn(145);
+        worksheet.setStyle('EF5', 'text-align', 'right');
+        worksheet.setStyle('EF5', 'color', 'blue');
+
+        worksheet.setMerge('A3', 150, 1);
+        const cell = worksheet.records[4][135].element;
+        expect(cell.style.textAlign).to.equal('left');
+        expect(cell.style.color).to.equal('red');
+
+        worksheet.removeMerge('A5');
+        expect(cell.style.textAlign).to.equal('right');
+        expect(cell.style.color).to.equal('blue');
+    });
+
+    it('gives a cell of a color column no color while it shows the text of another column, and its color again after (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[135] = { type: 'color' };
+        const { worksheet } = build({}, { columns });
+        worksheet.scrollToColumn(145);
+        worksheet.setValueFromCoords(135, 4, 'purple');
+        const cell = worksheet.records[4][135].element;
+        expect(cell.style.color).to.equal('purple');
+
+        worksheet.setMerge('A5', 150, 1);
+        expect(cell.textContent).to.equal('0:4');
+        expect(cell.style.color).to.equal('');
+
+        worksheet.removeMerge('A5');
+        expect(cell.style.color).to.equal('purple');
     });
 
     it('reads the widths and the hidden columns again after setWidth, hideColumn and refreshColumns', () => {

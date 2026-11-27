@@ -442,9 +442,11 @@ export class Clipboard {
                 if (style?.[styleIndex]) {
                     const columnName = getColumnNameFromId([colIndex, rowIndex]);
                     newStyle[columnName] = style[styleIndex];
-                    // The style text of one cell
-                    oldStyle[columnName] = worksheet.getStyle(columnName) as string;
+                    // The style text of one cell, with the own style of a cell that shows the text of a merged range
+                    const shown = worksheet.getStyle(columnName) as string;
+                    oldStyle[columnName] = worksheet.rowSource?.columns?.ownStyleText(columnName, shown) ?? shown;
                     worksheet.records[rowIndex]?.[colIndex]?.element.setAttribute('style', style[styleIndex]);
+                    worksheet.rowSource?.columns?.styled(columnName);
                     styleIndex++;
                 }
                 i++;

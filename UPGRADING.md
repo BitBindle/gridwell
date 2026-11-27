@@ -889,6 +889,21 @@ cleared the cells.
 
 No option keeps the old behavior, because Delete did not act on the rows or columns that the menu names.
 
+## A cell that shows the text of a merged range in the column window has the style of the first column
+
+In the row source mode with `columnWindow`, a merged range that starts left of the window shows its text in its first
+cell in the window. That cell now takes the alignment of the first column when the two columns have different
+alignments, and the color of the text when one of them is a color column. It already took the wrap.
+
+While the cell shows the text, `getStyle` of the cell gives these values, and a `setStyle` of the same value turns it
+off, as for any cell. When the merged range is removed or leaves the window, the cell gets its own values back. A value
+that `setStyle` gave while the cell showed the text stays. When the merged ranges apply again, for example after
+`setMerge` of another range or a change of the value of the cell, the cell shows the style of the first column again
+until it shows its own value.
+
+No option keeps the old style, because the cell showed the text with a style that the first column did not have. Code
+that saves `getStyle()` can save the style while no merged range starts left of the window.
+
 ## An insert next to the rows in the table body shows the new rows
 
 With `lazyLoading` or `filters`, `insertRow` puts the new rows in the table body when the row after them or the row
