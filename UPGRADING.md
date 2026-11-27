@@ -824,6 +824,14 @@ handle over the header.
 No option keeps the old behavior, because the header rows covered the titles of the groups, and the fill handle covered
 the header.
 
+## deleteWorksheet clears the active worksheet
+
+When `deleteWorksheet` removes the active worksheet, `jspreadsheet.current` is `null` after the call. Version 5 kept the
+removed worksheet as the active worksheet, so the keys and the clipboard changed a worksheet that did not show. The user
+clicks or focuses a worksheet to make it active, as after a page load. An application that sets `jspreadsheet.current`
+itself after `deleteWorksheet` keeps working. No option keeps the old behavior, because the keys went to a worksheet
+that the user could not see.
+
 ## Row changes with pagination, lazy loading or a filter
 
 `deleteRow` and `moveRow` with `pagination` show the rows of the current page again, also when the rows change on
