@@ -541,6 +541,7 @@ export class Worksheet {
 
     renderRows() {
         this.rowSource?.render();
+        this.rowSource?.columns?.render();
     }
 
     scrollToRow(y: number, toBottom?: boolean) {
@@ -549,6 +550,18 @@ export class Worksheet {
 
     fitRows(rows: number[]) {
         this.rowSource?.fitRows(rows);
+    }
+
+    columnWindow(): [number, number] | null {
+        return this.rowSource?.columns ? this.rowSource.columns.window() : null;
+    }
+
+    scrollToColumn(x: number) {
+        this.rowSource?.columns?.scrollToColumn(x);
+    }
+
+    refreshColumns() {
+        this.rowSource?.columns?.refresh();
     }
 
     isSelected(x: number, y: number) {
@@ -1049,6 +1062,10 @@ export class Worksheet {
             this.options.allowInsertColumn = false;
             this.options.allowDeleteColumn = false;
             this.options.columnSorting = false;
+            // A nested header spans columns that the column window can leave out
+            if (this.options.rowSource.columnWindow) {
+                this.options.nestedHeaders = undefined;
+            }
         }
 
         // Lazy loading

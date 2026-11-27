@@ -289,7 +289,7 @@ function setBorders(worksheet: Worksheet, borders: BorderOptions, type: string) 
                 // Col - px - ux
                 setBorder(getCellNameFromCoords(i, j), i, j);
 
-                if (worksheet.records[j][i].element.getAttribute('data-merged')) {
+                if (worksheet.records[j]?.[i]?.element.getAttribute('data-merged')) {
                     setBorder(getCellNameFromCoords(selectedRange[0], selectedRange[1]), i, j);
                 }
             }

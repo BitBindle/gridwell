@@ -217,6 +217,20 @@ export class Rows {
     }
 
     /**
+     * Make the cell of column i of row j and its record, and call the render of the column. Returns the cell.
+     */
+    createRecord(j: number, i: number, value: jspreadsheet.CellValue) {
+        const worksheet = this.worksheet;
+        const element = worksheet.cells.create(i, j, value);
+        worksheet.records[j][i] = { element, x: i, y: j };
+        const column = worksheet.options.columns?.[i];
+        if (column && typeof column.render === 'function') {
+            column.render(element, value, parseInt(i), parseInt(j), worksheet, column);
+        }
+        return element;
+    }
+
+    /**
      * Create row
      */
     create(j: number, data: jspreadsheet.CellValue[]) {
@@ -267,29 +281,14 @@ export class Rows {
         td.className = 'jss_row';
         row.element.appendChild(td);
 
-        const numberOfColumns = worksheet.columns.count();
-
-        // Data columns
-        for (let i = 0; i < numberOfColumns; i++) {
-            // New column of data to be append in the line
-            worksheet.records[j][i] = {
-                element: worksheet.cells.create(i, j, data[i]),
-                x: i,
-                y: j,
-            };
-            // Add column to the row
-            row.element.appendChild(worksheet.records[j][i].element);
-
-            if (worksheet.options.columns?.[i] && typeof worksheet.options.columns[i].render === 'function') {
-                // The test above makes it a function, which TypeScript does not narrow through the index
-                (worksheet.options.columns[i].render as NonNullable<jspreadsheet.BaseColumn['render']>)(
-                    worksheet.records[j][i].element,
-                    data[i],
-                    parseInt(i),
-                    parseInt(j),
-                    worksheet,
-                    worksheet.options.columns[i]
-                );
+        // With a column window, the row has cells only for the frozen columns and the window, and two spacer cells
+        const columns = worksheet.rowSource?.columns;
+        if (columns) {
+            columns.appendCells(row.element, (i) => row.element.appendChild(this.createRecord(j, i, data[i])));
+        } else {
+            const numberOfColumns = worksheet.columns.count();
+            for (let i = 0; i < numberOfColumns; i++) {
+                row.element.appendChild(this.createRecord(j, i, data[i]));
             }
         }
 

@@ -1168,6 +1168,7 @@ export class View {
         // The row source mode renders its window for the scroll position
         if (worksheet.rowSource) {
             worksheet.rowSource.render(false, true);
+            worksheet.rowSource.columns?.render();
         } else {
             this.wheel();
         }

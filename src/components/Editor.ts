@@ -404,7 +404,8 @@ export class Editor {
         const label = worksheet.accessibility.getLabelText('editCell', getColumnNameFromId([x, y]));
 
         // Overflow
-        if (x > 0) {
+        // The column window can leave out the column on the left
+        if (x > 0 && worksheet.records[y][x - 1]) {
             worksheet.records[y][x - 1].element.style.overflow = 'hidden';
         }
 

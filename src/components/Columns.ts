@@ -734,6 +734,9 @@ export class Columns {
                 newValue: width,
             });
 
+            // The column window reads the widths again
+            worksheet.rowSource?.columns?.refresh();
+
             // On resize column
             worksheet.dispatch('onresizecolumn', worksheet, column, width, oldWidth);
 
@@ -759,11 +762,18 @@ export class Columns {
                 (worksheet.filter.children[columnIndex + 1] as HTMLElement).style.display = '';
             }
             for (const j of this.rowIndexes()) {
-                worksheet.records[j][columnIndex].element.style.display = '';
+                // A column outside the column window has no cells
+                const record = worksheet.records[j][columnIndex];
+                if (record) {
+                    record.element.style.display = '';
+                }
             }
         }
 
         worksheet.merges.updateColumns(colNumber);
+
+        // The column window reads the widths again
+        worksheet.rowSource?.columns?.refresh();
 
         // Update footers
         if (worksheet.options.footers) {
@@ -795,11 +805,18 @@ export class Columns {
                 (worksheet.filter.children[columnIndex + 1] as HTMLElement).style.display = 'none';
             }
             for (const j of this.rowIndexes()) {
-                worksheet.records[j][columnIndex].element.style.display = 'none';
+                // A column outside the column window has no cells
+                const record = worksheet.records[j][columnIndex];
+                if (record) {
+                    record.element.style.display = 'none';
+                }
             }
         }
 
         worksheet.merges.updateColumns(colNumber);
+
+        // The column window reads the widths again
+        worksheet.rowSource?.columns?.refresh();
 
         // Update footers
         if (worksheet.options.footers) {
@@ -826,7 +843,10 @@ export class Columns {
         const dataset = [];
         // Go through the rows to get the data
         for (const j of this.rowIndexes()) {
-            if (processed) {
+            // A column outside the column window has no cells, and is empty
+            if (!worksheet.records[j][columnNumber]) {
+                dataset.push('');
+            } else if (processed) {
                 dataset.push(worksheet.records[j][columnNumber].element.innerHTML);
             } else {
                 dataset.push(worksheet.options.data[j][columnNumber]);

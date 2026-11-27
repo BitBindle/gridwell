@@ -93,12 +93,17 @@ export class Cells {
         if (typeof cell === 'string') {
             const coords = getCoordsFromCellName(cell);
 
-            record = worksheet.records[coords![1]!][coords![0]];
+            record = worksheet.records[coords![1]!]?.[coords![0]];
         } else {
             const x = parseInt(cell.getAttribute('data-x'));
             const y = parseInt(cell.getAttribute('data-y'));
 
             record = worksheet.records[y][x];
+        }
+
+        // In the row source mode, a cell outside the window has no record
+        if (!record) {
+            return;
         }
 
         if (state) {
@@ -303,12 +308,9 @@ export class Cells {
         }
 
         // Overflow
-        if (x > 0) {
-            if (value) {
-                worksheet.records[y][x - 1].element.style.overflow = 'hidden';
-            } else {
-                worksheet.records[y][x - 1].element.style.overflow = '';
-            }
+        // The column window can leave out the column on the left
+        if (x > 0 && worksheet.records[y][x - 1]) {
+            worksheet.records[y][x - 1].element.style.overflow = value ? 'hidden' : '';
         }
 
         if (column && typeof column.render === 'function') {
@@ -549,7 +551,11 @@ export class Cells {
         if (i > 0) {
             if (worksheet.options.textOverflow === true) {
                 if (value || td.innerHTML) {
-                    worksheet.records[j][i - 1].element.style.overflow = 'hidden';
+                    // The column window can leave out the column on the left
+                    const left = worksheet.records[j][i - 1];
+                    if (left) {
+                        left.element.style.overflow = 'hidden';
+                    }
                 } else {
                     if (i === worksheet.options.columns.length - 1) {
                         td.style.overflow = 'hidden';

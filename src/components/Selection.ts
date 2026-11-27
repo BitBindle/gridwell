@@ -707,7 +707,8 @@ export class Selection {
             for (let x = selectedRange[0]; x <= selectedRange[2]; x++) {
                 if (columnNameOnly) {
                     cells.push(getCellNameFromCoords(x, y));
-                } else {
+                } else if (worksheet.records[y][x]) {
+                    // A column outside the column window has no record
                     cells.push(worksheet.records[y][x]);
                 }
             }
@@ -1522,6 +1523,11 @@ export class Selection {
         // The row source mode scrolls by its layout, because the row of the cell can be outside the window
         if (worksheet.rowSource) {
             worksheet.rowSource.scrollToRow(worksheet.selection.range![3], direction !== 0 && direction !== 1);
+            // The column window scrolls by its layout, because the column of the cell can be outside the window
+            if (worksheet.rowSource.columns) {
+                worksheet.rowSource.columns.scrollToColumn(worksheet.selection.range![2]);
+                return;
+            }
         }
         if (!worksheet.records[worksheet.selection.range![3]]?.[worksheet.selection.range![2]]) {
             return;

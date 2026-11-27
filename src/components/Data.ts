@@ -355,18 +355,27 @@ export class Data {
             })
         );
 
+        // A column outside the column window has no cell. It is selected when the selection holds it, and it is empty.
+        const bounds = worksheet.selection.bounds;
+        function selectedOutside(i: number, j: number) {
+            return !!bounds && i >= bounds[0] && i <= bounds[2] && j >= bounds[1] && j <= bounds[3];
+        }
+
         // Go through the columns to get the data
         for (const j of rows) {
             let px = 0;
             for (let i = 0; i < x; i++) {
+                const record = worksheet.records[j][i];
                 // Cell selected or fullset
-                if (!highlighted || worksheet.records[j][i].element.classList.contains('highlight')) {
+                if (!highlighted || (record ? record.element.classList.contains('highlight') : selectedOutside(i, j))) {
                     // Get value
                     if (!dataset[py]) {
                         dataset[py] = [];
                     }
-                    if (processed) {
-                        dataset[py][px] = worksheet.records[j][i].element.innerHTML;
+                    if (!record) {
+                        dataset[py][px] = '';
+                    } else if (processed) {
+                        dataset[py][px] = record.element.innerHTML;
                     } else {
                         dataset[py][px] = worksheet.options.data[j][i];
                     }
@@ -412,7 +421,10 @@ export class Data {
             dataset.push([]);
 
             for (let x = coords[0]; x <= coords[2]; x++) {
-                if (processed) {
+                // In the row source mode, a cell outside the window has no record, and is empty
+                if (worksheet.rowSource && !worksheet.records[y]?.[x]) {
+                    dataset[dataset.length - 1].push('');
+                } else if (processed) {
                     dataset[dataset.length - 1].push(worksheet.records[y][x].element.innerHTML);
                 } else {
                     dataset[dataset.length - 1].push(worksheet.options.data[y][x]);
