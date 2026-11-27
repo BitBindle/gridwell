@@ -400,7 +400,7 @@ export class Rows {
     }
 
     /**
-     * Create the new rows with the data or empty, and put them in the table before the rows that follow them.
+     * Create the new rows with the data or empty, and put them in the table body with placeNew.
      * @param currentRows - The rows after the new rows, which insertRow took out of the list of rows.
      */
     private add(rowIndex: number, numOfRows: number, data: jspreadsheet.CellValue[], currentRows: Worksheet['rows']) {

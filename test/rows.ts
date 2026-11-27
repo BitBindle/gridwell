@@ -385,6 +385,25 @@ describe('Insert rows in a worksheet without rows (#244)', () => {
     });
 });
 
+describe('Insert a row next to the rows that a filter shows', () => {
+    it('shows a new row after a row that shows, and the redo shows the same rows', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ filters: true, data: [['a'], ['b'], ['a'], ['b']] }] })[0];
+        worksheet.view.filters[0] = ['a'];
+        worksheet.view.closeFilter(0);
+        const attached = () => Array.from(worksheet.tbody.children).map((tr) => Number(tr.getAttribute('data-y')));
+        expect(attached()).to.eql([0, 2]);
+
+        worksheet.insertRow(1, 0);
+        expect(attached()).to.eql([0, 1, 3]);
+
+        worksheet.undo();
+        expect(attached()).to.eql([0, 2]);
+
+        worksheet.redo();
+        expect(attached()).to.eql([0, 1, 3]);
+    });
+});
+
 describe('Row heights, visibility and data', () => {
     it('getHeight returns the height of a row, and of the rows that have one', () => {
         const worksheet = jspreadsheet(root, {
