@@ -677,7 +677,7 @@ export class Formulas {
             if (removed) {
                 // The old names of the removed cells
                 const gone = new Set<string>();
-                const other = removed.axis === 1 ? worksheet.options.data[0]?.length || 0 : worksheet.options.data.length;
+                const other = removed.axis === 1 ? worksheet.headers.length : worksheet.options.data.length;
                 for (let k = removed.index; k < removed.index + removed.count; k++) {
                     for (let o = 0; o < other; o++) {
                         gone.add(getColumnNameFromId(removed.axis === 1 ? [o, k] : [k, o]));

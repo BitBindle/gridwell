@@ -335,6 +335,24 @@ describe('The formulas and the chain after an insert, a delete, and their undo (
         expect([worksheet.getValue('B1', true), worksheet.getValue('B2', true)]).to.eql(['8', '8']);
     });
 
+    it('removes the formula cells from the chain when a delete removes all rows', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    allowDeletingAllRows: true,
+                    data: [
+                        ['1', ''],
+                        ['2', '=A1'],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.deleteRow(0, 2);
+
+        expect(worksheet.formulas.chain).to.eql({});
+    });
+
     it('moves the references of the formula of a new column once, also when the redo adds the column again', () => {
         const [worksheet] = jspreadsheet(root, {
             worksheets: [
