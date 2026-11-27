@@ -43,6 +43,10 @@ export class Rows {
         if (columns !== undefined) {
             worksheet.options.freezeColumns = count(columns);
         }
+        // The row source mode makes its rows again, with the new frozen rows first
+        if (rows !== undefined && worksheet.rowSource) {
+            worksheet.rowSource.reset();
+        }
         this.updateFreeze();
         // The scroll handler keeps this value only while columns are frozen, so it can be old
         worksheet.lastScrollLeft = worksheet.content.scrollLeft;
@@ -367,6 +371,11 @@ export class Rows {
     insert(mixed?: number | jspreadsheet.CellValue[], rowNumber?: number, insertBefore?: boolean | number): false | undefined {
         const worksheet = this.worksheet;
 
+        // The application changes the rows of the row source mode, and calls resetRows
+        if (worksheet.rowSource) {
+            return false;
+        }
+
         // Configuration
         if (worksheet.options.allowInsertRow !== false) {
             // Data to be insert
@@ -485,6 +494,11 @@ export class Rows {
     move(o: number, d: number, ignoreDom?: boolean) {
         const worksheet = this.worksheet;
 
+        // The application moves the rows of the row source mode
+        if (worksheet.rowSource) {
+            return;
+        }
+
         if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
             let insertBefore: 0 | 1;
 
@@ -571,6 +585,11 @@ export class Rows {
      */
     delete(rowNumber?: number, numOfRows?: number): false | undefined {
         const worksheet = this.worksheet;
+
+        // The application changes the rows of the row source mode, and calls resetRows
+        if (worksheet.rowSource) {
+            return false;
+        }
 
         // Global Configuration
         if (worksheet.options.allowDeleteRow !== false) {
@@ -716,6 +735,24 @@ export class Rows {
 
         let data;
 
+        // The row source mode keeps the heights in its layout
+        if (worksheet.rowSource) {
+            const layout = worksheet.rowSource.layout;
+            if (typeof row === 'undefined') {
+                const heights: string[] = [];
+                for (const run of layout.runs) {
+                    if (run.height! > 0) {
+                        for (let y = run.first; y <= run.last; y++) {
+                            heights[y] = `${run.height}px`;
+                        }
+                    }
+                }
+                return heights;
+            }
+            const y = typeof row === 'object' ? parseInt(row.getAttribute('data-y')!) : parseInt(row as string);
+            return `${layout.shownHeight(y)}px`;
+        }
+
         if (typeof row === 'undefined') {
             // Get height of all rows
             data = [];
@@ -748,6 +785,19 @@ export class Rows {
     // oldHeight is the height attribute as text, or the measured height
     setHeight(row: number, height: number, oldHeight?: number) {
         const worksheet = this.worksheet;
+
+        // The row source mode sets the height in its layout
+        if (height > 0 && worksheet.rowSource) {
+            height = parseInt(height);
+            if (!oldHeight) {
+                oldHeight = worksheet.rowSource.layout.shownHeight(parseInt(row));
+            }
+            worksheet.rowSource.setLayout([row], { height });
+            worksheet.history.add({ action: 'setHeight', row, oldValue: oldHeight, newValue: height });
+            worksheet.dispatch('onresizerow', worksheet, row, height, oldHeight);
+            worksheet.selection.updateCorner();
+            return;
+        }
 
         if (height > 0) {
             // Oldwidth
@@ -803,6 +853,12 @@ export class Rows {
             rowNumber = [rowNumber];
         }
 
+        // The row source mode keeps the hidden rows in its layout
+        if (worksheet.rowSource) {
+            worksheet.rowSource.setLayout(rowNumber, { hidden: false });
+            return;
+        }
+
         rowNumber.forEach((rowIndex) => {
             worksheet.rows[rowIndex].element.style.display = '';
         });
@@ -821,6 +877,12 @@ export class Rows {
 
         if (!Array.isArray(rowNumber)) {
             rowNumber = [rowNumber];
+        }
+
+        if (worksheet.rowSource) {
+            worksheet.rowSource.setLayout(rowNumber, { hidden: true });
+            worksheet.selection.updateTabStop();
+            return;
         }
 
         rowNumber.forEach((rowIndex) => {

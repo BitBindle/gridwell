@@ -4,6 +4,7 @@ import { getMask, isFormula } from '../utils/values.js';
 import { formatDate, parseDate } from '../utils/dates.js';
 import { render } from '../utils/mask.js';
 import type { HistoryCellChange, Worksheet } from '../types/internal';
+import { recordRows } from './RowSource.js';
 import type jspreadsheet from '../jspreadsheet';
 
 // The date, then the date as text, then its parts
@@ -222,8 +223,9 @@ export class Cells {
             if (column && (column.type === 'checkbox' || column.type === 'radio')) {
                 // Unchecked all options
                 if (column.type === 'radio' && write) {
-                    for (const dataRow of worksheet.options.data) {
-                        dataRow[c] = false;
+                    // The row source mode has values only for the rows of the window
+                    for (const y of recordRows(worksheet)) {
+                        worksheet.options.data[y][c] = false;
                     }
                 }
 
@@ -575,6 +577,11 @@ export class Cells {
     // undefined to text, so value is cast to text where the DOM takes text.
     update(x: number, y: number, value: jspreadsheet.CellValue | undefined, force?: boolean) {
         const worksheet = this.worksheet;
+
+        // In the row source mode, a row outside the window has no record: the application keeps its values
+        if (worksheet.rowSource && !worksheet.records[y]?.[x]) {
+            return null;
+        }
 
         // Column options
         const c = this.getColumnIndex(x, y);

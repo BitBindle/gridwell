@@ -1,5 +1,6 @@
 import { getCoordsFromCellName } from '../utils/helpers.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
+import { recordRows } from './RowSource.js';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -31,7 +32,7 @@ export class Comments {
             return worksheet.records[cell[1]][cell[0]].element.getAttribute('title') || '';
         } else {
             const data: Record<string, string> = {};
-            for (let j = 0; j < worksheet.options.data.length; j++) {
+            for (const j of recordRows(worksheet)) {
                 for (let i = 0; i < worksheet.options.columns.length; i++) {
                     const comments = worksheet.records[j][i].element.getAttribute('title');
                     if (comments) {
@@ -61,16 +62,18 @@ export class Comments {
         }
 
         const oldValue = this.apply(commentsObj);
+        // In the row source mode, a cell outside the window does not change, so the history and the event leave it out
+        const newValue = Object.fromEntries(Object.entries(commentsObj).filter(([cellName]) => cellName in oldValue));
 
         // Save history
         worksheet.history.add({
             action: 'setComments',
-            newValue: commentsObj,
+            newValue,
             oldValue,
         });
 
         // Set comments
-        worksheet.dispatch('oncomments', worksheet, commentsObj, oldValue);
+        worksheet.dispatch('oncomments', worksheet, newValue, oldValue);
     }
 
     /**
@@ -92,16 +95,21 @@ export class Comments {
 
         for (const [cellName, comment] of Object.entries(commentsObj)) {
             const cellCoords = getCoordsFromCellName(cellName);
+            // In the row source mode, a row outside the window has no record, and its comment does not change
+            if (worksheet.rowSource && !worksheet.records[cellCoords![1]!]?.[cellCoords![0]]) {
+                continue;
+            }
+            const element = worksheet.records[cellCoords![1]!][cellCoords![0]].element;
 
             // Keep old value
-            oldValue[cellName] = worksheet.records[cellCoords![1]!][cellCoords![0]].element.getAttribute('title');
+            oldValue[cellName] = element.getAttribute('title');
 
             // Set new values
-            worksheet.records[cellCoords![1]!][cellCoords![0]].element.setAttribute('title', comment ? comment : '');
+            element.setAttribute('title', comment ? comment : '');
 
             // Remove class if there is no comment
             if (comment) {
-                worksheet.records[cellCoords![1]!][cellCoords![0]].element.classList.add('jss_comments');
+                element.classList.add('jss_comments');
 
                 if (!worksheet.options.comments) {
                     worksheet.options.comments = {};
@@ -109,7 +117,7 @@ export class Comments {
 
                 worksheet.options.comments[cellName] = comment;
             } else {
-                worksheet.records[cellCoords![1]!][cellCoords![0]].element.classList.remove('jss_comments');
+                element.classList.remove('jss_comments');
 
                 if (worksheet.options.comments?.[cellName]) {
                     delete worksheet.options.comments[cellName];

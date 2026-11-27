@@ -158,7 +158,8 @@ function defaultContextMenu(worksheet: Worksheet, x: number, y: number, role: js
     }
 
     // Save
-    if (worksheet.parent.config.allowExport !== false) {
+    // The application makes the file of the row source mode
+    if (worksheet.parent.config.allowExport !== false && !worksheet.rowSource) {
         items.push({
             title: `${translate('Save as')}...`,
             shortcut: 'Ctrl + S',

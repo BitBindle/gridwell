@@ -5,6 +5,7 @@ import { setHeaderRole } from './Accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
 import { toGrid, toScreen } from '../utils/zoom.js';
+import { recordRows } from './RowSource.js';
 import { askConfirm } from '../utils/dialogs.js';
 
 /**
@@ -260,6 +261,11 @@ export class Columns {
     ): false | undefined {
         const worksheet = this.worksheet;
 
+        // The row source mode keeps the columns of the build
+        if (worksheet.rowSource) {
+            return false;
+        }
+
         // Configuration
         if (worksheet.options.allowInsertColumn !== false) {
             // Data to be insert
@@ -390,6 +396,11 @@ export class Columns {
     move(o: number, d: number): false | undefined {
         const worksheet = this.worksheet;
 
+        // The row source mode keeps the columns of the build
+        if (worksheet.rowSource) {
+            return false;
+        }
+
         if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
             let insertBefore: 0 | 1;
             if (o > d) {
@@ -479,6 +490,11 @@ export class Columns {
      */
     delete(columnNumber?: number, numOfColumns?: number): false | undefined {
         const worksheet = this.worksheet;
+
+        // The row source mode keeps the columns of the build
+        if (worksheet.rowSource) {
+            return false;
+        }
 
         // Global Configuration
         if (worksheet.options.allowDeleteColumn !== false) {
@@ -742,7 +758,7 @@ export class Columns {
             if (worksheet.filter && worksheet.filter.children.length > columnIndex + 1) {
                 (worksheet.filter.children[columnIndex + 1] as HTMLElement).style.display = '';
             }
-            for (let j = 0; j < worksheet.options.data.length; j++) {
+            for (const j of this.rowIndexes()) {
                 worksheet.records[j][columnIndex].element.style.display = '';
             }
         }
@@ -778,7 +794,7 @@ export class Columns {
             if (worksheet.filter && worksheet.filter.children.length > columnIndex + 1) {
                 (worksheet.filter.children[columnIndex + 1] as HTMLElement).style.display = 'none';
             }
-            for (let j = 0; j < worksheet.options.data.length; j++) {
+            for (const j of this.rowIndexes()) {
                 worksheet.records[j][columnIndex].element.style.display = 'none';
             }
         }
@@ -809,7 +825,7 @@ export class Columns {
 
         const dataset = [];
         // Go through the rows to get the data
-        for (let j = 0; j < worksheet.options.data.length; j++) {
+        for (const j of this.rowIndexes()) {
             if (processed) {
                 dataset.push(worksheet.records[j][columnNumber].element.innerHTML);
             } else {
@@ -972,6 +988,11 @@ export class Columns {
         return tr;
     }
 
+    /** The rows with a record: all rows, or the frozen rows and the window of the row source mode. */
+    private rowIndexes() {
+        return recordRows(this.worksheet);
+    }
+
     // Get the width of the index column. The frozen columns stay at the left of the content when scrollLeft is more than this width.
     getIndexWidth() {
         return this.worksheet.table.classList.contains('jss_hidden_index') ? 0 : 50;
@@ -1008,6 +1029,8 @@ export class Columns {
         const indexWidth = this.getIndexWidth();
         // The worksheet can have fewer columns than freezeColumns, for example after deleteColumn
         const freezeColumns = Math.min(worksheet.options.freezeColumns!, worksheet.headers.length);
+        // The rows with a record, once for all frozen columns
+        const rows = freezeColumns > 0 ? this.rowIndexes() : [];
         let width = 0;
         // The scroll position is in screen pixels, and the widths and the left of a cell in grid pixels
         if (scrollLeft > toScreen(worksheet, indexWidth)) {
@@ -1041,7 +1064,7 @@ export class Columns {
                 // frozen row is sticky, as a header is, so it gets the same distance from the left as the header.
                 const shifted = `${toGrid(worksheet, scrollLeft) - indexWidth - 1}px`;
                 const frozenRows = worksheet.rowManager.getFreezeCount();
-                for (let j = 0; j < worksheet.rows.length; j++) {
+                for (const j of rows) {
                     if (worksheet.rows[j] && worksheet.records[j][i]) {
                         worksheet.records[j][i].element.classList.add('jss_freezed');
                         if (isLast || wasLast) {
@@ -1078,7 +1101,7 @@ export class Columns {
 
         worksheet.headers[i].classList.remove('jss_freezed', 'jss_freezed_last');
         worksheet.headers[i].style.left = '';
-        for (let j = 0; j < worksheet.rows.length; j++) {
+        for (const j of this.rowIndexes()) {
             if (worksheet.records[j][i]) {
                 worksheet.records[j][i].element.classList.remove('jss_freezed', 'jss_freezed_last');
                 worksheet.records[j][i].element.style.left = '';

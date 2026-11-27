@@ -27,6 +27,7 @@ import type { Pointer } from '../components/Pointer';
 import type { Selection } from '../components/Selection';
 import type { Styles } from '../components/Styles';
 import type { View } from '../components/View';
+import type { RowSource } from '../components/RowSource';
 
 /** The classes. Their fields are in WorksheetState and SpreadsheetState below. */
 export type { Spreadsheet, Worksheet };
@@ -118,6 +119,9 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
 
     /** The number of the last loadWorksheet of the worksheet. A build that a later load replaced does not end. */
     generation?: number;
+
+    /** The row source mode of the worksheet, or null. */
+    rowSource: RowSource | null;
 
     /** The active worksheet and the focus from before a loadWorksheet that has not ended, for a load that replaces it. */
     pendingLoad?: { current: Worksheet | null; focused: boolean };

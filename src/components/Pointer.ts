@@ -269,15 +269,18 @@ export class Pointer {
             // Remove border
             worksheet.headers[resizing.column].classList.remove('resizing');
             for (const record of worksheet.records) {
-                if (record[resizing.column]) {
+                if (record?.[resizing.column]) {
                     record[resizing.column].element.classList.remove('resizing');
                 }
             }
         } else {
+            // In the row source mode, the row can leave the window during the resize. Then the row kept at the press
+            // gives the height.
+            const row = worksheet.rows[resizing.row]?.element ?? resizing.element;
             // Remove Class
-            worksheet.rows[resizing.row].element.children[0].classList.remove('resizing');
+            row.children[0].classList.remove('resizing');
             // setHeight parses the height, and it ignores a missing attribute (NaN) as it ignored null
-            const newHeight = parseInt(worksheet.rows[resizing.row].element.getAttribute('height'));
+            const newHeight = parseInt(row.getAttribute('height'));
             worksheet.rowManager.setHeight(resizing.row, newHeight, resizing.height);
             // Remove border
             resizing.element.classList.remove('resizing');
@@ -380,7 +383,7 @@ export class Pointer {
                 // Border indication
                 worksheet.headers[columnId].classList.add('resizing');
                 for (const record of worksheet.records) {
-                    if (record[columnId]) {
+                    if (record?.[columnId]) {
                         record[columnId].element.classList.add('resizing');
                     }
                 }
@@ -399,7 +402,7 @@ export class Pointer {
                     // Border indication
                     worksheet.headers[columnId].classList.add('dragging');
                     for (const record of worksheet.records) {
-                        if (record[columnId]) {
+                        if (record?.[columnId]) {
                             record[columnId].element.classList.add('dragging');
                         }
                     }
@@ -569,7 +572,8 @@ export class Pointer {
 
             if (resizing.height + height > 0) {
                 const tempHeight = resizing.height + height;
-                worksheet.rows[resizing.row].element.setAttribute('height', tempHeight);
+                // In the row source mode, the row can leave the window during the resize
+                (worksheet.rows[resizing.row]?.element ?? resizing.element).setAttribute('height', tempHeight);
 
                 worksheet.selection.updateCorner();
             }
@@ -794,6 +798,11 @@ export class Pointer {
      */
     fillDown() {
         const worksheet = this.worksheet;
+
+        // The row source mode has no fill handle
+        if (worksheet.rowSource) {
+            return;
+        }
 
         // Any selected cells
         if (worksheet.selection.highlighted.length > 0) {

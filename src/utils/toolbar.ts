@@ -1,5 +1,6 @@
 import { translate } from './dictionary.js';
 import { getCellNameFromCoords } from './helpers.js';
+import { recordRows } from '../components/RowSource.js';
 import { ColorPicker, type ColorElement } from './color.js';
 import { BordersDialog, type BorderOptions } from './borders.js';
 import { ToolbarControl } from './toolbarControl.js';
@@ -33,8 +34,17 @@ function getUpdateState(spreadsheet: Spreadsheet) {
  * @param toggle - Toggle the value off in the cells that have it.
  */
 function setSelectedStyle(worksheet: Worksheet, property: string, value: string, toggle?: boolean) {
-    const cells = worksheet.getSelected(true);
-    if (cells) {
+    const range = worksheet.selection.range && getSelectedRange(worksheet.selection.range);
+    if (range) {
+        const cells: string[] = [];
+        for (const y of selectedRows(worksheet, range)) {
+            for (let x = range[0]; x <= range[2]; x++) {
+                // In the row source mode, a cell without a record has no style, and setStyle does not change it
+                if (worksheet.records[y]?.[x]) {
+                    cells.push(getCellNameFromCoords(x, y));
+                }
+            }
+        }
         const changed = toggle ? cells : cells.filter((cellName: string) => worksheet.getStyle(cellName, property) !== value);
         if (changed.length) {
             worksheet.setStyle(
@@ -46,6 +56,21 @@ function setSelectedStyle(worksheet: Worksheet, property: string, value: string,
             );
         }
     }
+}
+
+/**
+ * The rows of a range that can get a style: in the row source mode, only the frozen rows and the rows of the window,
+ * so that the time does not grow with the selected rows.
+ */
+function selectedRows(worksheet: Worksheet, range: number[]) {
+    if (worksheet.rowSource) {
+        return recordRows(worksheet).filter((y) => y >= range[1] && y <= range[3]);
+    }
+    const rows = [];
+    for (let y = range[1]; y <= range[3]; y++) {
+        rows.push(y);
+    }
+    return rows;
 }
 
 /**
@@ -203,7 +228,11 @@ function getMergeItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
                 const selectedRange = getSelectedRange(worksheet.selection.range);
 
                 const cell = getCellNameFromCoords(selectedRange[0], selectedRange[1]);
-                if (worksheet.records[selectedRange[1]][selectedRange[0]].element.getAttribute('data-merged')) {
+                // In the row source mode, the first row of the selection can be outside the window
+                const merged = worksheet.rowSource
+                    ? !!worksheet.rowSource.merges[cell]
+                    : worksheet.records[selectedRange[1]][selectedRange[0]].element.getAttribute('data-merged');
+                if (merged) {
                     worksheet.removeMerge(cell);
                 } else {
                     const colspan = selectedRange[2] - selectedRange[0] + 1;
@@ -283,13 +312,14 @@ function setBorders(worksheet: Worksheet, borders: BorderOptions, type: string) 
             style[columnName] = border.join(';');
         }
 
-        for (let j = selectedRange[1]; j <= selectedRange[3]; j++) {
+        for (const j of selectedRows(worksheet, selectedRange)) {
             // Row - py - uy
             for (let i = selectedRange[0]; i <= selectedRange[2]; i++) {
                 // Col - px - ux
                 setBorder(getCellNameFromCoords(i, j), i, j);
 
-                if (worksheet.records[j][i].element.getAttribute('data-merged')) {
+                // In the row source mode, a row outside the window has no record
+                if (worksheet.records[j]?.[i]?.element.getAttribute('data-merged')) {
                     setBorder(getCellNameFromCoords(selectedRange[0], selectedRange[1]), i, j);
                 }
             }

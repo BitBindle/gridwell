@@ -2,6 +2,7 @@ import { translate } from '../utils/dictionary.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { MergeInfo, Worksheet } from '../types/internal';
+import { mergeProblem } from './RowSource.js';
 import { showAlert } from '../utils/dialogs.js';
 
 /**
@@ -156,6 +157,15 @@ export class Merges {
     get(cellName?: string) {
         const worksheet = this.worksheet;
 
+        // The row source mode keeps the merged ranges of the sheet
+        if (worksheet.rowSource) {
+            const merges = worksheet.rowSource.merges;
+            if (cellName) {
+                return merges[cellName] ? ([...merges[cellName]] as [number, number]) : null;
+            }
+            return Object.fromEntries(Object.entries(merges).map(([key, span]) => [key, [...span] as [number, number]]));
+        }
+
         let data: Record<string, [number, number]> | [number, number] | null = {};
         if (cellName) {
             if (worksheet.options.mergeCells?.[cellName]) {
@@ -184,6 +194,11 @@ export class Merges {
      */
     set(cellName?: string, colspan?: number, rowspan?: number, ignoreHistoryAndEvents?: boolean | 1, keepSelection?: boolean): null | undefined {
         const worksheet = this.worksheet;
+
+        // The row source mode keeps the merged ranges of the sheet, with no history entry
+        if (worksheet.rowSource) {
+            return this.setInRowSource(cellName, colspan, rowspan, ignoreHistoryAndEvents);
+        }
 
         if (!cellName) {
             if (!worksheet.selection.highlighted.length) {
@@ -236,6 +251,107 @@ export class Merges {
     }
 
     /**
+     * setMerge in the row source mode: the range of the selection, or of the arguments, goes into the merged ranges of the
+     * source. The same checks as in the other modes refuse a range of one cell and a range that crosses another range.
+     */
+    private setInRowSource(cellName: string | undefined, colspan: number | undefined, rowspan: number | undefined, ignoreEvents?: boolean | 1) {
+        const worksheet = this.worksheet;
+        const source = worksheet.rowSource!;
+        let x1: number, y1: number, x2: number, y2: number;
+        if (!cellName) {
+            const bounds = worksheet.selection.bounds;
+            if (!worksheet.selection.range || !bounds) {
+                showAlert(worksheet.parent.config, translate('No cells selected'));
+                return null;
+            }
+            [x1, y1, x2, y2] = bounds;
+            cellName = getColumnNameFromId([x1, y1]);
+        } else if (typeof cellName !== 'string') {
+            return null;
+        } else {
+            // A missing span, or a span below 1, is one cell, as in the other modes
+            colspan = Number.isInteger(colspan) && colspan! > 1 ? colspan! : 1;
+            rowspan = Number.isInteger(rowspan) && rowspan! > 1 ? rowspan! : 1;
+            [x1, y1] = getIdFromColumnName(cellName);
+            x2 = x1 + colspan - 1;
+            y2 = y1 + rowspan - 1;
+        }
+        if (source.merges[cellName]) {
+            showAlert(worksheet.parent.config, translate('Cell already merged'));
+            return;
+        }
+        // A name that is not a cell name, one cell, or a range outside the sheet
+        const problem = mergeProblem(cellName, [x2 - x1 + 1, y2 - y1 + 1], worksheet.headers.length, source.count);
+        if (problem) {
+            showAlert(worksheet.parent.config, translate(problem));
+            return;
+        }
+        if (source.mergesIn(y1, y2).some((range) => range.x1 <= x2 && range.x2 >= x1)) {
+            showAlert(worksheet.parent.config, translate('There is a conflict with another merged cell'));
+            return;
+        }
+        const span: [number, number] = [x2 - x1 + 1, y2 - y1 + 1];
+        source.replaceMerges({ ...source.merges, [cellName]: span });
+        // The first cell of the new range is selected, as in the other modes
+        this.settleInRowSource({ [cellName]: span }, {}, [x1, y1]);
+        if (!ignoreEvents) {
+            worksheet.dispatch('onmerge', worksheet, { [cellName]: span });
+        }
+    }
+
+    /**
+     * After a change of the merged ranges in the row source mode: an editor in a cell that a new range hides closes
+     * without a save, and the selection and the tab stop leave the hidden cells, as in replace for the other modes.
+     * @param select - A cell to select in all cases, as setMerge does.
+     */
+    private settleInRowSource(added: Record<string, [number, number]>, removed: Record<string, [number, number]>, select?: [number, number]) {
+        const worksheet = this.worksheet;
+        function hides(ranges: Record<string, [number, number]>, x: number, y: number, first: boolean) {
+            return Object.entries(ranges).find(([name, [colspan, rowspan]]) => {
+                const [left, top] = getIdFromColumnName(name);
+                return x >= left && x < left + colspan && y >= top && y < top + rowspan && (first || x !== left || y !== top);
+            });
+        }
+        const editor = worksheet.editor;
+        if (editor.isOpen() && hides(added, editor.x, editor.y, false)) {
+            worksheet.closeEditor(editor.cell, false);
+        }
+        const range = worksheet.selection.range;
+        if (!range && !select) {
+            this.settleTabStop(added);
+            return;
+        }
+        const [x, y] = select || [Number(range![0]), Number(range![1])];
+        const hiding = select ? [getColumnNameFromId(select)] : hides(added, x, y, false);
+        let selected = false;
+        if (hiding) {
+            const [left, top] = getIdFromColumnName(hiding[0]);
+            selected = worksheet.selection.updateFromCoords(left, top, left, top) !== false;
+        } else if (hides(removed, x, y, true)) {
+            // A removed range shows its cells again, so the selection is set again on the cells that show
+            selected = worksheet.selection.updateFromCoords(range![0], range![1], range![2], range![3]) !== false;
+        }
+        // A handler can cancel the selection. The tab stop then leaves the hidden cell. A row outside the window gets it later.
+        if (!selected && (hiding || Object.keys(removed).length) && worksheet.rows[range ? Number(range[1]) : y]) {
+            worksheet.selection.updateTabStop();
+        } else {
+            // A selected cell outside the window does not take the tab stop, so the active cell can still be hidden
+            this.settleTabStop(added);
+        }
+    }
+
+    /**
+     * The active cell can differ from the selected cell, for example after resetSelection, or when the selected row is
+     * outside the window. A new range that hides it gives the tab stop to a visible cell.
+     */
+    private settleTabStop(added: Record<string, [number, number]>) {
+        const active = this.worksheet.selection.activeCell;
+        if (Object.keys(added).length && active?.style.display === 'none') {
+            this.worksheet.selection.updateTabStop();
+        }
+    }
+
+    /**
      * Why a range cannot be merged, or false when it can. The first cell of a range of the options can be merged once.
      */
     private check(cellName: string, colspan: number | undefined, rowspan: number | undefined) {
@@ -268,7 +384,7 @@ export class Merges {
      * of the range lose their values.
      * @returns The values of the other cells of the range, for the history.
      */
-    private merge(cellName: string, colspan: number, rowspan: number) {
+    private merge(cellName: string, colspan: number, rowspan: number, keepValues = false) {
         const worksheet = this.worksheet;
 
         const cell = getIdFromColumnName(cellName);
@@ -298,7 +414,9 @@ export class Merges {
             for (let x = cell[0]; x < cell[0] + colspan; x++) {
                 if (!(cell[0] === x && cell[1] === y)) {
                     data.push(worksheet.options.data[y][x]);
-                    worksheet.cells.update(x, y, '', true);
+                    if (!keepValues) {
+                        worksheet.cells.update(x, y, '', true);
+                    }
                     (worksheet.options.mergeCells[cellName] as MergeInfo)[2]!.push(worksheet.records[y][x].element);
                     worksheet.records[y][x].element.style.display = 'none';
                     worksheet.records[y][x].element = worksheet.records[cell[1]][cell[0]].element;
@@ -312,6 +430,35 @@ export class Merges {
     }
 
     /**
+     * Merge a range of the rows that the row source mode shows, as the table shows it: no value, history, event or
+     * selection changes. A range that crosses another range of the table does not merge.
+     * @returns True when the range merged.
+     */
+    mergeWindow(cellName: string, colspan: number, rowspan: number) {
+        const worksheet = this.worksheet;
+        const [x1, y1] = getIdFromColumnName(cellName);
+        for (let y = y1; y < y1 + rowspan; y++) {
+            for (let x = x1; x < x1 + colspan; x++) {
+                if (!worksheet.records[y]?.[x] || worksheet.records[y][x].element.getAttribute('data-merged')) {
+                    return false;
+                }
+            }
+        }
+        this.merge(cellName, colspan, rowspan, true);
+        return true;
+    }
+
+    /**
+     * Split a range that mergeWindow merged, and remove it from the merged ranges of the table, with no event.
+     */
+    unmergeWindow(cellName: string) {
+        if (this.worksheet.options.mergeCells?.[cellName]) {
+            this.unmerge(cellName);
+            this.forget(cellName);
+        }
+    }
+
+    /**
      * Split a merged range.
      * @param cellName - The first cell of the range.
      * @param data - The values of the other cells of the range, which the history kept.
@@ -319,6 +466,21 @@ export class Merges {
      */
     remove(cellName: string, data?: jspreadsheet.CellValue[] | null, keepOptions?: boolean) {
         const worksheet = this.worksheet;
+
+        if (worksheet.rowSource) {
+            const merges = { ...worksheet.rowSource.merges };
+            if (merges[cellName]) {
+                const beforeMerges = { [cellName]: merges[cellName] };
+                const [x, y] = getIdFromColumnName(cellName);
+                const [colspan, rowspan] = merges[cellName];
+                delete merges[cellName];
+                worksheet.rowSource.replaceMerges(merges);
+                // As in the other modes, the selection holds the former range
+                worksheet.selection.updateFromCoords(x, y, x + colspan - 1, y + rowspan - 1);
+                worksheet.dispatch('onunmerge', worksheet, cellName, beforeMerges);
+            }
+            return;
+        }
 
         if (worksheet.options.mergeCells?.[cellName]) {
             const beforeMerges = { [cellName]: worksheet.options.mergeCells[cellName] };
@@ -396,6 +558,25 @@ export class Merges {
      */
     replace(merges: Record<string, [number, number]>) {
         const worksheet = this.worksheet;
+
+        // The row source mode keeps the merged ranges of the sheet, and merges the part in its window
+        if (worksheet.rowSource && merges && typeof merges === 'object' && !Array.isArray(merges)) {
+            const source = worksheet.rowSource;
+            const before = source.merges;
+            const refused = source.replaceMerges(merges);
+            const after = source.merges;
+            const added = Object.fromEntries(Object.entries(after).filter(([name, span]) => before[name]?.[0] !== span[0] || before[name]?.[1] !== span[1]));
+            const removed = Object.fromEntries(Object.entries(before).filter(([name, span]) => after[name]?.[0] !== span[0] || after[name]?.[1] !== span[1]));
+            // The order of the other modes: the selection moves, then onunmerge for each range that goes, and onmerge once for the new ranges
+            this.settleInRowSource(added, removed);
+            for (const [name, span] of Object.entries(removed)) {
+                worksheet.dispatch('onunmerge', worksheet, name, { [name]: span });
+            }
+            if (Object.keys(added).length) {
+                worksheet.dispatch('onmerge', worksheet, added);
+            }
+            return refused;
+        }
 
         if (!merges || typeof merges !== 'object' || Array.isArray(merges)) {
             throw new TypeError('replaceMerges needs an object of ranges');
@@ -510,6 +691,17 @@ export class Merges {
      */
     destroy(keepOptions?: boolean) {
         const worksheet = this.worksheet;
+
+        // The row source mode removes the merged ranges of the sheet
+        if (worksheet.rowSource) {
+            const before = worksheet.rowSource.merges;
+            worksheet.rowSource.replaceMerges({});
+            this.settleInRowSource({}, before);
+            for (const [key, span] of Object.entries(before)) {
+                worksheet.dispatch('onunmerge', worksheet, key, { [key]: span });
+            }
+            return;
+        }
 
         // Remove any merged cells
         if (worksheet.options.mergeCells) {

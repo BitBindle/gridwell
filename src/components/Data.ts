@@ -1,6 +1,7 @@
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import { getCoordsFromRange } from '../utils/helpers.js';
 import type { Worksheet } from '../types/internal';
+import { RowSource, recordRows } from './RowSource.js';
 import type { CellValue, WorksheetInstance } from '../jspreadsheet';
 
 /**
@@ -19,6 +20,20 @@ export class Data {
     // data can be rows of objects. They are changed to arrays.
     set(data?: CellValue[][] | Record<string, CellValue>[]): void {
         const worksheet = this.worksheet;
+
+        // In the row source mode, the application gives the rows when the window shows them
+        worksheet.rowSource?.stop();
+        worksheet.rowSource = null;
+        if (worksheet.options.rowSource) {
+            worksheet.view.results = null;
+            worksheet.history.clear();
+            worksheet.rowSource = new RowSource(worksheet, worksheet.options.rowSource);
+            worksheet.rowSource.start();
+            worksheet.accessibility.updateGridSize();
+            worksheet.selection.updateTabStop();
+            worksheet.rowManager.updateFreeze();
+            return;
+        }
 
         // Update data. Rows of objects are changed to arrays below.
         if (data) {
@@ -329,16 +344,19 @@ export class Data {
         const dataset: CellValue[][] = [];
         let py = 0;
 
-        // Column and row length
+        // The rows with a record: in the row source mode, the frozen rows and the window
+        const rows = recordRows(worksheet);
+
+        // Column length
         const x = Math.max(
-            ...worksheet.options.data.map((row) => {
-                return row.length;
+            0,
+            ...rows.map((j) => {
+                return worksheet.options.data[j].length;
             })
         );
-        const y = worksheet.options.data.length;
 
         // Go through the columns to get the data
-        for (let j = 0; j < y; j++) {
+        for (const j of rows) {
             let px = 0;
             for (let i = 0; i < x; i++) {
                 // Cell selected or fullset
