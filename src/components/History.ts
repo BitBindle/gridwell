@@ -104,6 +104,8 @@ export class History {
             worksheet.records.splice(rowIndex, numOfRows);
             worksheet.options.data.splice(rowIndex, numOfRows);
             worksheet.rows.splice(rowIndex, numOfRows);
+            // The rows that a filter shows keep their place in the results
+            worksheet.view.shiftResults(rowIndex, -numOfRows);
         } else {
             // Insert data
             const records = historyRecord.rowRecords.map((row) => {
@@ -117,16 +119,22 @@ export class History {
             worksheet.options.data = injectArray(worksheet.options.data, rowIndex, data);
 
             worksheet.rows = injectArray(worksheet.rows, rowIndex, historyRecord.rowNode);
-            // Insert nodes before the next row when it is in the table body, else after the previous row when it is. With
-            // pagination or lazy loading, the rows next to the others can be outside the body.
-            const next = worksheet.rows[rowIndex + historyRecord.numOfRows];
-            const previous = worksheet.rows[rowIndex - 1];
-            const before = next?.element.parentNode === worksheet.tbody ? next.element : null;
-            const after = !before && previous?.element.parentNode === worksheet.tbody ? previous.element : null;
-            if (before || after || (!next && !previous)) {
-                const reference = before || after?.nextSibling || null;
-                for (const row of historyRecord.rowNode) {
-                    worksheet.tbody.insertBefore(row.element, reference);
+            if (worksheet.view.results) {
+                // The rows that a filter shows keep their place in the results, and the rows that come back show
+                worksheet.view.shiftResults(rowIndex, historyRecord.numOfRows);
+                worksheet.view.placeResultRows(rowIndex, historyRecord.numOfRows);
+            } else {
+                // Insert nodes before the next row when it is in the table body, else after the previous row when it is.
+                // With pagination or lazy loading, the rows next to the others can be outside the body.
+                const next = worksheet.rows[rowIndex + historyRecord.numOfRows];
+                const previous = worksheet.rows[rowIndex - 1];
+                const before = next?.element.parentNode === worksheet.tbody ? next.element : null;
+                const after = !before && previous?.element.parentNode === worksheet.tbody ? previous.element : null;
+                if (before || after || (!next && !previous)) {
+                    const reference = before || after?.nextSibling || null;
+                    for (const row of historyRecord.rowNode) {
+                        worksheet.tbody.insertBefore(row.element, reference);
+                    }
                 }
             }
         }

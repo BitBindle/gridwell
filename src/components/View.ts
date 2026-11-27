@@ -440,6 +440,51 @@ export class View {
     }
 
     /**
+     * Change the results of a search or a filter after an insert or a delete of rows. The other rows keep their place in
+     * the results, and new rows show.
+     * @param rowIndex - The first row that the action adds or removes.
+     * @param count - The number of new rows, or minus the number of removed rows.
+     */
+    shiftResults(rowIndex: number, count: number) {
+        const results = this.results;
+        if (!results) {
+            return;
+        }
+        const end = count > 0 ? rowIndex : rowIndex - count;
+        const shifted = results.filter((row) => row < rowIndex || row >= end).map((row) => (row >= end ? row + count : row));
+        if (count > 0) {
+            const place = shifted.findIndex((row) => row >= rowIndex);
+            const added = Array.from({ length: count }, (value, i) => rowIndex + i);
+            shifted.splice(place < 0 ? shifted.length : place, 0, ...added);
+        }
+        this.results = shifted;
+    }
+
+    /**
+     * Put new rows in the table body while a search or a filter gives results. The rows go next to the rows of the
+     * results around them that the body has, and stay out of the body when it has none there.
+     * @param rowIndex - The first new row.
+     * @param count - The number of new rows.
+     */
+    placeResultRows(rowIndex: number, count: number) {
+        const worksheet = this.worksheet;
+        const results = this.results!;
+        const k = results.indexOf(rowIndex);
+        const next = worksheet.rows[results[k + count]];
+        const previous = k > 0 ? worksheet.rows[results[k - 1]] : undefined;
+        const before = next?.element.parentNode === worksheet.tbody ? next.element : null;
+        const after = !before && previous?.element.parentNode === worksheet.tbody ? previous.element : null;
+        for (let j = rowIndex; j < rowIndex + count; j++) {
+            const element = worksheet.rows[j].element;
+            // A row that a filter hid before a delete shows again after the undo
+            element.style.display = '';
+            if (before || after || (!next && !previous)) {
+                worksheet.tbody.insertBefore(element, before || after?.nextSibling || null);
+            }
+        }
+    }
+
+    /**
      * Show the rows of the current page again after a change of the rows. When a delete removed the current page, the
      * last page shows.
      */

@@ -812,3 +812,14 @@ last page shows. Version 5 showed a page after the last page, with no rows.
 
 No option keeps the old behavior, because it showed rows that the page or the filter did not have. An application that
 uses `onchangepage` to load data can compare the new and the old page number.
+
+## Insert and delete keep the rows of a filter
+
+With `filters`, `insertRow` and `deleteRow` keep the rows that the filter shows. The other rows keep their place in
+the results, and a deleted row leaves the results. A new row shows at its place, also when the filter would hide it.
+An undo of `deleteRow` shows the rows that come back, and an undo of `insertRow` removes the rows from the results.
+When a delete removes all rows of the filter, the table shows no rows until the filter changes. Version 5 kept the old
+row numbers in the results, so the filter then showed other rows, or an empty page.
+
+No option keeps the old behavior, because it showed rows that the filter did not have. To hide a new row again, apply
+the filter again.
