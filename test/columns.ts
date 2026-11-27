@@ -979,6 +979,19 @@ describe('The keyboard and a column of width 0', () => {
         expect(range(worksheet)).to.eql([0, 0, 0, 0]);
     });
 
+    it('moves over a merged range whose other columns are hidden', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [4, 1], columns: [{}, { width: 0 }, {}, {}], mergeCells: { B1: [2, 1] } }],
+        })[0];
+        worksheet.hideColumn(2);
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.right();
+        expect(range(worksheet)).to.eql([3, 0, 3, 0]);
+        worksheet.left();
+        expect(range(worksheet)).to.eql([0, 0, 0, 0]);
+    });
+
     it('stops on a merged range that starts in a column of width 0 in the row source mode', () => {
         const worksheet = jspreadsheet(root, {
             worksheets: [

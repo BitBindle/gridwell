@@ -965,6 +965,11 @@ export class Selection {
      */
     private columnStop(x: number, y: number, keyboard: boolean) {
         const worksheet = this.worksheet;
+        // The record of a cell in a merged range has the element of the first cell, which shows also when the column of
+        // the cell is hidden
+        if (keyboard && this.columnHidden(x)) {
+            return false;
+        }
         const shows = worksheet.rowSource ? !this.columnHidden(x) : worksheet.records[y][x].element.style.display !== 'none';
         if (!shows || !keyboard || !this.zeroWidth(x)) {
             return shows;
