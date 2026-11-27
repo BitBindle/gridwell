@@ -478,9 +478,14 @@ export class Formulas {
     }
 
     /**
-     * Whether a cell of the worksheet holds a formula.
+     * Whether a cell or a footer of the worksheet holds a formula.
      */
     private hasFormulas() {
+        for (const footer of this.worksheet.options.footers || []) {
+            if (footer.some((value) => typeof value === 'string' && value[0] === '=')) {
+                return true;
+            }
+        }
         for (const row of this.worksheet.options.data) {
             // The row source mode has rows without values
             if (!row) {
@@ -496,18 +501,31 @@ export class Formulas {
     }
 
     /**
-     * Give a formula the new names of the cells that moved after a delete. A reference to a removed cell becomes #REF!,
-     * with or without $ signs. A range that keeps some of its cells ends at the first and the last cell that stay, with
-     * the $ signs of its ends. A range that loses all its cells becomes #REF!. A cell that stays gets its new name as
-     * updateFormula gives it. The string literals, the function names, such as LOG10, and the names after a ! (the cells
-     * of another worksheet) do not change.
+     * Give a formula the new names of the cells that moved. A cell name keeps its $ signs: they fix a reference for a
+     * copy, not for an insert, a delete or a move. The string literals, the function names, such as LOG10, and the names
+     * after a ! (the cells of another worksheet) do not change.
+     *
+     * With removed, a delete removed rows or columns. A reference to a removed cell becomes #REF!, with or without $
+     * signs. A range that keeps some of its cells ends at the first and the last cell that stay, with the $ signs of its
+     * ends. A range that loses all its cells becomes #REF!.
      * @param removed - The removed rows (axis 1) or columns (axis 0), at their positions before the delete.
      * @returns The new text, and if the formula named a removed cell, alone or in a range, so that its result changes.
      */
-    private removeReferences(formula: string, referencesToUpdate: Record<string, string>, removed: Removed) {
-        const end = removed.index + removed.count;
-        const axis = removed.axis === 1 ? 1 : 0;
-        const updateFormula = (token: string) => this.updateFormula(token, referencesToUpdate);
+    private renameReferences(formula: string, referencesToUpdate: Record<string, string>, removed?: Removed) {
+        // Give a cell name the column and the row of another cell, and keep its $ signs
+        function withName(token: string, name: string) {
+            const [, column, row] = /^([A-Z]+)([0-9]+)$/.exec(name)!;
+            return token.replace(/^(\$?)[A-Z]+(\$?)[0-9]+$/, `$1${column}$2${row}`);
+        }
+        function rename(token: string) {
+            const name = referencesToUpdate[token.replace(/\$/g, '')];
+            return name ? withName(token, name) : token;
+        }
+        const end = removed ? removed.index + removed.count : 0;
+        const axis = removed?.axis === 1 ? 1 : 0;
+        function isRemoved(cell: number[]) {
+            return !!removed && cell[axis] >= removed.index && cell[axis] < end;
+        }
         let named = false;
         const text = formula.replace(
             /("(?:[^"]|"")*")|(?<![A-Za-z0-9_.!$])(\$?[A-Z]+\$?[0-9]+)(?::(\$?[A-Z]+\$?[0-9]+))?(?![A-Za-z0-9_.!(])/g,
@@ -515,44 +533,63 @@ export class Formulas {
                 if (literal) {
                     return literal;
                 }
+                if (!removed) {
+                    return to ? `${rename(from)}:${rename(to)}` : rename(from);
+                }
                 const fromCell = getIdFromColumnName(from.replace(/\$/g, ''));
-                const fromGone = fromCell[axis] >= removed.index && fromCell[axis] < end;
+                const fromGone = isRemoved(fromCell);
                 if (!to) {
                     named ||= fromGone;
-                    return fromGone ? '#REF!' : updateFormula(from);
+                    return fromGone ? '#REF!' : rename(from);
                 }
                 const toCell = getIdFromColumnName(to.replace(/\$/g, ''));
-                const toGone = toCell[axis] >= removed.index && toCell[axis] < end;
+                const toGone = isRemoved(toCell);
                 named ||= Math.min(fromCell[axis], toCell[axis]) < end && Math.max(fromCell[axis], toCell[axis]) >= removed.index;
                 if (fromGone && toGone) {
                     return '#REF!';
                 }
                 // A removed end of a range goes to the first cell after the removed cells, or to the last cell before
-                // them, which is in the range. It keeps its $ signs.
+                // them, which is in the range
                 const first = fromCell[axis] <= toCell[axis];
-                function rename(token: string, cell: number[], gone: boolean, low: boolean) {
+                function renameEnd(token: string, cell: number[], gone: boolean, low: boolean) {
                     if (!gone) {
-                        return updateFormula(token);
+                        return rename(token);
                     }
-                    cell[axis] = low ? removed.index : removed.index - 1;
-                    const [, column, row] = /^([A-Z]+)([0-9]+)$/.exec(getColumnNameFromId(cell))!;
-                    return token.replace(/^(\$?)[A-Z]+(\$?)[0-9]+$/, `$1${column}$2${row}`);
+                    cell[axis] = low ? removed!.index : removed!.index - 1;
+                    return withName(token, getColumnNameFromId(cell));
                 }
-                return `${rename(from, fromCell, fromGone, first)}:${rename(to, toCell, toGone, !first)}`;
+                return `${renameEnd(from, fromCell, fromGone, first)}:${renameEnd(to, toCell, toGone, !first)}`;
             }
         );
         return { text, named };
     }
 
     /**
-     * Update formulas. With removed, a delete removed rows or columns, and the references to its cells become #REF!.
-     * @returns The formula cells whose texts changed, at their positions before the change, with their texts before it.
+     * Update the formulas of the cells and of the footers. With removed, a delete removed rows or columns, and the
+     * references to its cells become #REF!.
+     * @param keepText - Whether a cell keeps its text. A footer has no row, so it gets no y.
+     * @returns The formulas whose texts the delete changed, at their positions before the delete, with their texts before
+     * it.
      */
-    private updateFormulas(referencesToUpdate: Record<string, string>, keepText: (x: number, y: number) => boolean, removed?: Removed) {
+    private updateFormulas(referencesToUpdate: Record<string, string>, keepText: (x: number, y?: number) => boolean, removed?: Removed) {
         const worksheet = this.worksheet;
         const changed: FormulaText[] = [];
         // The new names of the cells that the undo of a delete moves back, as the insert gives them
         const back = removed ? Object.fromEntries(Object.entries(referencesToUpdate).map(([from, to]) => [to, from])) : undefined;
+
+        // Give a formula its new text. A formula that named a removed cell calculates again. The undo of the delete moves
+        // the names back, and the history keeps the texts that it does not give back, also of a formula that the delete
+        // did not change.
+        const update = (value: string, i: number, j: number, footer: boolean) => {
+            const result = this.renameReferences(value, referencesToUpdate, removed);
+            if (removed && (result.named || this.renameReferences(result.text, back!).text !== value)) {
+                const moved = (removed.axis === 1 ? j : i) >= removed.index && !(footer && removed.axis === 1) ? removed.count : 0;
+                const x = removed.axis === 0 ? i + moved : i;
+                const y = removed.axis === 1 ? j + moved : j;
+                changed.push(footer ? { x, y, text: value, footer } : { x, y, text: value });
+            }
+            return result.text;
+        };
 
         // Update formulas. The formula of a cell that an undo or a redo adds already names the cells at their new positions.
         for (let j = 0; j < worksheet.options.data.length; j++) {
@@ -562,20 +599,23 @@ export class Formulas {
                     continue;
                 }
                 const value = `${row[i]}`;
-                // Is formula
                 if (value.substr(0, 1) === '=') {
-                    // Replace tokens
-                    const result = removed ? this.removeReferences(value, referencesToUpdate, removed) : null;
-                    const newFormula = result ? result.text : this.updateFormula(value, referencesToUpdate);
+                    const newFormula = update(value, i, j, false);
                     if (newFormula !== value) {
                         row[i] = newFormula;
                     }
-                    // A formula that named a removed cell calculates again. The undo of the delete moves the names back,
-                    // and the history keeps the texts that it does not give back, also of a formula that the delete did not
-                    // change.
-                    if (removed && result && (result.named || this.updateFormula(newFormula, back!) !== value)) {
-                        const moved = (removed.axis === 1 ? j : i) >= removed.index ? removed.count : 0;
-                        changed.push(removed.axis === 1 ? { x: i, y: j + moved, text: value } : { x: i + moved, y: j, text: value });
+                }
+            }
+        }
+
+        // The footers name the cells too. setFooter shows their new results.
+        for (const [j, footer] of (worksheet.options.footers || []).entries()) {
+            for (let i = 0; i < footer.length; i++) {
+                const value = `${footer[i]}`;
+                if (value.substr(0, 1) === '=' && !keepText(i)) {
+                    const newFormula = update(value, i, j, true);
+                    if (newFormula !== value) {
+                        footer[i] = newFormula;
                     }
                 }
             }
@@ -589,6 +629,9 @@ export class Formulas {
         if (changed.length) {
             const names: string[] = [];
             for (const cell of changed) {
+                if (cell.footer) {
+                    continue;
+                }
                 const moved = removed!.axis === 1 ? cell.y >= removed!.index : cell.x >= removed!.index;
                 const x = removed!.axis === 0 && moved ? cell.x - removed!.count : cell.x;
                 const y = removed!.axis === 1 && moved ? cell.y - removed!.count : cell.y;
@@ -604,20 +647,29 @@ export class Formulas {
     }
 
     /**
-     * Give formula cells their texts again, for the undo of a delete, and show their results and the results of the
-     * formulas that name them.
+     * Give formula cells and footers their texts again, for the undo of a delete, and show their results and the results
+     * of the formulas that name them.
      */
     restoreTexts(texts: FormulaText[]) {
         const worksheet = this.worksheet;
         const names: string[] = [];
-        for (const { x, y, text } of texts) {
-            if (worksheet.options.data[y] && worksheet.records[y]?.[x]) {
+        let footers = false;
+        for (const { x, y, text, footer } of texts) {
+            if (footer) {
+                if (worksheet.options.footers?.[y] && x < worksheet.options.footers[y].length) {
+                    worksheet.options.footers[y][x] = text;
+                    footers = true;
+                }
+            } else if (worksheet.options.data[y] && worksheet.records[y]?.[x]) {
                 worksheet.options.data[y][x] = text;
                 worksheet.cells.showValue(x, y);
                 names.push(getColumnNameFromId([x, y]));
             }
         }
         this.showDependents(names);
+        if (footers) {
+            this.setFooter();
+        }
     }
 
     /**
@@ -681,7 +733,11 @@ export class Formulas {
             return position >= inserted.index && position < inserted.index + inserted.count;
         }
 
-        function keepsText(x: number, y: number) {
+        // A footer has no row: it keeps its text when the undo of a delete gives back its column
+        function keepsText(x: number, y?: number) {
+            if (y === undefined) {
+                return !!inserted?.keepTexts && inserted.axis === 0 && isInserted(x, 0);
+            }
             return !!inserted?.keepTexts && isInserted(x, y);
         }
 
@@ -926,6 +982,10 @@ export class Formulas {
 
                     // Hide/Show with hideColumn()/showColumn()
                     td.style.display = worksheet.cols[i].colElement.style.display;
+                }
+                // A delete of columns leaves the cells of the last columns
+                while (worksheet.tfoot.children[j].children.length > worksheet.headers.length + 1) {
+                    worksheet.tfoot.children[j].lastElementChild!.remove();
                 }
             }
 

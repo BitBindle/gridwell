@@ -576,3 +576,142 @@ describe('References to deleted cells (#239)', () => {
         expect(column(worksheet, 1)).to.eql(['', '=A1', '=A2']);
     });
 });
+
+describe('References after an insert, a delete and a move (#259)', () => {
+    it('keeps string literals and the cells of other worksheets, and moves references with $ signs on an insert', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '="A1"&A1', '=$A$2+A$2+Sheet2!A2'],
+                        ['2', '', ''],
+                    ],
+                },
+            ],
+        });
+        const before = worksheet.getData()[0];
+
+        worksheet.insertRow(1, 0, true);
+        expect(worksheet.getData()[1]).to.eql(['1', '="A1"&A2', '=$A$3+A$3+Sheet2!A2']);
+        expect(worksheet.getValue('B2', true)).to.equal('A11');
+        worksheet.undo();
+        expect(worksheet.getData()[0]).to.eql(before);
+
+        worksheet.insertColumn(1, 0, true);
+        expect(worksheet.getData()[0]).to.eql(['', '1', '="A1"&B1', '=$B$2+B$2+Sheet2!A2']);
+        worksheet.undo();
+        expect(worksheet.getData()[0]).to.eql(before);
+    });
+
+    it('moves references with $ signs on a delete, and the formula takes the new values of the cell', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: [['1', '2', '=$B$1*10+B$1+$B1', '=SUM($B$1:$C$1)']] }],
+        });
+
+        worksheet.deleteColumn(0, 1);
+        expect(worksheet.getData()[0]).to.eql(['2', '=$A$1*10+A$1+$A1', '=SUM($A$1:$B$1)']);
+        worksheet.setValue('A1', '3');
+        expect(worksheet.getValue('B1', true)).to.equal('36');
+
+        worksheet.undo();
+        worksheet.undo();
+        expect(worksheet.getData()[0]).to.eql(['1', '2', '=$B$1*10+B$1+$B1', '=SUM($B$1:$C$1)']);
+    });
+
+    it('moves references with $ signs when a row moves', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '=$A$2'],
+                        ['2', ''],
+                    ],
+                },
+            ],
+        });
+        worksheet.moveRow(1, 0);
+        expect(worksheet.getData()).to.eql([
+            ['2', ''],
+            ['1', '=$A$1'],
+        ]);
+        expect(worksheet.getValue('B2', true)).to.equal('2');
+    });
+});
+
+describe('Footers after an insert or a delete (#260)', () => {
+    const footers = (worksheet: Worksheet) => worksheet.options.footers!.map((row) => [...row]);
+    const shown = (worksheet: Worksheet) =>
+        Array.from(worksheet.tfoot!.children).map((tr) =>
+            Array.from(tr.children)
+                .slice(1, worksheet.headers.length + 1)
+                .map((td) => td.textContent)
+        );
+
+    it('moves the references of a footer on an insert of rows, and shows the new result', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: [['1'], ['2'], ['3']], footers: [['=SUM(A1:A3)']] }],
+            formulaEngine: (worksheet, expression) => `engine ${expression}`,
+        });
+
+        worksheet.insertRow(1, 0, true);
+        expect(footers(worksheet)).to.eql([['=SUM(A2:A4)']]);
+        expect(shown(worksheet)).to.eql([['engine =SUM(A2:A4)']]);
+
+        worksheet.undo();
+        expect(footers(worksheet)).to.eql([['=SUM(A1:A3)']]);
+        expect(shown(worksheet)).to.eql([['engine =SUM(A1:A3)']]);
+    });
+
+    it('gives #REF! to the references of a footer to deleted rows, and the undo gives back the text', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: [['1'], ['2'], ['3']], footers: [['=A1+A3', '=SUM(A1:A3)']] }],
+        });
+
+        worksheet.deleteRow(0, 1);
+        expect(footers(worksheet)).to.eql([['=#REF!+A2', '=SUM(A1:A2)']]);
+
+        worksheet.undo();
+        expect(footers(worksheet)).to.eql([['=A1+A3', '=SUM(A1:A3)']]);
+        expect(shown(worksheet)[0][0]).to.equal('4');
+
+        worksheet.redo();
+        expect(footers(worksheet)).to.eql([['=#REF!+A2', '=SUM(A1:A2)']]);
+    });
+
+    it('moves the references of the footers of columns on an insert and a delete of columns', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: [['1', '2', '3']], footers: [['=B1', '=A1+B1', '=C1']] }],
+        });
+
+        worksheet.insertColumn(1, 0, true);
+        expect(footers(worksheet)).to.eql([['', '=C1', '=B1+C1', '=D1']]);
+        worksheet.undo();
+        expect(footers(worksheet)).to.eql([['=B1', '=A1+B1', '=C1']]);
+
+        worksheet.deleteColumn(0, 1);
+        expect(footers(worksheet)).to.eql([['=#REF!+A1', '=B1']]);
+        expect(shown(worksheet)).to.eql([['#REF!', '3']]);
+
+        worksheet.undo();
+        expect(footers(worksheet)).to.eql([['=B1', '=A1+B1', '=C1']]);
+        expect(shown(worksheet)).to.eql([['2', '3', '3']]);
+
+        worksheet.redo();
+        expect(footers(worksheet)).to.eql([['=#REF!+A1', '=B1']]);
+    });
+
+    it('removes the footer cells of the deleted columns (#262)', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: [['1', '2', '3']], footers: [['a', 'b', 'c']] }],
+        });
+        const cells = () => Array.from(worksheet.tfoot!.children[0].children).map((td) => td.textContent);
+
+        worksheet.deleteColumn(0, 1);
+        expect(cells()).to.eql(['', 'b', 'c']);
+        worksheet.undo();
+        expect(cells()).to.eql(['', 'a', 'b', 'c']);
+        worksheet.insertColumn(1, 0, true);
+        worksheet.undo();
+        expect(cells()).to.eql(['', 'a', 'b', 'c']);
+    });
+});

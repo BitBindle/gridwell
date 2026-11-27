@@ -240,11 +240,14 @@ export type HistoryCellChange = {
     oldValue: jspreadsheet.CellValue;
 };
 
-/** The text of a formula cell before a change, at the position of the cell before the change. */
+/** The text of a formula cell or footer before a change, at the position of the cell before the change. */
 export interface FormulaText {
     x: number;
+    /** The row of the cell, or of the footer. */
     y: number;
     text: string;
+    /** True for a footer: x is its column and y the index of its footer row. */
+    footer?: boolean;
 }
 
 /**
