@@ -92,6 +92,9 @@ libraryBase.jspreadsheet.destroy = (
             }
         }
 
+        // An open context menu listens to the document, and its items hold the spreadsheet
+        (element.spreadsheet as Spreadsheet).contextMenu.contextmenu?.close();
+
         // The size observer of the frozen rows holds the worksheet
         for (const worksheet of (element.spreadsheet as Spreadsheet).worksheets) {
             worksheet.rowManager.stopFreeze();

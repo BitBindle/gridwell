@@ -2194,7 +2194,8 @@ declare namespace jspreadsheet {
         deleteRow: (rowNumber?: number, numOfRows?: number) => false | undefined;
 
         /**
-         * Delete a worksheet.
+         * Delete a worksheet. When it is the active worksheet ({@link JSpreadsheet.current}), no worksheet is active after
+         * the call, until the user clicks or focuses a worksheet. An open context menu closes.
          * @param position - Worksheet index.
          */
         deleteWorksheet: (position: number) => void;
@@ -3173,12 +3174,13 @@ declare namespace jspreadsheet {
         (element: HTMLDivElement | HTMLTableElement, options: SpreadsheetOptions): WorksheetInstance[];
 
         /**
-         * Current instance of jss.
+         * The active worksheet, which gets the keys and the clipboard events. It is null when no worksheet is active, for
+         * example after `deleteWorksheet` removed it or `destroy` removed its spreadsheet.
          */
         current: null | WorksheetInstance;
 
         /**
-         * Destroy an instance of jss.
+         * Destroy an instance of jss. An open context menu of the spreadsheet closes.
          * @param element - Root element of jss instance.
          * @param destroyEventHandlers - Remove event listeners. Default: false.
          */

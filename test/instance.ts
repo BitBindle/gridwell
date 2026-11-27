@@ -461,6 +461,79 @@ describe('Destroy a spreadsheet', () => {
     });
 });
 
+describe('Delete the active worksheet or destroy its spreadsheet (#182, #183)', () => {
+    it('sends no key to the worksheet that deleteWorksheet removed', async () => {
+        const element = document.body.appendChild(document.createElement('div') as Jspreadsheet.JspreadsheetInstanceElement);
+
+        try {
+            const worksheets = jspreadsheet(element, {
+                worksheets: [
+                    { minDimensions: [3, 3], worksheetName: 'A' },
+                    { minDimensions: [3, 3], worksheetName: 'B' },
+                ],
+            });
+            await new Promise((resolve) => setTimeout(resolve));
+            worksheets[0].openWorksheet(1);
+            const removed = worksheets[1];
+            removed.updateSelectionFromCoords(0, 0, 0, 0);
+            expect(jspreadsheet.current).to.equal(removed);
+
+            removed.deleteWorksheet(1);
+            expect(jspreadsheet.current).to.equal(null);
+            document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
+
+            expect(removed.selection.range!.map(Number)).to.eql([0, 0, 0, 0]);
+            expect(worksheets[0].selection.range).to.equal(null);
+        } finally {
+            jspreadsheet.destroy(element);
+            element.remove();
+        }
+    });
+
+    it('keeps the active worksheet when deleteWorksheet removes another worksheet', async () => {
+        const element = document.body.appendChild(document.createElement('div') as Jspreadsheet.JspreadsheetInstanceElement);
+
+        try {
+            const worksheets = jspreadsheet(element, { worksheets: [{ minDimensions: [1, 1] }, { minDimensions: [1, 1] }] });
+            await new Promise((resolve) => setTimeout(resolve));
+            jspreadsheet.current = worksheets[0];
+
+            worksheets[0].deleteWorksheet(1);
+
+            expect(jspreadsheet.current).to.equal(worksheets[0]);
+        } finally {
+            jspreadsheet.destroy(element);
+            element.remove();
+        }
+    });
+
+    it('closes the open context menu when it destroys the spreadsheet', async () => {
+        const element = document.body.appendChild(document.createElement('div') as Jspreadsheet.JspreadsheetInstanceElement);
+        const removed: string[] = [];
+        const remove = document.removeEventListener;
+        document.removeEventListener = function (this: Document, type: string, ...rest: unknown[]) {
+            removed.push(type);
+            return (remove as (...args: unknown[]) => void).call(this, type, ...rest);
+        } as typeof document.removeEventListener;
+
+        try {
+            const [worksheet] = jspreadsheet(element, { worksheets: [{ minDimensions: [1, 1] }] });
+            await new Promise((resolve) => setTimeout(resolve));
+            const menu = worksheet.parent.contextMenu.contextmenu!;
+            menu.open({ x: 5, y: 6 });
+            expect(menu.isOpened()).to.equal(true);
+
+            jspreadsheet.destroy(element);
+
+            expect(menu.isOpened()).to.equal(false);
+            expect(removed).to.include.members(['mousedown', 'touchstart']);
+        } finally {
+            document.removeEventListener = remove;
+            element.remove();
+        }
+    });
+});
+
 describe('Destroy all spreadsheets', () => {
     it('destroys each spreadsheet (issue #114)', async () => {
         // Each element gets its spreadsheet

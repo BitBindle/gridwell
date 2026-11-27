@@ -716,6 +716,21 @@ export class Worksheet {
         removedWorksheet?.rowManager.stopFreeze();
         removedWorksheet?.rowSource?.stop();
 
+        // The keys and the clipboard go to the active worksheet. A removed worksheet is not active, and the worksheet that
+        // the tabs show becomes active when the user clicks it or focuses it.
+        if (removedWorksheet && libraryBase.jspreadsheet.current === removedWorksheet) {
+            libraryBase.jspreadsheet.current = null;
+
+            // A timer of a search, a column rename or a touch hold would read the active worksheet
+            if (libraryBase.jspreadsheet.timeControl) {
+                clearTimeout(libraryBase.jspreadsheet.timeControl);
+                libraryBase.jspreadsheet.timeControl = null;
+            }
+        }
+
+        // The items of an open context menu can act on the removed worksheet
+        this.parent.contextMenu.contextmenu?.close();
+
         // getConfig gives the options of the worksheets that the spreadsheet has. A position without a worksheet removes none.
         const index = removedWorksheet ? this.parent.config.worksheets.indexOf(removedWorksheet.options) : -1;
         if (index >= 0) {
