@@ -1038,6 +1038,7 @@ export class Worksheet {
 
         this.setLayout();
         this.loadContent();
+        this.rowManager.observeHeader();
     }
 
     /**
