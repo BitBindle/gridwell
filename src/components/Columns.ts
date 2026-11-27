@@ -649,21 +649,25 @@ export class Columns {
     }
 
     /**
-     * Get the width of a column.
-     * @param column - The column, from 0. Without it, the widths of all columns.
-     */
-    /**
      * The width of a column in the options, else the default width. A width of 0 stays 0, so that a column can have no
      * width.
      */
     private givenWidth(column: number): number | string {
-        const width = this.worksheet.options.columns?.[column]?.width;
-        if (width !== undefined && width !== null && width !== '') {
-            return width;
+        function given(width: number | string | undefined | null) {
+            return width !== undefined && width !== null && width !== '';
         }
-        return this.worksheet.options.defaultColWidth ?? 100;
+        const width = this.worksheet.options.columns?.[column]?.width;
+        if (given(width)) {
+            return width as number | string;
+        }
+        const defaultWidth = this.worksheet.options.defaultColWidth;
+        return given(defaultWidth) ? (defaultWidth as number) : 100;
     }
 
+    /**
+     * Get the width of a column.
+     * @param column - The column, from 0. Without it, the widths of all columns.
+     */
     getWidth(column?: number): number | (number | string)[] {
         const worksheet = this.worksheet;
 
