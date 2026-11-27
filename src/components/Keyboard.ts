@@ -95,13 +95,14 @@ export class Keyboard {
         const worksheet = this.worksheet as SelectedWorksheet;
 
         if (worksheet.options.editable !== false) {
-            if (worksheet.selection.row != null) {
+            // Only a selection of whole rows or columns that a press made deletes them. Other selections clear their cells.
+            if (worksheet.selection.rowAnchor() != null) {
                 if (worksheet.options.allowDeleteRow !== false) {
                     if (askConfirm(worksheet.parent.config, translate('Are you sure to delete the selected rows?'))) {
                         worksheet.deleteRow();
                     }
                 }
-            } else if (worksheet.selection.column != null) {
+            } else if (worksheet.selection.columnAnchor() != null) {
                 if (worksheet.options.allowDeleteColumn !== false) {
                     if (askConfirm(worksheet.parent.config, translate('Are you sure to delete the selected columns?'))) {
                         worksheet.deleteColumn();

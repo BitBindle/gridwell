@@ -1,6 +1,6 @@
 import { getMask, isFormula } from '../utils/values.js';
 import { extract, toEditor } from '../utils/mask.js';
-import { getColumnNameFromId } from '../utils/internalHelpers.js';
+import { getColumnNameFromId, movedIndex } from '../utils/internalHelpers.js';
 import { ColorPicker, type ColorPickerOptions } from '../utils/color.js';
 import { Dropdown } from '../utils/dropdown.js';
 import { Calendar, type CalendarOptions } from '../utils/calendar.js';
@@ -125,6 +125,23 @@ export class Editor {
             this.x += count;
         } else if (axis === 1 && this.y >= index) {
             this.y += count;
+        }
+    }
+
+    /**
+     * After a move of one row or column, the open editor keeps the position of its cell.
+     * @param axis - 0 for columns, 1 for rows.
+     * @param from - The row or column that moved.
+     * @param to - Its new position.
+     */
+    move(axis: 0 | 1, from: number, to: number) {
+        if (!this.isOpen()) {
+            return;
+        }
+        if (axis === 0) {
+            this.x = movedIndex(this.x, from, to);
+        } else {
+            this.y = movedIndex(this.y, from, to);
         }
     }
 

@@ -410,12 +410,15 @@ export class Pointer {
             } else {
                 let o, d;
 
-                if (worksheet.selection.column != null && (e.shiftKey || e.ctrlKey)) {
-                    o = worksheet.selection.column;
+                const range = worksheet.selection.range;
+                if (range && (e.shiftKey || e.ctrlKey)) {
+                    // Extend from the first header, or else from the first column of the selection
+                    o = worksheet.selection.columnAnchor() ?? Number(range[0]);
                     d = columnId;
+                    worksheet.selection.column = o;
                 } else {
                     // Hold the press on the selected header to rename the column. A move or the mouseup stops the timer.
-                    if (worksheet.selection.column === columnId && worksheet.options.allowRenameColumn !== false) {
+                    if (worksheet.selection.columnAnchor() === columnId && worksheet.options.allowRenameColumn !== false) {
                         // The active worksheet when the timer runs
                         libraryBase.jspreadsheet.timeControl = setTimeout(() => {
                             libraryBase.jspreadsheet.current!.columns.rename(columnId);
@@ -488,9 +491,12 @@ export class Pointer {
             }
         } else {
             let o, d;
-            if (worksheet.selection.row != null && (e.shiftKey || e.ctrlKey)) {
-                o = worksheet.selection.row;
+            const range = worksheet.selection.range;
+            if (range && (e.shiftKey || e.ctrlKey)) {
+                // Extend from the first row number, or else from the first row of the selection
+                o = worksheet.selection.rowAnchor() ?? Number(range[1]);
                 d = rowId;
+                worksheet.selection.row = o;
             } else {
                 // Keep track of which header was selected first
                 worksheet.selection.row = rowId;
@@ -758,9 +764,11 @@ export class Pointer {
         } else {
             // Header found
             if (section === 1) {
-                if (worksheet.selection.column != null) {
+                // A press that does not select whole columns, for example on the selection corner, keeps the old
+                // value of the field
+                const o = worksheet.selection.columnAnchor();
+                if (o != null) {
                     columnId = getIndex(e.target, 'data-x');
-                    const o = worksheet.selection.column;
                     const d = columnId;
                     // Update selection
                     worksheet.selection.updateFromCoords(o, 0, d, worksheet.options.data.length - 1, e);
@@ -770,8 +778,8 @@ export class Pointer {
             // Body found
             if (section === 2) {
                 if (e.target.classList.contains('jss_row')) {
-                    if (worksheet.selection.row != null) {
-                        const o = worksheet.selection.row;
+                    const o = worksheet.selection.rowAnchor();
+                    if (o != null) {
                         const d = rowId;
                         // Update selection
                         worksheet.selection.updateFromCoords(0, o, worksheet.options.data[0].length - 1, d, e);

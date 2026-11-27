@@ -124,19 +124,44 @@ held, the cells of the area that the corner fills, is `worksheet.selection.fill`
 `worksheet.selection.highlighted` is an empty array before the first selection. `getSelection()`, `getSelected()`,
 `updateSelectionFromCoords()`, `resetSelection()` and the selection events work as before.
 
-## Insert and delete keep the selection and the editor on their cells
+## Insert, delete and move keep the selection and the editor on their cells
 
-After `insertRow`, `insertColumn`, `deleteRow`, `deleteColumn`, and their undo and redo, the selection and an open
-editor stay on their cells. Version 5 kept the row and column numbers, so the selection and the editor moved to other
-cells, and a value typed into a deleted row went into the row that moved up.
+After `insertRow`, `insertColumn`, `deleteRow`, `deleteColumn`, `moveRow`, `moveColumn`, and their undo and redo, the
+selection and an open editor stay on their cells. After a move, each end of a larger selection stays on its cell, and a
+move inside the selection keeps its rows and columns, so a selection of whole rows or columns stays whole. The active
+cell can then be another cell. An insert after the last column or row adds the new columns or rows to a selection of
+whole rows or columns. Version 5 kept the row and
+column numbers, so the selection and the editor moved to other cells, and a value typed into a deleted row went into the
+row that moved up.
 
 - `getSelection()` gives the new position of the selected cells.
+- After an insert at the end, a selection of whole rows or columns includes the new columns or rows.
 - A delete removes the selection if a selected cell is deleted, also when the selection is inside the deleted rows or
   columns. Version 5 kept such a selection.
 - An editor in a deleted row or column closes without a save: `oneditionend` gets `false` for the save, and no
   `onchange` fires. Version 5 left it open.
 
 No option keeps the old behavior, because it put values into the wrong cells.
+
+## Shift, Ctrl and Delete use only a current selection of whole rows or columns
+
+This changes the result for users who press Shift or Ctrl on row numbers or headers, or press Delete, and for
+applications that read `worksheet.selection.row` or `worksheet.selection.column`.
+
+A press on a row number or a header starts a selection of whole rows or columns. Version 5 remembered that row or
+column after a selection of other cells with the keyboard, `updateSelectionFromCoords` or `selectAll`.
+
+- Delete deletes rows or columns only while the selection is of whole rows or columns that a press started. Version 5
+  deleted the row of a single cell after a press on its row number and an arrow key.
+- A Shift or Ctrl press on a row number or a header, after a selection that does not start at a pressed row number or
+  header, extends that selection from its first row or column. Version 5 extended from the row or column of an earlier
+  press, or selected only the pressed row or column. On macOS, a Ctrl press is the usual secondary press.
+- A drag over the row numbers or headers extends whole rows or columns only from a current selection of whole rows or
+  columns.
+- `worksheet.selection.row` and `worksheet.selection.column` can still keep an earlier press. The new methods
+  `rowAnchor()` and `columnAnchor()` give them only while they count.
+
+No option keeps the old behavior, because it deleted rows that the user did not select.
 
 ## The formula chain is an object
 

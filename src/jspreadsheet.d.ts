@@ -449,11 +449,29 @@ declare namespace jspreadsheet {
         /** Whether the keyboard focus is in the grid or in its editor. */
         focusInGrid: boolean;
 
-        /** The column whose header a press selected first, while the selection is of whole columns, or null. */
+        /**
+         * The column whose header a press selected first, or null. A selection of other cells with the keyboard or
+         * {@link WorksheetInstance.updateSelectionFromCoords} does not clear it, so use {@link WorksheetSelection.columnAnchor}.
+         */
         column: number | null;
 
-        /** The row whose number a press selected first, while the selection is of whole rows, or null. */
+        /**
+         * The row whose number a press selected first, or null. A selection of other cells with the keyboard or
+         * {@link WorksheetInstance.updateSelectionFromCoords} does not clear it, so use {@link WorksheetSelection.rowAnchor}.
+         */
         row: number | null;
+
+        /**
+         * The first row number of a selection of whole rows, or null. It is {@link WorksheetSelection.row} while the
+         * selection starts at that row and has all columns. Delete deletes the selected rows only then.
+         */
+        rowAnchor(): number | null;
+
+        /**
+         * The first header of a selection of whole columns, or null. It is {@link WorksheetSelection.column} while the
+         * selection starts at that column and has all rows. Delete deletes the selected columns only then.
+         */
+        columnAnchor(): number | null;
 
         /** Remove the fill border from the cells that a drag of the corner was going to fill, and forget them. */
         clearFill(): void;
