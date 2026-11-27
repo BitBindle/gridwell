@@ -245,7 +245,12 @@ export class RowSource {
     private changed = false;
     private measured = false;
     private focusLost = false;
-    private focusWatched = false;
+    /** The focus that the table got from a cell that left the window is not lost any more when it leaves the table. */
+    private readonly onFocusOut = (e: FocusEvent) => {
+        if (e.target === this.worksheet.table) {
+            this.focusLost = false;
+        }
+    };
 
     constructor(worksheet: Worksheet, source: jspreadsheet.RowSource) {
         this.worksheet = worksheet;
@@ -274,15 +279,7 @@ export class RowSource {
         }
         worksheet.tbody.appendChild(this.top);
         worksheet.tbody.appendChild(this.bottom);
-        // The focus that the table got from a cell that left the window is not lost any more when it leaves the table
-        if (!this.focusWatched) {
-            this.focusWatched = true;
-            worksheet.table.addEventListener('focusout', (e) => {
-                if (e.target === worksheet.table) {
-                    this.focusLost = false;
-                }
-            });
-        }
+        worksheet.table.addEventListener('focusout', this.onFocusOut);
         this.applyMerges();
         this.render(true);
         // The window renders again when the view changes its size, for example when the tab of the worksheet opens
@@ -298,6 +295,7 @@ export class RowSource {
 
     /** Stop the size observer and the pending fill, for example before the worksheet goes. */
     stop() {
+        this.worksheet.table.removeEventListener('focusout', this.onFocusOut);
         this.observer?.disconnect();
         this.observer = null;
         if (this.fillTimer) {
@@ -969,8 +967,9 @@ export class RowSource {
         const record = worksheet.records[range[1]]?.[range[0]];
         // A cell in a hidden row cannot get the focus: updateTabStop gives it to the new tab stop
         if (record && shows(record.element)) {
-            this.focusLost = false;
             record.element.focus({ preventScroll: true });
+            // A cell that is not the tab stop yet cannot get the focus, for example a frozen row before its selection
+            this.focusLost = document.activeElement !== record.element;
         }
     }
 
@@ -1136,11 +1135,20 @@ export class RowSource {
             this.decorate([[0, frozen - 1]]);
             this.updateTabStop();
         }
-        const selected = worksheet.selection.range;
-        const merged = selected && this.mergeAt(Number(selected[0]), Number(selected[1]));
-        if (merged && (merged[0] !== Number(selected[0]) || merged[1] !== Number(selected[1]))) {
-            worksheet.selection.updateFromCoords(merged[0], merged[1], merged[0], merged[1]);
+        const selected = worksheet.selection.range?.map(Number);
+        const merged = selected && this.mergeAt(selected[0], selected[1]);
+        if (merged && (merged[0] !== selected[0] || merged[1] !== selected[1])) {
+            const inside = selected[2] >= merged[0] && selected[2] <= merged[2] && selected[3] >= merged[1] && selected[3] <= merged[3];
+            // A selection inside the range goes to its first cell. A larger selection stays as given, and grows to hold
+            // the range.
+            if (inside) {
+                worksheet.selection.updateFromCoords(merged[0], merged[1], merged[0], merged[1]);
+            } else {
+                worksheet.selection.updateFromCoords(selected[0], selected[1], selected[2], selected[3]);
+            }
         }
+        // The focus of a cell that is in a frozen row now goes back to it
+        this.restoreFocus();
     }
 
     /** Set the height (pixels) or the hidden state of rows in the layout and in their records. */
