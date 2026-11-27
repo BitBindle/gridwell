@@ -739,3 +739,126 @@ describe('Footers after an insert or a delete (#260)', () => {
         expect(cells()).to.eql(['', 'a', 'b', 'c']);
     });
 });
+
+describe('References to cells after the last row or column (#263)', () => {
+    it('moves a reference after the last row on an insert and a delete of rows, and the undo and the redo move it back', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', ''],
+                        ['2', '=SUM(A1:A100)+Z2+$B$50'],
+                        ['3', ''],
+                    ],
+                },
+            ],
+        });
+        const formula = () => worksheet.getData().find((row) => row[1])![1];
+
+        worksheet.insertRow(1, 0, true);
+        expect(formula()).to.equal('=SUM(A2:A101)+Z3+$B$51');
+        worksheet.undo();
+        expect(formula()).to.equal('=SUM(A1:A100)+Z2+$B$50');
+        worksheet.redo();
+        expect(formula()).to.equal('=SUM(A2:A101)+Z3+$B$51');
+        worksheet.undo();
+
+        worksheet.deleteRow(0, 1);
+        expect(formula()).to.equal('=SUM(A1:A99)+Z1+$B$49');
+        worksheet.undo();
+        expect(formula()).to.equal('=SUM(A1:A100)+Z2+$B$50');
+        worksheet.redo();
+        expect(formula()).to.equal('=SUM(A1:A99)+Z1+$B$49');
+    });
+
+    it('moves a reference after the last column on an insert and a delete of columns', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '2', ''],
+                        ['', '', '=SUM(A1:Z1)+B9'],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.insertColumn(1, 0, true);
+        expect(worksheet.getData()[1][3]).to.equal('=SUM(B1:AA1)+C9');
+        worksheet.undo();
+        expect(worksheet.getData()[1][2]).to.equal('=SUM(A1:Z1)+B9');
+
+        worksheet.deleteColumn(0, 1);
+        expect(worksheet.getData()[1][1]).to.equal('=SUM(A1:Y1)+A9');
+        worksheet.undo();
+        expect(worksheet.getData()[1][2]).to.equal('=SUM(A1:Z1)+B9');
+    });
+
+    it('keeps a reference after the last row when the insert or the delete moves no row of the table', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '=SUM(A1:A100)'],
+                        ['2', ''],
+                    ],
+                    minSpareRows: 1,
+                },
+            ],
+        });
+        const formula = () => worksheet.getData()[0][1];
+
+        // minSpareRows adds a row after the last row
+        expect(worksheet.getData().length).to.equal(3);
+        worksheet.setValue('A3', '3');
+        expect(worksheet.getData().length).to.equal(4);
+        expect(formula()).to.equal('=SUM(A1:A100)');
+
+        worksheet.insertRow(2);
+        expect(formula()).to.equal('=SUM(A1:A100)');
+        worksheet.deleteRow(worksheet.getData().length - 2, 2);
+        expect(formula()).to.equal('=SUM(A1:A100)');
+        worksheet.undo();
+        expect(formula()).to.equal('=SUM(A1:A100)');
+    });
+
+    it('recalculates a formula when the moved cell after the last row changes, and not when the old cell changes', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', ''],
+                        ['2', '=A5*2'],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.insertRow(1, 0, true);
+        expect(worksheet.getValue('B3')).to.equal('=A6*2');
+        worksheet.insertRow(4, 2);
+        worksheet.setValue('A5', '100');
+        expect(worksheet.getValue('B3', true)).to.equal('0');
+        worksheet.setValue('A6', '7');
+        expect(worksheet.getValue('B3', true)).to.equal('14');
+    });
+
+    it('gives #REF! to a reference after the last column in a deleted row', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', ''],
+                        ['2', '=Z1+Z2'],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.deleteRow(0, 1);
+        expect(worksheet.getValue('B1')).to.equal('=#REF!+Z1');
+        expect(worksheet.formulas.chain).to.deep.equal({ Z1: ['B1'] });
+        worksheet.undo();
+        expect(worksheet.getValue('B2')).to.equal('=Z1+Z2');
+    });
+});

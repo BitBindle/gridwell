@@ -11,6 +11,39 @@ interface Removed {
     count: number;
 }
 
+/**
+ * An insert (count above 0) or a delete (count below 0) of rows (axis 1) or columns (axis 0) at index, with the number of
+ * rows and columns of the table before it.
+ */
+interface Shift {
+    axis: 0 | 1;
+    index: number;
+    count: number;
+    rows: number;
+    columns: number;
+}
+
+/**
+ * The new name of a cell outside the table after an insert or a delete. Undefined when the cell stays: a cell before the
+ * change, a cell of the table, or any cell when the change moves no row or column of the table, for example when it adds
+ * rows after the last row. Null when the delete removed the row or the column of the cell.
+ */
+function shiftName(name: string, shift: Shift): string | null | undefined {
+    const first = shift.count > 0 ? shift.index : shift.index - shift.count;
+    if (first >= (shift.axis === 1 ? shift.rows : shift.columns)) {
+        return undefined;
+    }
+    const cell = getIdFromColumnName(name);
+    if ((cell[0] < shift.columns && cell[1] < shift.rows) || cell[shift.axis] < shift.index) {
+        return undefined;
+    }
+    if (cell[shift.axis] < first) {
+        return null;
+    }
+    cell[shift.axis] += shift.count;
+    return getColumnNameFromId(cell);
+}
+
 // The cells in progress of updateChain, by cell name
 let chainLoopProtection: Record<string, boolean> = {};
 
@@ -508,17 +541,23 @@ export class Formulas {
      * With removed, a delete removed rows or columns. A reference to a removed cell becomes #REF!, with or without $
      * signs. A range that keeps some of its cells ends at the first and the last cell that stay, with the $ signs of its
      * ends. A range that loses all its cells becomes #REF!.
+     *
+     * referencesToUpdate gives the new names of the cells of the table. With shift, a reference to a cell outside the
+     * table moves as the cells of its rows or columns would move. When the insert or the delete moves no row or column
+     * of the table, for example when it adds rows after the last row, these references stay.
      * @param removed - The removed rows (axis 1) or columns (axis 0), at their positions before the delete.
+     * @param shift - The insert or the delete.
      * @returns The new text, and if the formula named a removed cell, alone or in a range, so that its result changes.
      */
-    private renameReferences(formula: string, referencesToUpdate: Record<string, string>, removed?: Removed) {
+    private renameReferences(formula: string, referencesToUpdate: Record<string, string>, removed?: Removed, shift?: Shift) {
         // Give a cell name the column and the row of another cell, and keep its $ signs
         function withName(token: string, name: string) {
             const [, column, row] = /^([A-Z]+)([0-9]+)$/.exec(name)!;
             return token.replace(/^(\$?)[A-Z]+(\$?)[0-9]+$/, `$1${column}$2${row}`);
         }
         function rename(token: string) {
-            const name = referencesToUpdate[token.replace(/\$/g, '')];
+            const plain = token.replace(/\$/g, '');
+            const name = referencesToUpdate[plain] || (shift && shiftName(plain, shift));
             return name ? withName(token, name) : token;
         }
         const end = removed ? removed.index + removed.count : 0;
@@ -569,15 +608,21 @@ export class Formulas {
      * Update the formulas of the cells, and for an insert or a delete the formulas of the footers. With removed, a delete
      * removed rows or columns, and the references to its cells become #REF!.
      * @param keepText - Whether a cell keeps its text. A footer has no row, so it gets no y.
-     * @param shift - True for an insert, a delete, and their undo and redo. False for a move or a sort.
+     * @param shift - The insert, the delete, or their undo or redo. Null for a move or a sort.
      * @returns The formulas whose texts the delete changed, at their positions before the delete, with their texts before
      * it.
      */
-    private updateFormulas(referencesToUpdate: Record<string, string>, keepText: (x: number, y?: number) => boolean, shift: boolean, removed?: Removed) {
+    private updateFormulas(referencesToUpdate: Record<string, string>, keepText: (x: number, y?: number) => boolean, shift: Shift | null, removed?: Removed) {
         const worksheet = this.worksheet;
         const changed: FormulaText[] = [];
         // The new names of the cells that the undo of a delete moves back, as the insert gives them
         const back = removed ? Object.fromEntries(Object.entries(referencesToUpdate).map(([from, to]) => [to, from])) : undefined;
+        const undo = shift && {
+            ...shift,
+            count: -shift.count,
+            rows: shift.rows + (shift.axis === 1 ? shift.count : 0),
+            columns: shift.columns + (shift.axis === 0 ? shift.count : 0),
+        };
 
         // Give a formula its new text. A formula that named a removed cell calculates again. The undo of the delete moves
         // the names back, and the history keeps the texts that it does not give back, also of a formula that the delete
@@ -587,8 +632,8 @@ export class Formulas {
             if (!shift) {
                 return this.updateFormula(value, referencesToUpdate);
             }
-            const result = this.renameReferences(value, referencesToUpdate, removed);
-            if (removed && (result.named || this.renameReferences(result.text, back!).text !== value)) {
+            const result = this.renameReferences(value, referencesToUpdate, removed, shift);
+            if (removed && (result.named || this.renameReferences(result.text, back!, undefined, undo!).text !== value)) {
                 const moved = (removed.axis === 1 ? j : i) >= removed.index && !(footer && removed.axis === 1) ? removed.count : 0;
                 const x = removed.axis === 0 ? i + moved : i;
                 const y = removed.axis === 1 ? j + moved : j;
@@ -627,8 +672,20 @@ export class Formulas {
             }
         }
 
-        // Update formula chain
-        worksheet.formulas.rename(referencesToUpdate);
+        // Update formula chain. The names of the cells outside the table move as the formula texts do, and the names of the
+        // cells that the delete removed leave the chain.
+        const outside: Record<string, string> = {};
+        if (shift) {
+            for (const name of Object.keys(this.chain)) {
+                const shifted = referencesToUpdate[name] ? undefined : shiftName(name, shift);
+                if (shifted) {
+                    outside[name] = shifted;
+                } else if (shifted === null && removed) {
+                    delete this.chain[name];
+                }
+            }
+        }
+        worksheet.formulas.rename(Object.keys(outside).length ? { ...referencesToUpdate, ...outside } : referencesToUpdate);
 
         // A formula that names #REF! in place of a removed cell has another result now, and so have the formulas that
         // name it
@@ -650,6 +707,24 @@ export class Formulas {
         }
 
         return changed;
+    }
+
+    /**
+     * The insert or the delete of updateTableReferences, with the size of the table before it. Null for a move or a sort.
+     */
+    private shiftOf(inserted?: { axis: 0 | 1; index: number; count: number }, removed?: Removed): Shift | null {
+        const change = inserted || removed;
+        if (!change) {
+            return null;
+        }
+        const count = inserted ? change.count : -change.count;
+        return {
+            axis: change.axis,
+            index: change.index,
+            count,
+            rows: this.worksheet.options.data.length - (change.axis === 1 ? count : 0),
+            columns: this.worksheet.headers.length - (change.axis === 0 ? count : 0),
+        };
     }
 
     /**
@@ -896,7 +971,7 @@ export class Formulas {
                 this.showResults(firstColumn, firstRow);
             } else {
                 // Update formulas
-                changed = this.updateFormulas(affectedTokens, keepsText, !!(inserted || removed), removed?.refErrors ? removed : undefined);
+                changed = this.updateFormulas(affectedTokens, keepsText, this.shiftOf(inserted, removed), removed?.refErrors ? removed : undefined);
             }
 
             // The formulas of the new cells calculate again at their positions, and get their place in the chain
