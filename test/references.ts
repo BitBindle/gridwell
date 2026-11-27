@@ -577,7 +577,7 @@ describe('References to deleted cells (#239)', () => {
     });
 });
 
-describe('References after an insert, a delete and a move (#259)', () => {
+describe('References after an insert and a delete (#259)', () => {
     it('keeps string literals and the cells of other worksheets, and moves references with $ signs on an insert', () => {
         const [worksheet] = jspreadsheet(root, {
             worksheets: [
