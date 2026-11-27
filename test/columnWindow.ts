@@ -333,6 +333,29 @@ describe('The column window of the row source mode', () => {
         expect(worksheet.cells.getColumnIndex(0, 4)).to.equal(0);
     });
 
+    for (const columnWindow of [true, false]) {
+        it(`gives a first cell in a hidden column its own column again when its merged range goes, with columnWindow ${columnWindow} (issue #257)`, () => {
+            const columns: Jspreadsheet.Column[] = [];
+            columns[0] = { type: 'hidden' };
+            columns[1] = { readOnly: true, align: 'left' };
+            const { worksheet } = build({ columnWindow }, { columns });
+            const cell = () => worksheet.records[4][0].element;
+
+            for (const remove of [() => worksheet.removeMerge('A5'), () => worksheet.replaceMerges({}), () => worksheet.destroyMerge()]) {
+                worksheet.setMerge('A5', 3, 1);
+                expect(worksheet.isReadOnly('A5')).to.equal(true);
+                expect(cell().style.textAlign).to.equal('left');
+
+                remove();
+                expect(worksheet.cells.getColumnIndex(0, 4)).to.equal(0);
+                expect(worksheet.isReadOnly('A5')).to.equal(false);
+                expect(cell().style.textAlign).to.equal('center');
+                worksheet.setValue('A5', 'new');
+                expect(worksheet.getValue('A5')).to.equal('new');
+            }
+        });
+    }
+
     it('keeps the alignment from setStyle when the columns have the same alignment, and gives back the color from setStyle (issue #246)', () => {
         const columns: Jspreadsheet.Column[] = [];
         columns[0] = { type: 'color' };

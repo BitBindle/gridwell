@@ -919,7 +919,16 @@ No option keeps the old style, because the cell showed the text with a style tha
 that saves `getStyle()` can save the style while no merged range starts left of the window.
 
 When the first column of the range has the type `hidden`, the first cell takes the options of the next column of the
-range that shows. The cell in the window now takes them too, as the first cell does.
+range that shows. In the row source mode, the range now comes from the merged ranges of the sheet, as in the other
+modes, and not from the part of the range in the table. So:
+
+- The cell in the window that shows the text takes these options too, as the first cell does.
+- A cell at the left edge of the window, in a column with the type `hidden`, inside a range that starts further left,
+  uses its own column. It is not the first cell of the range.
+- A range whose first columns are frozen columns with the type `hidden`, and that continues after the frozen columns,
+  gives its first cell the options of the first column after them that shows.
+- A formula that names the first cell reads its number with the options of that column also when the row is outside the
+  window.
 
 ## An insert next to the rows in the table body shows the new rows
 
