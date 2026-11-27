@@ -762,13 +762,9 @@ export class View {
         }
 
         const wanted = [...worksheet.rows.slice(0, frozen).map((row) => row.element), ...keep.flat()];
-        // A cursor on the next row of the body, because the list of the children changes after each insert
-        let next = tbody.firstChild;
-        for (const row of wanted) {
-            if (row === next) {
-                next = row.nextSibling;
-            } else {
-                tbody.insertBefore(row, next);
+        for (let k = 0; k < wanted.length; k++) {
+            if (tbody.children[k] !== wanted[k]) {
+                tbody.insertBefore(wanted[k], tbody.children[k] || null);
             }
         }
 

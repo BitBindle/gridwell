@@ -3,6 +3,8 @@ import type { Dropdown } from '../src/utils/dropdown';
 
 import jspreadsheet, { type Jspreadsheet } from './support/jspreadsheet';
 
+type DropdownElement = HTMLElement & { dropdown: Dropdown };
+
 function rows(count: number) {
     const data: string[][] = [];
     for (let j = 0; j < count; j++) {
@@ -642,10 +644,12 @@ describe('The editor leaves with its cell', () => {
 
         it('closes the editor when a filter hides its row', () => {
             const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(6), filters: true }] })[0];
+            worksheet.openFilter(0);
+            const dropdown = worksheet.filter!.children[1].querySelector<DropdownElement>('.jdropdown')!.dropdown;
             typeIn(worksheet, 1, 0);
 
-            worksheet.view.filters[0] = ['3'];
-            worksheet.view.closeFilter(0);
+            dropdown.setValue(['3']);
+            dropdown.close();
 
             expect(worksheet.view.results).to.eql([3]);
             expect(worksheet.editor.isOpen()).to.equal(false);
