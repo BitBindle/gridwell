@@ -4,6 +4,7 @@ import { getMask, isFormula } from '../utils/values.js';
 import { formatDate, parseDate } from '../utils/dates.js';
 import { render } from '../utils/mask.js';
 import type { HistoryCellChange, Worksheet } from '../types/internal';
+import { recordRows } from './RowSource.js';
 import type jspreadsheet from '../jspreadsheet';
 
 // The date, then the date as text, then its parts
@@ -222,11 +223,9 @@ export class Cells {
             if (column && (column.type === 'checkbox' || column.type === 'radio')) {
                 // Unchecked all options
                 if (column.type === 'radio' && write) {
-                    for (const dataRow of worksheet.options.data) {
-                        // The row source mode has rows without values
-                        if (dataRow) {
-                            dataRow[c] = false;
-                        }
+                    // The row source mode has values only for the rows of the window
+                    for (const y of recordRows(worksheet)) {
+                        worksheet.options.data[y][c] = false;
                     }
                 }
 

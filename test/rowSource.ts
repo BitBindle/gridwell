@@ -487,6 +487,7 @@ describe('The row source mode', () => {
         mouse('mouseup', 0, 148);
 
         expect(worksheet.getWidth(1)).to.equal(150);
+        expect(worksheet.rows.length).to.equal(100000);
     });
 
     it('sets a radio cell of the window', () => {
@@ -549,5 +550,34 @@ describe('The row source mode', () => {
 
         expect(titles.length).to.be.above(0);
         expect(titles).to.not.include('Save as...');
+    });
+
+    it('refuses with replaceMerges and setMerge the merged ranges that the other modes refuse', () => {
+        const alerts: string[] = [];
+        const { worksheet } = build({ count: 50 }, { mergeCells: { A2: [2, 2], B3: [2, 2] } }, { alert: (message) => alerts.push(message) });
+        expect(worksheet.getMerge()).to.eql({ A2: [2, 2] });
+
+        const refused = worksheet.replaceMerges({
+            foo: [2, 2],
+            A1: [1, 1],
+            B2: [2, 2],
+            C2: [2, 2],
+            A5: [2.5, 'x'] as unknown as [number, number],
+            C8: [5, 1],
+            A49: [1, 5],
+        });
+        expect(refused.sort()).to.eql(['A1', 'A49', 'A5', 'C2', 'C8', 'foo']);
+        expect(worksheet.getMerge()).to.eql({ B2: [2, 2] });
+
+        worksheet.setMerge('a1', 2, 2);
+        worksheet.setMerge('C5', 3, 1);
+        worksheet.setMerge('A48', 1, 10);
+        expect(alerts).to.eql(['Invalid merged properties', 'Invalid merged properties', 'Invalid merged properties']);
+        expect(worksheet.getMerge()).to.eql({ B2: [2, 2] });
+
+        // A window move after the refused ranges works
+        worksheet.scrollToRow(40);
+        worksheet.scrollToRow(0);
+        expect(worksheet.getCell('B2').getAttribute('rowspan')).to.equal('2');
     });
 });

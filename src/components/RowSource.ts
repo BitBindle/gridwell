@@ -49,12 +49,69 @@ function ranges(rows: number[]) {
 }
 
 /** The merged ranges as [colspan, rowspan] by the name of their first cell, with spans of at least 1. */
-function copyMerges(merges?: Record<string, readonly unknown[]>) {
-    const result: Record<string, [number, number]> = {};
-    for (const [name, span] of Object.entries(merges || {})) {
-        result[name] = [Math.max(1, parseInt(span[0] as string) || 1), Math.max(1, parseInt(span[1] as string) || 1)];
+/**
+ * Why a merged range cannot be one of the ranges of the sheet, or null when it can: the name must be a cell name, the
+ * spans two positive whole numbers for more than one cell, and the range inside the sheet.
+ */
+export function mergeProblem(name: string, span: readonly unknown[], columns: number, rows: number) {
+    if (!/^[A-Z]+[1-9][0-9]*$/.test(name) || !Array.isArray(span)) {
+        return 'Invalid merged properties';
     }
-    return result;
+    const [colspan, rowspan] = span;
+    if (
+        !Number.isInteger(colspan) ||
+        !Number.isInteger(rowspan) ||
+        (colspan as number) < 1 ||
+        (rowspan as number) < 1 ||
+        (colspan as number) * (rowspan as number) < 2
+    ) {
+        return 'Invalid merged properties';
+    }
+    const [x, y] = getIdFromColumnName(name);
+    if (x + (colspan as number) > columns || y + (rowspan as number) > rows) {
+        return 'Invalid merged properties';
+    }
+    return null;
+}
+
+/**
+ * The merged ranges that can be ranges of the sheet, and the names of the others: a name that mergeProblem refuses, or
+ * a range that crosses a range with a lower first row (with the same first row, a lower first column).
+ */
+function checkMerges(merges: Record<string, readonly unknown[]> | undefined, columns: number, rows: number) {
+    const refused: string[] = [];
+    const candidates: { name: string; x1: number; y1: number; x2: number; y2: number }[] = [];
+    for (const [name, span] of Object.entries(merges || {})) {
+        if (mergeProblem(name, span, columns, rows)) {
+            refused.push(name);
+            continue;
+        }
+        const [x1, y1] = getIdFromColumnName(name);
+        candidates.push({ name, x1, y1, x2: x1 + (span[0] as number) - 1, y2: y1 + (span[1] as number) - 1 });
+    }
+    candidates.sort((a, b) => a.y1 - b.y1 || a.x1 - b.x1);
+    // The accepted ranges in the order of their first row, with the largest last row up to each one
+    const accepted: typeof candidates = [];
+    const ends: number[] = [];
+    const result: Record<string, [number, number]> = {};
+    for (const range of candidates) {
+        let crosses = false;
+        for (let i = accepted.length - 1; i >= 0 && ends[i] >= range.y1; i--) {
+            const other = accepted[i];
+            if (other.y2 >= range.y1 && other.x1 <= range.x2 && other.x2 >= range.x1) {
+                crosses = true;
+                break;
+            }
+        }
+        if (crosses) {
+            refused.push(range.name);
+            continue;
+        }
+        accepted.push(range);
+        ends.push(Math.max(ends[ends.length - 1] ?? -1, range.y2));
+        result[range.name] = [range.x2 - range.x1 + 1, range.y2 - range.y1 + 1];
+    }
+    return { merges: result, refused };
 }
 
 /**
@@ -113,7 +170,7 @@ export class RowSource {
         this.layout = new RowLayout(this.count, source.defaultHeight || Number(worksheet.options.defaultRowHeight) || 20, source.runs);
         this.buffer = source.buffer! > 0 ? source.buffer! : defaultBuffer;
         this.maxScrollHeight = source.maxScrollHeight! > 0 ? Math.min(source.maxScrollHeight!, defaultMaxScrollHeight) : defaultMaxScrollHeight;
-        this.merges = copyMerges(worksheet.options.mergeCells as Record<string, unknown[]> | undefined);
+        this.merges = checkMerges(worksheet.options.mergeCells as Record<string, unknown[]> | undefined, worksheet.headers.length, this.count).merges;
         this.indexMerges();
         this.top = this.spacer();
         this.bottom = this.spacer();
@@ -936,7 +993,7 @@ export class RowSource {
         this.count = count;
         this.layout = new RowLayout(count, this.layout.givenHeight, options?.runs ?? this.layout.runs, this.layout.minHeight);
         if (options?.merges) {
-            this.merges = copyMerges(options.merges);
+            this.merges = checkMerges(options.merges, worksheet.headers.length, count).merges;
             this.indexMerges();
         }
         worksheet.rows = new Array(count);
@@ -1000,10 +1057,14 @@ export class RowSource {
         return null;
     }
 
-    /** Replace the merged ranges of the sheet. */
+    /**
+     * Replace the merged ranges of the sheet. A range that the checks of the other modes refuse is left out.
+     * @returns The first cells of the ranges that are left out.
+     */
     replaceMerges(merges: Record<string, [number, number]>) {
+        const checked = checkMerges(merges, this.worksheet.headers.length, this.count);
         this.clearMerges();
-        this.merges = copyMerges(merges);
+        this.merges = checked.merges;
         this.indexMerges();
         // A new range can hold hidden rows of the window without a record. The window adds them.
         if (this.to >= this.from && this.missingRows(this.from, this.to).length > 0) {
@@ -1011,5 +1072,6 @@ export class RowSource {
         } else {
             this.applyMerges();
         }
+        return checked.refused;
     }
 }

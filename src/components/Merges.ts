@@ -2,6 +2,7 @@ import { translate } from '../utils/dictionary.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { MergeInfo, Worksheet } from '../types/internal';
+import { mergeProblem } from './RowSource.js';
 import { showAlert } from '../utils/dialogs.js';
 
 /**
@@ -268,6 +269,16 @@ export class Merges {
         } else if (typeof cellName !== 'string') {
             return null;
         } else {
+            if (source.merges[cellName]) {
+                showAlert(worksheet.parent.config, translate('Cell already merged'));
+                return;
+            }
+            // A name that is not a cell name, spans that are not whole numbers, one cell, or a range outside the sheet
+            const problem = mergeProblem(cellName, [colspan ?? 1, rowspan ?? 1], worksheet.headers.length, source.count);
+            if (problem) {
+                showAlert(worksheet.parent.config, translate(problem));
+                return;
+            }
             [x1, y1] = getIdFromColumnName(cellName);
             x2 = x1 + Math.max(1, colspan || 1) - 1;
             y2 = y1 + Math.max(1, rowspan || 1) - 1;
@@ -497,8 +508,7 @@ export class Merges {
 
         // The row source mode keeps the merged ranges of the sheet, and merges the part in its window
         if (worksheet.rowSource && merges && typeof merges === 'object' && !Array.isArray(merges)) {
-            worksheet.rowSource.replaceMerges(merges);
-            return [];
+            return worksheet.rowSource.replaceMerges(merges);
         }
 
         if (!merges || typeof merges !== 'object' || Array.isArray(merges)) {
