@@ -2215,10 +2215,10 @@ declare namespace jspreadsheet {
          * This method returns false if the {@link SpreadsheetOptions.onbeforedeletecolumn} event returns false or if the "This action will destroy any existing merged cells. Are you sure?" dialog receives a negative response.
          *
          * The selection and an open editor stay on their cells. A selection with a cell in the removed columns is removed, and an editor in a removed column closes without a save.
-         * @param columnNumber - Column index from which removal starts.
+         * @param columnNumber - Column index from which removal starts. A text that is a number, such as the value of data-y, works as that number. A value that is not a number does nothing, and the method returns false.
          * @param numOfColumns - Number of columns to be removed.
          */
-        deleteColumn: (columnNumber?: number, numOfColumns?: number) => false | undefined;
+        deleteColumn: (columnNumber?: number | string, numOfColumns?: number | string) => false | undefined;
 
         /**
          * Remove rows.
@@ -2230,10 +2230,10 @@ declare namespace jspreadsheet {
          * This method returns false if the {@link SpreadsheetOptions.onbeforedeleterow} event returns false or if the dialog cases "This action will destroy any existing merged cells. Are you sure?" or "This action will clear your search results. Are you sure?" receive a negative response.
          *
          * The selection and an open editor stay on their cells. A selection with a cell in the removed rows is removed, and an editor in a removed row closes without a save.
-         * @param rowNumber - Row index from which removal starts.
+         * @param rowNumber - Row index from which removal starts. A text that is a number, such as the value of data-y, works as that number. A value that is not a number does nothing, and the method returns false.
          * @param numOfRows - Number of rows to be removed.
          */
-        deleteRow: (rowNumber?: number, numOfRows?: number) => false | undefined;
+        deleteRow: (rowNumber?: number | string, numOfRows?: number | string) => false | undefined;
 
         /**
          * Delete a worksheet. When it is the active worksheet ({@link JSpreadsheet.current}), no worksheet is active after
@@ -2557,11 +2557,11 @@ declare namespace jspreadsheet {
          * The selection and an open editor stay on their cells. The references of a formula in the values of the new column
          * move with the cells, as the other formulas do, and the formula shows the value of its new text.
          * @param mixed - Number of columns to insert. It can also be an array of values, but in this case, only one column is inserted, whose data is based on the array items. Default: 1.
-         * @param columnNumber - Index of the column used as reference for the insertion. Default: last column.
+         * @param columnNumber - Index of the column used as reference for the insertion. Default: last column. A text that is a number, such as the value of data-y, works as that number. A value that is not a number does nothing, and the method returns false.
          * @param insertBefore - Insert new columns before (a truthy value) or after the reference column. Default: false.
          * @param properties - New column properties.
          */
-        insertColumn: (mixed?: number | CellValue[], columnNumber?: number, insertBefore?: boolean | number, properties?: Column[]) => false | undefined;
+        insertColumn: (mixed?: number | string | CellValue[], columnNumber?: number | string, insertBefore?: boolean | number, properties?: Column[]) => false | undefined;
 
         /**
          * Insert one or more rows.
@@ -2573,10 +2573,10 @@ declare namespace jspreadsheet {
          * The selection and an open editor stay on their cells. The references of a formula in the values of the new row move
          * with the cells, as the other formulas do, and the formula shows the value of its new text.
          * @param mixed - Number of rows to insert. It can also be an array of values, but in this case, only one row is inserted, whose data is based on the array items. Default: 1.
-         * @param rowNumber - Index of the row used as reference for the insertion. Default: last row.
+         * @param rowNumber - Index of the row used as reference for the insertion. Default: last row. A text that is a number, such as the value of data-y, works as that number. A value that is not a number does nothing, and the method returns false.
          * @param insertBefore - Insert new rows before (a truthy value) or after the reference row. Default: false.
          */
-        insertRow: (mixed?: number | CellValue[], rowNumber?: number, insertBefore?: boolean | number) => false | undefined;
+        insertRow: (mixed?: number | string | CellValue[], rowNumber?: number | string, insertBefore?: boolean | number) => false | undefined;
 
         /**
          * Check if a cell is read only.

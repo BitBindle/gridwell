@@ -92,7 +92,7 @@ export class Columns {
      * The columns that insertColumn inserts, with their position, their options and their data, for the events.
      */
     private getInserted(
-        mixed: number | jspreadsheet.CellValue[] | undefined,
+        mixed: number | string | jspreadsheet.CellValue[] | undefined,
         columnNumber: number,
         numOfColumns: number,
         insertBefore: boolean,
@@ -261,8 +261,8 @@ export class Columns {
      * @param properties - The options of the new columns.
      */
     insert(
-        mixed?: number | jspreadsheet.CellValue[],
-        columnNumber?: number,
+        mixed?: number | string | jspreadsheet.CellValue[],
+        columnNumber?: number | string,
         insertBefore?: boolean | number,
         properties?: jspreadsheet.Column[]
     ): false | undefined {
@@ -282,6 +282,10 @@ export class Columns {
             let numOfColumns;
             if (!Array.isArray(mixed)) {
                 numOfColumns = toNumber(mixed) ?? 1;
+                // A value that is not a number inserts nothing
+                if (Number.isNaN(numOfColumns)) {
+                    return false;
+                }
             } else {
                 numOfColumns = 1;
 
@@ -305,6 +309,9 @@ export class Columns {
 
             // Confirm position
             columnNumber = toNumber(columnNumber);
+            if (Number.isNaN(columnNumber)) {
+                return false;
+            }
             if (columnNumber == null || columnNumber >= lastColumn || columnNumber < 0) {
                 columnNumber = lastColumn;
             }
@@ -494,7 +501,7 @@ export class Columns {
      * @param columnNumber - The first column to delete. Without it, the selected columns, or the last column.
      * @param numOfColumns - The number of columns to delete.
      */
-    delete(columnNumber?: number, numOfColumns?: number): false | undefined {
+    delete(columnNumber?: number | string, numOfColumns?: number | string): false | undefined {
         const worksheet = this.worksheet;
 
         // The row source mode keeps the columns of the build
@@ -523,8 +530,12 @@ export class Columns {
                 // Lasat column
                 const lastColumn = worksheet.options.data[0].length - 1;
 
+                // A value that is not a number deletes nothing
                 columnNumber = toNumber(columnNumber);
                 numOfColumns = toNumber(numOfColumns);
+                if (Number.isNaN(columnNumber) || Number.isNaN(numOfColumns)) {
+                    return false;
+                }
                 if (columnNumber == null || columnNumber > lastColumn || columnNumber < 0) {
                     columnNumber = lastColumn;
                 }

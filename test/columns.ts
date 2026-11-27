@@ -1236,7 +1236,7 @@ describe('Column numbers as texts', () => {
     it('inserts a column at a text column number, and the undo removes only that column', () => {
         const worksheet = create();
 
-        worksheet.insertColumn(1, '0' as unknown as number, true);
+        worksheet.insertColumn(1, '0', true);
         expect(worksheet.getData()).to.eql([['', 'a', 'b', 'c']]);
 
         worksheet.undo();
@@ -1246,9 +1246,20 @@ describe('Column numbers as texts', () => {
     it('inserts a text number of columns', () => {
         const worksheet = create();
 
-        worksheet.insertColumn('2' as unknown as number, 0);
+        worksheet.insertColumn('2', 0);
 
         expect(worksheet.getData()).to.eql([['a', '', '', 'b', 'c']]);
+    });
+
+    it('does nothing for a column number or a number of columns that is not a number', () => {
+        const worksheet = create();
+
+        expect(worksheet.insertColumn(1, 'x')).to.equal(false);
+        expect(worksheet.insertColumn(NaN, 0)).to.equal(false);
+        expect(worksheet.deleteColumn(NaN)).to.equal(false);
+        expect(worksheet.deleteColumn(0, 'x')).to.equal(false);
+
+        expect(worksheet.getData()).to.eql([['a', 'b', 'c']]);
     });
 
     it('gives onbeforedeletecolumn the numbers of the columns of a text column number', () => {
@@ -1260,7 +1271,7 @@ describe('Column numbers as texts', () => {
             },
         })[0];
 
-        worksheet.deleteColumn('1' as unknown as number, '2' as unknown as number);
+        worksheet.deleteColumn('1', '2');
 
         expect(columns).to.eql([1, 2]);
         expect(worksheet.getData()).to.eql([['a']]);

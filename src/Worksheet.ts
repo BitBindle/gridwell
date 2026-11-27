@@ -283,7 +283,7 @@ export class Worksheet {
         return this.columns.setWidth(column, width);
     }
 
-    insertRow(mixed?: number | jspreadsheet.CellValue[], rowNumber?: number, insertBefore?: boolean | number) {
+    insertRow(mixed?: number | string | jspreadsheet.CellValue[], rowNumber?: number | string, insertBefore?: boolean | number) {
         return this.rowManager.insert(mixed, rowNumber, insertBefore);
     }
 
@@ -291,7 +291,7 @@ export class Worksheet {
         return this.rowManager.move(rowNumber, newPositionNumber);
     }
 
-    deleteRow(rowNumber?: number, numOfRows?: number) {
+    deleteRow(rowNumber?: number | string, numOfRows?: number | string) {
         return this.rowManager.delete(rowNumber, numOfRows);
     }
 
@@ -381,7 +381,7 @@ export class Worksheet {
         return this.styles.reset(o, ignoreHistoryAndEvents);
     }
 
-    insertColumn(mixed?: number | jspreadsheet.CellValue[], columnNumber?: number, insertBefore?: boolean | number, properties?: jspreadsheet.Column[]) {
+    insertColumn(mixed?: number | string | jspreadsheet.CellValue[], columnNumber?: number | string, insertBefore?: boolean | number, properties?: jspreadsheet.Column[]) {
         return this.columns.insert(mixed, columnNumber, insertBefore, properties);
     }
 
@@ -389,7 +389,7 @@ export class Worksheet {
         return this.columns.move(o, d);
     }
 
-    deleteColumn(columnNumber?: number, numOfColumns?: number) {
+    deleteColumn(columnNumber?: number | string, numOfColumns?: number | string) {
         return this.columns.delete(columnNumber, numOfColumns);
     }
 

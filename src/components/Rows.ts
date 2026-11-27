@@ -438,7 +438,7 @@ export class Rows {
      * @param rowNumber - The row next to which the rows go. The last row by default.
      * @param insertBefore - Put the rows before that row instead of after it.
      */
-    insert(mixed?: number | jspreadsheet.CellValue[], rowNumber?: number, insertBefore?: boolean | number): false | undefined {
+    insert(mixed?: number | string | jspreadsheet.CellValue[], rowNumber?: number | string, insertBefore?: boolean | number): false | undefined {
         const worksheet = this.worksheet;
 
         // The application changes the rows of the row source mode, and calls resetRows
@@ -456,6 +456,10 @@ export class Rows {
 
             if (!Array.isArray(mixed)) {
                 numOfRows = toNumber(mixed) ?? 1;
+                // A value that is not a number inserts nothing
+                if (Number.isNaN(numOfRows)) {
+                    return false;
+                }
             } else {
                 numOfRows = 1;
 
@@ -471,6 +475,9 @@ export class Rows {
             const lastRow = worksheet.options.data.length - 1;
 
             rowNumber = toNumber(rowNumber);
+            if (Number.isNaN(rowNumber)) {
+                return false;
+            }
             if (rowNumber == null || rowNumber >= lastRow || rowNumber < 0) {
                 rowNumber = lastRow;
             }
@@ -701,7 +708,7 @@ export class Rows {
      * @param rowNumber - The first row to delete. Without it, the selected rows, or the last row.
      * @param numOfRows - The number of rows to delete.
      */
-    delete(rowNumber?: number, numOfRows?: number): false | undefined {
+    delete(rowNumber?: number | string, numOfRows?: number | string): false | undefined {
         const worksheet = this.worksheet;
 
         // The application changes the rows of the row source mode, and calls resetRows
@@ -728,8 +735,12 @@ export class Rows {
                 // Last column
                 const lastRow = worksheet.options.data.length - 1;
 
+                // A value that is not a number deletes nothing
                 rowNumber = toNumber(rowNumber);
                 numOfRows = toNumber(numOfRows);
+                if (Number.isNaN(rowNumber) || Number.isNaN(numOfRows)) {
+                    return false;
+                }
                 if (rowNumber == null || rowNumber > lastRow || rowNumber < 0) {
                     rowNumber = lastRow;
                 }
