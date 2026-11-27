@@ -1733,9 +1733,10 @@ declare namespace jspreadsheet {
         rowSource?: RowSource;
 
         /**
-         * The merged ranges of the build: the first cell of each range, with its colspan and its rowspan. The build leaves
-         * out a range that does not fit in the sheet, that crosses an earlier range, or that has invalid spans, and shows
-         * its first cell on the console.
+         * The merged ranges of the build: the first cell of each range, with its colspan and its rowspan. A missing span,
+         * or a span below 1, is 1. The build leaves out a range of one cell, a range that goes past the last row or column,
+         * and a range that crosses an earlier range, and shows their first cells on the console. The worksheet keeps this
+         * object and changes it: the build deletes the ranges that it leaves out, and the merge methods change the ranges.
          */
         mergeCells?: Record<string, [number, number]>;
 

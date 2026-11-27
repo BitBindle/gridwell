@@ -1,7 +1,7 @@
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import { getCoordsFromRange } from '../utils/helpers.js';
 import type { Worksheet } from '../types/internal';
-import { RowSource, checkMerges, recordRows, reportRefusedMerges } from './RowSource.js';
+import { RowSource, checkMerges, optionSpans, recordRows, reportRefusedMerges } from './RowSource.js';
 import type { CellValue, WorksheetInstance } from '../jspreadsheet';
 
 /**
@@ -137,15 +137,11 @@ export class Data {
             worksheet.view.updatePagination();
         }
 
-        // Merge cells. A range that does not fit in the sheet, or that crosses an earlier range, is left out, as in the row
-        // source mode. The ranges of an earlier build also hold their td elements, so only the spans are checked.
+        // Merge cells. A range that is not valid, that goes past the last row or column, or that crosses an earlier range, is
+        // left out, as in the row source mode.
         if (worksheet.options.mergeCells) {
             const mergeCells = worksheet.options.mergeCells;
-            const spans: Record<string, readonly unknown[]> = {};
-            for (const [key, value] of Object.entries(mergeCells)) {
-                spans[key] = Array.isArray(value) ? value.slice(0, 2) : [];
-            }
-            const checked = checkMerges(spans, worksheet.headers.length, worksheet.records.length);
+            const checked = checkMerges(optionSpans(mergeCells), worksheet.headers.length, worksheet.records.length);
             for (const key of checked.refused) {
                 delete mergeCells[key];
             }

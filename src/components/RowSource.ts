@@ -145,10 +145,24 @@ class CoveredColumns {
     }
 }
 
+/**
+ * The spans of the merged ranges of the option mergeCells, as the build checks them: a missing span, or a span below 1,
+ * is 1, as in setMerge. A range of an earlier build also holds its td elements, which the check does not need.
+ */
+export function optionSpans(merges: Record<string, readonly unknown[]> | undefined) {
+    const spans: Record<string, unknown[]> = {};
+    for (const [name, value] of Object.entries(merges || {})) {
+        spans[name] = Array.isArray(value)
+            ? [value[0], value[1]].map((span) => (span === undefined || (typeof span === 'number' && !(span > 1)) ? 1 : span))
+            : [];
+    }
+    return spans;
+}
+
 /** Show on the console the first cells of the merged ranges of the options that the build leaves out. */
 export function reportRefusedMerges(refused: string[]) {
     if (refused.length) {
-        console.error(`Jspreadsheet: The merged cells ${refused.join(', ')} do not fit in the sheet or cross another range`);
+        console.error(`Jspreadsheet: The merged cells ${refused.join(', ')} are not valid, do not fit in the sheet or cross another range`);
     }
 }
 
@@ -275,7 +289,7 @@ export class RowSource {
         this.layout = new RowLayout(this.count, source.defaultHeight || Number(worksheet.options.defaultRowHeight) || 20, source.runs);
         this.buffer = source.buffer! > 0 ? source.buffer! : defaultBuffer;
         this.maxScrollHeight = source.maxScrollHeight! > 0 ? Math.min(source.maxScrollHeight!, defaultMaxScrollHeight) : defaultMaxScrollHeight;
-        const checked = checkMerges(worksheet.options.mergeCells as Record<string, unknown[]> | undefined, worksheet.headers.length, this.count);
+        const checked = checkMerges(optionSpans(worksheet.options.mergeCells), worksheet.headers.length, this.count);
         this.merges = checked.merges;
         reportRefusedMerges(checked.refused);
         this.indexMerges();

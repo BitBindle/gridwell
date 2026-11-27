@@ -120,9 +120,10 @@ describe('The row source mode', () => {
             errors.push(args);
         };
         try {
-            const { worksheet } = build({}, { mergeCells: { A1: [2, 2], B2: [2, 2], C5: [2, 2] } });
+            const { worksheet } = build({}, { mergeCells: { A1: [2, 2], B2: [2, 2], C5: [2, 2], A10: [0, 2] } });
 
-            expect(worksheet.getMerge()).to.eql({ A1: [2, 2] });
+            // A span below 1 is 1, as in the other modes
+            expect(worksheet.getMerge()).to.eql({ A1: [2, 2], A10: [1, 2] });
             expect(errors).to.have.length(1);
             expect(String(errors[0][0])).to.contain('B2, C5');
         } finally {
