@@ -245,6 +245,42 @@ describe('The column window of the row source mode', () => {
         expect(cell.style.whiteSpace).to.equal('');
     });
 
+    it('gives the cell its own white-space again when the range goes, also from setStyle on a dropdown cell (issue #211)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { wordWrap: true };
+        columns[135] = { type: 'dropdown', source: ['a'] };
+        const { worksheet } = build({}, { columns });
+        worksheet.scrollToColumn(145);
+        // The dropdown cell has a white-space from setStyle, which showValue does not set again
+        worksheet.setStyle('EF5', 'white-space', 'nowrap');
+        worksheet.setMerge('A5', 150, 1);
+
+        const cell = worksheet.records[4][135].element;
+        expect(cell.textContent).to.equal('0:4');
+        expect(cell.style.whiteSpace).to.equal('pre-wrap');
+
+        worksheet.removeMerge('A5');
+        expect(cell.style.whiteSpace).to.equal('nowrap');
+        expect(worksheet.getStyle('EF5')).to.include('white-space: nowrap');
+    });
+
+    it('gives a calendar cell that showed the text of a merged range its own wrap again (issue #211)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { wordWrap: true };
+        columns[136] = { type: 'calendar' };
+        const { worksheet } = build({}, { columns });
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.scrollToColumn(146);
+
+        const [from] = worksheet.columnWindow()!;
+        expect(from).to.equal(136);
+        const cell = worksheet.records[4][136].element;
+        expect(cell.style.whiteSpace).to.equal('pre-wrap');
+
+        worksheet.removeMerge('A5');
+        expect(cell.style.whiteSpace).to.equal('');
+    });
+
     it('reads the widths and the hidden columns again after setWidth, hideColumn and refreshColumns', () => {
         const { worksheet } = build();
         const spacerWidth = () => {

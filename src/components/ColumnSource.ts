@@ -103,6 +103,11 @@ export class ColumnSource {
     private wantedLeft: number | null = null;
     /** The cells that show the text of a merged range that starts left of the window. */
     private readonly moved = new Map<string, number | null>();
+    /**
+     * The own white-space of the cells that show the text of a merged range, from before moveText gave them the wrap of
+     * the text. The value can come from setStyle. rebuild puts it back.
+     */
+    private readonly ownWrap = new Map<string, string>();
 
     constructor(worksheet: Worksheet, source: jspreadsheet.RowSource) {
         this.worksheet = worksheet;
@@ -141,6 +146,7 @@ export class ColumnSource {
         const worksheet = this.worksheet;
         this.layout = this.makeLayout();
         this.moved.clear();
+        this.ownWrap.clear();
         const frozen = this.frozenCount();
         const header = worksheet.headerContainer;
         const colgroup = worksheet.colgroupContainer;
@@ -496,10 +502,14 @@ export class ColumnSource {
         const worksheet = this.worksheet;
         const given = worksheet.rowSource!.values(y, [from]);
         const value = given?.[from] ?? '';
-        this.moved.set(getColumnNameFromId([to, y]), from);
+        const name = getColumnNameFromId([to, y]);
+        this.moved.set(name, from);
         const element = worksheet.records[y][to].element;
         const td = worksheet.cells.create(from, y, value, true);
         element.innerHTML = td.innerHTML;
+        if (!this.ownWrap.has(name)) {
+            this.ownWrap.set(name, element.style.whiteSpace);
+        }
         element.style.whiteSpace = td.style.whiteSpace;
         // The text goes through the render of the first column, as createRecord does
         const column = worksheet.options.columns?.[from];
@@ -540,13 +550,17 @@ export class ColumnSource {
         }
     }
 
-    /** Make the content and the wrap of the cell (x, y) again from its value, as a new cell has them. */
+    /** Make the content of the cell (x, y) again from its value, as a new cell has it, and give the cell its own wrap again. */
     private rebuild(x: number, y: number) {
         const worksheet = this.worksheet;
         const element = worksheet.records[y][x].element;
-        const td = worksheet.cells.create(x, y, worksheet.options.data[y][x], true);
-        element.innerHTML = td.innerHTML;
-        element.style.whiteSpace = td.style.whiteSpace;
+        element.innerHTML = worksheet.cells.create(x, y, worksheet.options.data[y][x], true).innerHTML;
+        const name = getColumnNameFromId([x, y]);
+        const own = this.ownWrap.get(name);
+        if (own !== undefined) {
+            element.style.whiteSpace = own;
+            this.ownWrap.delete(name);
+        }
     }
 
     /** The cells that showed the text of a merged range show their own value again. */
@@ -563,6 +577,8 @@ export class ColumnSource {
                 worksheet.cells.showValue(x, y);
             }
         }
+        // A cell that left the window has no own wrap to get back
+        this.ownWrap.clear();
     }
 
     /**
