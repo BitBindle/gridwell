@@ -603,11 +603,29 @@ describe('The row source mode', () => {
     it('leaves out the merged ranges that do not fit the new row count of resetRows', () => {
         const { worksheet } = build({ count: 50 }, { mergeCells: { A2: [2, 2], A9: [2, 5], A40: [2, 2] } });
 
-        worksheet.resetRows({ count: 10 });
+        // The current ranges that do not fit are named (issue #230)
+        expect(worksheet.resetRows({ count: 10 })).to.eql(['A9', 'A40']);
 
         expect(worksheet.getMerge()).to.eql({ A2: [2, 2] });
         worksheet.updateSelectionFromCoords(0, 9, 0, 9);
         expect(worksheet.selection.bounds).to.eql([0, 9, 0, 9]);
+    });
+
+    it('returns the new merged ranges of resetRows that it leaves out, as replaceMerges does (issue #230)', () => {
+        const { worksheet } = build({ count: 100 }, { mergeCells: { C20: [1, 2] } });
+
+        // A9 goes past the new row count, B1 crosses A1, D1 is a range of one cell, and the key X is not a cell name
+        const refused = worksheet.resetRows({ count: 10, merges: { A1: [2, 2], A9: [2, 5], B1: [2, 1], D1: [1, 1], X: [2, 2] } });
+
+        expect(refused).to.eql(['A9', 'B1', 'D1', 'X']);
+        expect(worksheet.getMerge()).to.eql({ A1: [2, 2] });
+        expect(worksheet.resetRows()).to.eql([]);
+    });
+
+    it('returns an empty list from resetRows outside the row source mode', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [2, 2] }] })[0];
+        expect(worksheet.resetRows({ count: 1 })).to.eql([]);
+        expect(worksheet.rows.length).to.equal(2);
     });
 
     it('keeps the order of the keys and the unchanged ranges in replaceMerges, with the events of the other modes', () => {

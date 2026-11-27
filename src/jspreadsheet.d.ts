@@ -2702,8 +2702,12 @@ declare namespace jspreadsheet {
          * inserted or deleted rows. All rows of the window are made again. The scroll position and the selection stay. When
          * a merged range hides the first selected cell, a selection inside the range selects its first cell, and a larger
          * selection grows to hold the range.
+         *
+         * A merged range is left out when it is not valid, does not fit the new row count, or crosses a range that stays. Without
+         * `merges`, the current ranges that do not fit the new row count are left out.
+         * @returns The first cells of the ranges that are left out, as for `replaceMerges`. In the other modes, an empty list.
          */
-        resetRows: (options?: { count?: number; runs?: RowRun[]; merges?: Record<string, [number, number]> }) => void;
+        resetRows: (options?: { count?: number; runs?: RowRun[]; merges?: Record<string, [number, number]> }) => string[];
 
         /**
          * In the row source mode, render the window of rows, and the column window, for the scroll position, for example
