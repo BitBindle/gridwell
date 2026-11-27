@@ -755,6 +755,25 @@ describe('The row source mode', () => {
         expect(worksheet.getSelected(true)).to.eql(['B4', 'C4', 'B5', 'C5']);
     });
 
+    it('brings the selected row into the window before F2, Space or a character opens the editor', () => {
+        const { worksheet } = build();
+        const press = (keyCode: number, key: string) => document.dispatchEvent(new KeyboardEvent('keydown', { key, keyCode, which: keyCode, bubbles: true }));
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+
+        for (const [keyCode, key] of [
+            [113, 'F2'],
+            [32, ' '],
+            [65, 'a'],
+        ] as const) {
+            worksheet.scrollToRow(900);
+            expect(worksheet.records[1]).to.equal(undefined);
+            press(keyCode, key);
+            expect(worksheet.editor.isOpen()).to.equal(true);
+            expect(worksheet.editor.cell).to.equal(worksheet.records[1][1].element);
+            worksheet.closeEditor(worksheet.editor.cell!, false);
+        }
+    });
+
     it('moves the selection before onunmerge, as the other modes do', () => {
         const events: string[] = [];
         const { worksheet } = build(
