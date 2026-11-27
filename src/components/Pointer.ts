@@ -393,6 +393,7 @@ export class Pointer {
                 } else {
                     // Reset selection
                     worksheet.resetSelection();
+                    worksheet.selection.row = null;
                     // Drag helper
                     worksheet.pointer.dragging = {
                         element: e.target as HTMLTableCellElement,
@@ -434,10 +435,12 @@ export class Pointer {
                 }
 
                 // Update selection
+                worksheet.selection.row = null;
                 worksheet.selection.updateFromCoords(o, 0, d, worksheet.options.data.length - 1, e);
             }
         } else {
             if ((e.target.parentNode as HTMLElement).classList.contains('jss_nested')) {
+                worksheet.selection.row = null;
                 let c1, c2;
 
                 if (e.target.getAttribute('data-column')) {
@@ -480,6 +483,7 @@ export class Pointer {
             } else {
                 // Reset selection
                 worksheet.resetSelection();
+                worksheet.selection.column = null;
                 // Drag helper
                 worksheet.pointer.dragging = {
                     element: e.target.parentNode as HTMLTableRowElement,
@@ -507,6 +511,7 @@ export class Pointer {
             }
 
             // Update selection
+            worksheet.selection.column = null;
             worksheet.selection.updateFromCoords(null, o, null, d, e);
         }
     }
