@@ -861,4 +861,26 @@ describe('References to cells after the last row or column (#263)', () => {
         worksheet.undo();
         expect(worksheet.getValue('B2')).to.equal('=Z1+Z2');
     });
+
+    it('gives #REF! to a reference after the last column in a deleted last row, and keeps a reference below it', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '=A3+Z3+Z9+SUM(A1:A100)'],
+                        ['2', ''],
+                        ['3', ''],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.deleteRow(2, 1);
+        expect(worksheet.getValue('B1')).to.equal('=#REF!+#REF!+Z9+SUM(A1:A100)');
+        expect(Object.keys(worksheet.formulas.chain)).to.not.include('Z3');
+        expect(worksheet.formulas.chain.Z9).to.deep.equal(['B1']);
+        worksheet.undo();
+        expect(worksheet.getValue('B1')).to.equal('=A3+Z3+Z9+SUM(A1:A100)');
+        expect(worksheet.formulas.chain.Z3).to.deep.equal(['B1']);
+    });
 });

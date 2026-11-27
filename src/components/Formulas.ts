@@ -30,15 +30,15 @@ interface Shift {
  */
 function shiftName(name: string, shift: Shift): string | null | undefined {
     const first = shift.count > 0 ? shift.index : shift.index - shift.count;
-    if (first >= (shift.axis === 1 ? shift.rows : shift.columns)) {
-        return undefined;
-    }
     const cell = getIdFromColumnName(name);
     if ((cell[0] < shift.columns && cell[1] < shift.rows) || cell[shift.axis] < shift.index) {
         return undefined;
     }
     if (cell[shift.axis] < first) {
         return null;
+    }
+    if (first >= (shift.axis === 1 ? shift.rows : shift.columns)) {
+        return undefined;
     }
     cell[shift.axis] += shift.count;
     return getColumnNameFromId(cell);

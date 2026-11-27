@@ -1464,7 +1464,9 @@ declare namespace jspreadsheet {
 
         /**
          * Change the references of the formulas when rows or columns are inserted, deleted, moved or sorted. A delete gives a
-         * reference to a deleted cell the value #REF!, and a range ends at the cells that stay. With false,
+         * reference to a deleted cell the value #REF!, and a range ends at the cells that stay. A reference to a cell after the
+         * last row or column moves with the rows or columns of the table, and stays when an insert adds rows or columns
+         * after the last one or a delete moves no row or column of the table. With false,
          * each formula text stays as it is, for example when a server changes the references, and each formula calculates
          * again with the cells that its text names after the change. The fill handle still moves the relative references
          * of a formula that it copies.
