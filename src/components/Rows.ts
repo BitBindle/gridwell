@@ -459,11 +459,6 @@ export class Rows {
                 }
             }
 
-            // Respect pagination
-            if (worksheet.options.pagination! > 0) {
-                worksheet.page(worksheet.view.pageNumber);
-            }
-
             // Keep history
             worksheet.history.add({
                 action: 'insertRow',
@@ -482,6 +477,11 @@ export class Rows {
 
             // Remove table references
             worksheet.formulas.updateTableReferences({ row: Number(rowNumber) });
+
+            // Respect pagination. The positions of the cells are up to date, for the editor of a row that leaves the page.
+            if (worksheet.options.pagination! > 0) {
+                worksheet.page(worksheet.view.pageNumber);
+            }
 
             // Events
             worksheet.dispatch('oninsertrow', worksheet, onbeforeinsertrowRecords);
@@ -554,11 +554,6 @@ export class Rows {
             }
         }
 
-        // Respect pagination
-        if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
-            worksheet.page(worksheet.view.pageNumber);
-        }
-
         // Keeping history of changes
         worksheet.history.add({
             action: 'moveRow',
@@ -573,6 +568,14 @@ export class Rows {
 
         // Update table references
         worksheet.formulas.updateTableReferences({ row: Math.min(Number(o), Number(d)) });
+
+        // Respect pagination
+        if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
+            worksheet.page(worksheet.view.pageNumber);
+        }
+
+        // A row that leaves the table body takes its editor with it. The positions of the cells are up to date.
+        worksheet.editor.settle();
 
         // Events
         worksheet.dispatch('onmoverow', worksheet, parseInt(o), parseInt(d), 1);
@@ -697,11 +700,6 @@ export class Rows {
                         }
                     }
 
-                    // Respect pagination
-                    if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
-                        worksheet.page(worksheet.view.pageNumber);
-                    }
-
                     // Keep history
                     worksheet.history.add({
                         action: 'deleteRow',
@@ -720,6 +718,11 @@ export class Rows {
 
                     // Remove table references
                     worksheet.formulas.updateTableReferences({ row: Number(rowNumber) });
+
+                    // Respect pagination. The positions of the cells are up to date, for the editor of a row that leaves the page.
+                    if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
+                        worksheet.page(worksheet.view.pageNumber);
+                    }
 
                     // Events
                     worksheet.dispatch('ondeleterow', worksheet, onbeforedeleterowRecords);
@@ -888,6 +891,7 @@ export class Rows {
         if (worksheet.rowSource) {
             worksheet.rowSource.setLayout(rowNumber, { hidden: true });
             worksheet.selection.updateTabStop();
+            worksheet.editor.settle();
             return;
         }
 
@@ -900,8 +904,9 @@ export class Rows {
             this.schedulePlace();
         }
 
-        // The tab stop of the grid can be in a hidden row
+        // The tab stop of the grid can be in a hidden row, and the editor of a hidden row detaches
         worksheet.selection.updateTabStop();
+        worksheet.editor.settle();
     }
 
     /**

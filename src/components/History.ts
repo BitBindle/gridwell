@@ -133,17 +133,17 @@ export class History {
             }
         }
 
-        // Respect pagination
-        if (worksheet.options.pagination! > 0) {
-            worksheet.page(worksheet.view.pageNumber);
-        }
-
         // The selection and the editor stay on their cells. A selection with a removed cell is removed.
         const count = type === 1 ? -historyRecord.numOfRows : historyRecord.numOfRows;
         worksheet.editor.shift(1, rowIndex, count);
         worksheet.selection.shift(1, rowIndex, count);
 
         worksheet.formulas.updateTableReferences();
+
+        // Respect pagination. The positions of the cells are up to date, for the editor of a row that leaves the page.
+        if (worksheet.options.pagination! > 0) {
+            worksheet.page(worksheet.view.pageNumber);
+        }
     }
 
     /**

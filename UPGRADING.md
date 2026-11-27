@@ -763,6 +763,20 @@ No option keeps the old behavior, because the ranges that go past the sheet or c
 and the other ranges merged no cells. To keep a range, give it spans that fit in the sheet and do not cross another
 range.
 
+## The editor closes when its cell leaves the table
+
+The open editor saves and closes when its cell leaves the table or no longer shows: a page change, a search, a filter,
+an insert, a delete, a move or an undo that takes the row off the page, `hideRow`, `hideColumn` and `setWidth` with 0.
+`oneditordetach` occurs first, as for lazy loading, and its handler can take the edit. `setData` closes the editor
+without a save. Version 5 kept the editor open on a cell that was not in the table, and a later close saved the text into
+the cell that then had the same position. A load of the lazy loading keeps the editor of a row that stays in the table.
+
+The tab stop and the active cell do not go to a cell that does not show: a cell of a hidden row, or of a column with
+the width 0. `setWidth` with 0 moves the tab stop, as `hideColumn` does. A selection that starts in such a cell, for
+example `selectAll` with a first column of width 0, makes the cell that `down` moves from the active cell: the next
+column with a width, in the same row or in the next row that shows. `up` and `down` move in that column. No option
+keeps the old behavior, because the user could not see or reach the cell.
+
 ## Moves keep the merged ranges that they do not cross, and undo merges the removed ranges again
 
 `moveRow` and `moveColumn` remove only the merged ranges that they cross: a range that has the moved row or column, or a

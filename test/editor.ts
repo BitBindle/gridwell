@@ -3,6 +3,8 @@ import type { Dropdown } from '../src/utils/dropdown';
 
 import jspreadsheet, { type Jspreadsheet } from './support/jspreadsheet';
 
+type DropdownElement = HTMLElement & { dropdown: Dropdown };
+
 function rows(count: number) {
     const data: string[][] = [];
     for (let j = 0; j < count; j++) {
@@ -579,5 +581,247 @@ describe('The text editor and line breaks', () => {
         expect(blurred).to.equal(true);
         // The color picker closes on its own events, which jsdom does not send
         worksheet.closeEditor(cell, false);
+    });
+});
+
+describe('The editor leaves with its cell', () => {
+    function typeIn(worksheet: Jspreadsheet.WorksheetInstance, x: number, y: number) {
+        const cell = worksheet.records[y][x].element;
+        worksheet.openEditor(cell);
+        cell.querySelector<HTMLInputElement | HTMLTextAreaElement>('input, textarea')!.value = 'typed';
+        return cell;
+    }
+
+    describe('A change that removes the cell from the table saves and closes the editor (issue #190)', () => {
+        it('closes the editor when a search hides its row', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(20), search: true }] })[0];
+            typeIn(worksheet, 1, 0);
+
+            worksheet.search('5');
+
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 0)).to.equal('typed');
+            expect(worksheet.getValueFromCoords(1, 15)).to.equal('');
+        });
+
+        it('closes the editor without a save when setData replaces the data', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(20) }] })[0];
+            typeIn(worksheet, 1, 0);
+
+            worksheet.setData([
+                ['new', 'data'],
+                ['more', 'data'],
+            ]);
+
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getData()).to.eql([
+                ['new', 'data'],
+                ['more', 'data'],
+            ]);
+        });
+
+        it('closes the editor when the grid goes to another page', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(9), pagination: 3 }] })[0];
+            typeIn(worksheet, 1, 0);
+
+            worksheet.page(1);
+
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 0)).to.equal('typed');
+            expect(worksheet.getValueFromCoords(1, 3)).to.equal('');
+        });
+
+        it('closes the editor when a move takes its row to another page', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(9), pagination: 3 }] })[0];
+            typeIn(worksheet, 1, 0);
+
+            worksheet.moveRow(0, 5);
+
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 5)).to.equal('typed');
+            expect(worksheet.getValueFromCoords(1, 0)).to.equal('');
+        });
+
+        it('closes the editor when a filter hides its row', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(6), filters: true }] })[0];
+            worksheet.openFilter(0);
+            const dropdown = worksheet.filter!.children[1].querySelector<DropdownElement>('.jdropdown')!.dropdown;
+            typeIn(worksheet, 1, 0);
+
+            dropdown.setValue(['3']);
+            dropdown.close();
+
+            expect(worksheet.view.results).to.eql([3]);
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 0)).to.equal('typed');
+        });
+
+        it('closes the editor when the undo of a delete pushes its row to the next page', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(9), pagination: 3 }] })[0];
+            worksheet.deleteRow(0, 1);
+            typeIn(worksheet, 1, 2);
+
+            worksheet.undo();
+
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getRowData(3)).to.eql(['3', 'typed']);
+        });
+
+        it('closes the editor without a save when oneditordetach returns true', () => {
+            const calls: number[][] = [];
+            const worksheet = jspreadsheet(root, {
+                worksheets: [{ data: rows(9), pagination: 3 }],
+                oneditordetach: (instance, cell, x, y) => {
+                    calls.push([Number(x), Number(y)]);
+                    return true;
+                },
+            })[0];
+            typeIn(worksheet, 1, 0);
+
+            worksheet.page(1);
+
+            expect(calls).to.eql([[1, 0]]);
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 0)).to.equal('');
+        });
+    });
+
+    it('closes the editor when an insert pushes its row to the next page (issue #225)', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(9), pagination: 3 }] })[0];
+        typeIn(worksheet, 1, 2);
+
+        worksheet.insertRow(1, 0, true);
+
+        expect(worksheet.editor.isOpen()).to.equal(false);
+        expect(worksheet.getValueFromCoords(1, 3)).to.equal('typed');
+    });
+
+    it('keeps the editor open when the new page of the lazy loading holds its row (issue #193)', async () => {
+        // The grid loads one page at a time. Let the loads of the tests before end.
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true }] })[0];
+        worksheet.content.dispatchEvent(new window.WheelEvent('wheel', { deltaY: 100 }));
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        expect(worksheet.tbody.contains(worksheet.records[0][1].element)).to.equal(false);
+
+        worksheet.updateSelectionFromCoords(1, 70, 1, 70);
+        const cell = typeIn(worksheet, 1, 70);
+        worksheet.first(false, true);
+
+        expect(worksheet.tbody.contains(worksheet.records[0][1].element)).to.equal(true);
+        expect(worksheet.editor.isOpen()).to.equal(true);
+        expect(worksheet.editor.cell).to.equal(cell);
+        worksheet.closeEditor(cell, false);
+    });
+
+    describe('A hidden row (issue #205)', () => {
+        it('does not take the tab stop when the selection starts in it', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [4, 8] }] })[0];
+            worksheet.hideRow(5);
+
+            worksheet.updateSelectionFromCoords(1, 5, 1, 5);
+
+            const stops = [...worksheet.table.querySelectorAll<HTMLElement>('[tabindex="0"]')];
+            expect(stops).to.have.length(1);
+            expect((stops[0].parentNode as HTMLElement).style.display).to.not.equal('none');
+        });
+
+        it('saves and closes the editor of the row that hideRow hides', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(8) }] })[0];
+            worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+            typeIn(worksheet, 1, 2);
+
+            worksheet.hideRow(2);
+
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 2)).to.equal('typed');
+        });
+
+        it('makes the next row that shows the active cell, also when another cell was active', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [4, 8] }] })[0];
+            worksheet.hideRow(5);
+            worksheet.updateSelectionFromCoords(3, 7, 3, 7);
+
+            worksheet.updateSelectionFromCoords(1, 5, 1, 5);
+
+            const active = worksheet.selection.activeCell!;
+            expect([active.getAttribute('data-x'), active.getAttribute('data-y')]).to.eql(['1', '6']);
+        });
+
+        it('does not take the tab stop in the row source mode', async () => {
+            const worksheet = jspreadsheet(root, {
+                worksheets: [{ minDimensions: [3, 1], tableOverflow: true, rowSource: { count: 1000, buffer: 20, row: (y) => [`a${y}`, `b${y}`, `c${y}`] } }],
+            })[0];
+            await new Promise((resolve) => setTimeout(resolve));
+            worksheet.hideRow(5);
+
+            worksheet.updateSelectionFromCoords(1, 5, 1, 5);
+
+            const stops = [...worksheet.table.querySelectorAll<HTMLElement>('[tabindex="0"]')];
+            expect(stops).to.have.length(1);
+            expect((stops[0].parentNode as HTMLElement).style.display).to.not.equal('none');
+        });
+    });
+
+    describe('A column of width 0 (issue #216)', () => {
+        it('gives the tab stop to a column with a width when setWidth makes the active column 0 wide', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 2] }] })[0];
+            worksheet.updateSelectionFromCoords(1, 0, 1, 0);
+
+            worksheet.setWidth(1, 0);
+
+            expect(worksheet.selection.activeCell!.getAttribute('data-x')).to.not.equal('1');
+        });
+
+        it('saves and closes the editor of a column that setWidth makes 0 wide', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(4) }] })[0];
+            worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+            typeIn(worksheet, 1, 2);
+
+            worksheet.setWidth(1, 0);
+
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 2)).to.equal('typed');
+        });
+
+        it('saves and closes the editor of the column that hideColumn hides', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ data: rows(4) }] })[0];
+            worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+            typeIn(worksheet, 1, 2);
+
+            worksheet.hideColumn(1);
+
+            expect(worksheet.editor.isOpen()).to.equal(false);
+            expect(worksheet.getValueFromCoords(1, 2)).to.equal('typed');
+        });
+
+        it('does not make the first column the active cell of selectAll when it is 0 wide', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 2], columns: [{ width: 0 }, {}, {}] }] })[0];
+
+            worksheet.selectAll();
+
+            expect(worksheet.selection.activeCell!.getAttribute('data-x')).to.equal('1');
+        });
+
+        it('makes the cell that down starts from the active cell of selectAll, also when another cell was active', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 4], columns: [{ width: 0 }, {}, {}] }] })[0];
+            worksheet.updateSelectionFromCoords(2, 2, 2, 2);
+
+            worksheet.selectAll();
+
+            const active = worksheet.selection.activeCell!;
+            expect([active.getAttribute('data-x'), active.getAttribute('data-y')]).to.eql(['1', '0']);
+            worksheet.down();
+            expect(worksheet.selection.range!.map(Number)).to.eql([1, 1, 1, 1]);
+        });
+
+        it('moves down into a column with a width', () => {
+            const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 2], columns: [{ width: 0 }, {}, {}] }] })[0];
+            worksheet.selectAll();
+
+            worksheet.down();
+
+            expect(worksheet.selection.range!.map(Number)).to.eql([1, 1, 1, 1]);
+        });
     });
 });

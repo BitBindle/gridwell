@@ -21,6 +21,11 @@ export class Data {
     set(data?: CellValue[][] | Record<string, CellValue>[]): void {
         const worksheet = this.worksheet;
 
+        // The cells of the open editor go, so the editor closes without a save, as for a delete
+        if (worksheet.editor.isOpen()) {
+            worksheet.closeEditor(worksheet.editor.cell, false);
+        }
+
         // In the row source mode, the application gives the rows when the window shows them
         worksheet.rowSource?.stop();
         worksheet.rowSource = null;

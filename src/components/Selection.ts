@@ -871,18 +871,38 @@ export class Selection {
     }
 
     /**
-     * A cell can be the tab stop when its row is in the table and the cell and its row are not hidden
+     * A cell can be the tab stop when its row is in the table, the cell and its row are not hidden, and its column has a
+     * width or it is a merged range that shows in another column
      */
-    private isVisibleCell(td: HTMLTableCellElement | null | undefined) {
+    isVisibleCell(td: HTMLTableCellElement | null | undefined) {
         const worksheet = this.worksheet;
 
-        return (
-            !!td &&
-            !!td.parentNode &&
-            td.parentNode.parentNode === worksheet.tbody &&
-            td.style.display !== 'none' &&
-            (td.parentNode as HTMLElement).style.display !== 'none'
-        );
+        if (td?.parentNode?.parentNode !== worksheet.tbody || td.style.display === 'none' || (td.parentNode as HTMLElement).style.display === 'none') {
+            return false;
+        }
+        const x = parseInt(td.getAttribute('data-x'));
+        return !this.zeroWidth(x) || this.mergeShows(x, parseInt(td.getAttribute('data-y')));
+    }
+
+    /**
+     * The cell that shows in the column where up and down move from cell (x, y): in row y or the next row of the table
+     * that shows, else in the row before it.
+     */
+    private nextVisibleCell(x: number, y: number) {
+        const worksheet = this.worksheet;
+        const column = this.stopColumn(x, y);
+        let before: HTMLTableCellElement | null = null;
+        for (const tr of worksheet.tbody.children) {
+            const row = parseInt(tr.getAttribute('data-y')!);
+            const td = worksheet.records[row]?.[column]?.element;
+            if (this.isVisibleCell(td)) {
+                if (row >= y) {
+                    return td;
+                }
+                before = td;
+            }
+        }
+        return before;
     }
 
     /**
@@ -1010,9 +1030,15 @@ export class Selection {
     updateActiveCell(x: number, y: number, origin: Event | undefined) {
         const worksheet = this.worksheet;
 
-        const td = worksheet.records[y]?.[x]?.element;
+        let td = worksheet.records[y]?.[x]?.element;
         if (!td) {
             return;
+        }
+
+        // A cell in the table that does not show, in a hidden row or in a column of width 0, is not the tab stop. The next
+        // cell that shows takes it, in the column where up and down move.
+        if (td.parentNode?.parentNode === worksheet.tbody && !this.isVisibleCell(td)) {
+            td = this.nextVisibleCell(x, y) || this.getFirstVisibleCell() || td;
         }
 
         this.setActiveCell(td);
@@ -1113,6 +1139,33 @@ export class Selection {
     private zeroWidth(x: number) {
         const width = this.worksheet.cols[x]?.colElement.getAttribute('width');
         return width !== null && width !== undefined && parseFloat(width) === 0;
+    }
+
+    /**
+     * The column of a vertical move from column x of row y: x when the keyboard can stop in it, else the next column to
+     * the right, else to the left, where it can stop. A selection of all cells can start in a column of width 0.
+     */
+    private stopColumn(x: number, y: number) {
+        const columns = this.worksheet.headers.length;
+        x = parseInt(x);
+        y = parseInt(y);
+        if (!this.worksheet.rowSource && !this.worksheet.records[y]?.[x]) {
+            return x;
+        }
+        if (this.columnStop(x, y, true)) {
+            return x;
+        }
+        for (let i = x + 1; i < columns; i++) {
+            if (this.columnStop(i, y, true)) {
+                return i;
+            }
+        }
+        for (let i = x - 1; i >= 0; i--) {
+            if (this.columnStop(i, y, true)) {
+                return i;
+            }
+        }
+        return x;
     }
 
     /**
@@ -1270,6 +1323,7 @@ export class Selection {
                 this.upVisible(range, 1, ctrlKey ? 0 : 1);
             }
         } else {
+            range[0] = this.stopColumn(range[0], range[1]);
             if (range[1] > 0) {
                 this.upVisible(range, 0, ctrlKey ? 0 : 1);
             }
@@ -1477,6 +1531,7 @@ export class Selection {
                 this.downVisible(range, 1, ctrlKey ? 0 : 1);
             }
         } else {
+            range[0] = this.stopColumn(range[0], range[1]);
             if (range[1] < worksheet.records.length - 1) {
                 this.downVisible(range, 0, ctrlKey ? 0 : 1);
             }
