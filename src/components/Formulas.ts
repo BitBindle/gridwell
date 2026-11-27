@@ -24,12 +24,17 @@ interface Shift {
 }
 
 /**
- * The new name of a cell outside the table after an insert or a delete. Undefined when the cell stays: a cell before the
- * change, a cell of the table, or any cell when the change moves no row or column of the table, for example when it adds
- * rows after the last row. Null when the delete removed the row or the column of the cell.
+ * The new name of a cell outside the table after an insert or a delete. Null when the delete removed the row or the column
+ * of the cell. Undefined when the cell stays: a cell before the change, a cell of the table, or any other cell when the
+ * change moves no row or column of the table, for example when it adds rows after the last row.
  */
 function shiftName(name: string, shift: Shift): string | null | undefined {
     const first = shift.count > 0 ? shift.index : shift.index - shift.count;
+    const moves = first < (shift.axis === 1 ? shift.rows : shift.columns);
+    // An insert removes no cell, so an insert that moves no row or column of the table keeps all names
+    if (!moves && shift.count > 0) {
+        return undefined;
+    }
     const cell = getIdFromColumnName(name);
     if ((cell[0] < shift.columns && cell[1] < shift.rows) || cell[shift.axis] < shift.index) {
         return undefined;
@@ -37,7 +42,7 @@ function shiftName(name: string, shift: Shift): string | null | undefined {
     if (cell[shift.axis] < first) {
         return null;
     }
-    if (first >= (shift.axis === 1 ? shift.rows : shift.columns)) {
+    if (!moves) {
         return undefined;
     }
     cell[shift.axis] += shift.count;
