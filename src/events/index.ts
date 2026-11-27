@@ -24,6 +24,10 @@ export function setEvents(root: Document | HTMLElement | ShadowRoot) {
     document.addEventListener('keydown', keyDownControls as EventListener);
     // A scroll does not bubble, so the document sees the scroll of the page and of any element in the capture phase
     document.addEventListener('scroll', scrollControls, true);
+    // A scroll in a shadow root does not leave it, so the shadow root of the spreadsheet listens too
+    if (root !== document && root.getRootNode() !== document) {
+        root.addEventListener('scroll', scrollControls, true);
+    }
 }
 
 export function destroyEvents(root: Document | HTMLElement | ShadowRoot) {
@@ -42,4 +46,5 @@ export function destroyEvents(root: Document | HTMLElement | ShadowRoot) {
     root.removeEventListener('focusin', focusInControls as EventListener);
     document.removeEventListener('keydown', keyDownControls as EventListener);
     document.removeEventListener('scroll', scrollControls, true);
+    root.removeEventListener('scroll', scrollControls, true);
 }

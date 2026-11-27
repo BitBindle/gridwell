@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Worksheet } from './support/jspreadsheet';
+import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
 
 function rows(count: number) {
     const data: string[][] = [];
@@ -172,7 +172,7 @@ describe('Frozen rows', () => {
             expect(frozen(worksheet).map(([, top]) => top)).to.eql(['30px', '60px']);
 
             const before = disconnects;
-            jspreadsheet.destroy(element as never);
+            jspreadsheet.destroy(element as Jspreadsheet.JspreadsheetInstanceElement, true);
             expect(disconnects).to.equal(before + 1);
             expect(observed).to.eql([]);
         } finally {
@@ -643,7 +643,7 @@ describe('Header rows stick below each other (issue #184)', () => {
             }
             expect(tops(worksheet)).to.eql(['0px', '30px']);
 
-            jspreadsheet.destroy(element as never);
+            jspreadsheet.destroy(element as Jspreadsheet.JspreadsheetInstanceElement, true);
             expect(observed).to.eql([]);
         } finally {
             (globalThis as { ResizeObserver?: unknown }).ResizeObserver = original;
@@ -779,6 +779,40 @@ describe('The fill handle under the header and the frozen rows (issue #185)', ()
             document.dispatchEvent(new Event('scroll'));
             expect(a.corner.style.display).to.equal('');
             expect(b.corner.style.display).to.equal('none');
+        })
+    );
+
+    it(
+        'checks the fill handle of a worksheet in a shadow root, on a scroll outside and inside the shadow root',
+        withRowHeight(async () => {
+            const host = document.createElement('div');
+            root.appendChild(host);
+            const shadow = host.attachShadow({ mode: 'open' });
+            const around = document.createElement('div');
+            const element = document.createElement('div');
+            around.appendChild(element);
+            shadow.appendChild(around);
+            const [worksheet] = jspreadsheet(element, { root: shadow, worksheets: [{ data: rows(40), filters: true }] });
+            await built();
+            stick(worksheet.thead.lastElementChild!, 40);
+            select(worksheet, 1, 10, 300);
+
+            // An element outside the shadow host scrolls. Node.contains does not cross the shadow root.
+            worksheet.records[10][1].element.getBoundingClientRect = rect(150, 10, 100, 20);
+            root.dispatchEvent(new Event('scroll'));
+            expect(worksheet.corner.style.display).to.equal('none');
+
+            // An element in the shadow root scrolls. The scroll does not leave the shadow root.
+            worksheet.records[10][1].element.getBoundingClientRect = rect(150, 280, 100, 20);
+            around.dispatchEvent(new Event('scroll'));
+            expect(worksheet.corner.style.display).to.equal('');
+
+            // After destroy, the shadow root does not call the worksheet
+            jspreadsheet.destroy(element as Jspreadsheet.JspreadsheetInstanceElement, true);
+            worksheet.records[10][1].element.getBoundingClientRect = () => {
+                throw new Error('read after destroy');
+            };
+            around.dispatchEvent(new Event('scroll'));
         })
     );
 
