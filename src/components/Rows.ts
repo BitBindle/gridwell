@@ -770,6 +770,9 @@ export class Rows {
                     // An editor in a deleted row closes without a save
                     worksheet.editor.closeIn(1, rowNumber, rowNumber + numOfRows - 1);
 
+                    // A row that the filter hides shows when an undo gives it back
+                    worksheet.view.releaseRows(rowNumber, numOfRows);
+
                     // Remove node
                     for (let row = rowNumber; row < rowNumber + numOfRows; row++) {
                         if (worksheet.rows[row].element.parentNode === worksheet.tbody) {

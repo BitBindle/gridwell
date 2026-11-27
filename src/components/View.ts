@@ -35,7 +35,10 @@ function anchorRow(tbody: HTMLTableSectionElement, last: boolean, frozen: number
 export class View {
     readonly worksheet: Worksheet;
 
-    /** The indexes of the rows that a search or the filters found, or null when the worksheet shows every row. */
+    /**
+     * The indexes of the rows that a search or the filters found, or null when the worksheet shows every row. The rows of
+     * an insert, and the rows that an undo of a delete gives back, also join the results.
+     */
     results: number[] | null = null;
 
     /** The scroll position from the top at the last scroll, so the fill handle is checked only for a vertical scroll. */
@@ -464,6 +467,26 @@ export class View {
     }
 
     /**
+     * Give back the display of rows that leave the worksheet while a search or a filter hides them. An undo or a redo can
+     * bring them back after the results change, and then they show. A row of the results keeps a display of hideRow.
+     * @param rowIndex - The first row that leaves.
+     * @param count - The number of rows that leave.
+     */
+    releaseRows(rowIndex: number, count: number) {
+        const worksheet = this.worksheet;
+        const results = this.results;
+        if (!results) {
+            return;
+        }
+        const shown = new Set(results);
+        for (let j = rowIndex; j < rowIndex + count; j++) {
+            if (!shown.has(j)) {
+                worksheet.rows[j].element.style.display = '';
+            }
+        }
+    }
+
+    /**
      * Put new rows in the table body while a search or a filter gives results. The rows go next to the rows of the
      * results around them that the body has, and stay out of the body when it has none there.
      * @param rowIndex - The first new row.
@@ -479,8 +502,6 @@ export class View {
         const after = !before && previous?.element.parentNode === worksheet.tbody ? previous.element : null;
         for (let j = rowIndex; j < rowIndex + count; j++) {
             const element = worksheet.rows[j].element;
-            // A row that a filter hid before a delete shows again after the undo
-            element.style.display = '';
             if (before || after || (!next && !previous)) {
                 worksheet.tbody.insertBefore(element, before || after?.nextSibling || null);
             }

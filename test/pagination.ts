@@ -274,4 +274,39 @@ describe('Insert and delete change the results of a filter (#234)', () => {
         expect(worksheet.rows[3].element.style.display).to.equal('');
         expect(shown(worksheet)).to.eql(['0', '2', '3', '4', '6', '8']);
     });
+
+    it('shows a row that the filter hid before the delete after a reset of the filter and the undo', () => {
+        const worksheet = create();
+
+        worksheet.deleteRow(3, 1);
+        worksheet.resetFilters();
+        worksheet.undo();
+        expect(worksheet.view.results).to.equal(null);
+        expect(worksheet.rows[3].element.style.display).to.equal('');
+        expect(shown(worksheet)).to.have.length(10);
+    });
+
+    it('shows a new row that a filter hid before the undo, after a reset of the filter and the redo', () => {
+        const worksheet = create();
+
+        worksheet.insertRow(['3', 'new'], 0);
+        worksheet.view.filters[0] = ['0', '2'];
+        worksheet.view.closeFilter(0);
+        expect(worksheet.rows[1].element.style.display).to.equal('none');
+        worksheet.undo();
+        worksheet.resetFilters();
+        worksheet.redo();
+        expect(worksheet.view.results).to.equal(null);
+        expect(worksheet.rows[1].element.style.display).to.equal('');
+        expect(shown(worksheet)).to.have.length(11);
+    });
+
+    it('keeps a row of the results that hideRow hid hidden after a delete and the undo', () => {
+        const worksheet = create();
+
+        worksheet.hideRow(4);
+        worksheet.deleteRow(4, 1);
+        worksheet.undo();
+        expect(worksheet.rows[4].element.style.display).to.equal('none');
+    });
 });

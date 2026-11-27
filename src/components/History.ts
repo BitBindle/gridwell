@@ -94,6 +94,8 @@ export class History {
             const numOfRows = historyRecord.numOfRows;
             // An editor in a removed row closes without a save
             worksheet.editor.closeIn(1, rowIndex, rowIndex + numOfRows - 1);
+            // A row that the filter hides shows when a redo or an undo gives it back
+            worksheet.view.releaseRows(rowIndex, numOfRows);
             // Remove nodes. With pagination or lazy loading, a row can be outside the table body.
             for (let j = rowIndex; j < numOfRows + rowIndex; j++) {
                 if (worksheet.rows[j].element.parentNode === worksheet.tbody) {
