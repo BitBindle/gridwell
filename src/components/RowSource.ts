@@ -223,10 +223,21 @@ export function checkMerges(
 }
 
 /**
- * The rows of a worksheet that have a record: all rows, or the frozen rows and the window of the row source mode.
+ * Call fn for each row of a worksheet that has a record: all rows, or the frozen rows and the window of the row source
+ * mode. In normal mode, a counted loop goes over the row numbers and makes no array or iterator, because it runs for each
+ * call of, for example, getColumnData and for each horizontal scroll with frozen columns.
  */
-export function recordRows(worksheet: Worksheet) {
-    return worksheet.rowSource ? worksheet.rowSource.attachedRows() : worksheet.rows.map((row, y) => y);
+export function forEachRecordRow(worksheet: Worksheet, fn: (y: number) => void) {
+    if (worksheet.rowSource) {
+        for (const y of worksheet.rowSource.attachedRows()) {
+            fn(y);
+        }
+        return;
+    }
+    const count = worksheet.rows.length;
+    for (let y = 0; y < count; y++) {
+        fn(y);
+    }
 }
 
 /**
@@ -1161,6 +1172,8 @@ export class RowSource {
      * Replace the row count, the runs and the merged ranges, for example after the application changed its rows. All
      * records are made again. The scroll position and the selection stay. When a merged range hides the first selected
      * cell, a selection inside the range selects its first cell, and a larger selection grows to hold the range.
+     * @returns The first cells of the merged ranges that are left out, as replaceMerges returns them. Without new ranges,
+     * these are the ranges that do not fit the new row count.
      */
     reset(options?: { count?: number; runs?: jspreadsheet.RowRun[]; merges?: Record<string, [number, number]> }) {
         const worksheet = this.worksheet;
@@ -1181,7 +1194,8 @@ export class RowSource {
         this.count = count;
         this.layout = new RowLayout(count, this.layout.givenHeight, options?.runs ?? this.layout.runs, this.layout.minHeight);
         // The merged ranges must fit the new row count also without new ranges
-        this.merges = checkMerges(options?.merges ?? this.merges, worksheet.headers.length, count, this.merges).merges;
+        const checked = checkMerges(options?.merges ?? this.merges, worksheet.headers.length, count, this.merges);
+        this.merges = checked.merges;
         this.indexMerges();
         worksheet.rows = new Array(count);
         worksheet.records = new Array(count);
@@ -1231,6 +1245,7 @@ export class RowSource {
         }
         // The focus of a cell that is in a frozen row now goes back to it
         this.restoreFocus();
+        return checked.refused;
     }
 
     /** Set the height (pixels) or the hidden state of rows in the layout and in their records. */

@@ -5,7 +5,7 @@ import { setHeaderRole } from './Accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
 import { toGrid, toScreen } from '../utils/zoom.js';
-import { recordRows } from './RowSource.js';
+import { forEachRecordRow } from './RowSource.js';
 import { askConfirm } from '../utils/dialogs.js';
 
 /**
@@ -784,13 +784,13 @@ export class Columns {
             if (worksheet.filter && worksheet.filter.children.length > columnIndex + 1) {
                 (worksheet.filter.children[columnIndex + 1] as HTMLElement).style.display = '';
             }
-            for (const j of this.rowIndexes()) {
+            forEachRecordRow(worksheet, (j) => {
                 // A column outside the column window has no cells
                 const record = worksheet.records[j][columnIndex];
                 if (record) {
                     record.element.style.display = '';
                 }
-            }
+            });
         }
 
         worksheet.merges.updateColumns(colNumber);
@@ -827,13 +827,13 @@ export class Columns {
             if (worksheet.filter && worksheet.filter.children.length > columnIndex + 1) {
                 (worksheet.filter.children[columnIndex + 1] as HTMLElement).style.display = 'none';
             }
-            for (const j of this.rowIndexes()) {
+            forEachRecordRow(worksheet, (j) => {
                 // A column outside the column window has no cells
                 const record = worksheet.records[j][columnIndex];
                 if (record) {
                     record.element.style.display = 'none';
                 }
-            }
+            });
         }
 
         worksheet.merges.updateColumns(colNumber);
@@ -864,9 +864,9 @@ export class Columns {
     getData(columnNumber: number, processed?: boolean): jspreadsheet.CellValue[] {
         const worksheet = this.worksheet;
 
-        const dataset = [];
+        const dataset: jspreadsheet.CellValue[] = [];
         // Go through the rows to get the data
-        for (const j of this.rowIndexes()) {
+        forEachRecordRow(worksheet, (j) => {
             // A column outside the column window has no cells, and is empty
             if (!worksheet.records[j][columnNumber]) {
                 dataset.push('');
@@ -875,7 +875,7 @@ export class Columns {
             } else {
                 dataset.push(worksheet.options.data[j][columnNumber]);
             }
-        }
+        });
         return dataset;
     }
 
@@ -1032,11 +1032,6 @@ export class Columns {
         return tr;
     }
 
-    /** The rows with a record: all rows, or the frozen rows and the window of the row source mode. */
-    private rowIndexes() {
-        return recordRows(this.worksheet);
-    }
-
     // Get the width of the index column. The frozen columns stay at the left of the content when scrollLeft is more than this width.
     getIndexWidth() {
         return this.worksheet.table.classList.contains('jss_hidden_index') ? 0 : 50;
@@ -1073,8 +1068,6 @@ export class Columns {
         const indexWidth = this.getIndexWidth();
         // The worksheet can have fewer columns than freezeColumns, for example after deleteColumn
         const freezeColumns = Math.min(worksheet.options.freezeColumns!, worksheet.headers.length);
-        // The rows with a record, once for all frozen columns
-        const rows = freezeColumns > 0 ? this.rowIndexes() : [];
         let width = 0;
         // The scroll position is in screen pixels, and the widths and the left of a cell in grid pixels
         if (scrollLeft > toScreen(worksheet, indexWidth)) {
@@ -1108,7 +1101,7 @@ export class Columns {
                 // frozen row is sticky, as a header is, so it gets the same distance from the left as the header.
                 const shifted = `${toGrid(worksheet, scrollLeft) - indexWidth - 1}px`;
                 const frozenRows = worksheet.rowManager.getFreezeCount();
-                for (const j of rows) {
+                forEachRecordRow(worksheet, (j) => {
                     if (worksheet.rows[j] && worksheet.records[j][i]) {
                         worksheet.records[j][i].element.classList.add('jss_freezed');
                         if (isLast || wasLast) {
@@ -1116,7 +1109,7 @@ export class Columns {
                         }
                         worksheet.records[j][i].element.style.left = j < frozenRows ? `${width}px` : shifted;
                     }
-                }
+                });
             }
         } else {
             for (let i = 0; i < freezeColumns; i++) {
@@ -1145,12 +1138,12 @@ export class Columns {
 
         worksheet.headers[i].classList.remove('jss_freezed', 'jss_freezed_last');
         worksheet.headers[i].style.left = '';
-        for (const j of this.rowIndexes()) {
+        forEachRecordRow(worksheet, (j) => {
             if (worksheet.records[j][i]) {
                 worksheet.records[j][i].element.classList.remove('jss_freezed', 'jss_freezed_last');
                 worksheet.records[j][i].element.style.left = '';
             }
-        }
+        });
     }
 
     /**

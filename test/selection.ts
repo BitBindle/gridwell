@@ -470,12 +470,12 @@ describe('The scroll to the active cell below the header', () => {
         expect(worksheet.content.scrollTop).to.equal(0);
     });
 
-    it('uses the highest header row for nested headers, because each header row sticks at the top', () => {
+    it('uses the height of all the header rows for nested headers, because they stick below each other', () => {
         const worksheet = scrolledWorksheet([24, 26], [[{ title: 'Group', colspan: 2 }]]);
 
         up(worksheet, 20);
 
-        expect(worksheet.content.scrollTop).to.equal(500 + 20 - 26);
+        expect(worksheet.content.scrollTop).to.equal(500 + 20 - 50);
     });
 });
 

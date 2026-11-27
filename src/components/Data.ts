@@ -1,7 +1,7 @@
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import { getCoordsFromRange } from '../utils/helpers.js';
 import type { Worksheet } from '../types/internal';
-import { RowSource, checkMerges, optionSpans, recordRows, reportRefusedMerges } from './RowSource.js';
+import { RowSource, checkMerges, forEachRecordRow, optionSpans, reportRefusedMerges } from './RowSource.js';
 import type { CellValue, WorksheetInstance } from '../jspreadsheet';
 
 /**
@@ -355,16 +355,11 @@ export class Data {
         const dataset: CellValue[][] = [];
         let py = 0;
 
-        // The rows with a record: in the row source mode, the frozen rows and the window
-        const rows = recordRows(worksheet);
-
-        // Column length
-        const x = Math.max(
-            0,
-            ...rows.map((j) => {
-                return worksheet.options.data[j].length;
-            })
-        );
+        // Column length, from the rows with a record: in the row source mode, the frozen rows and the window
+        let x = 0;
+        forEachRecordRow(worksheet, (j) => {
+            x = Math.max(x, worksheet.options.data[j].length);
+        });
 
         // A column outside the column window has no cell. It is selected when the selection holds it, and it is empty.
         const bounds = worksheet.selection.bounds;
@@ -373,7 +368,7 @@ export class Data {
         }
 
         // Go through the columns to get the data
-        for (const j of rows) {
+        forEachRecordRow(worksheet, (j) => {
             let px = 0;
             for (let i = 0; i < x; i++) {
                 const record = worksheet.records[j][i];
@@ -396,7 +391,7 @@ export class Data {
             if (px > 0) {
                 py++;
             }
-        }
+        });
 
         if (delimiter) {
             return `${dataset
