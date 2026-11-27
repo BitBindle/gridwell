@@ -520,7 +520,10 @@ export class Merges {
 
             // Update selection. The selection events still see the range.
             if (!keepSelection) {
-                worksheet.selection.update(worksheet.records[cell[1]][cell[0]].element, worksheet.records[cell[1] + rowspan - 1][cell[0] + colspan - 1].element);
+                worksheet.selection.update(
+                    worksheet.records[cell[1]][cell[0]].element,
+                    worksheet.records[cell[1] + rowspan - 1][cell[0] + colspan - 1].element
+                );
             }
 
             this.forget(cellName, keepOptions);
