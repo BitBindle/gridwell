@@ -858,3 +858,12 @@ last page shows. Version 5 showed a page after the last page, with no rows.
 
 No option keeps the old behavior, because it showed rows that the page or the filter did not have. An application that
 uses `onchangepage` to load data can compare the new and the old page number.
+
+## With lazy loading, an insert next to the attached rows attaches the new rows
+
+With `lazyLoading`, `insertRow` puts the new rows in the table body when the row after them or the row before them is
+in the body. Version 5 attached them only when the row after them was in the body, so an insert after the last attached
+row did not show its rows, but its redo did. The table body can then hold more than 100 rows until the next scroll.
+
+No option keeps the old behavior, because the insert and its redo must give the same rows, and the undo of a delete
+must give back the rows that were in the body.
