@@ -1007,7 +1007,7 @@ describe('The worksheet option wrapLongText', () => {
                         [long, 'b', 'c', 'd'],
                         ['1', '', 'x', ''],
                     ],
-                    columns: [{ type: 'hidden' }, { type: 'dropdown', source: [{ id: '1', name: long }] }, { type: 'text' }, { type: 'text' }],
+                    columns: [{ type: 'hidden' }, { type: 'dropdown', source: [{ id: '1', name: long }] }, { type: 'text', wordWrap: true }, { type: 'text' }],
                     mergeCells: { A2: [3, 1] },
                     wrapLongText: false,
                 },
@@ -1015,11 +1015,13 @@ describe('The worksheet option wrapLongText', () => {
         })[0];
 
         expect(worksheet.records[0][0].element.style.whiteSpace).to.equal('');
-        worksheet.setValueFromCoords(2, 0, long);
-        expect(worksheet.records[0][2].element.style.whiteSpace).to.equal('');
+        worksheet.setValueFromCoords(3, 0, long);
+        expect(worksheet.records[0][3].element.style.whiteSpace).to.equal('');
 
+        // The merged range shows the text of column 2, which wraps, and then the long text of column 1, which does not
         const merged = worksheet.records[1][0].element;
         worksheet.hideColumn(1);
+        expect(merged.style.whiteSpace).to.equal('pre-wrap');
         worksheet.showColumn(1);
         expect(merged.style.whiteSpace).to.equal('');
     });

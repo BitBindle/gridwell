@@ -173,7 +173,8 @@ declare namespace jspreadsheet {
         width?: string | number;
 
         /**
-         * Enable automatic word wrapping in cells in this column.
+         * Enable automatic word wrapping in cells in this column. If false, the cells of the column never wrap, also
+         * with a long text. See {@link WorksheetOptions.wrapLongText}.
          * @default false
          */
         wordWrap?: boolean;
@@ -1862,7 +1863,7 @@ declare namespace jspreadsheet {
         textOverflow?: boolean;
 
         /**
-         * If false, a text longer than 200 characters does not wrap by itself. A cell then wraps only with the option
+         * If false, a text longer than 200 characters of HTML does not wrap by itself. A cell then wraps only with the option
          * `wordWrap` of the worksheet or of its column.
          * @default true
          */
@@ -1872,7 +1873,7 @@ declare namespace jspreadsheet {
         url?: string;
 
         /**
-         * Global text wrapping.
+         * Global text wrapping. Without it, a long text still wraps; see {@link WorksheetOptions.wrapLongText}.
          * @default false
          */
         wordWrap?: boolean;
