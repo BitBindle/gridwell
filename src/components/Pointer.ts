@@ -269,7 +269,7 @@ export class Pointer {
             // Remove border
             worksheet.headers[resizing.column].classList.remove('resizing');
             for (const record of worksheet.records) {
-                if (record[resizing.column]) {
+                if (record?.[resizing.column]) {
                     record[resizing.column].element.classList.remove('resizing');
                 }
             }
@@ -380,7 +380,7 @@ export class Pointer {
                 // Border indication
                 worksheet.headers[columnId].classList.add('resizing');
                 for (const record of worksheet.records) {
-                    if (record[columnId]) {
+                    if (record?.[columnId]) {
                         record[columnId].element.classList.add('resizing');
                     }
                 }
@@ -399,7 +399,7 @@ export class Pointer {
                     // Border indication
                     worksheet.headers[columnId].classList.add('dragging');
                     for (const record of worksheet.records) {
-                        if (record[columnId]) {
+                        if (record?.[columnId]) {
                             record[columnId].element.classList.add('dragging');
                         }
                     }

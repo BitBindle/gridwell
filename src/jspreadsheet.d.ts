@@ -1683,9 +1683,9 @@ declare namespace jspreadsheet {
          *   `getData`, `getStyle`, `getComments` and a copy with `returnData` give only the rows of the window.
          * - A formula sees only the values of the window. `style`, `comments`, `classes` and `meta`, and `setStyle` and
          *   `setComments`, apply only while the row is in the window. A merge, an unmerge and a destroy of merged ranges
-         *   write no history entry.
+         *   write no history entry. A value in a radio column clears only the other rows of the window.
          * - A copy dispatches `oncopy` with an empty text: the application writes the clipboard from its own values. A cut
-         *   clears only the cells of the window. `download` does nothing.
+         *   clears only the cells of the window. `download` does nothing, and the context menu has no "Save as" item.
          */
         rowSource?: RowSource;
 

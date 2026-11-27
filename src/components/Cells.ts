@@ -223,7 +223,10 @@ export class Cells {
                 // Unchecked all options
                 if (column.type === 'radio' && write) {
                     for (const dataRow of worksheet.options.data) {
-                        dataRow[c] = false;
+                        // The row source mode has rows without values
+                        if (dataRow) {
+                            dataRow[c] = false;
+                        }
                     }
                 }
 

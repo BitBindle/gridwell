@@ -156,6 +156,15 @@ export class Merges {
     get(cellName?: string) {
         const worksheet = this.worksheet;
 
+        // The row source mode keeps the merged ranges of the sheet
+        if (worksheet.rowSource) {
+            const merges = worksheet.rowSource.merges;
+            if (cellName) {
+                return merges[cellName] ? ([...merges[cellName]] as [number, number]) : null;
+            }
+            return Object.fromEntries(Object.entries(merges).map(([key, span]) => [key, [...span] as [number, number]]));
+        }
+
         let data: Record<string, [number, number]> | [number, number] | null = {};
         if (cellName) {
             if (worksheet.options.mergeCells?.[cellName]) {
@@ -185,6 +194,11 @@ export class Merges {
     set(cellName?: string, colspan?: number, rowspan?: number, ignoreHistoryAndEvents?: boolean | 1, keepSelection?: boolean): null | undefined {
         const worksheet = this.worksheet;
 
+        // The row source mode keeps the merged ranges of the sheet, with no history entry
+        if (worksheet.rowSource) {
+            return this.setInRowSource(cellName, colspan, rowspan, ignoreHistoryAndEvents);
+        }
+
         if (!cellName) {
             if (!worksheet.selection.highlighted.length) {
                 showAlert(worksheet.parent.config, translate('No cells selected'));
@@ -203,18 +217,6 @@ export class Merges {
             }
         } else if (typeof cellName !== 'string') {
             return null;
-        }
-
-        // The row source mode keeps the merged ranges of the sheet, with no history entry
-        if (worksheet.rowSource) {
-            const source = worksheet.rowSource;
-            const merges = { ...source.merges };
-            merges[cellName] = [Math.max(1, colspan || 1), Math.max(1, rowspan || 1)];
-            source.replaceMerges(merges);
-            if (!ignoreHistoryAndEvents) {
-                worksheet.dispatch('onmerge', worksheet, { [cellName]: merges[cellName] });
-            }
-            return;
         }
 
         const test = this.check(cellName, colspan, rowspan);
@@ -244,6 +246,48 @@ export class Merges {
 
                 worksheet.dispatch('onmerge', worksheet, { [cellName]: [colspan, rowspan] });
             }
+        }
+    }
+
+    /**
+     * setMerge in the row source mode: the range of the selection, or of the arguments, goes into the merged ranges of the
+     * source. The same checks as in the other modes refuse a range of one cell and a range that crosses another range.
+     */
+    private setInRowSource(cellName: string | undefined, colspan: number | undefined, rowspan: number | undefined, ignoreEvents?: boolean | 1) {
+        const worksheet = this.worksheet;
+        const source = worksheet.rowSource!;
+        let x1: number, y1: number, x2: number, y2: number;
+        if (!cellName) {
+            const bounds = worksheet.selection.bounds;
+            if (!worksheet.selection.range || !bounds) {
+                showAlert(worksheet.parent.config, translate('No cells selected'));
+                return null;
+            }
+            [x1, y1, x2, y2] = bounds;
+            cellName = getColumnNameFromId([x1, y1]);
+        } else if (typeof cellName !== 'string') {
+            return null;
+        } else {
+            [x1, y1] = getIdFromColumnName(cellName);
+            x2 = x1 + Math.max(1, colspan || 1) - 1;
+            y2 = y1 + Math.max(1, rowspan || 1) - 1;
+        }
+        if (source.merges[cellName]) {
+            showAlert(worksheet.parent.config, translate('Cell already merged'));
+            return;
+        }
+        if (x1 === x2 && y1 === y2) {
+            showAlert(worksheet.parent.config, translate('Invalid merged properties'));
+            return;
+        }
+        if (source.mergesIn(y1, y2).some((range) => range.x1 <= x2 && range.x2 >= x1)) {
+            showAlert(worksheet.parent.config, translate('There is a conflict with another merged cell'));
+            return;
+        }
+        const span: [number, number] = [x2 - x1 + 1, y2 - y1 + 1];
+        source.replaceMerges({ ...source.merges, [cellName]: span });
+        if (!ignoreEvents) {
+            worksheet.dispatch('onmerge', worksheet, { [cellName]: span });
         }
     }
 
@@ -573,8 +617,10 @@ export class Merges {
 
         // The row source mode removes the merged ranges of the sheet
         if (worksheet.rowSource) {
-            for (const key of Object.keys(worksheet.rowSource.merges)) {
-                this.remove(key);
+            const before = worksheet.rowSource.merges;
+            worksheet.rowSource.replaceMerges({});
+            for (const [key, span] of Object.entries(before)) {
+                worksheet.dispatch('onunmerge', worksheet, key, { [key]: span });
             }
             return;
         }

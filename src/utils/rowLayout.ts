@@ -28,43 +28,93 @@ function normalRuns(runs: RowRun[], count: number, defaultHeight: number) {
         .filter((run) => run.first <= run.last && (run.height !== undefined || run.hidden))
         .sort((a, b) => a.first - b.first);
 
-    // The result is sorted and has no overlaps. A run after the last run of the result keeps the order. A run that
-    // overlaps runs of the result cuts each of them, and wins for its own rows. A sort after each run made 50,000 runs
-    // of hidden rows take seconds, so only an overlap sorts.
+    // A run after the last run of the result keeps the order, which is the common case
     const result: LayoutRun[] = [];
+    let overlap = false;
     for (const run of sorted) {
         const last = result[result.length - 1];
-        if (!last || run.first > last.last) {
-            if (last && last.last + 1 === run.first && last.height === run.height && last.hidden === run.hidden) {
-                last.last = run.last;
-            } else {
-                result.push(run);
+        if (last && run.first <= last.last) {
+            overlap = true;
+            break;
+        }
+        if (last && last.last + 1 === run.first && last.height === run.height && last.hidden === run.hidden) {
+            last.last = run.last;
+        } else {
+            result.push({ ...run });
+        }
+    }
+    return overlap ? sweepRuns(sorted) : result;
+}
+
+/**
+ * Cut runs that overlap into pieces in O(n log n): a sweep over the edges of the runs, with a max-heap of the runs that
+ * cover the current row, by their place in the sorted order. Each piece takes the run with the highest place.
+ */
+function sweepRuns(sorted: LayoutRun[]) {
+    const edges = new Set<number>();
+    for (const run of sorted) {
+        edges.add(run.first);
+        edges.add(run.last + 1);
+    }
+    const points = [...edges].sort((a, b) => a - b);
+    const heap: number[] = [];
+    function push(index: number) {
+        heap.push(index);
+        let i = heap.length - 1;
+        while (i > 0) {
+            const parent = (i - 1) >> 1;
+            if (heap[parent] >= heap[i]) {
+                break;
             }
+            [heap[parent], heap[i]] = [heap[i], heap[parent]];
+            i = parent;
+        }
+    }
+    function pop() {
+        const top = heap.pop()!;
+        if (heap.length) {
+            heap[0] = top;
+            let i = 0;
+            for (;;) {
+                const left = 2 * i + 1;
+                const right = left + 1;
+                let largest = i;
+                if (left < heap.length && heap[left] > heap[largest]) {
+                    largest = left;
+                }
+                if (right < heap.length && heap[right] > heap[largest]) {
+                    largest = right;
+                }
+                if (largest === i) {
+                    break;
+                }
+                [heap[largest], heap[i]] = [heap[i], heap[largest]];
+                i = largest;
+            }
+        }
+    }
+    const result: LayoutRun[] = [];
+    let next = 0;
+    for (let k = 0; k < points.length - 1; k++) {
+        const from = points[k];
+        const to = points[k + 1] - 1;
+        while (next < sorted.length && sorted[next].first <= from) {
+            push(next);
+            next++;
+        }
+        // A run that ended before this piece leaves the heap
+        while (heap.length && sorted[heap[0]].last < from) {
+            pop();
+        }
+        if (!heap.length) {
             continue;
         }
-        const pieces: LayoutRun[] = [];
-        for (const item of result) {
-            if (item.last < run.first || item.first > run.last) {
-                pieces.push(item);
-                continue;
-            }
-            if (item.first < run.first) {
-                pieces.push({ first: item.first, last: run.first - 1, height: item.height, hidden: item.hidden });
-            }
-            if (item.last > run.last) {
-                pieces.push({ first: run.last + 1, last: item.last, height: item.height, hidden: item.hidden });
-            }
-        }
-        pieces.push(run);
-        pieces.sort((x, y) => x.first - y.first);
-        result.length = 0;
-        for (const piece of pieces) {
-            const previous = result[result.length - 1];
-            if (previous && previous.last + 1 === piece.first && previous.height === piece.height && previous.hidden === piece.hidden) {
-                previous.last = piece.last;
-            } else {
-                result.push(piece);
-            }
+        const run = sorted[heap[0]];
+        const last = result[result.length - 1];
+        if (last && last.last + 1 === from && last.height === run.height && last.hidden === run.hidden) {
+            last.last = to;
+        } else {
+            result.push({ first: from, last: to, height: run.height, hidden: run.hidden });
         }
     }
     return result;

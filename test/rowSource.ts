@@ -82,7 +82,8 @@ describe('The row source mode', () => {
         worksheet.scrollToRow(90000);
         expect(attached(worksheet).slice(0, 2)).to.eql([0, 1]);
         expect(worksheet.records[4]).to.equal(undefined);
-        expect(worksheet.getMerge()).to.eql({});
+        expect(worksheet.options.mergeCells).to.eql({});
+        expect(worksheet.getMerge()).to.eql({ B5: [2, 3] });
     });
 
     it('moves the selection with the keys over hidden rows and merged ranges, also outside the window', () => {
@@ -466,5 +467,87 @@ describe('The row source mode', () => {
         worksheet.scrollToRow(1048575);
 
         expect(worksheet.content.scrollTop).to.be.below(8000000);
+    });
+
+    it('resizes a column with the mouse', async () => {
+        const { worksheet } = build({}, { columns: [{ width: 100 }, { width: 100 }, { width: 100 }] });
+        // The spreadsheet adds its event handlers after its build
+        await new Promise((resolve) => setTimeout(resolve));
+        const header = worksheet.headers[1];
+        header.getBoundingClientRect = () => ({ left: 0, top: 0, right: 100, bottom: 20, width: 100, height: 20 }) as DOMRect;
+        function mouse(type: string, offsetX: number, pageX: number) {
+            const event = new window.MouseEvent(type, { bubbles: true, cancelable: true, buttons: 1 });
+            Object.defineProperty(event, 'offsetX', { value: offsetX });
+            Object.defineProperty(event, 'pageX', { value: pageX });
+            header.dispatchEvent(event);
+        }
+
+        mouse('mousedown', 98, 98);
+        mouse('mousemove', 0, 148);
+        mouse('mouseup', 0, 148);
+
+        expect(worksheet.getWidth(1)).to.equal(150);
+    });
+
+    it('sets a radio cell of the window', () => {
+        const { worksheet } = build({ row: () => [false, '', ''] }, { columns: [{ type: 'radio' }, {}, {}] });
+
+        worksheet.setValueFromCoords(0, 3, true);
+
+        expect(worksheet.getValueFromCoords(0, 3)).to.equal(true);
+    });
+
+    it('merges the selection with setMerge, and refuses a range of one cell or a range that crosses another range', () => {
+        const alerts: string[] = [];
+        const { worksheet } = build({}, { mergeCells: { A2: [2, 2] } }, { alert: (message) => alerts.push(message) });
+
+        worksheet.setMerge('B3', 2, 2);
+        worksheet.setMerge('C10', 1, 1);
+        expect(worksheet.getMerge()).to.eql({ A2: [2, 2] });
+        expect(alerts).to.eql(['There is a conflict with another merged cell', 'Invalid merged properties']);
+
+        worksheet.updateSelectionFromCoords(0, 5, 1, 5000);
+        worksheet.setMerge();
+        expect(worksheet.getMerge('A6')).to.eql([2, 4996]);
+
+        // The merged ranges outside the window stay in getMerge
+        worksheet.scrollToRow(80000);
+        expect(worksheet.getMerge()).to.eql({ A2: [2, 2], A6: [2, 4996] });
+    });
+
+    it('removes many merged ranges at once with destroyMerge', () => {
+        const mergeCells: Record<string, [number, number]> = {};
+        for (let k = 0; k < 2000; k++) {
+            mergeCells[`A${k * 3 + 1}`] = [2, 2];
+        }
+        const events: string[] = [];
+        const { worksheet } = build({}, { mergeCells }, { onunmerge: (instance, cellName) => events.push(cellName) });
+
+        worksheet.destroyMerge();
+
+        expect(worksheet.getMerge()).to.eql({});
+        expect(events.length).to.equal(2000);
+    });
+
+    it('gives many single rows inside one run their own state', () => {
+        const runs: Jspreadsheet.RowRun[] = [{ first: 0, last: 99999, height: 30 }];
+        for (let k = 1; k <= 5000; k++) {
+            runs.push({ first: k * 10, last: k * 10, hidden: true });
+        }
+        const { worksheet } = build({ defaultHeight: 20, runs });
+
+        expect(worksheet.rowOffset(100000)).to.equal((100000 - 5000) * 30);
+        expect(worksheet.rowOffset(11)).to.equal(10 * 30);
+    });
+
+    it('shows no Save as item in the context menu', async () => {
+        let titles: (string | undefined)[] = [];
+        const { worksheet } = build({}, {}, { contextMenu: (instance, x, y, e, items) => void (titles = items.map((item) => item.title)) });
+        await new Promise((resolve) => setTimeout(resolve));
+
+        worksheet.getCell('A2').dispatchEvent(new window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+
+        expect(titles.length).to.be.above(0);
+        expect(titles).to.not.include('Save as...');
     });
 });
