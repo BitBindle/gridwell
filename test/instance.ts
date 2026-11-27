@@ -465,11 +465,17 @@ describe('Destroy a spreadsheet with an open context menu (issue #183)', () => {
     it('closes the open context menu when it destroys the spreadsheet', async () => {
         const element = document.body.appendChild(document.createElement('div') as Jspreadsheet.JspreadsheetInstanceElement);
         const removed: string[] = [];
+        const removedFromWindow: string[] = [];
         const remove = document.removeEventListener;
+        const removeFromWindow = window.removeEventListener;
         document.removeEventListener = function (this: Document, type: string, ...rest: unknown[]) {
             removed.push(type);
             return (remove as (...args: unknown[]) => void).call(this, type, ...rest);
         } as typeof document.removeEventListener;
+        window.removeEventListener = function (this: Window, type: string, ...rest: unknown[]) {
+            removedFromWindow.push(type);
+            return (removeFromWindow as (...args: unknown[]) => void).call(this, type, ...rest);
+        } as typeof window.removeEventListener;
 
         try {
             const [worksheet] = jspreadsheet(element, { worksheets: [{ minDimensions: [1, 1] }] });
@@ -482,8 +488,10 @@ describe('Destroy a spreadsheet with an open context menu (issue #183)', () => {
 
             expect(menu.isOpened()).to.equal(false);
             expect(removed).to.include.members(['mousedown', 'touchstart']);
+            expect(removedFromWindow).to.include('wheel');
         } finally {
             document.removeEventListener = remove;
+            window.removeEventListener = removeFromWindow;
             element.remove();
         }
     });
