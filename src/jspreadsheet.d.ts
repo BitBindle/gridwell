@@ -1084,7 +1084,8 @@ declare namespace jspreadsheet {
         /**
          * Occurs when a comment is changed.
          * @param instance - Instance of the worksheet where the change occurred.
-         * @param newComments - New comments, by cell name, as setComments got them. A falsy value removes the comment.
+         * @param newComments - New comments, by cell name, as setComments got them. A falsy value removes the comment. In
+         *   the row source mode, a cell outside the window is left out.
          * @param oldComments - Old comments, by cell name.
          */
         oncomments?: (instance: WorksheetInstance, newComments: Record<string, string | null | undefined>, oldComments: Record<string, string | null>) => void;

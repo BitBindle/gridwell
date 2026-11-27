@@ -439,10 +439,7 @@ export class Formulas {
 
         // Update formulas
         for (const row of worksheet.options.data) {
-            if (!row) {
-                continue;
-            }
-            for (let i = 0; i < row.length; i++) {
+            for (let i = 0; i < worksheet.options.data[0].length; i++) {
                 const value = `${row[i]}`;
                 // Is formula
                 if (value.substr(0, 1) === '=') {
