@@ -483,6 +483,9 @@ export class Columns {
             oldValue: o,
             newValue: d,
         });
+        // The selection and the editor stay on their cells
+        worksheet.editor.move(0, Number(o), Number(d));
+        worksheet.selection.move(0, Number(o), Number(d));
 
         // Update table references
         worksheet.formulas.updateTableReferences({ column: Math.min(Number(o), Number(d)) });

@@ -1,7 +1,7 @@
 import { getIdFromColumnName } from '../utils/internalHelpers.js';
 import { getCoordsFromRange } from '../utils/helpers.js';
 import type { Worksheet } from '../types/internal';
-import { RowSource, recordRows } from './RowSource.js';
+import { RowSource, checkMerges, optionSpans, recordRows, reportRefusedMerges } from './RowSource.js';
 import type { CellValue, WorksheetInstance } from '../jspreadsheet';
 
 /**
@@ -137,12 +137,18 @@ export class Data {
             worksheet.view.updatePagination();
         }
 
-        // Merge cells
+        // Merge cells. A range that is not valid, that goes past the last row or column, or that crosses an earlier range, is
+        // left out, as in the row source mode.
         if (worksheet.options.mergeCells) {
-            for (const key of Object.keys(worksheet.options.mergeCells)) {
-                const num = worksheet.options.mergeCells[key];
-                worksheet.merges.set(key, num[0], num[1], 1, true);
+            const mergeCells = worksheet.options.mergeCells;
+            const checked = checkMerges(optionSpans(mergeCells), worksheet.headers.length, worksheet.records.length);
+            for (const key of checked.refused) {
+                delete mergeCells[key];
             }
+            for (const [key, [colspan, rowspan]] of Object.entries(checked.merges)) {
+                worksheet.merges.set(key, colspan, rowspan, 1, true);
+            }
+            reportRefusedMerges(checked.refused);
         }
 
         // Update the size of the grid

@@ -146,11 +146,35 @@ class CoveredColumns {
 }
 
 /**
+ * The spans of the merged ranges of the option mergeCells, as the build checks them: a missing span, or a span below 1,
+ * is 1, as in setMerge. A range of an earlier build also holds its td elements, which the check does not need.
+ */
+export function optionSpans(merges: Record<string, readonly unknown[]> | undefined) {
+    const spans: Record<string, unknown[]> = {};
+    for (const [name, value] of Object.entries(merges || {})) {
+        spans[name] = Array.isArray(value) ? [value[0], value[1]].map((span) => (span == null || (typeof span === 'number' && !(span > 1)) ? 1 : span)) : [];
+    }
+    return spans;
+}
+
+/** Show on the console the first cells of the merged ranges of the options that the build leaves out. */
+export function reportRefusedMerges(refused: string[]) {
+    if (refused.length) {
+        console.error(`Jspreadsheet: The merged cells ${refused.join(', ')} are not valid, do not fit in the sheet or cross another range`);
+    }
+}
+
+/**
  * The merged ranges that can be ranges of the sheet, and the names of the others, as the other modes check them. The
  * ranges of keep that merges has with the same spans stay first. Then each entry of merges, in the order of the keys,
  * stays when mergeProblem accepts it and it does not cross a range that stays.
  */
-function checkMerges(merges: Record<string, readonly unknown[]> | undefined, columns: number, rows: number, keep: Record<string, [number, number]> = {}) {
+export function checkMerges(
+    merges: Record<string, readonly unknown[]> | undefined,
+    columns: number,
+    rows: number,
+    keep: Record<string, [number, number]> = {}
+) {
     const refused: string[] = [];
     const result: Record<string, [number, number]> = {};
     // The entries that mergeProblem accepts, with their first column, last column, first row and last row
@@ -263,7 +287,9 @@ export class RowSource {
         this.layout = new RowLayout(this.count, source.defaultHeight || Number(worksheet.options.defaultRowHeight) || 20, source.runs);
         this.buffer = source.buffer! > 0 ? source.buffer! : defaultBuffer;
         this.maxScrollHeight = source.maxScrollHeight! > 0 ? Math.min(source.maxScrollHeight!, defaultMaxScrollHeight) : defaultMaxScrollHeight;
-        this.merges = checkMerges(worksheet.options.mergeCells as Record<string, unknown[]> | undefined, worksheet.headers.length, this.count).merges;
+        const checked = checkMerges(optionSpans(worksheet.options.mergeCells), worksheet.headers.length, this.count);
+        this.merges = checked.merges;
+        reportRefusedMerges(checked.refused);
         this.indexMerges();
         this.top = this.spacer();
         this.bottom = this.spacer();

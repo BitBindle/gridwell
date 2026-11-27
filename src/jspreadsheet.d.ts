@@ -449,11 +449,29 @@ declare namespace jspreadsheet {
         /** Whether the keyboard focus is in the grid or in its editor. */
         focusInGrid: boolean;
 
-        /** The column whose header a press selected first, while the selection is of whole columns, or null. */
+        /**
+         * The column whose header a press selected first, or null. A selection of other cells with the keyboard or
+         * {@link WorksheetInstance.updateSelectionFromCoords} does not clear it, so use {@link WorksheetSelection.columnAnchor}.
+         */
         column: number | null;
 
-        /** The row whose number a press selected first, while the selection is of whole rows, or null. */
+        /**
+         * The row whose number a press selected first, or null. A selection of other cells with the keyboard or
+         * {@link WorksheetInstance.updateSelectionFromCoords} does not clear it, so use {@link WorksheetSelection.rowAnchor}.
+         */
         row: number | null;
+
+        /**
+         * The first row number of a selection of whole rows, or null. It is {@link WorksheetSelection.row} while the
+         * selection starts at that row and has all columns. Delete deletes the selected rows only then.
+         */
+        rowAnchor(): number | null;
+
+        /**
+         * The first header of a selection of whole columns, or null. It is {@link WorksheetSelection.column} while the
+         * selection starts at that column and has all rows. Delete deletes the selected columns only then.
+         */
+        columnAnchor(): number | null;
 
         /** Remove the fill border from the cells that a drag of the corner was going to fill, and forget them. */
         clearFill(): void;
@@ -1735,7 +1753,13 @@ declare namespace jspreadsheet {
          */
         rowSource?: RowSource;
 
-        /** Cells to be merged in the table innitialization. */
+        /**
+         * The merged ranges of the build: the first cell of each range, with its colspan and its rowspan. A missing span,
+         * a span of null, or a span below 1, is 1. The build leaves out a range of one cell, a span that is not a whole
+         * number, a cell name that is not in capitals, a range that goes past the last row or column, and a range that
+         * crosses an earlier range, and shows their first cells on the console. The worksheet keeps this object and changes
+         * it: the build deletes the ranges that it leaves out, and the merge methods change the ranges.
+         */
         mergeCells?: Record<string, [number, number]>;
 
         /**

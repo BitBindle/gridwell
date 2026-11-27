@@ -49,3 +49,22 @@ export function getIdFromColumnName(id: string): number[] {
 export function getColumnNameFromId(cellId: (string | number)[]): string {
     return getColumnName(parseInt(cellId[0])) + (parseInt(cellId[1]) + 1);
 }
+
+/**
+ * The new position of a row or column after a move of one row or column.
+ * @param position - The old position.
+ * @param from - The row or column that moved.
+ * @param to - Its new position.
+ */
+export function movedIndex(position: number, from: number, to: number) {
+    if (position === from) {
+        return to;
+    }
+    if (from < to && position > from && position <= to) {
+        return position - 1;
+    }
+    if (from > to && position >= to && position < from) {
+        return position + 1;
+    }
+    return position;
+}

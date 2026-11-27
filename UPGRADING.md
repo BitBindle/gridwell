@@ -124,19 +124,44 @@ held, the cells of the area that the corner fills, is `worksheet.selection.fill`
 `worksheet.selection.highlighted` is an empty array before the first selection. `getSelection()`, `getSelected()`,
 `updateSelectionFromCoords()`, `resetSelection()` and the selection events work as before.
 
-## Insert and delete keep the selection and the editor on their cells
+## Insert, delete and move keep the selection and the editor on their cells
 
-After `insertRow`, `insertColumn`, `deleteRow`, `deleteColumn`, and their undo and redo, the selection and an open
-editor stay on their cells. Version 5 kept the row and column numbers, so the selection and the editor moved to other
-cells, and a value typed into a deleted row went into the row that moved up.
+After `insertRow`, `insertColumn`, `deleteRow`, `deleteColumn`, `moveRow`, `moveColumn`, and their undo and redo, the
+selection and an open editor stay on their cells. After a move, each end of a larger selection stays on its cell, and a
+move inside the selection keeps its rows and columns, so a selection of whole rows or columns stays whole. The active
+cell can then be another cell. An insert after the last column or row adds the new columns or rows to a selection of
+whole rows or columns. Version 5 kept the row and
+column numbers, so the selection and the editor moved to other cells, and a value typed into a deleted row went into the
+row that moved up.
 
 - `getSelection()` gives the new position of the selected cells.
+- After an insert at the end, a selection of whole rows or columns includes the new columns or rows.
 - A delete removes the selection if a selected cell is deleted, also when the selection is inside the deleted rows or
   columns. Version 5 kept such a selection.
 - An editor in a deleted row or column closes without a save: `oneditionend` gets `false` for the save, and no
   `onchange` fires. Version 5 left it open.
 
 No option keeps the old behavior, because it put values into the wrong cells.
+
+## Shift, Ctrl and Delete use only a current selection of whole rows or columns
+
+This changes the result for users who press Shift or Ctrl on row numbers or headers, or press Delete, and for
+applications that read `worksheet.selection.row` or `worksheet.selection.column`.
+
+A press on a row number or a header starts a selection of whole rows or columns. Version 5 remembered that row or
+column after a selection of other cells with the keyboard, `updateSelectionFromCoords` or `selectAll`.
+
+- Delete deletes rows or columns only while the selection is of whole rows or columns that a press started. Version 5
+  deleted the row of a single cell after a press on its row number and an arrow key.
+- A Shift or Ctrl press on a row number or a header, after a selection that does not start at a pressed row number or
+  header, extends that selection from its first row or column. Version 5 extended from the row or column of an earlier
+  press, or selected only the pressed row or column. On macOS, a Ctrl press is the usual secondary press.
+- A drag over the row numbers or headers extends whole rows or columns only from a current selection of whole rows or
+  columns.
+- `worksheet.selection.row` and `worksheet.selection.column` can still keep an earlier press. The new methods
+  `rowAnchor()` and `columnAnchor()` give them only while they count.
+
+No option keeps the old behavior, because it deleted rows that the user did not select.
 
 ## The formula chain is an object
 
@@ -730,3 +755,20 @@ Version 5 moved their references again, so the restored formulas named other cel
 A formula cell that a delete removes leaves the formula chain. Version 5 kept its name, so a later change of a cell that
 the formula named threw a TypeError, or calculated the cell that then had the name. No option keeps the old behavior,
 because the old behavior changed the formulas that the history gave back.
+
+## The build leaves out the merged ranges of the options that do not fit
+
+The build of a worksheet, `setData` and `loadWorksheet` leave out a range of `mergeCells` that goes past the last row or
+column, or that crosses an earlier range of the option. The console shows the first cells of these ranges, and
+`getMerge` does not give them. Version 5 merged them, and the worksheet then threw on a later delete, or kept merged
+cells after `destroyMerge`. A range whose first cell was in an earlier range showed the alert "Cell already merged". It
+now goes to the console.
+
+The build also leaves out, with the same message, a range that is not valid: a range of one cell, a span that is not a
+whole number, or a cell name that is not in capitals. Version 5 kept a range of one cell in `getMerge`. A missing span,
+a span of `null`, or a span below 1, is 1, as in `setMerge` and in version 5. The row source mode left out all these
+ranges without a message, and it now reads such a span as 1 too.
+
+No option keeps the old behavior, because the ranges that go past the sheet or cross another range broke the worksheet,
+and the other ranges merged no cells. To keep a range, give it spans that fit in the sheet and do not cross another
+range.
