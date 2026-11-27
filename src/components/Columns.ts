@@ -1,6 +1,6 @@
 import { translate } from '../utils/dictionary.js';
 import { getColumnName } from '../utils/helpers.js';
-import { getColumnNameFromId, injectArray } from '../utils/internalHelpers.js';
+import { getColumnNameFromId, injectArray, toNumber } from '../utils/internalHelpers.js';
 import { setHeaderRole } from './Accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetHistoryRecord } from '../types/internal';
@@ -281,7 +281,7 @@ export class Columns {
             // The insert could be lead by number of rows or the array of data
             let numOfColumns;
             if (!Array.isArray(mixed)) {
-                numOfColumns = typeof mixed === 'number' ? mixed : 1;
+                numOfColumns = toNumber(mixed) ?? 1;
             } else {
                 numOfColumns = 1;
 
@@ -304,7 +304,8 @@ export class Columns {
             const lastColumn = currentNumOfColumns - 1;
 
             // Confirm position
-            if (columnNumber == null || columnNumber >= parseInt(lastColumn) || columnNumber < 0) {
+            columnNumber = toNumber(columnNumber);
+            if (columnNumber == null || columnNumber >= lastColumn || columnNumber < 0) {
                 columnNumber = lastColumn;
             }
 
@@ -522,6 +523,8 @@ export class Columns {
                 // Lasat column
                 const lastColumn = worksheet.options.data[0].length - 1;
 
+                columnNumber = toNumber(columnNumber);
+                numOfColumns = toNumber(numOfColumns);
                 if (columnNumber == null || columnNumber > lastColumn || columnNumber < 0) {
                     columnNumber = lastColumn;
                 }

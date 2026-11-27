@@ -68,3 +68,16 @@ export function movedIndex(position: number, from: number, to: number) {
     }
     return position;
 }
+
+/**
+ * A row or column number, or a number of rows or columns, that an application gave. An application can give a text,
+ * for example the value of data-y.
+ * @returns The number, or undefined when the value is not a number.
+ */
+export function toNumber(value: unknown): number | undefined {
+    if (value == null || value === '') {
+        return undefined;
+    }
+    const number = Number(value);
+    return Number.isNaN(number) ? undefined : number;
+}

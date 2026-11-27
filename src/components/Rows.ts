@@ -1,5 +1,5 @@
 import { translate } from '../utils/dictionary.js';
-import { getColumnNameFromId } from '../utils/internalHelpers.js';
+import { getColumnNameFromId, toNumber } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetHistoryRecord } from '../types/internal';
 import { toGrid } from '../utils/zoom.js';
@@ -455,7 +455,7 @@ export class Rows {
             let numOfRows;
 
             if (!Array.isArray(mixed)) {
-                numOfRows = typeof mixed !== 'undefined' ? mixed : 1;
+                numOfRows = toNumber(mixed) ?? 1;
             } else {
                 numOfRows = 1;
 
@@ -470,7 +470,8 @@ export class Rows {
             // Current column number
             const lastRow = worksheet.options.data.length - 1;
 
-            if (rowNumber == null || rowNumber >= parseInt(lastRow) || rowNumber < 0) {
+            rowNumber = toNumber(rowNumber);
+            if (rowNumber == null || rowNumber >= lastRow || rowNumber < 0) {
                 rowNumber = lastRow;
             }
 
@@ -727,6 +728,8 @@ export class Rows {
                 // Last column
                 const lastRow = worksheet.options.data.length - 1;
 
+                rowNumber = toNumber(rowNumber);
+                numOfRows = toNumber(numOfRows);
                 if (rowNumber == null || rowNumber > lastRow || rowNumber < 0) {
                     rowNumber = lastRow;
                 }

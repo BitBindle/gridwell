@@ -477,3 +477,52 @@ describe('Row heights, visibility and data', () => {
         expect(worksheet.getValue('A1')).to.equal('a');
     });
 });
+
+describe('Row numbers as texts (#235, #236)', () => {
+    function create() {
+        return jspreadsheet(root, { worksheets: [{ data: Array.from({ length: 9 }, (row, y) => [`${y}`]) }] })[0];
+    }
+
+    function firstColumn(worksheet: ReturnType<typeof create>) {
+        return worksheet.getColumnData(0).join();
+    }
+
+    it('deletes the rows of a text row number and a text number of rows', () => {
+        const worksheet = create();
+
+        worksheet.deleteRow('3' as unknown as number, 2);
+        expect(firstColumn(worksheet)).to.equal('0,1,2,5,6,7,8');
+
+        worksheet.deleteRow(0, '2' as unknown as number);
+        expect(firstColumn(worksheet)).to.equal('2,5,6,7,8');
+    });
+
+    it('inserts a row at a text row number, and the undo removes only that row', () => {
+        const worksheet = create();
+
+        worksheet.insertRow(1, '3' as unknown as number, true);
+        expect(firstColumn(worksheet)).to.equal('0,1,2,,3,4,5,6,7,8');
+
+        worksheet.undo();
+        expect(firstColumn(worksheet)).to.equal('0,1,2,3,4,5,6,7,8');
+    });
+
+    it('inserts a text number of rows', () => {
+        const worksheet = create();
+
+        worksheet.insertRow('2' as unknown as number, 3);
+
+        expect(firstColumn(worksheet)).to.equal('0,1,2,3,,,4,5,6,7,8');
+        expect(worksheet.rows.map((row) => row.y)).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    });
+
+    it('uses the last row for a text that is not a number', () => {
+        const worksheet = create();
+
+        worksheet.insertRow(1, 'x' as unknown as number);
+        expect(firstColumn(worksheet)).to.equal('0,1,2,3,4,5,6,7,8,');
+
+        worksheet.deleteRow('x' as unknown as number);
+        expect(firstColumn(worksheet)).to.equal('0,1,2,3,4,5,6,7,8');
+    });
+});

@@ -1227,3 +1227,42 @@ describe('The worksheet option wrapLongText', () => {
         expect(all.records[0][0].element.style.whiteSpace).to.equal('pre-wrap');
     });
 });
+
+describe('Column numbers as texts', () => {
+    function create() {
+        return jspreadsheet(root, { worksheets: [{ data: [['a', 'b', 'c']] }] })[0];
+    }
+
+    it('inserts a column at a text column number, and the undo removes only that column', () => {
+        const worksheet = create();
+
+        worksheet.insertColumn(1, '0' as unknown as number, true);
+        expect(worksheet.getData()).to.eql([['', 'a', 'b', 'c']]);
+
+        worksheet.undo();
+        expect(worksheet.getData()).to.eql([['a', 'b', 'c']]);
+    });
+
+    it('inserts a text number of columns', () => {
+        const worksheet = create();
+
+        worksheet.insertColumn('2' as unknown as number, 0);
+
+        expect(worksheet.getData()).to.eql([['a', '', '', 'b', 'c']]);
+    });
+
+    it('gives onbeforedeletecolumn the numbers of the columns of a text column number', () => {
+        let columns: number[] | undefined;
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b', 'c']] }],
+            onbeforedeletecolumn(instance, list) {
+                columns = list;
+            },
+        })[0];
+
+        worksheet.deleteColumn('1' as unknown as number, '2' as unknown as number);
+
+        expect(columns).to.eql([1, 2]);
+        expect(worksheet.getData()).to.eql([['a']]);
+    });
+});
