@@ -1050,7 +1050,8 @@ export class RowSource {
 
     /**
      * Replace the row count, the runs and the merged ranges, for example after the application changed its rows. All
-     * records are made again. The scroll position and the selection stay.
+     * records are made again. The scroll position and the selection stay. A new merged range that hides the selected
+     * cell selects its first cell, as replaceMerges does.
      */
     reset(options?: { count?: number; runs?: jspreadsheet.RowRun[]; merges?: Record<string, [number, number]> }) {
         const worksheet = this.worksheet;
@@ -1102,6 +1103,11 @@ export class RowSource {
         if (frozen) {
             this.applyMerges();
             this.decorate([[0, frozen - 1]]);
+        }
+        const selected = worksheet.selection.range;
+        const merged = selected && this.mergeAt(Number(selected[0]), Number(selected[1]));
+        if (merged && (merged[0] !== Number(selected[0]) || merged[1] !== Number(selected[1]))) {
+            worksheet.selection.updateFromCoords(merged[0], merged[1], merged[0], merged[1]);
         }
     }
 

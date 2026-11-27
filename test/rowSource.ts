@@ -662,6 +662,24 @@ describe('The row source mode', () => {
         worksheet.updateSelectionFromCoords(1, 499, 1, 499);
         worksheet.replaceMerges({ A5: [2, 2] });
         expect(visible()).to.equal(true);
+
+        // The selection moves to a cell outside the window, and the same change hides the active cell
+        worksheet.replaceMerges({});
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+        worksheet.updateSelectionFromCoords(1, 499, 1, 499);
+        worksheet.replaceMerges({ A2: [2, 2], A499: [2, 2] });
+        expect(worksheet.selection.range).to.eql([0, 498, 0, 498]);
+        expect(visible()).to.equal(true);
+    });
+
+    it('selects the first cell of a new merged range of resetRows that hides the selected cell, as replaceMerges does', () => {
+        const { worksheet } = build();
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+
+        worksheet.resetRows({ merges: { A2: [2, 2] } });
+
+        expect(worksheet.selection.range).to.eql([0, 1, 0, 1]);
+        expect(worksheet.getSelected(true)).to.eql(['A2']);
     });
 
     it('moves the selection before onunmerge, as the other modes do', () => {

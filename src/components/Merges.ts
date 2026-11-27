@@ -334,7 +334,8 @@ export class Merges {
         // A handler can cancel the selection. The tab stop then leaves the hidden cell. A row outside the window gets it later.
         if (!selected && (hiding || Object.keys(removed).length) && worksheet.rows[range ? Number(range[1]) : y]) {
             worksheet.selection.updateTabStop();
-        } else if (!selected) {
+        } else {
+            // A selected cell outside the window does not take the tab stop, so the active cell can still be hidden
             this.settleTabStop(added);
         }
     }
