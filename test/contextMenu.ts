@@ -92,6 +92,19 @@ describe('The default context menu', () => {
             expect(worksheet.getData()).to.eql([['b', 'c']]);
         });
 
+        it('drops the row anchor of an earlier press, so that Delete deletes the column in a worksheet with one column (issue #229)', async () => {
+            const [worksheet] = await load({ worksheets: [{ data: [['a'], ['b'], ['c']], rowResize: false, rowDrag: false }] });
+            const rowNumber = worksheet.rows[0].element.children[0];
+            rowNumber.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, buttons: 1 }));
+            rowNumber.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true }));
+            expect(worksheet.selection.rowAnchor()).to.equal(0);
+
+            contextmenu(worksheet.headers[0]);
+            expect(worksheet.selection.rowAnchor()).to.equal(null);
+
+            expect(deleteKey(worksheet)).to.eql(['Are you sure to delete the selected columns?']);
+        });
+
         it('shows the items of a column', async () => {
             const [worksheet] = await load({ worksheets: [{ data: data() }] });
 
@@ -207,8 +220,15 @@ describe('The default context menu', () => {
 
         it('lets a press with Shift on another row number extend the selection from the row of the menu (issue #229)', async () => {
             // jsdom gives the row numbers no size, so a press is at their edge, which resizes or drags unless that is off
-            const [worksheet] = await load({ worksheets: [{ data: [['a'], ['b'], ['c'], ['d']], rowResize: false, rowDrag: false }] });
-            worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+            const data = [
+                ['a', 1],
+                ['b', 2],
+                ['c', 3],
+                ['d', 4],
+            ];
+            const [worksheet] = await load({ worksheets: [{ data, rowResize: false, rowDrag: false }] });
+            // A cell selection in column A with the row of the menu, which starts above it
+            worksheet.updateSelectionFromCoords(0, 1, 0, 2);
 
             contextmenu(worksheet.rows[2].element.children[0]);
             worksheet.parent.contextMenu.contextmenu.close();
@@ -216,7 +236,30 @@ describe('The default context menu', () => {
             rowNumber.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, shiftKey: true, buttons: 1 }));
             rowNumber.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true }));
 
-            expect(worksheet.selection.range!.map(Number)).to.eql([0, 2, 0, 3]);
+            expect(worksheet.selection.range!.map(Number)).to.eql([0, 2, 1, 3]);
+        });
+
+        it('keeps a selection of whole rows that has the row, also without a press on the row numbers (issue #229)', async () => {
+            const [worksheet] = await load({ worksheets: [{ data: [['a'], ['b'], ['c'], ['d'], ['e']] }] });
+            worksheet.updateSelectionFromCoords(null, 1, null, 3);
+
+            contextmenu(worksheet.rows[2].element.children[0]);
+            expect(worksheet.selection.range!.map(Number)).to.eql([0, 1, 0, 3]);
+            expect(worksheet.selection.rowAnchor()).to.equal(1);
+
+            click('Delete selected rows');
+            expect(worksheet.getColumnData(0)).to.eql(['a', 'e']);
+        });
+
+        it('keeps the selection of all cells, so that Delete deletes the rows (issue #229)', async () => {
+            const [worksheet] = await load({ worksheets: [{ data: [['a'], ['b'], ['c']], allowDeletingAllRows: true }] });
+            worksheet.selectAll();
+
+            contextmenu(worksheet.rows[1].element.children[0]);
+            expect(worksheet.selection.range!.map(Number)).to.eql([0, 0, 0, 2]);
+
+            expect(deleteKey(worksheet)).to.eql(['Are you sure to delete the selected rows?']);
+            expect(worksheet.rows.length).to.equal(0);
         });
 
         it('leaves out the row items that the options turn off', async () => {

@@ -628,8 +628,7 @@ export class Selection {
         if (this.row == null || !range || Number(range[1]) !== this.row) {
             return null;
         }
-        const x = [Number(range[0]), Number(range[2])];
-        return Math.min(...x) === 0 && Math.max(...x) >= this.lastColumn() ? this.row : null;
+        return this.hasAllColumns() ? this.row : null;
     }
 
     /** The first header of a selection of whole columns, or null. The same rules as for rowAnchor apply. */
@@ -638,8 +637,27 @@ export class Selection {
         if (this.column == null || !range || Number(range[0]) !== this.column) {
             return null;
         }
+        return this.hasAllRows() ? this.column : null;
+    }
+
+    /** Whether the selection has all columns of its rows, as a selection of whole rows does. */
+    hasAllColumns(): boolean {
+        const range = this.range;
+        if (!range) {
+            return false;
+        }
+        const x = [Number(range[0]), Number(range[2])];
+        return Math.min(...x) === 0 && Math.max(...x) >= this.lastColumn();
+    }
+
+    /** Whether the selection has all rows of its columns, as a selection of whole columns does. */
+    hasAllRows(): boolean {
+        const range = this.range;
+        if (!range) {
+            return false;
+        }
         const y = [Number(range[1]), Number(range[3])];
-        return Math.min(...y) === 0 && Math.max(...y) >= this.lastRow() ? this.column : null;
+        return Math.min(...y) === 0 && Math.max(...y) >= this.lastRow();
     }
 
     /** The last row of a selection of whole columns. */

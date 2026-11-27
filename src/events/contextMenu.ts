@@ -227,25 +227,30 @@ export function contextMenuControls(e: TargetEvent<PointerEvent>) {
                     x = e.target.getAttribute('data-x');
                 }
 
-                // A selection of whole rows, or of whole columns, that has the pressed row or column stays. Another
-                // selection, also a cell selection with a cell of the row or column, changes as after a left press.
+                // A selection of whole rows that has the pressed row stays, also one of select-all or of
+                // updateSelectionFromCoords. The same applies to whole columns and a header. Another selection, also a
+                // cell selection with a cell of the row or column, changes as after a left press.
                 const range = current.selection.range?.map(Number);
                 const index = Number(role === 'row' ? y : x);
-                const anchor = role === 'row' ? current.selection.rowAnchor() : current.selection.columnAnchor();
                 const first = role === 'row' ? 1 : 0;
-                const inside =
-                    range != null && anchor != null && index >= Math.min(range[first], range[first + 2]) && index <= Math.max(range[first], range[first + 2]);
-                if (!inside) {
+                const whole = role === 'row' ? current.selection.hasAllColumns() : current.selection.hasAllRows();
+                const inside = range != null && whole && index >= Math.min(range[first], range[first + 2]) && index <= Math.max(range[first], range[first + 2]);
+                // As a left press, the press makes the selection one of whole rows or columns, so that Delete and a press
+                // with Shift act on the rows or columns. The anchor of the other axis goes, as after a left press.
+                if (inside) {
+                    if (role === 'row') {
+                        current.selection.row = range[1];
+                        current.selection.column = null;
+                    } else {
+                        current.selection.column = range[0];
+                        current.selection.row = null;
+                    }
+                } else {
                     // A null index selects the whole row or column
                     const column = x == null ? null : parseInt(x);
                     const row = y == null ? null : parseInt(y);
-                    // As a left press, the press starts a selection of whole rows or columns, so that Delete and a
-                    // press with Shift act on the rows or columns
-                    if (role === 'row') {
-                        current.selection.row = row;
-                    } else {
-                        current.selection.column = column;
-                    }
+                    current.selection.row = row;
+                    current.selection.column = column;
                     current.selection.updateFromCoords(column, row, column, row, e);
                 }
             } else if (role === 'nested') {
