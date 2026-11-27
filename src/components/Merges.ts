@@ -318,6 +318,7 @@ export class Merges {
         }
         const range = worksheet.selection.range;
         if (!range && !select) {
+            this.settleTabStop(added);
             return;
         }
         const [x, y] = select || [Number(range![0]), Number(range![1])];
@@ -333,6 +334,19 @@ export class Merges {
         // A handler can cancel the selection. The tab stop then leaves the hidden cell. A row outside the window gets it later.
         if (!selected && (hiding || Object.keys(removed).length) && worksheet.rows[range ? Number(range[1]) : y]) {
             worksheet.selection.updateTabStop();
+        } else if (!selected) {
+            this.settleTabStop(added);
+        }
+    }
+
+    /**
+     * The active cell can differ from the selected cell, for example after resetSelection, or when the selected row is
+     * outside the window. A new range that hides it gives the tab stop to a visible cell.
+     */
+    private settleTabStop(added: Record<string, [number, number]>) {
+        const active = this.worksheet.selection.activeCell;
+        if (Object.keys(added).length && active?.style.display === 'none') {
+            this.worksheet.selection.updateTabStop();
         }
     }
 
@@ -547,15 +561,13 @@ export class Merges {
             const before = source.merges;
             const refused = source.replaceMerges(merges);
             const after = source.merges;
-            // The events of the other modes: onunmerge for each range that goes, and onmerge once for the new ranges
-            for (const [name, span] of Object.entries(before)) {
-                if (after[name]?.[0] !== span[0] || after[name]?.[1] !== span[1]) {
-                    worksheet.dispatch('onunmerge', worksheet, name, { [name]: span });
-                }
-            }
             const added = Object.fromEntries(Object.entries(after).filter(([name, span]) => before[name]?.[0] !== span[0] || before[name]?.[1] !== span[1]));
             const removed = Object.fromEntries(Object.entries(before).filter(([name, span]) => after[name]?.[0] !== span[0] || after[name]?.[1] !== span[1]));
+            // The order of the other modes: the selection moves, then onunmerge for each range that goes, and onmerge once for the new ranges
             this.settleInRowSource(added, removed);
+            for (const [name, span] of Object.entries(removed)) {
+                worksheet.dispatch('onunmerge', worksheet, name, { [name]: span });
+            }
             if (Object.keys(added).length) {
                 worksheet.dispatch('onmerge', worksheet, added);
             }

@@ -1493,7 +1493,7 @@ declare namespace jspreadsheet {
         /** The rows above and below the view that the window holds. Default: 200. */
         buffer?: number;
 
-        /** The largest height of the scroll area in pixels. Above it, a scroll position maps to a row in proportion. Default: 15,000,000. */
+        /** The largest height of the scroll area in pixels. Above it, a scroll position maps to a row in proportion. Default and largest value: 8,000,000. */
         maxScrollHeight?: number;
     }
 
@@ -1683,7 +1683,8 @@ declare namespace jspreadsheet {
          *   `getData`, `getStyle`, `getComments` and a copy with `returnData` give only the rows of the window.
          * - A formula sees only the values of the window. `style`, `comments`, `classes` and `meta`, and `setStyle` and
          *   `setComments`, apply only while the row is in the window. A merge, an unmerge and a destroy of merged ranges
-         *   write no history entry. A value in a radio column clears only the other rows of the window.
+         *   write no history entry. A merge keeps the values of the hidden cells, and an unmerge keeps the selection.
+         *   A value in a radio column clears only the other rows of the window.
          * - A copy dispatches `oncopy` with an empty text: the application writes the clipboard from its own values. A cut
          *   clears only the cells of the window. `download` does nothing, and the context menu has no "Save as" item.
          */

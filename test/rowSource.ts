@@ -643,4 +643,48 @@ describe('The row source mode', () => {
         expect(worksheet.selection.range?.slice(0, 2)).to.eql([0, 8]);
         expect(stops()).to.eql([worksheet.getCell('A9')]);
     });
+
+    it('moves the tab stop out of a hidden active cell that is not the selected cell', () => {
+        const { worksheet } = build();
+        const stops = () => Array.from(root.querySelectorAll('[tabindex="0"]')).filter((element) => worksheet.element.contains(element));
+        const visible = () => stops().every((element) => (element as HTMLElement).style.display !== 'none');
+
+        // No cell is selected, and the active cell stays
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+        worksheet.resetSelection();
+        worksheet.replaceMerges({ A2: [2, 2] });
+        expect(stops()).to.have.length(1);
+        expect(visible()).to.equal(true);
+
+        // The selected row is outside the window
+        worksheet.replaceMerges({});
+        worksheet.updateSelectionFromCoords(1, 5, 1, 5);
+        worksheet.updateSelectionFromCoords(1, 499, 1, 499);
+        worksheet.replaceMerges({ A5: [2, 2] });
+        expect(visible()).to.equal(true);
+    });
+
+    it('moves the selection before onunmerge, as the other modes do', () => {
+        const events: string[] = [];
+        const { worksheet } = build(
+            {},
+            {},
+            {
+                onselection: (_, x, y) => events.push(`selection ${x},${y}`),
+                onunmerge: (_, name) => events.push(`unmerge ${name}`),
+                onmerge: (_, merges) => events.push(`merge ${Object.keys(merges).join()}`),
+            }
+        );
+        worksheet.replaceMerges({ A2: [2, 2] });
+        worksheet.updateSelectionFromCoords(0, 1, 0, 1);
+        events.length = 0;
+        worksheet.replaceMerges({ A3: [2, 2] });
+        expect(events).to.eql(['selection 0,1', 'unmerge A2', 'merge A3']);
+    });
+
+    it('checks merged ranges whose last row is above 2^31', () => {
+        const { worksheet } = build({ count: 3000000000 });
+        const refused = worksheet.replaceMerges({ A1: [1, 2147483650], A100: [2, 2] });
+        expect(refused.length).to.equal(1);
+    });
 });

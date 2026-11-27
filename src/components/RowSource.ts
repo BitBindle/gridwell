@@ -73,7 +73,7 @@ export function mergeProblem(name: string, span: readonly unknown[], columns: nu
  * check and an add then take O(log n) for each column of a range, in any order of the keys.
  */
 class CoveredColumns {
-    private readonly columns = new Map<number, { starts: number[]; ends: Int32Array }>();
+    private readonly columns = new Map<number, { starts: number[]; ends: Float64Array }>();
 
     constructor(candidates: Iterable<readonly [number, number, number]>) {
         const starts = new Map<number, number[]>();
@@ -90,7 +90,7 @@ class CoveredColumns {
         for (const [x, list] of starts) {
             list.sort((a, b) => a - b);
             const unique = list.filter((y, i) => i === 0 || y !== list[i - 1]);
-            this.columns.set(x, { starts: unique, ends: new Int32Array(unique.length + 1).fill(-1) });
+            this.columns.set(x, { starts: unique, ends: new Float64Array(unique.length + 1).fill(-1) });
         }
     }
 
