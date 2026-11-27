@@ -316,6 +316,10 @@ function setBorders(worksheet: Worksheet, borders: BorderOptions, type: string) 
             // Row - py - uy
             for (let i = selectedRange[0]; i <= selectedRange[2]; i++) {
                 // Col - px - ux
+                // With the column window, setStyle skips a column outside the window, so the style leaves it out
+                if (worksheet.rowSource && !worksheet.records[j]?.[i]) {
+                    continue;
+                }
                 setBorder(getCellNameFromCoords(i, j), i, j);
 
                 // In the row source mode, a row or a column outside the window has no record

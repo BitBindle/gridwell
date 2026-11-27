@@ -1191,8 +1191,9 @@ export class RowSource {
             this.updateTabStop();
         }
         const selected = worksheet.selection.range?.map(Number);
-        const merged = selected && this.mergeAt(selected[0], selected[1]);
-        if (merged && (merged[0] !== selected[0] || merged[1] !== selected[1])) {
+        // The same rule as updateInRowSource: a range whose first row has no record keeps the selection
+        const merged = selected && this.firstCellOf(selected[0], selected[1]) && this.mergeAt(selected[0], selected[1]);
+        if (merged) {
             const inside = selected[2] >= merged[0] && selected[2] <= merged[2] && selected[3] >= merged[1] && selected[3] <= merged[3];
             // A selection inside the range goes to its first cell. A larger selection stays as given, and grows to hold
             // the range.

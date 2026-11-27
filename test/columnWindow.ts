@@ -417,6 +417,9 @@ describe('The column window of the row source mode', () => {
         expect(worksheet.selection.range).to.eql([1, 1500, 1, 1500]);
         worksheet.openEditor(cell);
         expect([worksheet.editor.x, worksheet.editor.y]).to.eql([1, 1500]);
+        worksheet.closeEditor(cell, false);
+        worksheet.resetRows();
+        expect(worksheet.selection.range).to.eql([1, 1500, 1, 1500]);
     });
 
     it('keeps the editor of the first cell of a merged range open after a press on its part in the window', () => {
