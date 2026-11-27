@@ -767,6 +767,11 @@ export class Columns {
 
             // Update corner position
             worksheet.selection.updateCorner();
+
+            // A column of width 0 shows no cell, so the tab stop leaves it, as after hideColumn
+            if ((Array.isArray(width) ? width : [width]).some((w) => Number(w) === 0)) {
+                worksheet.selection.updateTabStop();
+            }
         }
     }
 
@@ -855,8 +860,9 @@ export class Columns {
 
         worksheet.resetSelection();
 
-        // The tab stop of the grid can be in a hidden column
+        // The tab stop of the grid can be in a hidden column, and the editor of a hidden cell detaches
         worksheet.selection.updateTabStop();
+        worksheet.editor.settle();
     }
 
     /**

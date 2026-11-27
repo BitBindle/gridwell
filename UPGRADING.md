@@ -762,3 +762,16 @@ ranges without a message, and it now reads such a span as 1 too.
 No option keeps the old behavior, because the ranges that go past the sheet or cross another range broke the worksheet,
 and the other ranges merged no cells. To keep a range, give it spans that fit in the sheet and do not cross another
 range.
+
+## The editor closes when its cell leaves the table
+
+The open editor saves and closes when its cell leaves the table or stops to show: a page change, a search, a filter, an
+insert, a delete or a move that takes the row off the page, `hideRow` and `hideColumn`. `oneditordetach` occurs first,
+as for lazy loading, and its handler can take the edit. `setData` closes the editor without a save. Version 5 kept the
+editor open on a cell that was not in the table, and a later close saved the text into the cell that then had the same
+position. A load of the lazy loading keeps the editor of a row that stays in the table.
+
+The tab stop and the active cell do not go to a cell that does not show: a cell of a hidden row, or of a column with
+the width 0. `setWidth` with 0 moves the tab stop, as `hideColumn` does. A selection that starts in such a cell, for
+example `selectAll` with a first column of width 0, gives the tab stop to the first cell that shows, and `up` and `down` move in
+the next column with a width. No option keeps the old behavior, because the user could not see or reach the cell.
