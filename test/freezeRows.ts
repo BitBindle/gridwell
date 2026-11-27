@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import jspreadsheet, { type Worksheet } from './support/jspreadsheet';
+import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
 
 function rows(count: number) {
     const data: string[][] = [];
@@ -19,6 +19,13 @@ function rect(left: number, top: number, width: number, height: number) {
 function placed() {
     return new Promise((resolve) => {
         queueMicrotask(() => resolve(undefined));
+    });
+}
+
+// The spreadsheet joins jspreadsheet.spreadsheet, which the scroll of the page reads, after it builds its worksheets
+function built() {
+    return new Promise((resolve) => {
+        setTimeout(resolve, 10);
     });
 }
 
@@ -563,4 +570,333 @@ describe('setFreeze', () => {
         expect(worksheet.tbody.contains(worksheet.records[2][1].element)).to.equal(false);
         expect(worksheet.tbody.querySelector('td[tabindex="0"]')).to.not.equal(null);
     });
+});
+
+describe('Header rows stick below each other (issue #184)', () => {
+    function tops(worksheet: Worksheet) {
+        return Array.from(worksheet.thead.children).map((row) => (row as HTMLElement).style.getPropertyValue('--jss-header-top'));
+    }
+
+    it(
+        'puts each nested header row and the filter row below the rows above it',
+        withRowHeight(async () => {
+            const [worksheet] = jspreadsheet(root, {
+                worksheets: [{ data: rows(5), filters: true, nestedHeaders: [[{ title: 'Group', colspan: 2 }]] }],
+            });
+            await placed();
+
+            expect(tops(worksheet)).to.eql(['0px', '20px', '40px']);
+        })
+    );
+
+    it(
+        'puts the frozen rows below all the header rows',
+        withRowHeight(async () => {
+            const [worksheet] = jspreadsheet(root, {
+                worksheets: [{ data: rows(5), freezeRows: 1, nestedHeaders: [[{ title: 'Group', colspan: 2 }]] }],
+            });
+            await placed();
+
+            expect(frozen(worksheet)).to.eql([[0, '40px', true]]);
+        })
+    );
+
+    it(
+        'gives a header of one row no distance',
+        withRowHeight(async () => {
+            const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(5) }] });
+            await placed();
+
+            expect(tops(worksheet)).to.eql(['']);
+        })
+    );
+
+    it('places the header rows again when the size observer sees a change, and destroy stops the observer', async () => {
+        const observed: Element[] = [];
+        let callback: (() => void) | null = null;
+        const original = (globalThis as { ResizeObserver?: unknown }).ResizeObserver;
+        (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
+            constructor(cb: () => void) {
+                callback = cb;
+            }
+            observe(element: Element) {
+                observed.push(element);
+            }
+            disconnect() {
+                observed.length = 0;
+            }
+        };
+
+        const element = document.body.appendChild(document.createElement('div'));
+        try {
+            const [worksheet] = jspreadsheet(element, { worksheets: [{ data: rows(5), nestedHeaders: [[{ title: 'Group', colspan: 2 }]] }] });
+            await new Promise((resolve) => setTimeout(resolve));
+
+            expect(observed).to.eql(Array.from(worksheet.thead.children));
+
+            // A web font makes the header rows 30 pixels high
+            Object.defineProperty(window.HTMLTableRowElement.prototype, 'offsetHeight', { configurable: true, get: () => 30 });
+            try {
+                callback!();
+            } finally {
+                delete (window.HTMLTableRowElement.prototype as { offsetHeight?: number }).offsetHeight;
+            }
+            expect(tops(worksheet)).to.eql(['0px', '30px']);
+
+            jspreadsheet.destroy(element as never);
+            expect(observed).to.eql([]);
+        } finally {
+            (globalThis as { ResizeObserver?: unknown }).ResizeObserver = original;
+            element.remove();
+        }
+    });
+});
+
+describe('The fill handle under the header and the frozen rows (issue #185)', () => {
+    // jsdom has no layout. The cells of the header rows and of the frozen rows are sticky, so the test gives the first
+    // cell of the last header row, and of the last frozen row, the place where it stops on the screen.
+    function stick(row: Element, bottom: number) {
+        (row.children[0] as HTMLElement).getBoundingClientRect = rect(0, bottom - 20, 50, 20);
+    }
+
+    // The content is at the top left of the screen. The bottom of the cell is `bottom` pixels below the top of the screen.
+    function select(worksheet: Worksheet, x: number, y: number, bottom: number) {
+        worksheet.content.getBoundingClientRect = rect(0, 0, 400, 300);
+        worksheet.records[y][x].element.getBoundingClientRect = rect(150, bottom - 20, 100, 20);
+        worksheet.updateSelectionFromCoords(x, y, x, y);
+    }
+
+    function scroll(worksheet: Worksheet, x: number, y: number, top: number, bottom: number) {
+        Object.defineProperty(worksheet.content, 'scrollTop', { value: top, writable: true, configurable: true });
+        worksheet.records[y][x].element.getBoundingClientRect = rect(150, bottom - 20, 100, 20);
+        worksheet.content.dispatchEvent(new Event('scroll'));
+    }
+
+    it(
+        'hides the fill handle while its cell is under the nested header rows, and shows it again after the scroll back',
+        withRowHeight(async () => {
+            const [worksheet] = jspreadsheet(root, {
+                worksheets: [{ data: rows(40), tableOverflow: true, nestedHeaders: [[{ title: 'Group', colspan: 2 }]] }],
+            });
+            await placed();
+            stick(worksheet.thead.lastElementChild!, 40);
+
+            select(worksheet, 1, 5, 50);
+            expect(worksheet.corner.style.display).to.equal('');
+
+            // The header rows cover 40 pixels, and the fill handle starts 4 pixels above the bottom of the cell
+            scroll(worksheet, 1, 5, 20, 30);
+            expect(worksheet.corner.style.display).to.equal('none');
+
+            scroll(worksheet, 1, 5, 0, 50);
+            expect(worksheet.corner.style.display).to.equal('');
+        })
+    );
+
+    it(
+        'hides the fill handle of a cell under the frozen rows, but not of a cell in a frozen row',
+        withRowHeight(async () => {
+            const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(40), tableOverflow: true, freezeRows: 2 }] });
+            await placed();
+            // The header row and the two frozen rows cover 60 pixels
+            stick(worksheet.thead.lastElementChild!, 20);
+            stick(worksheet.rows[1].element, 60);
+
+            select(worksheet, 1, 5, 55);
+            expect(worksheet.corner.style.display).to.equal('none');
+
+            select(worksheet, 1, 1, 55);
+            expect(worksheet.corner.style.display).to.equal('');
+        })
+    );
+
+    it(
+        'hides the fill handle while a scroll of the page moves its cell under the header rows',
+        withRowHeight(async () => {
+            const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(40), filters: true }] });
+            await built();
+            // The header row and the filter row stick at the top of the window, and cover 40 pixels
+            stick(worksheet.thead.lastElementChild!, 40);
+
+            select(worksheet, 1, 10, 300);
+            expect(worksheet.corner.style.display).to.equal('');
+
+            worksheet.records[10][1].element.getBoundingClientRect = rect(150, 10, 100, 20);
+            document.dispatchEvent(new Event('scroll'));
+            expect(worksheet.corner.style.display).to.equal('none');
+
+            worksheet.records[10][1].element.getBoundingClientRect = rect(150, 280, 100, 20);
+            document.dispatchEvent(new Event('scroll'));
+            expect(worksheet.corner.style.display).to.equal('');
+        })
+    );
+
+    it(
+        'hides the fill handle under the last frozen row that shows when the last frozen row is hidden',
+        withRowHeight(async () => {
+            const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(40), tableOverflow: true, freezeRows: 3 }] });
+            await placed();
+            worksheet.hideRow(2);
+            await placed();
+            // The header row and the two frozen rows that show cover 60 pixels. The hidden row has no size on the screen.
+            stick(worksheet.thead.lastElementChild!, 20);
+            stick(worksheet.rows[1].element, 60);
+
+            select(worksheet, 1, 5, 55);
+            expect(worksheet.corner.style.display).to.equal('none');
+        })
+    );
+
+    it(
+        'checks the fill handle of each worksheet in the scrolled element, also of a worksheet that is not current',
+        withRowHeight(async () => {
+            const first = document.createElement('div');
+            const second = document.createElement('div');
+            root.appendChild(first);
+            root.appendChild(second);
+            const a = jspreadsheet(first, { worksheets: [{ data: rows(40) }] })[0];
+            const b = jspreadsheet(second, { worksheets: [{ data: rows(40) }] })[0];
+            await built();
+            stick(a.thead.lastElementChild!, 40);
+            stick(b.thead.lastElementChild!, 40);
+            select(a, 1, 10, 300);
+            select(b, 1, 10, 300);
+            jspreadsheet.current = b;
+
+            // A scroll of the element around the first worksheet reads no layout of the second worksheet
+            let reads = 0;
+            b.records[10][1].element.getBoundingClientRect = () => {
+                reads++;
+                return rect(150, 10, 100, 20)();
+            };
+            a.records[10][1].element.getBoundingClientRect = rect(150, 10, 100, 20);
+            first.dispatchEvent(new Event('scroll'));
+            expect(a.corner.style.display).to.equal('none');
+            expect(b.corner.style.display).to.equal('');
+            expect(reads).to.equal(0);
+
+            a.records[10][1].element.getBoundingClientRect = rect(150, 280, 100, 20);
+            document.dispatchEvent(new Event('scroll'));
+            expect(a.corner.style.display).to.equal('');
+            expect(b.corner.style.display).to.equal('none');
+        })
+    );
+
+    it(
+        'checks the fill handle of a worksheet in a shadow root in another shadow root, on a scroll in the outer shadow root',
+        withRowHeight(async () => {
+            // An application host with a scrolled element in its shadow root, and a grid host with its own shadow root
+            const app = document.createElement('div');
+            root.appendChild(app);
+            const outer = app.attachShadow({ mode: 'open' });
+            const main = document.createElement('div');
+            outer.appendChild(main);
+            const host = document.createElement('div');
+            main.appendChild(host);
+            const inner = host.attachShadow({ mode: 'open' });
+            const element = document.createElement('div');
+            inner.appendChild(element);
+            const [worksheet] = jspreadsheet(element, { root: inner, worksheets: [{ data: rows(40), filters: true }] });
+            await built();
+            stick(worksheet.thead.lastElementChild!, 40);
+            select(worksheet, 1, 10, 300);
+
+            worksheet.records[10][1].element.getBoundingClientRect = rect(150, 10, 100, 20);
+            main.dispatchEvent(new Event('scroll'));
+            expect(worksheet.corner.style.display).to.equal('none');
+        })
+    );
+
+    it(
+        'checks the fill handle when the root option is an element in a shadow root, on a scroll of an element around it',
+        withRowHeight(async () => {
+            const host = document.createElement('div');
+            root.appendChild(host);
+            const shadow = host.attachShadow({ mode: 'open' });
+            const around = document.createElement('div');
+            const element = document.createElement('div');
+            around.appendChild(element);
+            shadow.appendChild(around);
+            const [worksheet] = jspreadsheet(element, { root: element, worksheets: [{ data: rows(40), filters: true }] });
+            await built();
+            stick(worksheet.thead.lastElementChild!, 40);
+            select(worksheet, 1, 10, 300);
+
+            // The element around the root scrolls. The listener is on the shadow root, not on the root.
+            worksheet.records[10][1].element.getBoundingClientRect = rect(150, 10, 100, 20);
+            around.dispatchEvent(new Event('scroll'));
+            expect(worksheet.corner.style.display).to.equal('none');
+        })
+    );
+
+    it(
+        'checks the fill handle of a worksheet in a shadow root, on a scroll outside and inside the shadow root',
+        withRowHeight(async () => {
+            const host = document.createElement('div');
+            root.appendChild(host);
+            const shadow = host.attachShadow({ mode: 'open' });
+            const around = document.createElement('div');
+            const element = document.createElement('div');
+            around.appendChild(element);
+            shadow.appendChild(around);
+            const [worksheet] = jspreadsheet(element, { root: shadow, worksheets: [{ data: rows(40), filters: true }] });
+            await built();
+            stick(worksheet.thead.lastElementChild!, 40);
+            select(worksheet, 1, 10, 300);
+
+            // An element outside the shadow host scrolls. Node.contains does not cross the shadow root.
+            worksheet.records[10][1].element.getBoundingClientRect = rect(150, 10, 100, 20);
+            root.dispatchEvent(new Event('scroll'));
+            expect(worksheet.corner.style.display).to.equal('none');
+
+            // An element in the shadow root scrolls. The scroll does not leave the shadow root.
+            worksheet.records[10][1].element.getBoundingClientRect = rect(150, 280, 100, 20);
+            around.dispatchEvent(new Event('scroll'));
+            expect(worksheet.corner.style.display).to.equal('');
+
+            // After destroy, the shadow root does not call the worksheet
+            jspreadsheet.destroy(element as Jspreadsheet.JspreadsheetInstanceElement, true);
+            worksheet.records[10][1].element.getBoundingClientRect = () => {
+                throw new Error('read after destroy');
+            };
+            around.dispatchEvent(new Event('scroll'));
+        })
+    );
+
+    it(
+        'reads no layout on a scroll when the worksheet has no fill handle',
+        withRowHeight(async () => {
+            const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(40), tableOverflow: true, selectionCopy: false }] });
+            await placed();
+            worksheet.updateSelectionFromCoords(1, 10, 1, 10);
+
+            let reads = 0;
+            worksheet.records[10][1].element.getBoundingClientRect = () => {
+                reads++;
+                return rect(150, 10, 100, 20)();
+            };
+            document.dispatchEvent(new Event('scroll'));
+            scroll(worksheet, 0, 0, 20, 10);
+            expect(reads).to.equal(0);
+        })
+    );
+
+    it(
+        'keeps the fill handle of a cell under the frozen columns hidden after a scroll down',
+        withRowHeight(async () => {
+            const [worksheet] = jspreadsheet(root, { worksheets: [{ data: rows(40), tableOverflow: true, freezeColumns: 1 }] });
+            await placed();
+
+            // The frozen column is 100 pixels wide, and the cell ends 50 pixels from the left of the content
+            worksheet.content.getBoundingClientRect = rect(0, 0, 400, 300);
+            worksheet.records[10][1].element.getBoundingClientRect = rect(0, 180, 50, 20);
+            worksheet.updateSelectionFromCoords(1, 10, 1, 10);
+            expect(worksheet.corner.style.display).to.equal('none');
+
+            Object.defineProperty(worksheet.content, 'scrollTop', { value: 20, writable: true, configurable: true });
+            worksheet.records[10][1].element.getBoundingClientRect = rect(0, 160, 50, 20);
+            worksheet.content.dispatchEvent(new Event('scroll'));
+            expect(worksheet.corner.style.display).to.equal('none');
+        })
+    );
 });

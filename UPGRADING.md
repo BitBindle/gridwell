@@ -796,6 +796,34 @@ move.
 
 No option keeps the old behavior, because the old behavior lost merged ranges that the user did not change.
 
+## An action that removes a merged range keeps the selection
+
+`insertRow`, `deleteRow`, `moveRow`, `insertColumn`, `deleteColumn`, `moveColumn` and `orderBy` keep the selection of
+the user when they remove a merged range. As without merged ranges, an insert, a delete or a move moves the selection
+with its cells, and a sort keeps the selected position. Version 5 selected each removed range, so the action then moved
+or removed that range as the selection. `onunmerge` still occurs for each removed range, but `onselection` no longer
+receives the removed ranges during the action. An application with an `onselection` handler sees only the selection
+after the action. `removeMerge` and `destroyMerge` still select the removed ranges.
+
+No option keeps the old behavior, because the old selection did not relate to what the user selected.
+
+## The header rows stick below each other, and the fill handle hides under them
+
+The nested header rows and the filter row stick below each other when the content scrolls. Each header row gets the
+height of the rows above it in the custom property `--jss-header-top`, and its cells use it as their `top`. Version 5
+gave each header cell `top: 0`, so the last header row covered the rows above it. A stylesheet that sets `top` on the
+cells of the header replaces the new value. The frozen rows stick below all header rows, and the scroll to the active
+cell keeps the cell below all header rows, not only below the highest one.
+
+The fill handle hides while its cell is under the header or under the frozen rows, and shows again when the cell scrolls
+out from under them. This applies to a scroll of the content, of the page and of an element around the worksheet. For
+the scroll of the page, the library listens to `scroll` on the document in the capture phase. A scroll does not leave a
+shadow root, so the library also listens on each shadow root around the `root` option. Version 5 showed the fill
+handle over the header.
+
+No option keeps the old behavior, because the header rows covered the titles of the groups, and the fill handle covered
+the header.
+
 ## Row changes with pagination, lazy loading or a filter
 
 `deleteRow` and `moveRow` with `pagination` show the rows of the current page again, also when the rows change on
