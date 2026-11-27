@@ -330,6 +330,80 @@ describe('Insert rows', () => {
     });
 });
 
+describe('Insert rows in a worksheet without rows (#244)', () => {
+    function create(options: Record<string, unknown> = {}) {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    allowDeletingAllRows: true,
+                    data: [
+                        ['1', 'a'],
+                        ['2', 'b'],
+                    ],
+                    ...options,
+                },
+            ],
+        })[0];
+        worksheet.deleteRow(0, 2);
+        return worksheet;
+    }
+
+    it('inserts a row, and the undo and the redo remove it and give it back', () => {
+        const worksheet = create();
+
+        worksheet.insertRow();
+        expect(worksheet.getData()).to.eql([['', '']]);
+        expect(Array.from(worksheet.tbody.children)).to.eql([worksheet.rows[0].element]);
+
+        worksheet.undo();
+        expect(worksheet.getData()).to.eql([]);
+        expect(worksheet.tbody.children).to.have.length(0);
+
+        worksheet.redo();
+        expect(worksheet.getData()).to.eql([['', '']]);
+        expect(Array.from(worksheet.tbody.children)).to.eql([worksheet.rows[0].element]);
+    });
+
+    it('inserts the rows at row 0 for each row number and direction', () => {
+        const after = create();
+        after.insertRow(2, 0);
+        expect(after.rows.map((row) => row.y)).to.eql([0, 1]);
+        expect(Array.from(after.tbody.children)).to.eql(after.rows.map((row) => row.element));
+
+        const before = create();
+        before.insertRow(['x', 'y'], 5, true);
+        expect(before.getData()).to.eql([['x', 'y']]);
+        expect(before.records[0].map((cell) => cell.y)).to.eql([0, 0]);
+    });
+
+    it('shows the new row with pagination', () => {
+        const worksheet = create({ pagination: 3 });
+
+        worksheet.insertRow();
+
+        expect(Array.from(worksheet.tbody.children)).to.eql([worksheet.rows[0].element]);
+    });
+});
+
+describe('Insert a row next to the rows that a filter shows', () => {
+    it('shows a new row after a row that shows, and the redo shows the same rows', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ filters: true, data: [['a'], ['b'], ['a'], ['b']] }] })[0];
+        worksheet.view.filters[0] = ['a'];
+        worksheet.view.closeFilter(0);
+        const attached = () => Array.from(worksheet.tbody.children).map((tr) => Number(tr.getAttribute('data-y')));
+        expect(attached()).to.eql([0, 2]);
+
+        worksheet.insertRow(1, 0);
+        expect(attached()).to.eql([0, 1, 3]);
+
+        worksheet.undo();
+        expect(attached()).to.eql([0, 2]);
+
+        worksheet.redo();
+        expect(attached()).to.eql([0, 1, 3]);
+    });
+});
+
 describe('Row heights, visibility and data', () => {
     it('getHeight returns the height of a row, and of the rows that have one', () => {
         const worksheet = jspreadsheet(root, {
