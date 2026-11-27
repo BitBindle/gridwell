@@ -8,6 +8,14 @@ import type { Worksheet } from '../types/internal';
 type OwnStyle = Pick<CSSStyleDeclaration, 'whiteSpace' | 'textAlign' | 'color'>;
 
 /** The style of a cell that moveText changes, as the cell has it now. */
+const ownStyleKeys = ['whiteSpace', 'textAlign', 'color'] as const;
+
+/** The property of OwnStyle for a CSS property, in either spelling, or undefined. */
+function styleKey(property: string) {
+    const key = property.trim().replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
+    return (ownStyleKeys as readonly string[]).includes(key) ? (key as keyof OwnStyle) : undefined;
+}
+
 function styleOf(element: HTMLElement): OwnStyle {
     const { whiteSpace, textAlign, color } = element.style;
     return { whiteSpace, textAlign, color };
@@ -540,21 +548,45 @@ export class ColumnSource {
     }
 
     /**
-     * After setStyle gave the property of the cell a value: when the cell shows the text of a merged range, the value is
-     * its own value, which the cell keeps when it shows its own value again.
+     * After the application gave the cell a style, with setStyle, resetStyle or a paste: when the cell shows the text of a
+     * merged range, the value of the property is its own value, which the cell keeps when it shows its own value again.
+     * Without a property, this applies to the white-space, the alignment and the color.
      */
-    styled(name: string, property: string) {
+    styled(name: string, property?: string) {
         const saved = this.ownStyle.get(name);
         if (!saved) {
             return;
         }
-        const key = property.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
-        if (key === 'whiteSpace' || key === 'textAlign' || key === 'color') {
-            const [x, y] = getIdFromColumnName(name);
-            const value = this.worksheet.records[y][x].element.style[key];
-            saved.own[key] = value;
-            saved.shown[key] = value;
+        const [x, y] = getIdFromColumnName(name);
+        const style = this.worksheet.records[y][x].element.style;
+        const key = property && styleKey(property);
+        for (const p of key ? [key] : ownStyleKeys) {
+            saved.own[p] = style[p];
+            saved.shown[p] = style[p];
         }
+    }
+
+    /**
+     * The own value of a property of the cell, which the history keeps in place of the value of the first column of a
+     * merged range. Undefined when the cell shows its own value, or for another property.
+     */
+    ownValue(name: string, property: string) {
+        const key = styleKey(property);
+        return key ? this.ownStyle.get(name)?.own[key] : undefined;
+    }
+
+    /** The style text of the cell with its own white-space, alignment and color, as ownValue. */
+    ownStyleText(name: string, text: string) {
+        const saved = this.ownStyle.get(name);
+        if (!saved) {
+            return text;
+        }
+        const element = document.createElement('td');
+        element.setAttribute('style', text);
+        for (const p of ownStyleKeys) {
+            element.style[p] = saved.own[p];
+        }
+        return element.getAttribute('style') || '';
     }
 
     /** The cell (x, y) of the window shows no value, as a cell that a merged range hides. Its value does not change. */
@@ -600,7 +632,7 @@ export class ColumnSource {
         const name = getColumnNameFromId([x, y]);
         const saved = this.ownStyle.get(name);
         if (saved) {
-            for (const property of ['whiteSpace', 'textAlign', 'color'] as const) {
+            for (const property of ownStyleKeys) {
                 // A value that the application gave after moveText stays
                 if (element.style[property] === saved.shown[property]) {
                     element.style[property] = saved.own[property];

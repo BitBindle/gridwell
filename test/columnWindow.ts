@@ -362,6 +362,55 @@ describe('The column window of the row source mode', () => {
         expect(cell.style.color).to.equal('red');
     });
 
+    it('gives the cell its own color after the undo of a setStyle while the cell shows the text of a merged range (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { align: 'left', type: 'color' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.scrollToColumn(145);
+        worksheet.setStyle('EF5', 'color', 'blue');
+        worksheet.undo();
+
+        worksheet.removeMerge('A5');
+        const cell = worksheet.records[4][135].element;
+        expect(cell.style.color).to.equal('');
+        expect(worksheet.getStyle('EF5', 'color')).to.equal('');
+    });
+
+    it('keeps a resetStyle while the cell shows the text of a merged range (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { type: 'color', render: 'square' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.scrollToColumn(145);
+        worksheet.setStyle('EF5', 'color', 'blue');
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.resetStyle({ EF5: '' });
+
+        worksheet.removeMerge('A5');
+        expect(worksheet.records[4][135].element.style.color).to.equal('');
+    });
+
+    it('keeps a pasted style while the cell shows the text of a merged range, and gives back its own style on undo (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { align: 'left', type: 'color' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.scrollToColumn(145);
+        worksheet.clipboard.keep('x', ['text-align: left; color: red;']);
+        worksheet.paste(135, 4, 'x');
+
+        const cell = worksheet.records[4][135].element;
+        worksheet.removeMerge('A5');
+        expect(cell.style.textAlign).to.equal('left');
+        expect(cell.style.color).to.equal('red');
+
+        worksheet.undo();
+        worksheet.undo();
+        expect(cell.textContent).to.equal('135:4');
+        expect(cell.style.textAlign).to.equal('center');
+        expect(cell.style.color).to.equal('');
+    });
+
     it('gives the cell the style of the first column again when the merged ranges apply again, and the value from setStyle after (issue #246)', () => {
         const columns: Jspreadsheet.Column[] = [];
         columns[0] = { align: 'left', type: 'color' };

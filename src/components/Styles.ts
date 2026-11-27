@@ -132,6 +132,9 @@ export class Styles {
                 // Current value
                 const currentValue = (worksheet.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key];
 
+                // The history keeps the own value of a cell that shows the text of a merged range
+                const ownValue = worksheet.rowSource?.columns?.ownValue(cellId, key) ?? currentValue;
+
                 // Change layout
                 if (currentValue === value && !force) {
                     value = '';
@@ -149,7 +152,7 @@ export class Styles {
                     newValue[cellId] = [];
                 }
 
-                oldValue[cellId].push([`${key}:${currentValue}`]);
+                oldValue[cellId].push([`${key}:${ownValue}`]);
                 newValue[cellId].push([`${key}:${value}`]);
             }
         }
@@ -217,6 +220,7 @@ export class Styles {
             const cell = getIdFromColumnName(key);
             if (worksheet.records[cell[1]]?.[cell[0]]) {
                 worksheet.records[cell[1]][cell[0]].element.setAttribute('style', '');
+                worksheet.rowSource?.columns?.styled(key);
             }
         }
         worksheet.setStyle(o, null, null, false, ignoreHistoryAndEvents);
