@@ -490,16 +490,12 @@ export class Selection {
         let b = Math.min(parseInt(y1), lastRow);
         let c = Math.min(parseInt(x2 ?? x1), lastColumn);
         let d = Math.min(parseInt(y2 ?? y1), lastRow);
-        // A cell that a merged range hides gives the selection to the first cell of the range. With a column window, a
-        // part of a range in the window starts with such a cell.
-        const merged = source.mergeAt(a, b);
-        if (merged && (merged[0] !== a || merged[1] !== b)) {
-            if (c >= merged[0] && c <= merged[2] && d >= merged[1] && d <= merged[3]) {
-                c = merged[0];
-                d = merged[1];
-            }
-            a = merged[0];
-            b = merged[1];
+        // A selection inside one merged range, from a cell that the range hides, goes to the first cell of the range. With a
+        // column window, a part of a range in the window starts with such a cell. A larger selection stays as given.
+        const first = source.firstCellOf(a, b);
+        if (first && source.firstCellOf(c, d)?.join() === first.join()) {
+            a = c = first[0];
+            b = d = first[1];
         }
         let px = Math.min(a, c);
         let ux = Math.max(a, c);

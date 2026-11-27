@@ -1222,6 +1222,18 @@ export class RowSource {
         return worksheet.records[y]?.[x]?.element ?? null;
     }
 
+    /**
+     * The first cell of the merged range that holds the cell (x, y), when the table merges that range and (x, y) is not its
+     * first cell, or null. The table merges a range whose first row has a record.
+     */
+    firstCellOf(x: number, y: number): [number, number] | null {
+        const merged = this.mergeAt(x, y);
+        if (!merged || (merged[0] === x && merged[1] === y) || !this.worksheet.records[merged[1]]) {
+            return null;
+        }
+        return [merged[0], merged[1]];
+    }
+
     /** The merged range that holds cell (x, y), as [x1, y1, x2, y2], or null. */
     mergeAt(x: number, y: number): [number, number, number, number] | null {
         for (const range of this.mergesIn(y, y)) {

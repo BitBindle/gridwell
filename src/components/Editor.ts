@@ -396,8 +396,8 @@ export class Editor {
 
         // In the row source mode, a cell that a merged range hides opens the editor of the first cell of the range. With a
         // column window, a part of a range in the window starts with such a cell.
-        const merged = worksheet.rowSource?.mergeAt(x, y);
-        if (merged && (merged[0] !== x || merged[1] !== y)) {
+        const merged = worksheet.rowSource?.firstCellOf(x, y);
+        if (merged) {
             const first = worksheet.rowSource!.reveal(merged[0], merged[1]);
             if (first) {
                 this.open(first as HTMLTableCellElement, empty, e);

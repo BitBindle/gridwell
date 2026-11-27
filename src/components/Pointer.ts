@@ -512,9 +512,10 @@ export class Pointer {
         if (position) {
             const columnId = position[0];
             const rowId = position[1];
-            // Close edition
+            // Close edition. In the row source mode, a press on a part of a merged range is a press on its first cell.
             if (worksheet.editor.isOpen()) {
-                if (worksheet.editor.x !== columnId || worksheet.editor.y !== rowId) {
+                const [x, y] = worksheet.rowSource?.firstCellOf(columnId, rowId) ?? [columnId, rowId];
+                if (worksheet.editor.x !== x || worksheet.editor.y !== y) {
                     worksheet.editor.close(worksheet.editor.cell, true);
                 }
             }

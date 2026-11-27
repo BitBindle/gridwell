@@ -102,7 +102,7 @@ export class ColumnSource {
     private expectedLeft: number | null = null;
     private wantedLeft: number | null = null;
     /** The cells that show the text of a merged range that starts left of the window. */
-    private readonly moved = new Set<string>();
+    private readonly moved = new Map<string, number | null>();
 
     constructor(worksheet: Worksheet, source: jspreadsheet.RowSource) {
         this.worksheet = worksheet;
@@ -496,26 +496,41 @@ export class ColumnSource {
         const worksheet = this.worksheet;
         const given = worksheet.rowSource!.values(y, [from]);
         const value = given?.[from] ?? '';
-        this.moved.add(getColumnNameFromId([to, y]));
+        this.moved.set(getColumnNameFromId([to, y]), from);
         worksheet.records[y][to].element.innerHTML = worksheet.cells.create(from, y, value, true).innerHTML;
     }
 
     /** The cell (x, y) of the window shows no value, as a cell that a merged range hides. Its value does not change. */
     clearText(x: number, y: number) {
-        this.moved.add(getColumnNameFromId([x, y]));
+        this.moved.set(getColumnNameFromId([x, y]), null);
         this.worksheet.records[y][x].element.innerHTML = '';
+    }
+
+    /**
+     * After a change of the cell (x, y), a cell that shows the text of a merged range, or no text, shows it again in place
+     * of its own value.
+     */
+    keepText(x: number, y: number) {
+        const from = this.moved.get(getColumnNameFromId([x, y]));
+        if (from === null) {
+            this.clearText(x, y);
+        } else if (from !== undefined) {
+            this.moveText(from, x, y);
+        }
     }
 
     /** The cells that showed the text of a merged range show their own value again. */
     restoreMoved() {
         const worksheet = this.worksheet;
-        for (const name of this.moved) {
+        // The map is empty before showValue, so keepText does not apply the text rule again
+        const names = [...this.moved.keys()];
+        this.moved.clear();
+        for (const name of names) {
             const [x, y] = getIdFromColumnName(name);
             if (worksheet.records[y]?.[x]) {
                 worksheet.cells.showValue(x, y);
             }
         }
-        this.moved.clear();
     }
 
     /**

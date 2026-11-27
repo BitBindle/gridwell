@@ -373,4 +373,61 @@ describe('The column window of the row source mode', () => {
         const [, after] = worksheet.columnWindow()!;
         expect(after).to.be.above(before + 3);
     });
+
+    it('keeps a selection of columns, rows or cells that starts in a merged range as the caller gives it', () => {
+        const { worksheet } = build();
+        worksheet.setMerge('A1', 2, 2);
+
+        worksheet.updateSelectionFromCoords(1, null, 1, null);
+        expect(worksheet.getSelectedColumns()).to.eql([1]);
+
+        worksheet.updateSelectionFromCoords(null, 1, null, 1);
+        expect(worksheet.getSelectedRows(true)).to.eql([1]);
+
+        worksheet.updateSelectionFromCoords(1, 1, 3, 3);
+        expect(worksheet.selection.range).to.eql([1, 1, 3, 3]);
+    });
+
+    it('keeps the text rule of a merged part after a change of its cell', () => {
+        const { worksheet } = build({}, { freezeColumns: 2 });
+        worksheet.setMerge('A3', 10, 1);
+        const tail = () => worksheet.records[2][2].element.textContent;
+
+        worksheet.setValueFromCoords(2, 2, 'X');
+        expect(worksheet.getValueFromCoords(2, 2)).to.equal('X');
+        expect(tail()).to.equal('');
+        worksheet.undo();
+        expect(tail()).to.equal('');
+        worksheet.setRowData(2, ['r0', 'r1', 'r2']);
+        expect(tail()).to.equal('');
+
+        worksheet.setMerge('C5', 150, 1);
+        worksheet.scrollToColumn(145);
+        worksheet.setValueFromCoords(135, 4, 'Z');
+        expect(worksheet.records[4][135].element.textContent).to.equal('2:4');
+    });
+
+    it('selects and edits a cell of a merged range whose first row is too far above the window to merge', () => {
+        const { worksheet } = build({ count: 5000 });
+        worksheet.setMerge('A1', 2, 2000);
+        worksheet.scrollToRow(1500);
+        const cell = worksheet.records[1500][1].element;
+
+        worksheet.updateSelectionFromCoords(1, 1500, 1, 1500);
+        expect(worksheet.selection.range).to.eql([1, 1500, 1, 1500]);
+        worksheet.openEditor(cell);
+        expect([worksheet.editor.x, worksheet.editor.y]).to.eql([1, 1500]);
+    });
+
+    it('keeps the editor of the first cell of a merged range open after a press on its part in the window', () => {
+        const { worksheet } = build({}, { freezeColumns: 2 });
+        worksheet.setMerge('A3', 10, 1);
+        worksheet.updateSelectionFromCoords(0, 2, 0, 2);
+        worksheet.openEditor(worksheet.records[2][0].element);
+
+        worksheet.records[2][2].element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, buttons: 1 }));
+
+        expect(worksheet.editor.isOpen()).to.equal(true);
+        expect([worksheet.editor.x, worksheet.editor.y]).to.eql([0, 2]);
+    });
 });

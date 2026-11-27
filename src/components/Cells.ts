@@ -307,6 +307,9 @@ export class Cells {
             }
         }
 
+        // A part of a merged range in the column window shows the text of its range, or no text
+        worksheet.rowSource?.columns?.keepText(x, y);
+
         // Overflow
         // The column window can leave out the column on the left
         if (x > 0 && worksheet.records[y][x - 1]) {
