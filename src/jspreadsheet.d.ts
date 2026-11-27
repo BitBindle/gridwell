@@ -2170,6 +2170,8 @@ declare namespace jspreadsheet {
         /**
          * Remove columns.
          *
+         * The merged ranges that have a cell in the removed columns are removed, after the dialog. The other ranges stay and move with their cells.
+         *
          * This method returns false if the {@link SpreadsheetOptions.onbeforedeletecolumn} event returns false or if the "This action will destroy any existing merged cells. Are you sure?" dialog receives a negative response.
          * @param columnNumber - Column index from which removal starts.
          * @param numOfColumns - Number of columns to be removed.
@@ -2178,6 +2180,8 @@ declare namespace jspreadsheet {
 
         /**
          * Remove rows.
+         *
+         * The merged ranges that have a cell in the removed rows are removed, after the dialog. The other ranges stay and move with their cells.
          *
          * This method returns false if the {@link SpreadsheetOptions.onbeforedeleterow} event returns false or if the dialog cases "This action will destroy any existing merged cells. Are you sure?" or "This action will clear your search results. Are you sure?" receive a negative response.
          * @param rowNumber - Row index from which removal starts.
@@ -2499,6 +2503,8 @@ declare namespace jspreadsheet {
         /**
          * Insert one or more columns.
          *
+         * The merged ranges that the new columns split are removed, after the dialog. The other ranges stay and move with their cells.
+         *
          * This method returns false if the {@link SpreadsheetOptions.onbeforeinsertcolumn} event returns false or if the "This action will destroy any existing merged cells. Are you sure?" dialog receives a negative response.
          * @param mixed - Number of columns to insert. It can also be an array of values, but in this case, only one column is inserted, whose data is based on the array items. Default: 1.
          * @param columnNumber - Index of the column used as reference for the insertion. Default: last column.
@@ -2509,6 +2515,8 @@ declare namespace jspreadsheet {
 
         /**
          * Insert one or more rows.
+         *
+         * The merged ranges that the new rows split are removed, after the dialog. The other ranges stay and move with their cells.
          *
          * This method returns false if the {@link SpreadsheetOptions.onbeforeinsertrow} event returns false or if the "This action will destroy any existing merged cells. Are you sure?" or "This action will clear your search results. Are you sure?" dialogs receive a negative response.
          * @param mixed - Number of rows to insert. It can also be an array of values, but in this case, only one row is inserted, whose data is based on the array items. Default: 1.

@@ -92,6 +92,30 @@ export class Merges {
     }
 
     /**
+     * The merged ranges that have a cell in the rows first to last.
+     */
+    inRows(first: number, last: number) {
+        return Object.entries(this.worksheet.options.mergeCells || {})
+            .filter(([key, [, rowspan]]) => {
+                const y = getIdFromColumnName(key)[1];
+                return y <= last && y + Math.max(rowspan, 1) - 1 >= first;
+            })
+            .map(([key]) => key);
+    }
+
+    /**
+     * The merged ranges that have a cell in the columns first to last.
+     */
+    inColumns(first: number, last: number) {
+        return Object.entries(this.worksheet.options.mergeCells || {})
+            .filter(([key, [colspan]]) => {
+                const x = getIdFromColumnName(key)[0];
+                return x <= last && x + Math.max(colspan, 1) - 1 >= first;
+            })
+            .map(([key]) => key);
+    }
+
+    /**
      * Update the first cell of a merged range for the columns that are hidden.
      * The record of each cell of a merged range points to the element of the first cell.
      * So the first cell is hidden only when each column of the range is hidden,

@@ -573,32 +573,32 @@ export class Formulas {
             }
         }
 
-        // Update merged if applicable
-        const keys = Object.keys(mergeCellUpdates);
-        if (keys.length) {
-            for (const key of keys) {
-                const update = mergeCellUpdates[key];
-                // A cell with data-merged that has no range in the options is skipped. Before, the update threw a TypeError.
-                if (update && worksheet.options.mergeCells?.[key]) {
-                    const info = getIdFromColumnName(key);
-                    let x = info[0];
-                    let y = info[1];
-                    updatePosition(x, y, x + update[1], y + update[2]);
+        // Update the merged ranges. A range can move onto the old name of another range that did not move yet, so all
+        // the old names go before the new names are written.
+        const moved: [string, MergeInfo][] = [];
+        for (const [key, update] of Object.entries(mergeCellUpdates)) {
+            // A cell with data-merged that has no range in the options is skipped. Before, the update threw a TypeError.
+            if (update && worksheet.options.mergeCells?.[key]) {
+                const info = getIdFromColumnName(key);
+                let x = info[0];
+                let y = info[1];
+                updatePosition(x, y, x + update[1], y + update[2]);
 
-                    const columnIdFrom = key;
-                    const columnIdTo = update[0];
-                    for (const cell of (worksheet.options.mergeCells![columnIdFrom] as MergeInfo)[2]!) {
-                        x = parseInt(cell.getAttribute('data-x'));
-                        y = parseInt(cell.getAttribute('data-y'));
-                        cell.setAttribute('data-x', x + update[1]);
-                        cell.setAttribute('aria-colindex', x + update[1] + 2);
-                        cell.setAttribute('data-y', y + update[2]);
-                    }
-
-                    worksheet.options.mergeCells![columnIdTo] = worksheet.options.mergeCells![columnIdFrom];
-                    delete worksheet.options.mergeCells![columnIdFrom];
+                const entry = worksheet.options.mergeCells[key] as MergeInfo;
+                for (const cell of entry[2]!) {
+                    x = parseInt(cell.getAttribute('data-x'));
+                    y = parseInt(cell.getAttribute('data-y'));
+                    cell.setAttribute('data-x', x + update[1]);
+                    cell.setAttribute('aria-colindex', x + update[1] + 2);
+                    cell.setAttribute('data-y', y + update[2]);
                 }
+
+                moved.push([update[0], entry]);
+                delete worksheet.options.mergeCells[key];
             }
+        }
+        for (const [cellName, entry] of moved) {
+            (worksheet.options.mergeCells as Record<string, MergeInfo>)[cellName] = entry;
         }
 
         if (references) {

@@ -692,3 +692,17 @@ A column with `width: 0`, and each column without a width when `defaultColWidth`
 `setWidth` with 0 did nothing. No option keeps the old behavior, because `defaultColWidth` is the width of the columns
 with no width, and the frozen columns already counted such a column as 0. To keep a visible column, remove `width: 0`, or
 set the width that you want.
+
+## Insert and delete keep the merged ranges that they do not cross
+
+`insertRow`, `insertColumn`, `deleteRow` and `deleteColumn` remove only the merged ranges that they cross, after the
+dialog. An insert crosses a range when the new rows or columns split it. A delete crosses a range when the range has a
+cell in the deleted rows or columns. The other ranges stay and move with their cells. Version 5 removed all merged ranges
+of the worksheet.
+
+`deleteRow` also asks before it deletes a row of a range that version 5 did not count, and removes that range: a range
+of one row, or the last row of a taller range. Version 5 did not ask. It kept the range of one row on the next row in
+`getMerge`, and kept the rowspan of the taller range, which then covered the next row.
+
+No option keeps the old behavior, because the removal of ranges that the action does not touch lost data. The dialog
+text stays the same, so that the translations of applications still apply.
