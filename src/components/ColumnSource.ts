@@ -497,7 +497,13 @@ export class ColumnSource {
         const given = worksheet.rowSource!.values(y, [from]);
         const value = given?.[from] ?? '';
         this.moved.set(getColumnNameFromId([to, y]), from);
-        worksheet.records[y][to].element.innerHTML = worksheet.cells.create(from, y, value, true).innerHTML;
+        const element = worksheet.records[y][to].element;
+        element.innerHTML = worksheet.cells.create(from, y, value, true).innerHTML;
+        // The text goes through the render of the first column, as createRecord does
+        const column = worksheet.options.columns?.[from];
+        if (column && typeof column.render === 'function') {
+            column.render(element, value, from, y, worksheet, column);
+        }
     }
 
     /** The cell (x, y) of the window shows no value, as a cell that a merged range hides. Its value does not change. */
@@ -511,12 +517,31 @@ export class ColumnSource {
      * of its own value.
      */
     keepText(x: number, y: number) {
+        if (!this.moved.size) {
+            return;
+        }
         const from = this.moved.get(getColumnNameFromId([x, y]));
         if (from === null) {
             this.clearText(x, y);
         } else if (from !== undefined) {
             this.moveText(from, x, y);
         }
+    }
+
+    /**
+     * Before a change of the cell (x, y): a cell that shows the text of a merged range, or no text, gets its own content
+     * again, for example the input of a checkbox, so that the change finds it. keepText then applies the rule again.
+     */
+    ownContent(x: number, y: number) {
+        if (this.moved.size && this.moved.has(getColumnNameFromId([x, y]))) {
+            this.rebuild(x, y);
+        }
+    }
+
+    /** Make the content of the cell (x, y) again from its value, as a new cell has it. */
+    private rebuild(x: number, y: number) {
+        const worksheet = this.worksheet;
+        worksheet.records[y][x].element.innerHTML = worksheet.cells.create(x, y, worksheet.options.data[y][x], true).innerHTML;
     }
 
     /** The cells that showed the text of a merged range show their own value again. */
@@ -528,6 +553,8 @@ export class ColumnSource {
         for (const name of names) {
             const [x, y] = getIdFromColumnName(name);
             if (worksheet.records[y]?.[x]) {
+                // The content of the cell can miss the parts of its column type, for example the input of a checkbox
+                this.rebuild(x, y);
                 worksheet.cells.showValue(x, y);
             }
         }

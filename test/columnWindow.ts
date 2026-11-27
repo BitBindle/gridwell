@@ -430,4 +430,55 @@ describe('The column window of the row source mode', () => {
         expect(worksheet.editor.isOpen()).to.equal(true);
         expect([worksheet.editor.x, worksheet.editor.y]).to.eql([0, 2]);
     });
+
+    it('keeps the input of a checkbox or radio cell that a merged part covers', () => {
+        const columns = Array.from({ length: columnCount }, (_, x): Jspreadsheet.Column =>
+            x === 2 || x === 135 ? { type: 'checkbox' } : x === 3 ? { type: 'radio' } : {}
+        );
+        const { worksheet } = build({}, { freezeColumns: 2, columns });
+        worksheet.setMerge('A3', 10, 1);
+        worksheet.setMerge('A4', 10, 1);
+        expect(worksheet.records[2][2].element.textContent).to.equal('');
+
+        worksheet.setValueFromCoords(2, 2, true);
+        expect(worksheet.records[2][2].element.textContent).to.equal('');
+        worksheet.removeMerge('A3');
+        expect(worksheet.records[2][2].element.querySelector('input')!.checked).to.equal(true);
+
+        worksheet.setMerge('C5', 150, 1);
+        worksheet.scrollToColumn(145);
+        worksheet.scrollToColumn(170);
+        worksheet.scrollToColumn(150);
+        expect(worksheet.records[3][150]).to.not.equal(undefined);
+    });
+
+    it('keeps the text rule of a merged part with a render of the column', () => {
+        const render = (cell: HTMLTableCellElement, value: Jspreadsheet.CellValue | undefined) => {
+            cell.textContent = `R(${value})`;
+        };
+        const columns = Array.from({ length: columnCount }, (): Jspreadsheet.Column => ({ render }));
+        const { worksheet } = build({}, { freezeColumns: 2, columns });
+        worksheet.setMerge('A3', 10, 1);
+        worksheet.setValueFromCoords(2, 2, 'V');
+        expect(worksheet.records[2][2].element.textContent).to.equal('');
+
+        worksheet.setMerge('C5', 150, 1);
+        worksheet.scrollToColumn(145);
+        expect(worksheet.records[4][135].element.textContent).to.equal('R(2:4)');
+        worksheet.setValueFromCoords(135, 4, 'V2');
+        expect(worksheet.records[4][135].element.textContent).to.equal('R(2:4)');
+    });
+
+    it('builds the window again after setFreeze changes only the frozen columns', () => {
+        const { worksheet } = build({}, { freezeColumns: 2 });
+
+        worksheet.setFreeze(undefined, 4);
+        expect(worksheet.columnWindow()![0]).to.equal(4);
+        worksheet.scrollToColumn(100);
+        expect(cellColumns(worksheet, 0).slice(0, 4)).to.eql([0, 1, 2, 3]);
+        expect(headerColumns(worksheet).slice(0, 4)).to.eql([0, 1, 2, 3]);
+
+        worksheet.setFreeze(undefined, 0);
+        expect(cellColumns(worksheet, 0)[0]).to.be.above(50);
+    });
 });

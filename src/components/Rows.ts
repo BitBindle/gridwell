@@ -43,8 +43,9 @@ export class Rows {
         if (columns !== undefined) {
             worksheet.options.freezeColumns = count(columns);
         }
-        // The row source mode makes its rows again, with the new frozen rows first
-        if (rows !== undefined && worksheet.rowSource) {
+        // The row source mode makes its rows again, with the new frozen rows first. A column window makes its columns
+        // again, with the new frozen columns first.
+        if (worksheet.rowSource && (rows !== undefined || (columns !== undefined && worksheet.rowSource.columns))) {
             worksheet.rowSource.reset();
         }
         this.updateFreeze();

@@ -212,6 +212,9 @@ export class Cells {
     ) {
         const worksheet = this.worksheet;
 
+        // A part of a merged range in the column window gets its own content before the change
+        worksheet.rowSource?.columns?.ownContent(x, y);
+
         // A custom editor can have setValue, which is not in the public typings
         const editor = (column && typeof column.type === 'object' ? column.type : null) as
             (jspreadsheet.CustomEditor & { setValue?: (cell: HTMLTableCellElement, value: jspreadsheet.CellValue | undefined) => void }) | null;
@@ -307,9 +310,6 @@ export class Cells {
             }
         }
 
-        // A part of a merged range in the column window shows the text of its range, or no text
-        worksheet.rowSource?.columns?.keepText(x, y);
-
         // Overflow
         // The column window can leave out the column on the left
         if (x > 0 && worksheet.records[y][x - 1]) {
@@ -327,6 +327,9 @@ export class Cells {
                 column
             );
         }
+
+        // A part of a merged range in the column window shows the text of its range, or no text, after the render
+        worksheet.rowSource?.columns?.keepText(x, y);
 
         // Accessible name of the active cell
         if (worksheet.selection.activeCell && worksheet.records[y]?.[x]?.element === worksheet.selection.activeCell) {
