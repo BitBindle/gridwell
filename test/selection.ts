@@ -929,3 +929,139 @@ describe('moveRow and moveColumn keep the selection and the editor on their cell
         expect(worksheet.getValueFromCoords(0, 3)).to.equal('typed');
     });
 });
+
+describe('A press that does not select keeps the first row number or header (#250)', () => {
+    // The spreadsheet adds its event handlers after a promise. jsdom gives the headers and the row numbers no size, so a
+    // press is at their edge, which resizes or drags unless that is off.
+    let questions: string[];
+    const load = (options: Record<string, unknown> = {}) =>
+        new Promise<Worksheet>((resolve) => {
+            questions = [];
+            const data = Array.from({ length: 3 }, (row, y) => ['A', 'B', 'C'].map((column) => `${column}${y + 1}`));
+            const confirm = (text: string) => {
+                questions.push(text);
+                return true;
+            };
+            const instance = jspreadsheet(root, { confirm, worksheets: [{ data, ...options }], onload: () => resolve(instance[0]) });
+        });
+    const press = (element: Element, options?: MouseEventInit) => {
+        element.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, buttons: 1, ...options }));
+        document.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true, buttons: 1 }));
+    };
+    const deleteKey = (worksheet: Worksheet) =>
+        worksheet.element.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, cancelable: true, which: 46, keyCode: 46 } as KeyboardEventInit));
+    const rowNumber = (worksheet: Worksheet, y: number) => worksheet.rows[y].element.children[0];
+    const range = (worksheet: Worksheet) => worksheet.selection.range?.map(Number) ?? null;
+
+    it('keeps the header of a selection of whole columns after a press that resizes a row, so Delete deletes the column', async () => {
+        const worksheet = await load({ columnResize: false, columnDrag: false });
+        press(worksheet.headers[1]);
+
+        press(rowNumber(worksheet, 0));
+        expect(range(worksheet)).to.eql([1, 0, 1, 2]);
+        expect(worksheet.selection.columnAnchor()).to.equal(1);
+
+        worksheet.records[0][1].element.focus();
+        deleteKey(worksheet);
+        expect(questions).to.eql(['Are you sure to delete the selected columns?']);
+        expect(worksheet.getData()[0]).to.eql(['A1', 'C1']);
+    });
+
+    it('keeps the header after a refused drag of a merged row', async () => {
+        const worksheet = await load({ columnResize: false, columnDrag: false, rowResize: false, mergeCells: { A2: [2, 1] } });
+        press(worksheet.headers[2]);
+
+        press(rowNumber(worksheet, 1));
+
+        expect(range(worksheet)).to.eql([2, 0, 2, 2]);
+        expect(worksheet.selection.columnAnchor()).to.equal(2);
+    });
+
+    it('keeps the row number of a selection of whole rows after a press that resizes a column', async () => {
+        const worksheet = await load({ rowResize: false, rowDrag: false });
+        press(rowNumber(worksheet, 1));
+
+        press(worksheet.headers[0]);
+
+        expect(range(worksheet)).to.eql([0, 1, 2, 1]);
+        expect(worksheet.selection.rowAnchor()).to.equal(1);
+    });
+
+    it('drops the header when a press on a row number selects the row, and the row number when a press on a header selects', async () => {
+        const worksheet = await load({ rowResize: false, rowDrag: false, columnResize: false, columnDrag: false });
+        press(worksheet.headers[1]);
+
+        press(rowNumber(worksheet, 2));
+        expect(worksheet.selection.columnAnchor()).to.equal(null);
+        expect(worksheet.selection.rowAnchor()).to.equal(2);
+
+        press(worksheet.headers[0]);
+        expect(worksheet.selection.rowAnchor()).to.equal(null);
+        expect(worksheet.selection.columnAnchor()).to.equal(0);
+    });
+});
+
+describe('Keys after the selection of a cell that does not show (#240)', () => {
+    function create() {
+        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [4, 8] }] })[0];
+        worksheet.hideRow(5);
+        worksheet.updateSelectionFromCoords(3, 7, 3, 7);
+        worksheet.updateSelectionFromCoords(1, 5, 1, 5);
+        return worksheet;
+    }
+    const range = (worksheet: Worksheet) => worksheet.selection.range?.map(Number) ?? null;
+
+    it('moves down from the cell that has the tab stop', () => {
+        const worksheet = create();
+        expect(worksheet.selection.activeCell).to.equal(worksheet.records[6][1].element);
+        expect(range(worksheet)).to.eql([1, 5, 1, 5]);
+
+        worksheet.down();
+
+        expect(range(worksheet)).to.eql([1, 7, 1, 7]);
+        expect(worksheet.selection.activeCell).to.equal(worksheet.records[7][1].element);
+    });
+
+    it('moves up and right from the cell that has the tab stop', () => {
+        const up = create();
+        up.up();
+        expect(range(up)).to.eql([1, 4, 1, 4]);
+
+        const right = create();
+        right.right();
+        expect(range(right)).to.eql([2, 6, 2, 6]);
+    });
+
+    it('moves right from the cell that has the tab stop after the selection of a cell in a hidden column', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [4, 8] }] })[0];
+        worksheet.hideColumn(1);
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+        expect(worksheet.selection.activeCell).to.equal(worksheet.records[2][2].element);
+
+        worksheet.right();
+
+        expect(range(worksheet)).to.eql([3, 2, 3, 2]);
+    });
+
+    it('moves left, and to the first and the last column, from the cell that has the tab stop', () => {
+        const left = create();
+        left.left();
+        expect(range(left)).to.eql([0, 6, 0, 6]);
+
+        const first = create();
+        first.first();
+        expect(range(first)).to.eql([0, 6, 0, 6]);
+
+        const last = create();
+        last.last();
+        expect(range(last)).to.eql([3, 6, 3, 6]);
+    });
+
+    it('extends the selected range with Shift', () => {
+        const worksheet = create();
+
+        worksheet.down(true);
+
+        expect(range(worksheet)).to.eql([1, 5, 1, 6]);
+    });
+});

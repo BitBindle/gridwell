@@ -483,7 +483,10 @@ declare namespace jspreadsheet {
      * {@link WorksheetInstance.resetFilters}), {@link WorksheetInstance.page} and the lazy loading change it.
      */
     interface WorksheetView {
-        /** The indexes of the rows that a search or the filters found, or null when the worksheet shows every row. */
+        /**
+         * The indexes of the rows that a search or the filters found, or null when the worksheet shows every row. The rows
+         * of an insert, and the rows that an undo of a delete gives back, also join the results.
+         */
         results: number[] | null;
 
         /** The values that each column is filtered by, by column index. null or a missing entry is a column without filter. */
@@ -1439,7 +1442,8 @@ declare namespace jspreadsheet {
         oncolumnsattached?: (instance: WorksheetInstance, ranges: [number, number][], rows: [number, number][]) => void;
 
         /**
-         * Occurs when the rows that a search or a filter shows have changed.
+         * Occurs when a search, a filter or their reset has changed the rows that the worksheet shows. `insertRow`,
+         * `deleteRow`, `moveRow` and their undo and redo change the results without this event.
          * @param instance - Instance of the worksheet.
          * @param results - Indexes of the rows that are shown, or null when every row is shown.
          */

@@ -190,3 +190,123 @@ describe('Row changes show the rows of the page again (#223, #224)', () => {
         expect(Array.from(worksheet.tbody.children).map((tr) => tr.children[1].textContent)).to.eql(['4', '0', '6']);
     });
 });
+
+describe('Insert and delete change the results of a filter (#234)', () => {
+    function create(options: Record<string, unknown> = {}) {
+        const data = Array.from({ length: 10 }, (row, y) => [`${y}`, `b${y}`]);
+        const worksheet = jspreadsheet(root, { worksheets: [{ data, filters: true, ...options }] })[0];
+        worksheet.view.filters[0] = ['0', '2', '4', '6', '8'];
+        worksheet.view.closeFilter(0);
+        return worksheet;
+    }
+
+    function shown(worksheet: ReturnType<typeof create>) {
+        return Array.from(worksheet.tbody.children).map((tr) => tr.children[1].textContent);
+    }
+
+    it('keeps the rows of the filter after a delete, and the page shows them', () => {
+        const worksheet = create({ pagination: 3 });
+
+        worksheet.deleteRow(0, 1);
+        expect(worksheet.view.results).to.eql([1, 3, 5, 7]);
+        expect(shown(worksheet)).to.eql(['2', '4', '6']);
+    });
+
+    it('shows a new row at its place after an insert, and keeps the rows of the filter', () => {
+        const worksheet = create({ pagination: 3 });
+
+        worksheet.insertRow(1, 0, true);
+        expect(worksheet.view.results).to.eql([0, 1, 3, 5, 7, 9]);
+        expect(shown(worksheet)).to.eql(['', '0', '2']);
+    });
+
+    it('puts new rows in the body between the rows of the filter, and undo and redo change the results', () => {
+        const worksheet = create();
+
+        worksheet.insertRow(2, 3);
+        expect(worksheet.view.results).to.eql([0, 2, 4, 5, 6, 8, 10]);
+        expect(shown(worksheet)).to.eql(['0', '2', '', '', '4', '6', '8']);
+
+        worksheet.undo();
+        expect(worksheet.view.results).to.eql([0, 2, 4, 6, 8]);
+        expect(shown(worksheet)).to.eql(['0', '2', '4', '6', '8']);
+
+        worksheet.redo();
+        expect(worksheet.view.results).to.eql([0, 2, 4, 5, 6, 8, 10]);
+        expect(shown(worksheet)).to.eql(['0', '2', '', '', '4', '6', '8']);
+    });
+
+    it('removes the deleted rows from the results, and shows the rows that an undo gives back', () => {
+        const worksheet = create();
+
+        worksheet.deleteRow(2, 2);
+        expect(worksheet.view.results).to.eql([0, 2, 4, 6]);
+        expect(shown(worksheet)).to.eql(['0', '4', '6', '8']);
+
+        worksheet.undo();
+        expect(worksheet.view.results).to.eql([0, 2, 3, 4, 6, 8]);
+        expect(shown(worksheet)).to.eql(['0', '2', '3', '4', '6', '8']);
+
+        worksheet.redo();
+        expect(worksheet.view.results).to.eql([0, 2, 4, 6]);
+        expect(shown(worksheet)).to.eql(['0', '4', '6', '8']);
+    });
+
+    it('keeps the filter when a delete removes all its rows, and shows a new row', () => {
+        const worksheet = create();
+        worksheet.view.filters[0] = ['4'];
+        worksheet.view.closeFilter(0);
+
+        worksheet.deleteRow(4, 1);
+        expect(worksheet.view.results).to.eql([]);
+        expect(shown(worksheet)).to.eql([]);
+
+        worksheet.insertRow(1, 0);
+        expect(worksheet.view.results).to.eql([1]);
+        expect(shown(worksheet)).to.eql(['']);
+    });
+
+    it('shows a row that the filter hid before the delete after the undo', () => {
+        const worksheet = create();
+
+        worksheet.deleteRow(3, 1);
+        worksheet.undo();
+        expect(worksheet.rows[3].element.style.display).to.equal('');
+        expect(shown(worksheet)).to.eql(['0', '2', '3', '4', '6', '8']);
+    });
+
+    it('shows a row that the filter hid before the delete after a reset of the filter and the undo', () => {
+        const worksheet = create();
+
+        worksheet.deleteRow(3, 1);
+        worksheet.resetFilters();
+        worksheet.undo();
+        expect(worksheet.view.results).to.equal(null);
+        expect(worksheet.rows[3].element.style.display).to.equal('');
+        expect(shown(worksheet)).to.have.length(10);
+    });
+
+    it('shows a new row that a filter hid before the undo, after a reset of the filter and the redo', () => {
+        const worksheet = create();
+
+        worksheet.insertRow(['3', 'new'], 0);
+        worksheet.view.filters[0] = ['0', '2'];
+        worksheet.view.closeFilter(0);
+        expect(worksheet.rows[1].element.style.display).to.equal('none');
+        worksheet.undo();
+        worksheet.resetFilters();
+        worksheet.redo();
+        expect(worksheet.view.results).to.equal(null);
+        expect(worksheet.rows[1].element.style.display).to.equal('');
+        expect(shown(worksheet)).to.have.length(11);
+    });
+
+    it('keeps a row of the results that hideRow hid hidden after a delete and the undo', () => {
+        const worksheet = create();
+
+        worksheet.hideRow(4);
+        worksheet.deleteRow(4, 1);
+        worksheet.undo();
+        expect(worksheet.rows[4].element.style.display).to.equal('none');
+    });
+});

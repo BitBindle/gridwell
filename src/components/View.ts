@@ -35,7 +35,10 @@ function anchorRow(tbody: HTMLTableSectionElement, last: boolean, frozen: number
 export class View {
     readonly worksheet: Worksheet;
 
-    /** The indexes of the rows that a search or the filters found, or null when the worksheet shows every row. */
+    /**
+     * The indexes of the rows that a search or the filters found, or null when the worksheet shows every row. The rows of
+     * an insert, and the rows that an undo of a delete gives back, also join the results.
+     */
     results: number[] | null = null;
 
     /** The scroll position from the top at the last scroll, so the fill handle is checked only for a vertical scroll. */
@@ -440,6 +443,69 @@ export class View {
 
         // Events. setData sets the page number of a worksheet with pagination.
         worksheet.dispatch('onchangepage', worksheet, pageNumber, oldPage, worksheet.options.pagination!);
+    }
+
+    /**
+     * Change the results of a search or a filter after an insert or a delete of rows. The other rows keep their place in
+     * the results, and new rows show.
+     * @param rowIndex - The first row that the action adds or removes.
+     * @param count - The number of new rows, or minus the number of removed rows.
+     */
+    shiftResults(rowIndex: number, count: number) {
+        const results = this.results;
+        if (!results) {
+            return;
+        }
+        const end = count > 0 ? rowIndex : rowIndex - count;
+        const shifted = results.filter((row) => row < rowIndex || row >= end).map((row) => (row >= end ? row + count : row));
+        if (count > 0) {
+            const place = shifted.findIndex((row) => row >= rowIndex);
+            const added = Array.from({ length: count }, (value, i) => rowIndex + i);
+            shifted.splice(place < 0 ? shifted.length : place, 0, ...added);
+        }
+        this.results = shifted;
+    }
+
+    /**
+     * Give back the display of rows that leave the worksheet while a search or a filter hides them. An undo or a redo can
+     * bring them back after the results change, and then they show. A row of the results keeps a display of hideRow.
+     * @param rowIndex - The first row that leaves.
+     * @param count - The number of rows that leave.
+     */
+    releaseRows(rowIndex: number, count: number) {
+        const worksheet = this.worksheet;
+        const results = this.results;
+        if (!results) {
+            return;
+        }
+        const shown = new Set(results);
+        for (let j = rowIndex; j < rowIndex + count; j++) {
+            if (!shown.has(j)) {
+                worksheet.rows[j].element.style.display = '';
+            }
+        }
+    }
+
+    /**
+     * Put new rows in the table body while a search or a filter gives results. The rows go next to the rows of the
+     * results around them that the body has, and stay out of the body when it has none there.
+     * @param rowIndex - The first new row.
+     * @param count - The number of new rows.
+     */
+    placeResultRows(rowIndex: number, count: number) {
+        const worksheet = this.worksheet;
+        const results = this.results!;
+        const k = results.indexOf(rowIndex);
+        const next = worksheet.rows[results[k + count]];
+        const previous = k > 0 ? worksheet.rows[results[k - 1]] : undefined;
+        const before = next?.element.parentNode === worksheet.tbody ? next.element : null;
+        const after = !before && previous?.element.parentNode === worksheet.tbody ? previous.element : null;
+        for (let j = rowIndex; j < rowIndex + count; j++) {
+            const element = worksheet.rows[j].element;
+            if (before || after || (!next && !previous)) {
+                worksheet.tbody.insertBefore(element, before || after?.nextSibling || null);
+            }
+        }
     }
 
     /**

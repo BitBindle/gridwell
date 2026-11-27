@@ -397,13 +397,14 @@ export class Rows {
             }
             // Create row
             const newRow = this.create(row, worksheet.options.data[row]);
-            // Append node
-            if (currentRows[0]) {
-                if (currentRows[0].element.parentNode === worksheet.tbody) {
-                    worksheet.tbody.insertBefore(newRow.element, currentRows[0].element);
-                }
-            } else {
-                if (worksheet.rows[rowNumber].element.parentNode === worksheet.tbody) {
+            // Append node. While a search or a filter gives results, insertRow puts the rows in the body after it
+            // changes the results.
+            if (!worksheet.view.results) {
+                if (currentRows[0]) {
+                    if (currentRows[0].element.parentNode === worksheet.tbody) {
+                        worksheet.tbody.insertBefore(newRow.element, currentRows[0].element);
+                    }
+                } else if (worksheet.rows[rowNumber].element.parentNode === worksheet.tbody) {
                     worksheet.tbody.appendChild(newRow.element);
                 }
             }
@@ -511,6 +512,12 @@ export class Rows {
                 for (const cell of worksheet.records[j]) {
                     cell.y = j;
                 }
+            }
+
+            // The rows that a filter shows keep their place in the results, and the new rows show
+            if (worksheet.view.results) {
+                worksheet.view.shiftResults(rowIndex, numOfRows);
+                worksheet.view.placeResultRows(rowIndex, numOfRows);
             }
 
             // Keep history
@@ -763,6 +770,9 @@ export class Rows {
                     // An editor in a deleted row closes without a save
                     worksheet.editor.closeIn(1, rowNumber, rowNumber + numOfRows - 1);
 
+                    // A row that the filter hides shows when an undo gives it back
+                    worksheet.view.releaseRows(rowNumber, numOfRows);
+
                     // Remove node
                     for (let row = rowNumber; row < rowNumber + numOfRows; row++) {
                         if (worksheet.rows[row].element.parentNode === worksheet.tbody) {
@@ -785,6 +795,9 @@ export class Rows {
                             cell.y = j;
                         }
                     }
+
+                    // The rows that a filter shows keep their place in the results
+                    worksheet.view.shiftResults(rowNumber, -numOfRows);
 
                     // Keep history
                     const historyRecord: WorksheetHistoryRecord = {
