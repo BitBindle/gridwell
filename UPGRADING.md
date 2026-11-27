@@ -862,9 +862,10 @@ uses `onchangepage` to load data can compare the new and the old page number.
 ## A right press on a row number or a header selects as a left press
 
 A right press on a row number selects the whole row, and a right press on a header selects the whole column, as a left
-press does. A selection of whole rows that has the pressed row stays, also one of `selectAll` or of
-`updateSelectionFromCoords`. The same applies to whole columns and a header. After the press, `selection.row` (or
-`selection.column`) is the first row (or column) of the selection, and the anchor of the other axis is null.
+press does. A selection that has all columns and the pressed row stays, also a selection of cells, for example of
+`selectAll`, of `updateSelectionFromCoords` or in a worksheet with one column. The same applies to a selection that has
+all rows and a header. After the press, `selection.row` (or `selection.column`) is the first row (or column) of the
+selection, and the anchor of the other axis is null.
 
 So Delete then deletes the selected rows or columns, as the menu item "Delete selected rows" does: `onbeforedeleterow`
 and `ondeleterow` (or the column events) fire instead of `onchange`, and with the `confirm` option false Delete asks no

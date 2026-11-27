@@ -82,14 +82,23 @@ describe('The default context menu', () => {
         });
 
         it('changes a cell selection with a cell of the column into a selection of the column, so that Delete deletes the column (issue #229)', async () => {
-            const [worksheet] = await load({ worksheets: [{ data: [['a', 'b', 'c']] }] });
+            // Two rows, so that the cell does not have all rows of its column
+            const data = [
+                ['a', 'b', 'c'],
+                ['d', 'e', 'f'],
+            ];
+            const [worksheet] = await load({ worksheets: [{ data }] });
             worksheet.updateSelectionFromCoords(0, 0, 0, 0);
 
             contextmenu(worksheet.headers[0]);
+            expect(worksheet.selection.range!.map(Number)).to.eql([0, 0, 0, 1]);
             expect(worksheet.selection.column).to.equal(0);
 
             expect(deleteKey(worksheet)).to.eql(['Are you sure to delete the selected columns?']);
-            expect(worksheet.getData()).to.eql([['b', 'c']]);
+            expect(worksheet.getData()).to.eql([
+                ['b', 'c'],
+                ['e', 'f'],
+            ]);
         });
 
         it('drops the row anchor of an earlier press, so that Delete deletes the column in a worksheet with one column (issue #229)', async () => {
@@ -208,10 +217,17 @@ describe('The default context menu', () => {
         });
 
         it('changes a cell selection with a cell of the row into a selection of the row, so that Delete deletes the row (issue #229)', async () => {
-            const [worksheet] = await load({ worksheets: [{ data: [['a'], ['b'], ['c']] }] });
+            // Two columns, so that the cell does not have all columns of its row
+            const data = [
+                ['a', 1],
+                ['b', 2],
+                ['c', 3],
+            ];
+            const [worksheet] = await load({ worksheets: [{ data }] });
             worksheet.updateSelectionFromCoords(0, 1, 0, 1);
 
             contextmenu(worksheet.rows[1].element.children[0]);
+            expect(worksheet.selection.range!.map(Number)).to.eql([0, 1, 1, 1]);
             expect(worksheet.selection.row).to.equal(1);
 
             expect(deleteKey(worksheet)).to.eql(['Are you sure to delete the selected rows?']);
