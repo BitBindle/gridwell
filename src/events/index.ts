@@ -3,6 +3,7 @@ import { contextMenuControls } from './contextMenu.js';
 import { focusInControls } from './focus.js';
 import { keyDownControls } from './keyboard.js';
 import { doubleClickControls, mouseDownControls, mouseMoveControls, mouseOverControls, mouseUpControls } from './mouse.js';
+import { scrollControls } from './scroll.js';
 import { touchEndControls, touchStartControls } from './touch.js';
 
 export function setEvents(root: Document | HTMLElement | ShadowRoot) {
@@ -21,6 +22,8 @@ export function setEvents(root: Document | HTMLElement | ShadowRoot) {
     root.addEventListener('touchmove', touchEndControls as EventListener);
     root.addEventListener('focusin', focusInControls as EventListener);
     document.addEventListener('keydown', keyDownControls as EventListener);
+    // A scroll does not bubble, so the document sees the scroll of the page and of any element in the capture phase
+    document.addEventListener('scroll', scrollControls, true);
 }
 
 export function destroyEvents(root: Document | HTMLElement | ShadowRoot) {
@@ -38,4 +41,5 @@ export function destroyEvents(root: Document | HTMLElement | ShadowRoot) {
     root.removeEventListener('touchmove', touchEndControls as EventListener);
     root.removeEventListener('focusin', focusInControls as EventListener);
     document.removeEventListener('keydown', keyDownControls as EventListener);
+    document.removeEventListener('scroll', scrollControls, true);
 }

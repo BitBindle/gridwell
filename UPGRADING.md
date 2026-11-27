@@ -805,7 +805,9 @@ cells of the header replaces the new value. The frozen rows stick below all head
 cell keeps the cell below all header rows, not only below the highest one.
 
 The fill handle hides while its cell is under the header or under the frozen rows, and shows again when the cell scrolls
-out from under them. Version 5 showed the fill handle over the header.
+out from under them. This applies to a scroll of the content, of the page and of an element around the worksheet. For
+the scroll of the page, the library listens to `scroll` on the document in the capture phase. Version 5 showed the fill
+handle over the header.
 
 No option keeps the old behavior, because the header rows covered the titles of the groups, and the fill handle covered
 the header.
