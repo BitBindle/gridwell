@@ -1,6 +1,6 @@
 import { translate } from '../utils/dictionary.js';
 import { getColumnName } from '../utils/helpers.js';
-import { getColumnNameFromId, injectArray } from '../utils/internalHelpers.js';
+import { getColumnNameFromId, injectArray, toNumber } from '../utils/internalHelpers.js';
 import { setHeaderRole } from './Accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetHistoryRecord } from '../types/internal';
@@ -92,7 +92,7 @@ export class Columns {
      * The columns that insertColumn inserts, with their position, their options and their data, for the events.
      */
     private getInserted(
-        mixed: number | jspreadsheet.CellValue[] | undefined,
+        mixed: number | string | jspreadsheet.CellValue[] | undefined,
         columnNumber: number,
         numOfColumns: number,
         insertBefore: boolean,
@@ -261,8 +261,8 @@ export class Columns {
      * @param properties - The options of the new columns.
      */
     insert(
-        mixed?: number | jspreadsheet.CellValue[],
-        columnNumber?: number,
+        mixed?: number | string | jspreadsheet.CellValue[],
+        columnNumber?: number | string,
         insertBefore?: boolean | number,
         properties?: jspreadsheet.Column[]
     ): false | undefined {
@@ -281,7 +281,11 @@ export class Columns {
             // The insert could be lead by number of rows or the array of data
             let numOfColumns;
             if (!Array.isArray(mixed)) {
-                numOfColumns = typeof mixed === 'number' ? mixed : 1;
+                // A number of columns that is not a number inserts one column, as no number does
+                numOfColumns = toNumber(mixed) ?? NaN;
+                if (Number.isNaN(numOfColumns)) {
+                    numOfColumns = 1;
+                }
             } else {
                 numOfColumns = 1;
 
@@ -304,7 +308,11 @@ export class Columns {
             const lastColumn = currentNumOfColumns - 1;
 
             // Confirm position
-            if (columnNumber == null || columnNumber >= parseInt(lastColumn) || columnNumber < 0) {
+            columnNumber = toNumber(columnNumber);
+            if (Number.isNaN(columnNumber)) {
+                return false;
+            }
+            if (columnNumber == null || columnNumber >= lastColumn || columnNumber < 0) {
                 columnNumber = lastColumn;
             }
 
@@ -493,7 +501,7 @@ export class Columns {
      * @param columnNumber - The first column to delete. Without it, the selected columns, or the last column.
      * @param numOfColumns - The number of columns to delete.
      */
-    delete(columnNumber?: number, numOfColumns?: number): false | undefined {
+    delete(columnNumber?: number | string, numOfColumns?: number | string): false | undefined {
         const worksheet = this.worksheet;
 
         // The row source mode keeps the columns of the build
@@ -522,6 +530,13 @@ export class Columns {
                 // Lasat column
                 const lastColumn = worksheet.options.data[0].length - 1;
 
+                // A column number that is not a number deletes nothing. A number of columns that is not a number
+                // deletes one, as no number does.
+                columnNumber = toNumber(columnNumber);
+                numOfColumns = toNumber(numOfColumns);
+                if (Number.isNaN(columnNumber)) {
+                    return false;
+                }
                 if (columnNumber == null || columnNumber > lastColumn || columnNumber < 0) {
                     columnNumber = lastColumn;
                 }

@@ -1,5 +1,5 @@
 import { translate } from '../utils/dictionary.js';
-import { getColumnNameFromId } from '../utils/internalHelpers.js';
+import { getColumnNameFromId, toNumber } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetHistoryRecord } from '../types/internal';
 import { toGrid } from '../utils/zoom.js';
@@ -438,7 +438,7 @@ export class Rows {
      * @param rowNumber - The row next to which the rows go. The last row by default.
      * @param insertBefore - Put the rows before that row instead of after it.
      */
-    insert(mixed?: number | jspreadsheet.CellValue[], rowNumber?: number, insertBefore?: boolean | number): false | undefined {
+    insert(mixed?: number | string | jspreadsheet.CellValue[], rowNumber?: number | string, insertBefore?: boolean | number): false | undefined {
         const worksheet = this.worksheet;
 
         // The application changes the rows of the row source mode, and calls resetRows
@@ -455,7 +455,11 @@ export class Rows {
             let numOfRows;
 
             if (!Array.isArray(mixed)) {
-                numOfRows = typeof mixed !== 'undefined' ? mixed : 1;
+                // A number of rows that is not a number inserts one row, as no number does
+                numOfRows = toNumber(mixed) ?? NaN;
+                if (Number.isNaN(numOfRows)) {
+                    numOfRows = 1;
+                }
             } else {
                 numOfRows = 1;
 
@@ -470,7 +474,11 @@ export class Rows {
             // Current column number
             const lastRow = worksheet.options.data.length - 1;
 
-            if (rowNumber == null || rowNumber >= parseInt(lastRow) || rowNumber < 0) {
+            rowNumber = toNumber(rowNumber);
+            if (Number.isNaN(rowNumber)) {
+                return false;
+            }
+            if (rowNumber == null || rowNumber >= lastRow || rowNumber < 0) {
                 rowNumber = lastRow;
             }
 
@@ -700,7 +708,7 @@ export class Rows {
      * @param rowNumber - The first row to delete. Without it, the selected rows, or the last row.
      * @param numOfRows - The number of rows to delete.
      */
-    delete(rowNumber?: number, numOfRows?: number): false | undefined {
+    delete(rowNumber?: number | string, numOfRows?: number | string): false | undefined {
         const worksheet = this.worksheet;
 
         // The application changes the rows of the row source mode, and calls resetRows
@@ -727,6 +735,13 @@ export class Rows {
                 // Last column
                 const lastRow = worksheet.options.data.length - 1;
 
+                // A row number that is not a number deletes nothing. A number of rows that is not a number
+                // deletes one, as no number does.
+                rowNumber = toNumber(rowNumber);
+                numOfRows = toNumber(numOfRows);
+                if (Number.isNaN(rowNumber)) {
+                    return false;
+                }
                 if (rowNumber == null || rowNumber > lastRow || rowNumber < 0) {
                     rowNumber = lastRow;
                 }

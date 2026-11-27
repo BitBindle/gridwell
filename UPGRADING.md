@@ -927,3 +927,16 @@ lazy loading, the table body can then hold more than 100 rows until the next scr
 
 No option keeps the old behavior, because the insert and its redo must give the same rows, and the undo of a delete
 must give back the rows that were in the body.
+
+## insertRow, deleteRow, insertColumn and deleteColumn read their numbers as numbers
+
+A text that is a number, such as the value of `data-y`, works as that number. Version 5 joined the texts, so the calls
+threw or changed other rows. Two calls that did something in version 5 now behave differently:
+
+- `insertRow` and `insertColumn` with a boolean row or column number inserted next to row or column 1 (`true`) or 0
+  (`false`). Now they return false and change nothing. Pass a number.
+- `deleteRow` and `deleteColumn` with a count that is a text that is not a number, such as `'x'`, or an array or an
+  object, removed nothing but fired the events with an empty list. Now they remove 1 row or column, as version 5 already
+  did for `NaN`, `''`, `0` and `false`.
+
+No option keeps the old behavior, because a boolean is not an index, and the default count of 1 is the documented one.
