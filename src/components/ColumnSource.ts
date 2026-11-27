@@ -183,11 +183,6 @@ export class ColumnSource {
         return result;
     }
 
-    /** True when the rows have a cell for column x. */
-    isAttached(x: number) {
-        return (x >= 0 && x < this.frozenCount()) || (x >= this.from && x <= this.to);
-    }
-
     /**
      * The part of the columns first to last that has cells in one block of the table, as [from, to], or null. A range
      * that starts in a frozen column ends at the last frozen column.
@@ -503,6 +498,12 @@ export class ColumnSource {
         const value = given?.[from] ?? '';
         this.moved.add(getColumnNameFromId([to, y]));
         worksheet.records[y][to].element.innerHTML = worksheet.cells.create(from, y, value, true).innerHTML;
+    }
+
+    /** The cell (x, y) of the window shows no value, as a cell that a merged range hides. Its value does not change. */
+    clearText(x: number, y: number) {
+        this.moved.add(getColumnNameFromId([x, y]));
+        this.worksheet.records[y][x].element.innerHTML = '';
     }
 
     /** The cells that showed the text of a merged range show their own value again. */

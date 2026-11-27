@@ -301,4 +301,76 @@ describe('The column window of the row source mode', () => {
         }
         expect(cellColumns(worksheet, 0)).to.eql(range(140, 160));
     });
+
+    it('selects and edits the first cell of a merged range from each part of the range', () => {
+        const { worksheet } = build({}, { freezeColumns: 2 });
+        worksheet.setMerge('A3', 10, 1);
+
+        // The part in the window of a range that crosses the edge of the frozen columns does not show a value
+        const tail = worksheet.records[2][2].element;
+        expect(tail.getAttribute('colspan')).to.equal('8');
+        expect(tail.textContent).to.equal('');
+        expect(worksheet.getValueFromCoords(2, 2)).to.equal('2:2');
+
+        worksheet.updateSelectionFromCoords(2, 2, 2, 2);
+        expect(worksheet.selection.range).to.eql([0, 2, 0, 2]);
+        worksheet.openEditor(tail);
+        expect(worksheet.editor.isOpen()).to.equal(true);
+        expect([worksheet.editor.x, worksheet.editor.y]).to.eql([0, 2]);
+        worksheet.closeEditor(worksheet.editor.cell!, false);
+
+        // A range that starts more than 100 columns left of the window
+        worksheet.setMerge('C5', 150, 1);
+        worksheet.scrollToColumn(145);
+        const [from] = worksheet.columnWindow()!;
+        expect(from).to.equal(135);
+        const part = worksheet.records[4][135].element;
+        expect(part.textContent).to.equal('2:4');
+
+        worksheet.updateSelectionFromCoords(135, 4, 135, 4);
+        expect(worksheet.selection.range).to.eql([2, 4, 2, 4]);
+        worksheet.openEditor(part);
+        expect(worksheet.editor.isOpen()).to.equal(true);
+        expect([worksheet.editor.x, worksheet.editor.y]).to.eql([2, 4]);
+        expect(worksheet.editor.cell).to.equal(worksheet.records[4][2].element);
+    });
+
+    it('brings the selected cell into the window before F2, Space or a character opens the editor', () => {
+        const { worksheet } = build();
+        worksheet.updateSelectionFromCoords(10, 1, 10, 1);
+        worksheet.scrollToColumn(150);
+        expect(worksheet.records[1][10]).to.equal(undefined);
+
+        key(113, 'F2');
+
+        expect(worksheet.editor.isOpen()).to.equal(true);
+        expect(worksheet.editor.cell).to.equal(worksheet.records[1][10].element);
+        worksheet.closeEditor(worksheet.editor.cell!, false);
+
+        worksheet.scrollToColumn(150);
+        key(32, ' ');
+        expect(worksheet.editor.isOpen()).to.equal(true);
+        expect(worksheet.editor.cell).to.equal(worksheet.records[1][10].element);
+        worksheet.closeEditor(worksheet.editor.cell!, false);
+
+        // A row outside the window of rows
+        worksheet.scrollToRow(900);
+        expect(worksheet.records[1]).to.equal(undefined);
+        key(65, 'a');
+        expect(worksheet.editor.isOpen()).to.equal(true);
+        expect(worksheet.editor.cell).to.equal(worksheet.records[1][10].element);
+    });
+
+    it('renders the window again after a change of the zoom', () => {
+        const { worksheet } = build();
+        Object.defineProperty(worksheet.content, 'clientWidth', { configurable: true, get: () => 600 });
+        worksheet.refreshColumns();
+        const [, before] = worksheet.columnWindow()!;
+
+        worksheet.setZoom(0.25);
+
+        // At 25 %, the view holds four times as many columns
+        const [, after] = worksheet.columnWindow()!;
+        expect(after).to.be.above(before + 3);
+    });
 });

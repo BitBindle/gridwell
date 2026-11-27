@@ -207,6 +207,18 @@ export class Keyboard {
     }
 
     /**
+     * Open the editor of the cell (x, y). In the row source mode, the windows scroll to the cell when its row or its column
+     * has no record.
+     */
+    private openEditor(y: number, x: number, empty: boolean, e: KeyboardEvent) {
+        const worksheet = this.worksheet;
+        const element = worksheet.rowSource ? worksheet.rowSource.reveal(x, y) : worksheet.records[y][x].element;
+        if (element) {
+            worksheet.editor.open(element as HTMLTableCellElement, empty, e);
+        }
+    }
+
+    /**
      * A key that starts an edition: Space opens the editor or toggles a checkbox or a radio, F2 opens the editor with the
      * value of the cell, and a character opens the editor with that character.
      */
@@ -227,14 +239,14 @@ export class Keyboard {
                     worksheet.editor.setCheckRadioValue();
                 } else {
                     // Start edition
-                    worksheet.editor.open(worksheet.records[rowId][columnId].element, true, e);
+                    this.openEditor(rowId, columnId, true, e);
                 }
             } else if (e.keyCode === 113) {
                 // Start edition with current content F2
-                worksheet.editor.open(worksheet.records[rowId][columnId].element, false, e);
+                this.openEditor(rowId, columnId, false, e);
             } else if ((e.key.length === 1 || e.key === 'Process') && !(e.altKey || isCtrl(e))) {
                 // Start edition
-                worksheet.editor.open(worksheet.records[rowId][columnId].element, true, e);
+                this.openEditor(rowId, columnId, true, e);
                 // Prevent entries in the calendar
                 if (column?.type === 'calendar') {
                     e.preventDefault();

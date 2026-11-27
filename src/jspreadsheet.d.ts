@@ -1519,7 +1519,10 @@ declare namespace jspreadsheet {
          * Each row has cells only for the frozen columns and a window of columns around the view, for a worksheet with
          * many columns. A cell outside the window is like a cell of a row outside the window: it has no record, its
          * value is not kept, and a change of it does nothing. `getData` gives empty values for these columns, and the
-         * values that `height` gets have items only for the columns with a cell. Nested headers are off.
+         * values that `height` gets have items only for the columns with a cell. Nested headers are off. A merged range
+         * can have a part in the frozen columns and a part in the window. A press on a part selects the first cell of the
+         * range, and an edition of the range scrolls to its first cell when needed. F2, Space and a character scroll the
+         * selected cell into the windows before the editor opens.
          */
         columnWindow?: boolean;
 

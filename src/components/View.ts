@@ -908,6 +908,10 @@ export class View {
                 worksheet.content.scrollLeft = (worksheet.content.scrollLeft * next) / previous;
                 worksheet.content.scrollTop = (worksheet.content.scrollTop * next) / previous;
                 worksheet.columns.updateFreezePosition();
+                // The view holds another number of rows and columns
+                if (worksheet.rowSource) {
+                    worksheet.renderRows();
+                }
                 worksheet.selection.updateCorner();
             }
         }

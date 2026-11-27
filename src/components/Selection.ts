@@ -486,10 +486,21 @@ export class Selection {
             x1 = 0;
             x2 = lastColumn;
         }
-        const a = Math.min(parseInt(x1), lastColumn);
-        const b = Math.min(parseInt(y1), lastRow);
-        const c = Math.min(parseInt(x2 ?? x1), lastColumn);
-        const d = Math.min(parseInt(y2 ?? y1), lastRow);
+        let a = Math.min(parseInt(x1), lastColumn);
+        let b = Math.min(parseInt(y1), lastRow);
+        let c = Math.min(parseInt(x2 ?? x1), lastColumn);
+        let d = Math.min(parseInt(y2 ?? y1), lastRow);
+        // A cell that a merged range hides gives the selection to the first cell of the range. With a column window, a
+        // part of a range in the window starts with such a cell.
+        const merged = source.mergeAt(a, b);
+        if (merged && (merged[0] !== a || merged[1] !== b)) {
+            if (c >= merged[0] && c <= merged[2] && d >= merged[1] && d <= merged[3]) {
+                c = merged[0];
+                d = merged[1];
+            }
+            a = merged[0];
+            b = merged[1];
+        }
         let px = Math.min(a, c);
         let ux = Math.max(a, c);
         let py = Math.min(b, d);

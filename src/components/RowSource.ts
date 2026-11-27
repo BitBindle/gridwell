@@ -863,8 +863,8 @@ export class RowSource {
 
     /**
      * Merge the part of each merged range whose first row has a record. A range ends at the last row with a record. With a
-     * column window, the part of a range in the frozen columns and the part in the window merge on their own. A part that
-     * starts right of the first column of its range shows the text of that cell.
+     * column window, the part of a range in the frozen columns and the part in the window merge on their own. The first
+     * part shows the text of the first cell of its range, and the second part shows no text.
      */
     applyMerges() {
         const worksheet = this.worksheet;
@@ -910,6 +910,9 @@ export class RowSource {
                 if ((colspan > 1 || rowspan > 1) && worksheet.merges.mergeWindow(getColumnNameFromId([left, y]), colspan, rowspan)) {
                     if (k === 0 && left > x) {
                         this.columns!.moveText(x, left, y);
+                    } else if (k > 0) {
+                        // The part in the window of a range that starts in a frozen column shows no value
+                        this.columns!.clearText(left, y);
                     }
                     // The first cell shows when one of the columns of the range shows
                     const element = worksheet.records[y][left].element;
@@ -1190,6 +1193,21 @@ export class RowSource {
             }
         }
         this.render(true);
+    }
+
+    /**
+     * The element of the cell (x, y). When its row or its column has no record, the windows scroll to it first. Null when
+     * the cell has no record after the scroll, for example in a hidden row.
+     */
+    reveal(x: number, y: number) {
+        const worksheet = this.worksheet;
+        if (!worksheet.records[y]) {
+            this.scrollToRow(y);
+        }
+        if (worksheet.records[y] && !worksheet.records[y][x]) {
+            this.columns?.scrollToColumn(x);
+        }
+        return worksheet.records[y]?.[x]?.element ?? null;
     }
 
     /** The merged range that holds cell (x, y), as [x1, y1, x2, y2], or null. */
