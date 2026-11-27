@@ -746,6 +746,16 @@ of one row, or the last row of a taller range. Version 5 did not ask. It kept th
 No option keeps the old behavior, because the removal of ranges that the action does not touch lost data. The dialog
 text stays the same, so that the translations of applications still apply.
 
+## The undo of a delete keeps the formula texts of the cells that it adds
+
+The undo of a row or column delete gives the cells that it adds the formula texts that they had before the delete.
+Version 5 moved their references again, so the restored formulas named other cells. A formula in the values of
+`insertRow` or `insertColumn` still moves its references with the cells, but it now shows the value of its new text.
+
+A formula cell that a delete removes leaves the formula chain. Version 5 kept its name, so a later change of a cell that
+the formula named threw a TypeError, or calculated the cell that then had the name. No option keeps the old behavior,
+because the old behavior changed the formulas that the history gave back.
+
 ## The build leaves out the merged ranges of the options that do not fit
 
 The build of a worksheet, `setData` and `loadWorksheet` leave out a range of `mergeCells` that goes past the last row or
@@ -823,6 +833,31 @@ handle over the header.
 
 No option keeps the old behavior, because the header rows covered the titles of the groups, and the fill handle covered
 the header.
+
+## deleteWorksheet clears the active worksheet
+
+When `deleteWorksheet` removes the active worksheet, `jspreadsheet.current` is `null` after the call. Version 5 kept the
+removed worksheet as the active worksheet, so the keys and the clipboard changed a worksheet that did not show. The user
+clicks or focuses a worksheet to make it active, as after a page load. An application that sets `jspreadsheet.current`
+itself after `deleteWorksheet` keeps working. No option keeps the old behavior, because the keys went to a worksheet
+that the user could not see.
+
+## Row changes with pagination, lazy loading or a filter
+
+`deleteRow` and `moveRow` with `pagination` show the rows of the current page again, also when the rows change on
+another page. Undo and redo of `insertRow`, `deleteRow` and `moveRow` work for rows that are not on the page, or that
+lazy loading did not attach. Version 5 showed the old rows, or threw.
+
+With `filters`, `moveRow` keeps the rows that the filter shows: the moved row shows at its new place, and the other rows
+keep their place. A row that the filter hides stays hidden. Version 5 kept the old row numbers in the results of the
+filter, so the filter then showed other rows.
+
+With `pagination`, `onchangepage` occurs after each `deleteRow` and `moveRow`, and after their undo and redo, also when
+the page number does not change. `insertRow` already did this in version 5. When a delete removes the current page, the
+last page shows. Version 5 showed a page after the last page, with no rows.
+
+No option keeps the old behavior, because it showed rows that the page or the filter did not have. An application that
+uses `onchangepage` to load data can compare the new and the old page number.
 
 ## A right press on a row number or a header selects as a left press
 
