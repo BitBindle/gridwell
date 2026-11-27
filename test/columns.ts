@@ -886,6 +886,65 @@ describe('A column of width 0', () => {
     });
 });
 
+describe('The keyboard and a column of width 0', () => {
+    const range = (worksheet: Worksheet) => worksheet.selection.range!.map(Number);
+
+    it('moves over a column of width 0 with the arrow keys and Ctrl, and does not make it the first tab stop', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [5, 2], columns: [{ width: 0 }, {}, { width: 0 }, {}, { width: 0 }] }],
+        })[0];
+
+        expect(Array.from(worksheet.table.querySelectorAll('[tabindex="0"]'))).to.eql([worksheet.records[0][1].element]);
+
+        worksheet.updateSelectionFromCoords(1, 0, 1, 0);
+        worksheet.right();
+        expect(range(worksheet)).to.eql([3, 0, 3, 0]);
+        worksheet.right();
+        expect(range(worksheet)).to.eql([3, 0, 3, 0]);
+        worksheet.left();
+        expect(range(worksheet)).to.eql([1, 0, 1, 0]);
+        worksheet.left();
+        expect(range(worksheet)).to.eql([1, 0, 1, 0]);
+
+        worksheet.right(false, true);
+        expect(range(worksheet)).to.eql([3, 0, 3, 0]);
+        worksheet.left(false, true);
+        expect(range(worksheet)).to.eql([1, 0, 1, 0]);
+    });
+
+    it('stops on a merged range that starts in a column of width 0 and shows in the next column', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [4, 1], columns: [{}, { width: 0 }, {}, {}], mergeCells: { B1: [2, 1] } }],
+        })[0];
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.right();
+        expect(range(worksheet)).to.eql([1, 0, 1, 0]);
+        worksheet.right();
+        expect(range(worksheet)).to.eql([3, 0, 3, 0]);
+    });
+
+    it('moves over a column of width 0 in the row source mode', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    minDimensions: [4, 1],
+                    columns: [{}, { width: 0 }, {}, { width: 0 }],
+                    rowSource: { count: 10, row: (y) => [`a${y}`, `b${y}`, `c${y}`, `d${y}`] },
+                },
+            ],
+        })[0];
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.right();
+        expect(range(worksheet)).to.eql([2, 0, 2, 0]);
+        worksheet.right(false, true);
+        expect(range(worksheet)).to.eql([2, 0, 2, 0]);
+        worksheet.left();
+        expect(range(worksheet)).to.eql([0, 0, 0, 0]);
+    });
+});
+
 describe('Set the widths of columns with an array', () => {
     it('setWidth keeps the width of a column that the array of widths has no width for (issue #47)', () => {
         const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [3, 2], defaultColWidth: 80 }] })[0];

@@ -796,8 +796,10 @@ export class Selection {
             if (tr.style.display !== 'none') {
                 // The first child is the row number
                 for (let i = 1; i < tr.children.length; i++) {
-                    if ((tr.children[i] as HTMLTableCellElement).style.display !== 'none') {
-                        return tr.children[i] as HTMLTableCellElement;
+                    const td = tr.children[i] as HTMLTableCellElement;
+                    const x = td.getAttribute('data-x');
+                    if (td.style.display !== 'none' && (x === null || !this.zeroWidth(parseInt(x)) || parseInt(td.getAttribute('colspan') ?? '1') > 1)) {
+                        return td;
                     }
                 }
             }
@@ -956,6 +958,32 @@ export class Selection {
     }
 
     /**
+     * True when a horizontal move can stop in column x of row y: the column is not hidden, and it has a width, or a
+     * merged range starts in it and spans more columns. A column of width 0 shows no cell, so the focus would not show.
+     */
+    private columnShown(x: number, y: number) {
+        const worksheet = this.worksheet;
+        if (worksheet.rowSource) {
+            if (this.columnHidden(x)) {
+                return false;
+            }
+            const range = worksheet.rowSource.mergeAt(x, y);
+            return !this.zeroWidth(x) || (range?.[0] === x && range[2] > x);
+        }
+        const td = worksheet.records[y][x].element;
+        if (td.style.display === 'none') {
+            return false;
+        }
+        return !this.zeroWidth(x) || parseInt(td.getAttribute('colspan') ?? '1') > 1;
+    }
+
+    /** True when column x has the width 0. */
+    private zeroWidth(x: number) {
+        const width = this.worksheet.cols[x]?.colElement.getAttribute('width');
+        return width !== null && width !== undefined && parseFloat(width) === 0;
+    }
+
+    /**
      * In the row source mode: the next cell from (x, y) in the direction (dx, dy) that shows and is not in the merged
      * range of (x, y). The rows outside the window have no record, so the hidden rows come from the layout and the
      * merged ranges from the source.
@@ -976,7 +1004,7 @@ export class Selection {
                 j = dy > 0 ? run.last + 1 : run.first - 1;
                 continue;
             }
-            if (dx !== 0 && this.columnHidden(i)) {
+            if (dx !== 0 && !this.columnShown(i, j)) {
                 i += dx;
                 continue;
             }
@@ -1160,7 +1188,7 @@ export class Selection {
         y = parseInt(y);
 
         for (let i = x + 1; i < worksheet.headers.length; i++) {
-            if (worksheet.records[y][i].element.style.display !== 'none') {
+            if (this.columnShown(i, y)) {
                 if (worksheet.records[y][i].element.getAttribute('data-merged')) {
                     if (worksheet.records[y][i].element === worksheet.records[y][x].element) {
                         continue;
@@ -1189,7 +1217,7 @@ export class Selection {
 
         if (direction === 0) {
             for (let i = worksheet.headers.length - 1; i > x; i--) {
-                if (worksheet.rowSource ? !this.columnHidden(i) : worksheet.records[y][i].element.style.display !== 'none') {
+                if (this.columnShown(i, y)) {
                     x = i;
                     break;
                 }
@@ -1362,7 +1390,7 @@ export class Selection {
         x = parseInt(x);
         y = parseInt(y);
         for (let i = x - 1; i >= 0; i--) {
-            if (worksheet.records[y][i].element.style.display !== 'none') {
+            if (this.columnShown(i, y)) {
                 if (worksheet.records[y][i].element.getAttribute('data-merged')) {
                     if (worksheet.records[y][i].element === worksheet.records[y][x].element) {
                         continue;
@@ -1391,7 +1419,7 @@ export class Selection {
 
         if (direction === 0) {
             for (let i = 0; i < x; i++) {
-                if (worksheet.rowSource ? !this.columnHidden(i) : worksheet.records[y][i].element.style.display !== 'none') {
+                if (this.columnShown(i, y)) {
                     x = i;
                     break;
                 }
