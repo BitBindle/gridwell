@@ -442,6 +442,14 @@ export class View {
         worksheet.dispatch('onchangepage', worksheet, pageNumber, oldPage, worksheet.options.pagination!);
     }
 
+    /**
+     * Show the rows of the current page again after a change of the rows. When a delete removed the current page, the
+     * last page shows.
+     */
+    refreshPage() {
+        this.page(Math.min(this.pageNumber, Math.max(0, this.countPages() - 1)));
+    }
+
     countPages() {
         const worksheet = this.worksheet;
 

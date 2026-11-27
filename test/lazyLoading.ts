@@ -274,3 +274,97 @@ describe('Scroll position after a lazy load', () => {
         expect(scrollTop).to.equal(5);
     });
 });
+
+describe('Row changes of rows that lazy loading did not attach (#188, #189)', () => {
+    const confirm = globalThis.confirm;
+
+    beforeEach(() => {
+        globalThis.confirm = () => true;
+    });
+
+    afterEach(() => {
+        globalThis.confirm = confirm;
+    });
+
+    function create(options: Record<string, unknown> = {}) {
+        return jspreadsheet(root, {
+            worksheets: [{ data: rows(300), lazyLoading: true, tableOverflow: true, ...options }],
+        })[0];
+    }
+
+    function attached(worksheet: Worksheet) {
+        return Array.from(worksheet.tbody.children).map((tr) => Number(tr.getAttribute('data-y')));
+    }
+
+    it('attaches the rows that the undo of a delete brings back after the last attached row', () => {
+        const worksheet = create();
+
+        worksheet.deleteRow(95, 5);
+        worksheet.undo();
+
+        const rows = attached(worksheet);
+        expect(rows).to.have.length(100);
+        expect(rows[rows.length - 1]).to.equal(99);
+    });
+
+    it('undoes and redoes an insert of rows that are not attached (#188)', () => {
+        const worksheet = create();
+
+        worksheet.insertRow(5, 250);
+        worksheet.undo();
+        expect(worksheet.options.data.length).to.equal(300);
+        expect(attached(worksheet)).to.eql(Array.from({ length: 100 }, (value, k) => k));
+
+        worksheet.redo();
+        expect(worksheet.options.data.length).to.equal(305);
+        worksheet.undo();
+        expect(worksheet.getColumnData(0)).to.eql(rows(300).map((row) => row[0]));
+    });
+
+    it('undoes a delete of rows that are not attached, and keeps them out of the table body', () => {
+        const worksheet = create();
+
+        worksheet.deleteRow(200, 3);
+        worksheet.undo();
+
+        expect(worksheet.getValueFromCoords(0, 200)).to.equal('200');
+        expect(attached(worksheet)).to.eql(Array.from({ length: 100 }, (value, k) => k));
+    });
+
+    it('moves rows into and out of the attached rows, also on undo', () => {
+        const worksheet = create();
+
+        worksheet.moveRow(250, 260);
+        worksheet.moveRow(250, 3);
+        expect(worksheet.tbody.children[3]).to.equal(worksheet.rows[3].element);
+        worksheet.moveRow(3, 250);
+        expect(attached(worksheet)).to.eql(Array.from({ length: 100 }, (value, k) => k));
+
+        worksheet.undo();
+        worksheet.undo();
+        worksheet.undo();
+        expect(worksheet.getColumnData(0)).to.eql(rows(300).map((row) => row[0]));
+    });
+
+    it('moves a row with filters, and keeps the rows that the filter shows (#189)', () => {
+        const worksheet = create({ filters: true });
+        worksheet.view.filters[0] = Array.from({ length: 150 }, (value, k) => `${k * 2}`);
+        worksheet.view.closeFilter(0);
+        worksheet.updateSelectionFromCoords(0, 250, 0, 250);
+        worksheet.down();
+
+        worksheet.moveRow(4, 0);
+
+        expect(worksheet.getValueFromCoords(0, 0)).to.equal('4');
+        expect(worksheet.view.results!.slice(0, 4)).to.eql([0, 1, 3, 6]);
+        // The attached rows are the rows of the filter after row 250, so the moved row is not attached
+        const ys = attached(worksheet);
+        expect(worksheet.tbody.contains(worksheet.rows[0].element)).to.equal(false);
+        expect(ys.every((y) => worksheet.view.results!.includes(y))).to.equal(true);
+        expect(ys).to.eql([...ys].sort((a, b) => a - b));
+
+        // Back to the first rows: the moved row shows first
+        worksheet.view.loadPage(0);
+        expect(worksheet.tbody.children[0].children[1].textContent).to.equal('4');
+    });
+});

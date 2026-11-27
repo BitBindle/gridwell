@@ -823,3 +823,20 @@ handle over the header.
 
 No option keeps the old behavior, because the header rows covered the titles of the groups, and the fill handle covered
 the header.
+
+## Row changes with pagination, lazy loading or a filter
+
+`deleteRow` and `moveRow` with `pagination` show the rows of the current page again, also when the rows change on
+another page. Undo and redo of `insertRow`, `deleteRow` and `moveRow` work for rows that are not on the page, or that
+lazy loading did not attach. Version 5 showed the old rows, or threw.
+
+With `filters`, `moveRow` keeps the rows that the filter shows: the moved row shows at its new place, and the other rows
+keep their place. A row that the filter hides stays hidden. Version 5 kept the old row numbers in the results of the
+filter, so the filter then showed other rows.
+
+With `pagination`, `onchangepage` occurs after each `deleteRow` and `moveRow`, and after their undo and redo, also when
+the page number does not change. `insertRow` already did this in version 5. When a delete removes the current page, the
+last page shows. Version 5 showed a page after the last page, with no rows.
+
+No option keeps the old behavior, because it showed rows that the page or the filter did not have. An application that
+uses `onchangepage` to load data can compare the new and the old page number.
