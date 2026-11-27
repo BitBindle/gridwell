@@ -299,10 +299,7 @@ export class Cells {
                     }
                 }
                 // Handle big text inside a cell
-                if (
-                    column?.wordWrap !== false &&
-                    (worksheet.options.wordWrap === true || column?.wordWrap === true || worksheet.records[y][x].element.innerHTML.length > 200)
-                ) {
+                if (this.wraps(column, worksheet.records[y][x].element)) {
                     worksheet.records[y][x].element.style.whiteSpace = 'pre-wrap';
                 } else {
                     worksheet.records[y][x].element.style.whiteSpace = '';
@@ -370,11 +367,7 @@ export class Cells {
         if (before.align !== after.align) {
             element.style.textAlign = td.style.textAlign;
         }
-        // create wraps the text with the wordWrap options, or when it is longer than 200 characters
-        function wraps(options: jspreadsheet.Column, cell: HTMLElement) {
-            return options.wordWrap !== false && (worksheet.options.wordWrap === true || options.wordWrap === true || cell.innerHTML.length > 200);
-        }
-        if (wraps(before, element) !== wraps(after, td)) {
+        if (this.wraps(before, element) !== this.wraps(after, td)) {
             element.style.whiteSpace = td.style.whiteSpace;
         }
         if (before.type === 'color' || after.type === 'color') {
@@ -549,7 +542,7 @@ export class Cells {
         }
 
         // Wrap option
-        if (column?.wordWrap !== false && (worksheet.options.wordWrap === true || column?.wordWrap === true || td.innerHTML.length > 200)) {
+        if (this.wraps(column, td)) {
             td.style.whiteSpace = 'pre-wrap';
         }
 
@@ -701,6 +694,18 @@ export class Cells {
         const date = validDate(value) ? value : parseDate(`${value ?? ''}`, format || 'YYYY-MM-DD');
         // A value that is not a date shows as it is
         return formatDate(date || value, format) || `${value ?? ''}`;
+    }
+
+    /**
+     * The cell wraps its text: with the wordWrap option of the worksheet or of the column, or when the text is longer
+     * than 200 characters, unless the worksheet option wrapLongText is false. A column with wordWrap false never wraps.
+     */
+    private wraps(column: jspreadsheet.Column | undefined, cell: HTMLElement) {
+        const options = this.worksheet.options;
+        if (column?.wordWrap === false) {
+            return false;
+        }
+        return options.wordWrap === true || column?.wordWrap === true || (options.wrapLongText !== false && cell.innerHTML.length > 200);
     }
 
     /**
