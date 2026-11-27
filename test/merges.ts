@@ -1149,6 +1149,8 @@ describe('An action that removes a merged range keeps the selection of the user 
         ['insertColumn', (worksheet) => worksheet.insertColumn(1, 0, false), [3, 3, 3, 3]],
         ['deleteColumn', (worksheet) => worksheet.deleteColumn(1, 1), [1, 3, 1, 3]],
         ['moveColumn', (worksheet) => worksheet.moveColumn(0, 2), [1, 3, 1, 3]],
+        // The sort keeps the selected position
+        ['orderBy', (worksheet) => worksheet.orderBy(2, 0), [2, 3, 2, 3]],
     ];
     for (const [name, action, selection] of actions) {
         it(`moves the selection with its cell after ${name}`, () => {

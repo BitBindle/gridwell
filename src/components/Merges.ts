@@ -502,10 +502,9 @@ export class Merges {
                 const [colspan, rowspan] = merges[cellName];
                 delete merges[cellName];
                 worksheet.rowSource.replaceMerges(merges);
-                // As in the other modes, the selection holds the former range
-                if (!keepSelection) {
-                    worksheet.selection.updateFromCoords(x, y, x + colspan - 1, y + rowspan - 1);
-                }
+                // As in the other modes, the selection holds the former range. The actions that keep the selection do
+                // not run in this mode.
+                worksheet.selection.updateFromCoords(x, y, x + colspan - 1, y + rowspan - 1);
                 worksheet.dispatch('onunmerge', worksheet, cellName, beforeMerges);
             }
             return;
@@ -764,8 +763,11 @@ export class Merges {
 
     /**
      * Remove all merged cells
+     * @param keepOptions - Keep the ranges in the options.
+     * @param keepSelection - Do not select the former ranges. A sort keeps the selection of the user. The row source mode
+     * has no sort, so it ignores this argument.
      */
-    destroy(keepOptions?: boolean) {
+    destroy(keepOptions?: boolean, keepSelection?: boolean) {
         const worksheet = this.worksheet;
 
         // The row source mode removes the merged ranges of the sheet
@@ -782,7 +784,7 @@ export class Merges {
         // Remove any merged cells
         if (worksheet.options.mergeCells) {
             for (const key of Object.keys(worksheet.options.mergeCells)) {
-                this.remove(key, null, keepOptions);
+                this.remove(key, null, keepOptions, keepSelection);
             }
         }
     }

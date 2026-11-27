@@ -603,8 +603,8 @@ export class View {
                 if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                     return false;
                 } else {
-                    // Remove merged cells
-                    worksheet.destroyMerge();
+                    // Remove merged cells. The selection of the user stays.
+                    worksheet.merges.destroy(false, true);
                 }
             }
 
