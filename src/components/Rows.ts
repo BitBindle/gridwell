@@ -477,6 +477,10 @@ export class Rows {
                 rowNode,
             });
 
+            // The selection and the editor stay on their cells
+            worksheet.editor.shift(1, rowIndex, numOfRows);
+            worksheet.selection.shift(1, rowIndex, numOfRows);
+
             // Remove table references
             worksheet.formulas.updateTableReferences({ row: Number(rowNumber) });
 
@@ -670,6 +674,9 @@ export class Rows {
                         console.error('Jspreadsheet: It is not possible to delete the last row');
                     }
 
+                    // An editor in a deleted row closes without a save
+                    worksheet.editor.closeIn(1, rowNumber, rowNumber + numOfRows - 1);
+
                     // Remove node
                     for (let row = rowNumber; row < rowNumber + numOfRows; row++) {
                         if (worksheet.rows[row].element.parentNode === worksheet.tbody) {
@@ -698,9 +705,6 @@ export class Rows {
                         worksheet.page(worksheet.view.pageNumber);
                     }
 
-                    // Remove selection
-                    worksheet.selection.conditionalUpdate(1, rowNumber, rowNumber + numOfRows - 1);
-
                     // Keep history
                     worksheet.history.add({
                         action: 'deleteRow',
@@ -711,6 +715,10 @@ export class Rows {
                         rowData,
                         rowNode,
                     });
+
+                    // The selection and the editor stay on their cells. A selection with a deleted cell is removed.
+                    worksheet.editor.shift(1, rowNumber, -numOfRows);
+                    worksheet.selection.shift(1, rowNumber, -numOfRows);
 
                     // Remove table references
                     worksheet.formulas.updateTableReferences({ row: Number(rowNumber) });

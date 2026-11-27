@@ -384,6 +384,10 @@ export class Columns {
                 data: historyData,
             });
 
+            // The selection and the editor stay on their cells
+            worksheet.editor.shift(0, columnIndex, numOfColumns);
+            worksheet.selection.shift(0, columnIndex, numOfColumns);
+
             // Remove table references
             worksheet.formulas.updateTableReferences({ column: Number(columnNumber) });
 
@@ -567,6 +571,9 @@ export class Columns {
                         }
                     }
 
+                    // An editor in a deleted column closes without a save
+                    worksheet.editor.closeIn(0, columnNumber, columnNumber + numOfColumns - 1);
+
                     // Delete the column properties
                     const columns = worksheet.options.columns ? worksheet.options.columns.splice(columnNumber, numOfColumns) : undefined;
 
@@ -614,9 +621,6 @@ export class Columns {
                         }
                     }
 
-                    // Remove selection
-                    worksheet.selection.conditionalUpdate(0, columnNumber, columnNumber + numOfColumns - 1);
-
                     // Adjust nested headers
                     if (worksheet.options.nestedHeaders && worksheet.options.nestedHeaders.length > 0 && worksheet.options.nestedHeaders[0]?.[0]) {
                         for (let j = 0; j < worksheet.options.nestedHeaders.length; j++) {
@@ -639,6 +643,10 @@ export class Columns {
                         footers: historyFooters,
                         data: historyData,
                     });
+
+                    // The selection and the editor stay on their cells. A selection with a deleted cell is removed.
+                    worksheet.editor.shift(0, columnNumber, -numOfColumns);
+                    worksheet.selection.shift(0, columnNumber, -numOfColumns);
 
                     // Update table references
                     worksheet.formulas.updateTableReferences({ column: Number(columnNumber) });

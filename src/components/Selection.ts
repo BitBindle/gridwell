@@ -619,30 +619,39 @@ export class Selection {
     }
 
     /**
-     * Move coords to A1 in case overlaps with an excluded cell
+     * After an insert or a delete of rows or columns, the selection stays on its cells. A selection with a deleted cell
+     * is removed. Call it before updateTableReferences, which shows the moved selection with refresh.
+     * @param axis - 0 for columns, 1 for rows.
+     * @param index - The first row or column that was inserted or deleted.
+     * @param count - The number of rows or columns that were inserted, or minus the number that were deleted.
      */
-    // type is 1 for rows and 0 for columns
-    conditionalUpdate(type: 0 | 1, o: number, d: number) {
+    shift(axis: 0 | 1, index: number, count: number) {
         const worksheet = this.worksheet;
-
-        if (type === 1) {
-            if (
-                worksheet.selection.range &&
-                ((o >= worksheet.selection.range[1] && o <= worksheet.selection.range[3]) ||
-                    (d >= worksheet.selection.range[1] && d <= worksheet.selection.range[3]))
-            ) {
-                worksheet.resetSelection();
-                return;
+        const range = worksheet.selection.range;
+        if (!range || !count) {
+            return;
+        }
+        const ends = axis === 0 ? [0, 2] : [1, 3];
+        const low = Math.min(range[ends[0]], range[ends[1]]);
+        const high = Math.max(range[ends[0]], range[ends[1]]);
+        if (count < 0 && low < index - count && high >= index) {
+            worksheet.resetSelection();
+            this.column = null;
+            this.row = null;
+            return;
+        }
+        const next = [...range].map(Number) as [number, number, number, number];
+        for (const end of ends) {
+            if (next[end] >= index) {
+                next[end] += count;
             }
-        } else {
-            if (
-                worksheet.selection.range &&
-                ((o >= worksheet.selection.range[0] && o <= worksheet.selection.range[2]) ||
-                    (d >= worksheet.selection.range[0] && d <= worksheet.selection.range[2]))
-            ) {
-                worksheet.resetSelection();
-                return;
-            }
+        }
+        worksheet.selection.range = next;
+        // The first header or row number of a selection of whole columns or rows moves with it
+        if (axis === 0 && this.column != null && this.column >= index) {
+            this.column += count;
+        } else if (axis === 1 && this.row != null && this.row >= index) {
+            this.row += count;
         }
     }
 

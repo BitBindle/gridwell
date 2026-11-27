@@ -124,6 +124,20 @@ held, the cells of the area that the corner fills, is `worksheet.selection.fill`
 `worksheet.selection.highlighted` is an empty array before the first selection. `getSelection()`, `getSelected()`,
 `updateSelectionFromCoords()`, `resetSelection()` and the selection events work as before.
 
+## Insert and delete keep the selection and the editor on their cells
+
+After `insertRow`, `insertColumn`, `deleteRow`, `deleteColumn`, and their undo and redo, the selection and an open
+editor stay on their cells. Version 5 kept the row and column numbers, so the selection and the editor moved to other
+cells, and a value typed into a deleted row went into the row that moved up.
+
+- `getSelection()` gives the new position of the selected cells.
+- A delete removes the selection if a selected cell is deleted, also when the selection is inside the deleted rows or
+  columns. Version 5 kept such a selection.
+- An editor in a deleted row or column closes without a save: `oneditionend` gets `false` for the save, and no
+  `onchange` fires. Version 5 left it open.
+
+No option keeps the old behavior, because it put values into the wrong cells.
+
 ## The formula chain is an object
 
 `worksheet.formula`, the list of the cells whose formulas refer to each cell, is now `worksheet.formulas.chain`. It is

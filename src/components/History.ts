@@ -92,6 +92,8 @@ export class History {
         // Remove row
         if (type === 1) {
             const numOfRows = historyRecord.numOfRows;
+            // An editor in a removed row closes without a save
+            worksheet.editor.closeIn(1, rowIndex, rowIndex + numOfRows - 1);
             // Remove nodes
             for (let j = rowIndex; j < numOfRows + rowIndex; j++) {
                 worksheet.rows[j].element.parentNode!.removeChild(worksheet.rows[j].element);
@@ -100,8 +102,6 @@ export class History {
             worksheet.records.splice(rowIndex, numOfRows);
             worksheet.options.data.splice(rowIndex, numOfRows);
             worksheet.rows.splice(rowIndex, numOfRows);
-
-            worksheet.selection.conditionalUpdate(1, rowIndex, numOfRows + rowIndex - 1);
         } else {
             // Insert data
             const records = historyRecord.rowRecords.map((row) => {
@@ -138,6 +138,11 @@ export class History {
             worksheet.page(worksheet.view.pageNumber);
         }
 
+        // The selection and the editor stay on their cells. A selection with a removed cell is removed.
+        const count = type === 1 ? -historyRecord.numOfRows : historyRecord.numOfRows;
+        worksheet.editor.shift(1, rowIndex, count);
+        worksheet.selection.shift(1, rowIndex, count);
+
         worksheet.formulas.updateTableReferences();
     }
 
@@ -152,6 +157,8 @@ export class History {
         // Remove column
         if (type === 1) {
             const numOfColumns = historyRecord.numOfColumns;
+            // An editor in a removed column closes without a save
+            worksheet.editor.closeIn(0, columnIndex, columnIndex + numOfColumns - 1);
 
             worksheet.options.columns.splice(columnIndex, numOfColumns);
             for (let i = columnIndex; i < numOfColumns + columnIndex; i++) {
@@ -231,6 +238,11 @@ export class History {
 
         // The frozen columns can be other columns now
         worksheet.columns.updateFrozenColumns();
+
+        // The selection and the editor stay on their cells. A selection with a removed cell is removed.
+        const count = type === 1 ? -historyRecord.numOfColumns : historyRecord.numOfColumns;
+        worksheet.editor.shift(0, columnIndex, count);
+        worksheet.selection.shift(0, columnIndex, count);
 
         worksheet.formulas.updateTableReferences();
     }

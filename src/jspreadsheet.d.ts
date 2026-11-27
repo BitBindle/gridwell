@@ -2171,6 +2171,8 @@ declare namespace jspreadsheet {
          * Remove columns.
          *
          * This method returns false if the {@link SpreadsheetOptions.onbeforedeletecolumn} event returns false or if the "This action will destroy any existing merged cells. Are you sure?" dialog receives a negative response.
+         *
+         * The selection and an open editor stay on their cells. A selection with a cell in the removed columns is removed, and an editor in a removed column closes without a save.
          * @param columnNumber - Column index from which removal starts.
          * @param numOfColumns - Number of columns to be removed.
          */
@@ -2180,6 +2182,8 @@ declare namespace jspreadsheet {
          * Remove rows.
          *
          * This method returns false if the {@link SpreadsheetOptions.onbeforedeleterow} event returns false or if the dialog cases "This action will destroy any existing merged cells. Are you sure?" or "This action will clear your search results. Are you sure?" receive a negative response.
+         *
+         * The selection and an open editor stay on their cells. A selection with a cell in the removed rows is removed, and an editor in a removed row closes without a save.
          * @param rowNumber - Row index from which removal starts.
          * @param numOfRows - Number of rows to be removed.
          */
@@ -2500,6 +2504,8 @@ declare namespace jspreadsheet {
          * Insert one or more columns.
          *
          * This method returns false if the {@link SpreadsheetOptions.onbeforeinsertcolumn} event returns false or if the "This action will destroy any existing merged cells. Are you sure?" dialog receives a negative response.
+         *
+         * The selection and an open editor stay on their cells.
          * @param mixed - Number of columns to insert. It can also be an array of values, but in this case, only one column is inserted, whose data is based on the array items. Default: 1.
          * @param columnNumber - Index of the column used as reference for the insertion. Default: last column.
          * @param insertBefore - Insert new columns before (a truthy value) or after the reference column. Default: false.
@@ -2511,6 +2517,8 @@ declare namespace jspreadsheet {
          * Insert one or more rows.
          *
          * This method returns false if the {@link SpreadsheetOptions.onbeforeinsertrow} event returns false or if the "This action will destroy any existing merged cells. Are you sure?" or "This action will clear your search results. Are you sure?" dialogs receive a negative response.
+         *
+         * The selection and an open editor stay on their cells.
          * @param mixed - Number of rows to insert. It can also be an array of values, but in this case, only one row is inserted, whose data is based on the array items. Default: 1.
          * @param rowNumber - Index of the row used as reference for the insertion. Default: last row.
          * @param insertBefore - Insert new rows before (a truthy value) or after the reference row. Default: false.

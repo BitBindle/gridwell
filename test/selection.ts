@@ -478,3 +478,142 @@ describe('The scroll to the active cell below the header', () => {
         expect(worksheet.content.scrollTop).to.equal(500 + 20 - 26);
     });
 });
+
+describe('Insert and delete keep the selection and the editor on their cells', () => {
+    function create() {
+        const data = Array.from({ length: 6 }, (row, y) => Array.from({ length: 6 }, (cell, x) => `${x}:${y}`));
+        return jspreadsheet(root, { worksheets: [{ data }] })[0];
+    }
+
+    const range = (worksheet: Worksheet) => worksheet.selection.range?.map(Number) ?? null;
+    const highlighted = (worksheet: Worksheet) => Array.from(worksheet.table.querySelectorAll('td.highlight')).map((td) => td.textContent);
+    const input = (worksheet: Worksheet) => worksheet.editor.cell!.querySelector<HTMLInputElement | HTMLTextAreaElement>('input, textarea')!;
+
+    it('moves the selection with its cells when rows or columns are inserted before it', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(2, 3, 3, 3);
+
+        worksheet.insertRow(2, 1, true);
+        expect(range(worksheet)).to.eql([2, 5, 3, 5]);
+        expect(highlighted(worksheet)).to.eql(['2:3', '3:3']);
+        expect(worksheet.selection.activeCell!.textContent).to.equal('2:3');
+
+        worksheet.insertColumn(1, 0, true);
+        expect(range(worksheet)).to.eql([3, 5, 4, 5]);
+        expect(highlighted(worksheet)).to.eql(['2:3', '3:3']);
+    });
+
+    it('moves the selection with its cells when rows or columns before it are deleted', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(2, 3, 3, 4);
+
+        worksheet.deleteRow(0, 2);
+        expect(range(worksheet)).to.eql([2, 1, 3, 2]);
+        worksheet.deleteColumn(0, 1);
+        expect(range(worksheet)).to.eql([1, 1, 2, 2]);
+        expect(highlighted(worksheet)).to.eql(['2:3', '3:3', '2:4', '3:4']);
+    });
+
+    it('grows the selection when the new rows split it', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(2, 1, 2, 4);
+
+        worksheet.insertRow(2, 2, true);
+
+        expect(range(worksheet)).to.eql([2, 1, 2, 6]);
+    });
+
+    it('removes a selection that is inside the deleted rows', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(2, 2, 2, 2);
+
+        worksheet.deleteRow(1, 3);
+
+        expect(range(worksheet)).to.equal(null);
+        expect(highlighted(worksheet)).to.eql([]);
+    });
+
+    it('moves the selection back and forth with undo and redo', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(2, 3, 2, 3);
+
+        worksheet.deleteRow(0, 1);
+        worksheet.undo();
+        expect(range(worksheet)).to.eql([2, 3, 2, 3]);
+        worksheet.redo();
+        expect(range(worksheet)).to.eql([2, 2, 2, 2]);
+
+        worksheet.insertColumn(1, 0, true);
+        expect(range(worksheet)).to.eql([3, 2, 3, 2]);
+        worksheet.undo();
+        expect(range(worksheet)).to.eql([2, 2, 2, 2]);
+        expect(highlighted(worksheet)).to.eql(['2:3']);
+    });
+
+    it('keeps the editor open on its cell when a row or a column is inserted before it, and saves to that cell', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(2, 3, 2, 3);
+        worksheet.openEditor(worksheet.records[3][2].element);
+
+        worksheet.insertRow(1, 0, true);
+        worksheet.insertColumn(1, 0, true);
+
+        expect(worksheet.editor.isOpen()).to.equal(true);
+        expect([worksheet.editor.x, worksheet.editor.y]).to.eql([3, 4]);
+        expect(worksheet.editor.cell).to.equal(worksheet.records[4][3].element);
+
+        input(worksheet).value = 'typed';
+        worksheet.closeEditor(worksheet.editor.cell!, true);
+        expect(worksheet.getValueFromCoords(3, 4)).to.equal('typed');
+    });
+
+    it('closes the editor without a save when its row is deleted', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(2, 3, 2, 3);
+        worksheet.openEditor(worksheet.records[3][2].element);
+        input(worksheet).value = 'typed';
+
+        worksheet.deleteRow(3, 1);
+
+        expect(worksheet.editor.isOpen()).to.equal(false);
+        expect(worksheet.getData().flat()).to.not.include('typed');
+        expect(worksheet.getValueFromCoords(2, 3)).to.equal('2:4');
+    });
+
+    it('closes the editor without a save when its column is deleted', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(2, 3, 2, 3);
+        worksheet.openEditor(worksheet.records[3][2].element);
+        input(worksheet).value = 'typed';
+
+        worksheet.deleteColumn(2, 1);
+
+        expect(worksheet.editor.isOpen()).to.equal(false);
+        expect(worksheet.getData().flat()).to.not.include('typed');
+    });
+
+    it('moves the first row number of a selection of whole rows, so that a Shift press extends it from that row', async () => {
+        const data = Array.from({ length: 6 }, (row, y) => Array.from({ length: 3 }, (cell, x) => `${x}:${y}`));
+        // jsdom gives the row numbers no size, so a press is at their edge, which resizes or drags unless that is off
+        const worksheet = await new Promise<Worksheet>((resolve) => {
+            const instance = jspreadsheet(root, { worksheets: [{ data, rowResize: false, rowDrag: false }], onload: () => resolve(instance[0]) });
+        });
+        const press = (y: number, options?: MouseEventInit) => {
+            worksheet.rows[y].element.children[0].dispatchEvent(
+                new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, buttons: 1, ...options })
+            );
+            document.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true, buttons: 1 }));
+        };
+
+        press(2);
+        worksheet.insertRow(1, 0, true);
+        expect(worksheet.selection.row).to.equal(3);
+
+        press(4, { shiftKey: true });
+        expect(range(worksheet)).to.eql([0, 3, 2, 4]);
+
+        worksheet.deleteRow(3, 1);
+        expect(range(worksheet)).to.equal(null);
+        expect(worksheet.selection.row).to.equal(null);
+    });
+});

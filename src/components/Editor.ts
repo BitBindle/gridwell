@@ -98,6 +98,36 @@ export class Editor {
         this.text = null;
     }
 
+    /**
+     * Before a delete of rows or columns: an editor in a deleted cell closes without a save, because its cell goes.
+     * @param axis - 0 for columns, 1 for rows.
+     * @param first - The first row or column to delete.
+     * @param last - The last row or column to delete.
+     */
+    closeIn(axis: 0 | 1, first: number, last: number) {
+        const position = axis === 0 ? this.x : this.y;
+        if (this.isOpen() && position >= first && position <= last) {
+            this.worksheet.closeEditor(this.cell, false);
+        }
+    }
+
+    /**
+     * After an insert or a delete of rows or columns, the open editor keeps the position of its cell.
+     * @param axis - 0 for columns, 1 for rows.
+     * @param index - The first row or column that was inserted or deleted.
+     * @param count - The number of rows or columns that were inserted, or minus the number that were deleted.
+     */
+    shift(axis: 0 | 1, index: number, count: number) {
+        if (!this.isOpen()) {
+            return;
+        }
+        if (axis === 0 && this.x >= index) {
+            this.x += count;
+        } else if (axis === 1 && this.y >= index) {
+            this.y += count;
+        }
+    }
+
     /** Forget the cell when its editor closes, or when the column type has no editor to keep open. */
     end() {
         this.cell = null;
