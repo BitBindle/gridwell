@@ -856,7 +856,28 @@ describe('A column of width 0', () => {
     it('keeps a default width of 0', () => {
         const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [2, 1], defaultColWidth: 0 }] })[0];
 
+        expect(worksheet.cols[0].colElement.getAttribute('width')).to.equal('0');
         expect(worksheet.getWidth()).to.eql([0, 0]);
+    });
+
+    it('sets a width of 0 and gives back a width of 0 with undo', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [3, 1], columns: [{ width: 80 }, { width: 0 }, { width: 70 }] }],
+        })[0];
+
+        worksheet.setWidth(1, 50);
+        worksheet.undo();
+        expect(worksheet.getWidth(1)).to.equal(0);
+        expect(worksheet.getWidth()).to.eql([80, 0, 70]);
+
+        worksheet.setWidth([0, 1], [50, 40]);
+        worksheet.undo();
+        expect(worksheet.getWidth()).to.eql([80, 0, 70]);
+
+        worksheet.setWidth(2, 0);
+        expect(worksheet.getWidth(2)).to.equal(0);
+        worksheet.undo();
+        expect(worksheet.getWidth(2)).to.equal(70);
     });
 });
 

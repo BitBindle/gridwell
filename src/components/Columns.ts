@@ -9,6 +9,13 @@ import { recordRows } from './RowSource.js';
 import { askConfirm } from '../utils/dialogs.js';
 
 /**
+ * A width is given when it is not undefined, null or empty. A width of 0 is given.
+ */
+function given<T>(width: T | undefined | null | ''): width is T {
+    return width !== undefined && width !== null && width !== '';
+}
+
+/**
  * The columns of a worksheet: it counts them, creates their headers, inserts, moves, deletes, hides and shows them, gets
  * and sets their widths, their titles and their data, and places the frozen columns.
  *
@@ -653,15 +660,12 @@ export class Columns {
      * width.
      */
     private givenWidth(column: number): number | string {
-        function given(width: number | string | undefined | null) {
-            return width !== undefined && width !== null && width !== '';
-        }
         const width = this.worksheet.options.columns?.[column]?.width;
         if (given(width)) {
-            return width as number | string;
+            return width;
         }
         const defaultWidth = this.worksheet.options.defaultColWidth;
-        return given(defaultWidth) ? (defaultWidth as number) : 100;
+        return given(defaultWidth) ? defaultWidth : 100;
     }
 
     /**
@@ -695,7 +699,7 @@ export class Columns {
     setWidth(column: number | number[], width: number | number[], oldWidth?: number | number[]) {
         const worksheet = this.worksheet;
 
-        if (width) {
+        if (given(width)) {
             if (Array.isArray(column)) {
                 // Oldwidth
                 if (!oldWidth) {
@@ -703,12 +707,12 @@ export class Columns {
                 }
                 // Set width. An array of columns has an array of old widths.
                 for (let i = 0; i < column.length; i++) {
-                    if (!(oldWidth as number[])[i]) {
+                    if (!given((oldWidth as number[])[i])) {
                         (oldWidth as number[])[i] = parseInt(worksheet.cols[column[i]].colElement.getAttribute('width'));
                     }
                     // A column without a width in the array of widths keeps its width
                     const w = Array.isArray(width) ? width[i] : width;
-                    if (!w) {
+                    if (!given(w)) {
                         continue;
                     }
                     worksheet.cols[column[i]].colElement.setAttribute('width', w);
@@ -725,7 +729,7 @@ export class Columns {
                 }
             } else {
                 // Oldwidth
-                if (!oldWidth) {
+                if (!given(oldWidth)) {
                     oldWidth = parseInt(worksheet.cols[column].colElement.getAttribute('width'));
                 }
                 // Set width. One column has one width.

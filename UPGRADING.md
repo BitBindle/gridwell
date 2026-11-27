@@ -684,3 +684,11 @@ The content of a worksheet (`worksheet.content`, `div.jss_content`) holds one el
 `worksheet.zoomed` (`div.jss_zoom`), which holds the table, the selection corner and the clipboard helper. Version 5 put
 these three elements directly in the content. The wrapper has the zoom of the spreadsheet option `zoom`. CSS or code
 that selects `.jss_content > table` must select `.jss_content > .jss_zoom > table`, or `.jss_content table`.
+
+## A column width of 0 stays 0
+
+A column with `width: 0`, and each column without a width when `defaultColWidth` is 0, has no width. `getWidth` gives
+0, and `setWidth(column, 0)` sets a width of 0. Version 5 gave such a column `defaultColWidth`, or 100 pixels, and
+`setWidth` with 0 did nothing. No option keeps the old behavior, because `defaultColWidth` is the width of the columns
+with no width, and `getFreezeWidth` already counted such a column as 0. To keep a visible column, remove `width: 0`, or
+set the width that you want.
