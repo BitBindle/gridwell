@@ -139,6 +139,7 @@ export class Styles {
                 } else {
                     (worksheet.records[cell[1]][cell[0]].element.style as unknown as StyleProperties)[key] = value;
                 }
+                worksheet.rowSource?.columns?.styled(cellId, key);
 
                 // History
                 if (!oldValue[cellId]) {

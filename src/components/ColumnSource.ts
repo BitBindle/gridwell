@@ -539,6 +539,24 @@ export class ColumnSource {
         }
     }
 
+    /**
+     * After setStyle gave the property of the cell a value: when the cell shows the text of a merged range, the value is
+     * its own value, which the cell keeps when it shows its own value again.
+     */
+    styled(name: string, property: string) {
+        const saved = this.ownStyle.get(name);
+        if (!saved) {
+            return;
+        }
+        const key = property.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
+        if (key === 'whiteSpace' || key === 'textAlign' || key === 'color') {
+            const [x, y] = getIdFromColumnName(name);
+            const value = this.worksheet.records[y][x].element.style[key];
+            saved.own[key] = value;
+            saved.shown[key] = value;
+        }
+    }
+
     /** The cell (x, y) of the window shows no value, as a cell that a merged range hides. Its value does not change. */
     clearText(x: number, y: number) {
         this.moved.set(getColumnNameFromId([x, y]), null);
@@ -583,7 +601,7 @@ export class ColumnSource {
         const saved = this.ownStyle.get(name);
         if (saved) {
             for (const property of ['whiteSpace', 'textAlign', 'color'] as const) {
-                // A value from setStyle after moveText stays
+                // A value that the application gave after moveText stays
                 if (element.style[property] === saved.shown[property]) {
                     element.style[property] = saved.own[property];
                 }

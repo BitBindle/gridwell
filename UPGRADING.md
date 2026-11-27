@@ -867,7 +867,9 @@ alignments, and the color of the text when one of them is a color column. It alr
 
 While the cell shows the text, `getStyle` of the cell gives these values, and a `setStyle` of the same value turns it
 off, as for any cell. When the merged range is removed or leaves the window, the cell gets its own values back. A value
-that `setStyle` gave while the cell showed the text stays.
+that `setStyle` gave while the cell showed the text stays. When the merged ranges apply again, for example after
+`setMerge` of another range or a change of the value of the cell, the cell shows the style of the first column again
+until it shows its own value.
 
 No option keeps the old style, because the cell showed the text with a style that the first column did not have. Code
 that saves `getStyle()` can save the style while no merged range starts left of the window.

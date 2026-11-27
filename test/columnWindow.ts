@@ -344,6 +344,43 @@ describe('The column window of the row source mode', () => {
         expect(cell.style.color).to.equal('blue');
     });
 
+    it('keeps a value from setStyle that is the same as the value of the first column (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { type: 'color' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.scrollToColumn(145);
+        worksheet.setStyle('EF5', 'color', 'blue');
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.setStyle('EF5', 'color', 'green');
+        worksheet.setStyle('EF5', 'color', 'red');
+
+        const cell = worksheet.records[4][135].element;
+        expect(cell.style.color).to.equal('red');
+
+        worksheet.removeMerge('A5');
+        expect(cell.textContent).to.equal('135:4');
+        expect(cell.style.color).to.equal('red');
+    });
+
+    it('gives the cell the style of the first column again when the merged ranges apply again, and the value from setStyle after (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { align: 'left', type: 'color' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.scrollToColumn(145);
+        worksheet.setStyle('EF5', 'text-align', 'right');
+        worksheet.setStyle('EF5', 'color', 'blue');
+
+        worksheet.setMerge('A3', 150, 1);
+        const cell = worksheet.records[4][135].element;
+        expect(cell.style.textAlign).to.equal('left');
+        expect(cell.style.color).to.equal('red');
+
+        worksheet.removeMerge('A5');
+        expect(cell.style.textAlign).to.equal('right');
+        expect(cell.style.color).to.equal('blue');
+    });
+
     it('gives a cell of a color column no color while it shows the text of another column, and its color again after (issue #246)', () => {
         const columns: Jspreadsheet.Column[] = [];
         columns[135] = { type: 'color' };
