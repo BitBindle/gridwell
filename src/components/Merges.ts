@@ -488,8 +488,10 @@ export class Merges {
      * @param cellName - The first cell of the range.
      * @param data - The values of the other cells of the range, which the history kept.
      * @param keepOptions - Keep the range in the options.
+     * @param keepSelection - Do not select the former range. An insert, a delete or a move that crosses the range keeps
+     * the selection of the user, and moves it with the cells.
      */
-    remove(cellName: string, data?: jspreadsheet.CellValue[] | null, keepOptions?: boolean) {
+    remove(cellName: string, data?: jspreadsheet.CellValue[] | null, keepOptions?: boolean, keepSelection?: boolean) {
         const worksheet = this.worksheet;
 
         if (worksheet.rowSource) {
@@ -501,7 +503,9 @@ export class Merges {
                 delete merges[cellName];
                 worksheet.rowSource.replaceMerges(merges);
                 // As in the other modes, the selection holds the former range
-                worksheet.selection.updateFromCoords(x, y, x + colspan - 1, y + rowspan - 1);
+                if (!keepSelection) {
+                    worksheet.selection.updateFromCoords(x, y, x + colspan - 1, y + rowspan - 1);
+                }
                 worksheet.dispatch('onunmerge', worksheet, cellName, beforeMerges);
             }
             return;
@@ -515,7 +519,9 @@ export class Merges {
             this.unmerge(cellName, data);
 
             // Update selection. The selection events still see the range.
-            worksheet.selection.update(worksheet.records[cell[1]][cell[0]].element, worksheet.records[cell[1] + rowspan - 1][cell[0] + colspan - 1].element);
+            if (!keepSelection) {
+                worksheet.selection.update(worksheet.records[cell[1]][cell[0]].element, worksheet.records[cell[1] + rowspan - 1][cell[0] + colspan - 1].element);
+            }
 
             this.forget(cellName, keepOptions);
 
@@ -524,7 +530,7 @@ export class Merges {
     }
 
     /**
-     * Split the merged ranges that an insert, a delete or a move crosses, as removeMerge does.
+     * Split the merged ranges that an insert, a delete or a move crosses, as removeMerge does, but keep the selection.
      * @returns The spans of the ranges by first cell, for the history, or undefined when there are none.
      */
     removeCrossed(cellNames: string[]) {
@@ -535,7 +541,7 @@ export class Merges {
         const removed: Record<string, [number, number]> = {};
         for (const cellName of cellNames) {
             removed[cellName] = [mergeCells[cellName][0], mergeCells[cellName][1]];
-            this.remove(cellName);
+            this.remove(cellName, undefined, false, true);
         }
         return removed;
     }

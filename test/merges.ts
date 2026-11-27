@@ -1113,3 +1113,55 @@ describe('Moves remove only the merged ranges that they cross, and undo merges t
         expect(worksheet.getValueFromCoords(2, 3)).to.equal('');
     });
 });
+
+describe('An action that removes a merged range keeps the selection of the user (issue #228)', () => {
+    function create(selection: string[] = []) {
+        const worksheet = jspreadsheet(root, {
+            confirm: false,
+            worksheets: [{ minDimensions: [3, 5], mergeCells: { A1: [2, 2] } }],
+            onselection: (instance, x1, y1, x2, y2) => {
+                selection.push(`${x1},${y1},${x2},${y2}`);
+            },
+            onunmerge: (instance, cellName) => {
+                selection.push(`unmerge ${cellName}`);
+            },
+        })[0];
+        // C4
+        worksheet.updateSelectionFromCoords(2, 3, 2, 3);
+        selection.length = 0;
+        return worksheet;
+    }
+
+    it('moves the selection with its cell after moveRow, and onselection does not see the range', () => {
+        const events: string[] = [];
+        const worksheet = create(events);
+
+        worksheet.moveRow(0, 3);
+
+        expect(worksheet.getMerge()).to.eql({});
+        expect(worksheet.getSelection()).to.eql([2, 2, 2, 2]);
+        expect(events).to.eql(['unmerge A1', '2,2,2,2']);
+    });
+
+    const actions: [string, (worksheet: Jspreadsheet.WorksheetInstance) => void, number[]][] = [
+        ['insertRow', (worksheet) => worksheet.insertRow(1, 0, false), [2, 4, 2, 4]],
+        ['deleteRow', (worksheet) => worksheet.deleteRow(1, 1), [2, 2, 2, 2]],
+        ['insertColumn', (worksheet) => worksheet.insertColumn(1, 0, false), [3, 3, 3, 3]],
+        ['deleteColumn', (worksheet) => worksheet.deleteColumn(1, 1), [1, 3, 1, 3]],
+        ['moveColumn', (worksheet) => worksheet.moveColumn(0, 2), [1, 3, 1, 3]],
+    ];
+    for (const [name, action, selection] of actions) {
+        it(`moves the selection with its cell after ${name}`, () => {
+            const worksheet = create();
+            action(worksheet);
+            expect(worksheet.getMerge()).to.eql({});
+            expect(worksheet.getSelection()).to.eql(selection);
+        });
+    }
+
+    it('still selects the former range for removeMerge', () => {
+        const worksheet = create();
+        worksheet.removeMerge('A1');
+        expect(worksheet.getSelection()).to.eql([0, 0, 1, 1]);
+    });
+});
