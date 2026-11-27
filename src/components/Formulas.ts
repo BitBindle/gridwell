@@ -502,8 +502,8 @@ export class Formulas {
 
     /**
      * Give a formula the new names of the cells that moved. A cell name keeps its $ signs: they fix a reference for a
-     * copy, not for an insert, a delete or a move. The string literals, the function names, such as LOG10, and the names
-     * after a ! (the cells of another worksheet) do not change.
+     * copy, not for an insert or a delete. The string literals, the function names, such as LOG10, and the cells and
+     * ranges after a worksheet name and a !, also a quoted name, do not change.
      *
      * With removed, a delete removed rows or columns. A reference to a removed cell becomes #REF!, with or without $
      * signs. A range that keeps some of its cells ends at the first and the last cell that stay, with the $ signs of its
@@ -528,10 +528,11 @@ export class Formulas {
         }
         let named = false;
         const text = formula.replace(
-            /("(?:[^"]|"")*")|(?<![A-Za-z0-9_.!$])(\$?[A-Z]+\$?[0-9]+)(?::(\$?[A-Z]+\$?[0-9]+))?(?![A-Za-z0-9_.!(])/g,
-            (match, literal: string | undefined, from: string, to: string | undefined) => {
-                if (literal) {
-                    return literal;
+            // A string literal, or a worksheet name with the cell or the range after its !, stays as it is
+            /("(?:[^"]|"")*"|(?:'(?:[^']|'')*'|[A-Za-z0-9_.]+)!(?:\$?[A-Z]+\$?[0-9]+(?::\$?[A-Z]+\$?[0-9]+)?)?)|(?<![A-Za-z0-9_.!$])(\$?[A-Z]+\$?[0-9]+)(?::(\$?[A-Z]+\$?[0-9]+))?(?![A-Za-z0-9_.!(])/g,
+            (match, kept: string | undefined, from: string, to: string | undefined) => {
+                if (kept) {
+                    return kept;
                 }
                 if (!removed) {
                     return to ? `${rename(from)}:${rename(to)}` : rename(from);
@@ -565,13 +566,14 @@ export class Formulas {
     }
 
     /**
-     * Update the formulas of the cells and of the footers. With removed, a delete removed rows or columns, and the
-     * references to its cells become #REF!.
+     * Update the formulas of the cells, and for an insert or a delete the formulas of the footers. With removed, a delete
+     * removed rows or columns, and the references to its cells become #REF!.
      * @param keepText - Whether a cell keeps its text. A footer has no row, so it gets no y.
+     * @param shift - True for an insert, a delete, and their undo and redo. False for a move or a sort.
      * @returns The formulas whose texts the delete changed, at their positions before the delete, with their texts before
      * it.
      */
-    private updateFormulas(referencesToUpdate: Record<string, string>, keepText: (x: number, y?: number) => boolean, removed?: Removed) {
+    private updateFormulas(referencesToUpdate: Record<string, string>, keepText: (x: number, y?: number) => boolean, shift: boolean, removed?: Removed) {
         const worksheet = this.worksheet;
         const changed: FormulaText[] = [];
         // The new names of the cells that the undo of a delete moves back, as the insert gives them
@@ -581,6 +583,10 @@ export class Formulas {
         // the names back, and the history keeps the texts that it does not give back, also of a formula that the delete
         // did not change.
         const update = (value: string, i: number, j: number, footer: boolean) => {
+            // A move or a sort renames the cells one by one, so it would cut a range. It keeps the rule of version 5.
+            if (!shift) {
+                return this.updateFormula(value, referencesToUpdate);
+            }
             const result = this.renameReferences(value, referencesToUpdate, removed);
             if (removed && (result.named || this.renameReferences(result.text, back!).text !== value)) {
                 const moved = (removed.axis === 1 ? j : i) >= removed.index && !(footer && removed.axis === 1) ? removed.count : 0;
@@ -608,8 +614,8 @@ export class Formulas {
             }
         }
 
-        // The footers name the cells too. setFooter shows their new results.
-        for (const [j, footer] of (worksheet.options.footers || []).entries()) {
+        // The footers name the cells too. setFooter shows their new results. A move or a sort keeps their texts.
+        for (const [j, footer] of ((shift && worksheet.options.footers) || []).entries()) {
             for (let i = 0; i < footer.length; i++) {
                 const value = `${footer[i]}`;
                 if (value.substr(0, 1) === '=' && !keepText(i)) {
@@ -890,7 +896,7 @@ export class Formulas {
                 this.showResults(firstColumn, firstRow);
             } else {
                 // Update formulas
-                changed = this.updateFormulas(affectedTokens, keepsText, removed?.refErrors ? removed : undefined);
+                changed = this.updateFormulas(affectedTokens, keepsText, !!(inserted || removed), removed?.refErrors ? removed : undefined);
             }
 
             // The formulas of the new cells calculate again at their positions, and get their place in the chain

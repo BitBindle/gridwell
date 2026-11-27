@@ -618,23 +618,47 @@ describe('References after an insert, a delete and a move (#259)', () => {
         expect(worksheet.getData()[0]).to.eql(['1', '2', '=$B$1*10+B$1+$B1', '=SUM($B$1:$C$1)']);
     });
 
-    it('moves references with $ signs when a row moves', () => {
+    it('keeps the ranges and the quoted names of other worksheets on an insert and a delete', () => {
+        const formulas = ['=SUM(Sheet2!A1:A3)', "=SUM('My Sheet'!A1:B3)", "='Q1 2024'!A1+'It''s A1'!$B$2", '=SUM(Sheet2!A:A)+A2'];
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: [['1', ...formulas], ['2'], ['3']], minDimensions: [18, 3] }],
+        });
+
+        worksheet.insertRow(1, 0, true);
+        expect(worksheet.getData()[1].slice(1, 5)).to.eql([...formulas.slice(0, 3), '=SUM(Sheet2!A:A)+A3']);
+        worksheet.deleteRow(2, 1);
+        expect(worksheet.getData()[1].slice(1, 5)).to.eql([...formulas.slice(0, 3), '=SUM(Sheet2!A:A)+#REF!']);
+        worksheet.undo();
+        worksheet.undo();
+        expect(worksheet.getData()[0].slice(1, 5)).to.eql(formulas);
+    });
+
+    it('keeps the texts of version 5 on a move and a sort: references with $ signs and footers stay', () => {
         const [worksheet] = jspreadsheet(root, {
             worksheets: [
                 {
                     data: [
-                        ['1', '=$A$2'],
-                        ['2', ''],
+                        ['1', '10', '=SUM($A$1:$A$3)'],
+                        ['3', '30', ''],
+                        ['2', '20', ''],
                     ],
+                    footers: [['=A1+A2+A3', '=SUM(B1:B3)', '']],
                 },
             ],
         });
-        worksheet.moveRow(1, 0);
-        expect(worksheet.getData()).to.eql([
-            ['2', ''],
-            ['1', '=$A$1'],
-        ]);
-        expect(worksheet.getValue('B2', true)).to.equal('2');
+
+        worksheet.moveRow(2, 0);
+        expect(worksheet.getValueFromCoords(2, 1)).to.equal('=SUM($A$1:$A$3)');
+        expect(worksheet.options.footers![0].slice(0, 2)).to.eql(['=A1+A2+A3', '=SUM(B1:B3)']);
+
+        worksheet.orderBy(0, 0);
+        expect(worksheet.options.footers![0].slice(0, 2)).to.eql(['=A1+A2+A3', '=SUM(B1:B3)']);
+        expect(
+            worksheet
+                .getData()
+                .map((row) => row[2])
+                .filter(Boolean)
+        ).to.eql(['=SUM($A$1:$A$3)']);
     });
 });
 
