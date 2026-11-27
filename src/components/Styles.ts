@@ -73,10 +73,13 @@ export class Styles {
             // Go through the columns to get the data
             for (const j of rows) {
                 for (let i = 0; i < x; i++) {
+                    // A column outside the column window has no cell
+                    const record = worksheet.records[j][i];
+                    if (!record) {
+                        continue;
+                    }
                     // Value
-                    const v = key
-                        ? (worksheet.records[j][i].element.style as unknown as StyleProperties)[key]
-                        : worksheet.records[j][i].element.getAttribute('style');
+                    const v = key ? (record.element.style as unknown as StyleProperties)[key] : record.element.getAttribute('style');
 
                     // Any meta data for this column?
                     if (v) {

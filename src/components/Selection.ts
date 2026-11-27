@@ -486,10 +486,17 @@ export class Selection {
             x1 = 0;
             x2 = lastColumn;
         }
-        const a = Math.min(parseInt(x1), lastColumn);
-        const b = Math.min(parseInt(y1), lastRow);
-        const c = Math.min(parseInt(x2 ?? x1), lastColumn);
-        const d = Math.min(parseInt(y2 ?? y1), lastRow);
+        let a = Math.min(parseInt(x1), lastColumn);
+        let b = Math.min(parseInt(y1), lastRow);
+        let c = Math.min(parseInt(x2 ?? x1), lastColumn);
+        let d = Math.min(parseInt(y2 ?? y1), lastRow);
+        // A selection inside one merged range, from a cell that the range hides, goes to the first cell of the range. With a
+        // column window, a part of a range in the window starts with such a cell. A larger selection stays as given.
+        const first = source.firstCellOf(a, b);
+        if (first && source.firstCellOf(c, d)?.join() === first.join()) {
+            a = c = first[0];
+            b = d = first[1];
+        }
         let px = Math.min(a, c);
         let ux = Math.max(a, c);
         let py = Math.min(b, d);
@@ -709,7 +716,8 @@ export class Selection {
             for (let x = selectedRange[0]; x <= selectedRange[2]; x++) {
                 if (columnNameOnly) {
                     cells.push(getCellNameFromCoords(x, y));
-                } else {
+                } else if (worksheet.records[y][x]) {
+                    // A column outside the column window has no record
                     cells.push(worksheet.records[y][x]);
                 }
             }
@@ -1525,6 +1533,11 @@ export class Selection {
         // The row source mode scrolls by its layout, because the row of the cell can be outside the window
         if (worksheet.rowSource) {
             worksheet.rowSource.scrollToRow(worksheet.selection.range![3], direction !== 0 && direction !== 1);
+            // The column window scrolls by its layout, because the column of the cell can be outside the window
+            if (worksheet.rowSource.columns) {
+                worksheet.rowSource.columns.scrollToColumn(worksheet.selection.range![2]);
+                return;
+            }
         }
         if (!worksheet.records[worksheet.selection.range![3]]?.[worksheet.selection.range![2]]) {
             return;

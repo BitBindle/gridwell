@@ -1393,6 +1393,24 @@ declare namespace jspreadsheet {
         onrowwindow?: (instance: WorksheetInstance, from: number, to: number, first: number, last: number) => void;
 
         /**
+         * Occurs when the column window of the row source mode changes.
+         * @param instance - Instance of the worksheet.
+         * @param from - First column of the window after the frozen columns.
+         * @param to - Last column of the window.
+         * @param first - First column in the view.
+         * @param last - Last column in the view.
+         */
+        oncolumnwindow?: (instance: WorksheetInstance, from: number, to: number, first: number, last: number) => void;
+
+        /**
+         * Occurs after the column window adds cells to the rows with a record, from the values of the row source.
+         * @param instance - Instance of the worksheet.
+         * @param ranges - The new columns, as `[from, to]` pairs, in order.
+         * @param rows - The rows that got the cells, as `[from, to]` pairs, in order.
+         */
+        oncolumnsattached?: (instance: WorksheetInstance, ranges: [number, number][], rows: [number, number][]) => void;
+
+        /**
          * Occurs when the rows that a search or a filter shows have changed.
          * @param instance - Instance of the worksheet.
          * @param results - Indexes of the rows that are shown, or null when every row is shown.
@@ -1481,9 +1499,10 @@ declare namespace jspreadsheet {
 
         /**
          * The values of row `y` from 0, for the columns of the worksheet. A value that is undefined or null shows empty.
-         * The grid calls it when the window shows the row, and keeps the values while the row is in the window.
+         * The grid calls it when the window shows the row, and keeps the values while the row is in the window. With
+         * `columnWindow`, `columns` holds the columns that need a value, and the other items can be empty.
          */
-        row: (y: number) => CellValue[] | null | undefined;
+        row: (y: number, columns?: number[]) => CellValue[] | null | undefined;
 
         /**
          * The height of row `y` when it shows, from its values, for example the height of its wrapped text. A positive
@@ -1496,6 +1515,26 @@ declare namespace jspreadsheet {
 
         /** The largest height of the scroll area in pixels. Above it, a scroll position maps to a row in proportion. Default and largest value: 8,000,000. */
         maxScrollHeight?: number;
+
+        /**
+         * Each row has cells only for the frozen columns and a window of columns around the view, for a worksheet with
+         * many columns. A cell outside the window is like a cell of a row outside the window: it has no record, its
+         * value is not kept, and a change of it does nothing. `getData` gives empty values for these columns, and the
+         * values that `height` gets have items only for the columns with a cell. Nested headers are off. A merged range
+         * can have a part in the frozen columns and a part in the window. A press on a part selects the first cell of the
+         * range, and an edition of the range scrolls to its first cell when needed. F2, Space and a character scroll the
+         * selected cell into the windows before the editor opens.
+         */
+        columnWindow?: boolean;
+
+        /** The columns left and right of the view that the column window holds. Default: 10. */
+        columnBuffer?: number;
+
+        /**
+         * The largest width of the scroll area in pixels. Above it, a scroll position maps to a column in proportion.
+         * Default and largest value: 8,000,000.
+         */
+        maxScrollWidth?: number;
     }
 
     interface WorksheetOptions {
@@ -2049,7 +2088,7 @@ declare namespace jspreadsheet {
          * If true, the spreadsheet does not emit events, except onbeforerequest, onbeforesave and onsave: the persistence
          * still saves the changes, for example of an undo or a redo. oneditordetach also occurs, so the application can take
          * the edit of an editor whose row lazy loading removes, and onrowsattached, so it can prepare the rows that lazy
-         * loading puts in the table.
+         * loading puts in the table. oncolumnsattached occurs too, for the cells that the column window adds.
          */
         ignoreEvents?: boolean;
 
@@ -2612,7 +2651,10 @@ declare namespace jspreadsheet {
          */
         resetRows: (options?: { count?: number; runs?: RowRun[]; merges?: Record<string, [number, number]> }) => void;
 
-        /** In the row source mode, render the window for the scroll position, for example after the worksheet shows. */
+        /**
+         * In the row source mode, render the window of rows, and the column window, for the scroll position, for example
+         * after the worksheet shows.
+         */
         renderRows: () => void;
 
         /**
@@ -2626,6 +2668,21 @@ declare namespace jspreadsheet {
          * change of its cells. The row at the top of the view stays in place.
          */
         fitRows: (rows: number[]) => void;
+
+        /**
+         * With a column window, the first and the last column of the window after the frozen columns, or null in the
+         * other modes.
+         */
+        columnWindow: () => [number, number] | null;
+
+        /**
+         * With a column window, scroll so that column `x` shows. A column left of the view goes to the left edge of the
+         * view, and a column right of it to the right edge. A column that shows does not move.
+         */
+        scrollToColumn: (x: number) => void;
+
+        /** With a column window, read the column widths and the hidden columns again, and render the window. */
+        refreshColumns: () => void;
 
         /**
          * Spreadsheet settings.

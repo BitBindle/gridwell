@@ -207,8 +207,8 @@ export class Keyboard {
     }
 
     /**
-     * Open the editor of the cell (x, y). In the row source mode, the window scrolls to the row of the cell when it has no
-     * record.
+     * Open the editor of the cell (x, y). In the row source mode, the windows scroll to the cell when its row or its column
+     * has no record.
      */
     private openEditor(y: number, x: number, empty: boolean, e: KeyboardEvent) {
         const worksheet = this.worksheet;

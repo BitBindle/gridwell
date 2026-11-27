@@ -908,6 +908,10 @@ export class View {
                 worksheet.content.scrollLeft = (worksheet.content.scrollLeft * next) / previous;
                 worksheet.content.scrollTop = (worksheet.content.scrollTop * next) / previous;
                 worksheet.columns.updateFreezePosition();
+                // The view holds another number of rows and columns
+                if (worksheet.rowSource) {
+                    worksheet.renderRows();
+                }
                 worksheet.selection.updateCorner();
             }
         }
@@ -1168,6 +1172,7 @@ export class View {
         // The row source mode renders its window for the scroll position
         if (worksheet.rowSource) {
             worksheet.rowSource.render(false, true);
+            worksheet.rowSource.columns?.render();
         } else {
             this.wheel();
         }

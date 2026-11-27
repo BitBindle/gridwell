@@ -394,6 +394,17 @@ export class Editor {
         const y = parseInt(yText);
         const x = parseInt(xText);
 
+        // In the row source mode, a cell that a merged range hides opens the editor of the first cell of the range. With a
+        // column window, a part of a range in the window starts with such a cell.
+        const merged = worksheet.rowSource?.firstCellOf(x, y);
+        if (merged) {
+            const first = worksheet.rowSource!.reveal(merged[0], merged[1]);
+            if (first) {
+                this.open(first as HTMLTableCellElement, empty, e);
+            }
+            return;
+        }
+
         // Column options
         const column = worksheet.options.columns?.[worksheet.cells.getColumnIndex(x, y)];
 
@@ -404,7 +415,8 @@ export class Editor {
         const label = worksheet.accessibility.getLabelText('editCell', getColumnNameFromId([x, y]));
 
         // Overflow
-        if (x > 0) {
+        // The column window can leave out the column on the left
+        if (x > 0 && worksheet.records[y][x - 1]) {
             worksheet.records[y][x - 1].element.style.overflow = 'hidden';
         }
 

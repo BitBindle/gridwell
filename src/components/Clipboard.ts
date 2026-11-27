@@ -444,7 +444,7 @@ export class Clipboard {
                     newStyle[columnName] = style[styleIndex];
                     // The style text of one cell
                     oldStyle[columnName] = worksheet.getStyle(columnName) as string;
-                    worksheet.records[rowIndex][colIndex].element.setAttribute('style', style[styleIndex]);
+                    worksheet.records[rowIndex]?.[colIndex]?.element.setAttribute('style', style[styleIndex]);
                     styleIndex++;
                 }
                 i++;

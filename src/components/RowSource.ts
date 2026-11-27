@@ -1,4 +1,5 @@
-import { getIdFromColumnName } from '../utils/internalHelpers.js';
+import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
+import { ColumnSource } from './ColumnSource.js';
 import { RowLayout } from '../utils/rowLayout.js';
 import { toGrid, toScreen, zoomOf } from '../utils/zoom.js';
 import type jspreadsheet from '../jspreadsheet';
@@ -227,6 +228,9 @@ export class RowSource {
     private mergeList: { name: string; x1: number; y1: number; x2: number; y2: number }[] = [];
     private mergeEnds: number[] = [];
 
+    /** The column window, when the option columnWindow is on. */
+    readonly columns: ColumnSource | null;
+
     /** The first and the last row of the window after the frozen rows. The window is empty when to is below from. */
     from = 0;
     to = -1;
@@ -263,6 +267,7 @@ export class RowSource {
         this.indexMerges();
         this.top = this.spacer();
         this.bottom = this.spacer();
+        this.columns = source.columnWindow ? new ColumnSource(worksheet, source) : null;
     }
 
     /** Fill the table body with the frozen rows and the spacers, and render the window. */
@@ -273,6 +278,7 @@ export class RowSource {
         worksheet.records = new Array(this.count);
         worksheet.options.data = new Array(this.count);
         worksheet.tbody.innerHTML = '';
+        this.columns?.start();
         for (let y = 0; y < this.frozenCount(); y++) {
             this.attachRow(y);
             worksheet.tbody.appendChild(worksheet.rows[y].element);
@@ -287,6 +293,7 @@ export class RowSource {
             this.observer = new ResizeObserver(() => {
                 if (worksheet.rowSource === this && worksheet.content.isConnected) {
                     this.render();
+                    this.columns?.render();
                 }
             });
             this.observer.observe(worksheet.content);
@@ -338,6 +345,18 @@ export class RowSource {
         return tr;
     }
 
+    /** The spacer rows span all cells of a row. */
+    setSpacerSpan(cells: number) {
+        for (const tr of [this.top, this.bottom]) {
+            (tr.firstChild as HTMLElement).setAttribute('colspan', String(cells));
+        }
+    }
+
+    /** The values of row y from the application. With a column window, only the items of columns need a value. */
+    values(y: number, columns?: number[]) {
+        return columns ? this.source.row(y, columns) : this.source.row(y);
+    }
+
     private setSpacer(tr: HTMLTableRowElement, height: number) {
         height = Math.max(0, Math.round(height));
         tr.style.display = height > 0 ? '' : 'none';
@@ -349,16 +368,18 @@ export class RowSource {
     private attachRow(y: number) {
         const worksheet = this.worksheet;
         const columns = worksheet.headers.length;
-        const given = this.source.row(y);
+        // With a column window, the values and the record of the row have items only for the frozen columns and the window
+        const list = this.columns?.attachedColumns();
+        const given = this.values(y, list);
         const data: jspreadsheet.CellValue[] = new Array(columns);
-        for (let x = 0; x < columns; x++) {
+        for (const x of list || worksheet.headers.keys()) {
             const value = given ? given[x] : undefined;
             data[x] = value === undefined || value === null ? '' : value;
         }
         worksheet.options.data[y] = data;
         const row = worksheet.rowManager.create(y, data);
         // A cell of a hidden column is hidden
-        for (let x = 0; x < columns; x++) {
+        for (const x of list || worksheet.headers.keys()) {
             if (worksheet.headers[x].style.display === 'none') {
                 worksheet.records[y][x].element.style.display = 'none';
             }
@@ -793,7 +814,7 @@ export class RowSource {
     }
 
     /** The table is the tab stop while the row of the active cell is outside the window, so the keys reach the grid. */
-    private updateTabStop() {
+    updateTabStop() {
         const worksheet = this.worksheet;
         let cell = worksheet.selection.activeCell;
         // A cell in a hidden row, or a cell that a merged range hides, cannot get the focus, so a cell that shows gets the tab stop
@@ -852,14 +873,19 @@ export class RowSource {
     }
 
     /** Remove the merged ranges of the window from the table. */
-    private clearMerges() {
+    clearMerges() {
         for (const name of Object.keys(this.worksheet.options.mergeCells || {})) {
             this.worksheet.merges.unmergeWindow(name);
         }
+        this.columns?.restoreMoved();
     }
 
-    /** Merge the part of each merged range whose first row has a record. A range ends at the last row with a record. */
-    private applyMerges() {
+    /**
+     * Merge the part of each merged range whose first row has a record. A range ends at the last row with a record. With a
+     * column window, the part of a range in the frozen columns and the part in the window merge on their own. The first
+     * part shows the text of the first cell of its range, and the second part shows no text.
+     */
+    applyMerges() {
         const worksheet = this.worksheet;
         const frozen = this.frozenCount();
         // The ranges whose first row can have a record: in the frozen rows or in the window
@@ -883,15 +909,38 @@ export class RowSource {
                 }
             }
             const rowspan = Math.max(end, y) - y + 1;
-            const colspan = Math.min(span[0], worksheet.headers.length - x);
-            if ((colspan > 1 || rowspan > 1) && worksheet.merges.mergeWindow(name, colspan, rowspan)) {
-                // The first cell shows when one of the columns of the range shows
-                const element = worksheet.records[y][x].element;
-                if (element.style.display === 'none') {
-                    for (let i = x; i < x + colspan; i++) {
-                        if (worksheet.headers[i]?.style.display !== 'none') {
-                            element.style.display = '';
-                            break;
+            const x2 = Math.min(x + span[0], worksheet.headers.length) - 1;
+            const parts: [number, number][] = [];
+            if (this.columns) {
+                const head = this.columns.attachedPart(x, x2);
+                if (head) {
+                    parts.push(head);
+                    // A range that crosses the edge of the frozen columns has a second part in the window
+                    const tail = head[1] < x2 && x < this.columns.frozenCount() ? this.columns.attachedPart(head[1] + 1, x2) : null;
+                    if (tail) {
+                        parts.push(tail);
+                    }
+                }
+            } else {
+                parts.push([x, x2]);
+            }
+            for (const [k, [left, right]] of parts.entries()) {
+                const colspan = right - left + 1;
+                if ((colspan > 1 || rowspan > 1) && worksheet.merges.mergeWindow(getColumnNameFromId([left, y]), colspan, rowspan)) {
+                    if (k === 0 && left > x) {
+                        this.columns!.moveText(x, left, y);
+                    } else if (k > 0) {
+                        // The part in the window of a range that starts in a frozen column shows no value
+                        this.columns!.clearText(left, y);
+                    }
+                    // The first cell shows when one of the columns of the range shows
+                    const element = worksheet.records[y][left].element;
+                    if (element.style.display === 'none') {
+                        for (let i = left; i <= right; i++) {
+                            if (worksheet.headers[i]?.style.display !== 'none') {
+                                element.style.display = '';
+                                break;
+                            }
                         }
                     }
                 }
@@ -899,8 +948,11 @@ export class RowSource {
         }
     }
 
-    /** Give row y the classes of the selection, and the tab stop when it has the selected cell. */
-    selectRow(y: number) {
+    /**
+     * Give row y the classes of the selection, and the tab stop when it has the selected cell. With columns, only these
+     * columns get the classes, for example the columns that the column window adds.
+     */
+    selectRow(y: number, columns?: number[]) {
         const worksheet = this.worksheet;
         const range = worksheet.selection.range;
         const bounds = worksheet.selection.bounds;
@@ -913,7 +965,8 @@ export class RowSource {
             return;
         }
         const hidden = worksheet.rows[y].element.style.display === 'none';
-        for (let x = left; x <= right; x++) {
+        const list = columns ? columns.filter((x) => x >= left && x <= right) : this.columns ? this.columns.attachedIn(left, right) : null;
+        for (const x of list || Array.from({ length: right - left + 1 }, (_, i) => left + i)) {
             const record = records[x];
             if (!record || hidden || record.element.style.display === 'none') {
                 continue;
@@ -941,14 +994,14 @@ export class RowSource {
     }
 
     /** The focus in an element that the window removes goes to the table, so that the keys keep working. */
-    private keepFocus(element: HTMLElement) {
+    keepFocus(element: HTMLElement) {
         const active = document.activeElement;
         if (active && element.contains(active)) {
             this.focusTable();
         }
     }
 
-    private focusTable() {
+    focusTable() {
         const worksheet = this.worksheet;
         if (!worksheet.table.hasAttribute('tabindex')) {
             worksheet.table.tabIndex = -1;
@@ -958,7 +1011,7 @@ export class RowSource {
     }
 
     /** Give the focus back to the active cell when its row is in the window again. */
-    private restoreFocus() {
+    restoreFocus() {
         const worksheet = this.worksheet;
         const range = worksheet.selection.range;
         if (!this.focusLost || document.activeElement !== worksheet.table || !range) {
@@ -1109,6 +1162,8 @@ export class RowSource {
         worksheet.options.data = new Array(count);
         this.from = 0;
         this.to = -1;
+        // The frozen columns can change, for example with setFreeze
+        this.columns?.start();
         const frozen = this.frozenCount();
         const frozenRows = document.createDocumentFragment();
         for (let y = 0; y < frozen; y++) {
@@ -1136,8 +1191,9 @@ export class RowSource {
             this.updateTabStop();
         }
         const selected = worksheet.selection.range?.map(Number);
-        const merged = selected && this.mergeAt(selected[0], selected[1]);
-        if (merged && (merged[0] !== selected[0] || merged[1] !== selected[1])) {
+        // The same rule as updateInRowSource: a range whose first row has no record keeps the selection
+        const merged = selected && this.firstCellOf(selected[0], selected[1]) && this.mergeAt(selected[0], selected[1]);
+        if (merged) {
             const inside = selected[2] >= merged[0] && selected[2] <= merged[2] && selected[3] >= merged[1] && selected[3] <= merged[3];
             // A selection inside the range goes to its first cell. A larger selection stays as given, and grows to hold
             // the range.
@@ -1171,15 +1227,30 @@ export class RowSource {
     }
 
     /**
-     * The element of the cell (x, y). When its row has no record, the window scrolls to it first. Null when the cell has
-     * no record after the scroll, for example in a hidden row.
+     * The element of the cell (x, y). When its row or its column has no record, the windows scroll to it first. Null when
+     * the cell has no record after the scroll, for example in a hidden row.
      */
     reveal(x: number, y: number) {
         const worksheet = this.worksheet;
         if (!worksheet.records[y]) {
             this.scrollToRow(y);
         }
+        if (worksheet.records[y] && !worksheet.records[y][x]) {
+            this.columns?.scrollToColumn(x);
+        }
         return worksheet.records[y]?.[x]?.element ?? null;
+    }
+
+    /**
+     * The first cell of the merged range that holds the cell (x, y), when the table merges that range and (x, y) is not its
+     * first cell, or null. The table merges a range whose first row has a record.
+     */
+    firstCellOf(x: number, y: number): [number, number] | null {
+        const merged = this.mergeAt(x, y);
+        if (!merged || (merged[0] === x && merged[1] === y) || !this.worksheet.records[merged[1]]) {
+            return null;
+        }
+        return [merged[0], merged[1]];
     }
 
     /** The merged range that holds cell (x, y), as [x1, y1, x2, y2], or null. */

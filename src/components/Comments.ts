@@ -34,7 +34,8 @@ export class Comments {
             const data: Record<string, string> = {};
             for (const j of recordRows(worksheet)) {
                 for (let i = 0; i < worksheet.options.columns.length; i++) {
-                    const comments = worksheet.records[j][i].element.getAttribute('title');
+                    // A column outside the column window has no cell
+                    const comments = worksheet.records[j][i]?.element.getAttribute('title');
                     if (comments) {
                         const cell = getColumnNameFromId([i, j]);
                         data[cell] = comments;
@@ -95,7 +96,7 @@ export class Comments {
 
         for (const [cellName, comment] of Object.entries(commentsObj)) {
             const cellCoords = getCoordsFromCellName(cellName);
-            // In the row source mode, a row outside the window has no record, and its comment does not change
+            // In the row source mode, a row or a column outside the window has no record, and its comment does not change
             if (worksheet.rowSource && !worksheet.records[cellCoords![1]!]?.[cellCoords![0]]) {
                 continue;
             }
