@@ -720,3 +720,10 @@ of one row, or the last row of a taller range. Version 5 did not ask. It kept th
 
 No option keeps the old behavior, because the removal of ranges that the action does not touch lost data. The dialog
 text stays the same, so that the translations of applications still apply.
+
+## deleteWorksheet clears the active worksheet
+
+When `deleteWorksheet` removes the active worksheet, `jspreadsheet.current` is `null` after the call. Version 5 kept the removed worksheet as the active worksheet, so the keys and the clipboard changed a
+worksheet that did not show. The user clicks or focuses a worksheet to make it active, as after a page load. An
+application that sets `jspreadsheet.current` itself after `deleteWorksheet` keeps working. No option keeps the old
+behavior, because the keys went to a worksheet that the user could not see.

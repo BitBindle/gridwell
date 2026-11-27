@@ -80,8 +80,9 @@ libraryBase.jspreadsheet.destroy = (
 
         const root = element.spreadsheet.config.root || document;
 
-        // The active worksheet would keep the destroyed spreadsheet in memory. A worksheet that deleteWorksheet removed
-        // is not in the list of worksheets, but its parent is still the spreadsheet.
+        // The active worksheet would keep the destroyed spreadsheet in memory. The application can make a worksheet that
+        // deleteWorksheet removed the active worksheet: it is not in the list of worksheets, but its parent is still the
+        // spreadsheet.
         if (libraryBase.jspreadsheet.current?.parent === element.spreadsheet) {
             libraryBase.jspreadsheet.current = null;
 

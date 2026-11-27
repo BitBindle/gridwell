@@ -418,7 +418,7 @@ describe('Destroy a spreadsheet', () => {
         }
     });
 
-    it('clears the active worksheet when deleteWorksheet removed it from the destroyed spreadsheet', async () => {
+    it('clears the active worksheet when the application set a worksheet that deleteWorksheet removed', async () => {
         const element = document.body.appendChild(document.createElement('div') as Jspreadsheet.JspreadsheetInstanceElement);
 
         try {
@@ -430,8 +430,10 @@ describe('Destroy a spreadsheet', () => {
             removed.deleteWorksheet(1);
             await new Promise((resolve) => setTimeout(resolve));
 
-            // The removed worksheet is not in the list, but it keeps the spreadsheet as its parent
+            // The removed worksheet is not in the list, but it keeps the spreadsheet as its parent. deleteWorksheet
+            // clears the active worksheet, so the application sets it here.
             expect(element.spreadsheet.worksheets).to.not.include(removed);
+            jspreadsheet.current = removed;
             jspreadsheet.destroy(element);
             expect(jspreadsheet.current).to.equal(null);
         } finally {
@@ -456,6 +458,77 @@ describe('Destroy a spreadsheet', () => {
             await new Promise((resolve) => setTimeout(resolve, 250));
             expect(jspreadsheet.current).to.equal(null);
         } finally {
+            element.remove();
+        }
+    });
+});
+
+describe('Delete the active worksheet (issue #182)', () => {
+    it('sends no key to the worksheet that deleteWorksheet removed', async () => {
+        const element = document.body.appendChild(document.createElement('div') as Jspreadsheet.JspreadsheetInstanceElement);
+
+        try {
+            const worksheets = jspreadsheet(element, {
+                worksheets: [
+                    { minDimensions: [3, 3], worksheetName: 'A' },
+                    { minDimensions: [3, 3], worksheetName: 'B' },
+                ],
+            });
+            await new Promise((resolve) => setTimeout(resolve));
+            worksheets[0].openWorksheet(1);
+            const removed = worksheets[1];
+            removed.updateSelectionFromCoords(0, 0, 0, 0);
+            expect(jspreadsheet.current).to.equal(removed);
+
+            removed.deleteWorksheet(1);
+            expect(jspreadsheet.current).to.equal(null);
+            document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
+
+            expect(removed.selection.range!.map(Number)).to.eql([0, 0, 0, 0]);
+            expect(worksheets[0].selection.range).to.equal(null);
+        } finally {
+            jspreadsheet.destroy(element);
+            element.remove();
+        }
+    });
+
+    it('keeps the active worksheet when deleteWorksheet removes another worksheet', async () => {
+        const element = document.body.appendChild(document.createElement('div') as Jspreadsheet.JspreadsheetInstanceElement);
+
+        try {
+            const worksheets = jspreadsheet(element, { worksheets: [{ minDimensions: [1, 1] }, { minDimensions: [1, 1] }] });
+            await new Promise((resolve) => setTimeout(resolve));
+            jspreadsheet.current = worksheets[0];
+
+            worksheets[0].deleteWorksheet(1);
+
+            expect(jspreadsheet.current).to.equal(worksheets[0]);
+        } finally {
+            jspreadsheet.destroy(element);
+            element.remove();
+        }
+    });
+
+    it('stops the timer of a search when deleteWorksheet removes the active worksheet', async () => {
+        const element = document.body.appendChild(document.createElement('div') as Jspreadsheet.JspreadsheetInstanceElement);
+
+        try {
+            const worksheets = jspreadsheet(element, { worksheets: [{ minDimensions: [1, 1], search: true }, { minDimensions: [1, 1] }] });
+            await new Promise((resolve) => setTimeout(resolve));
+            jspreadsheet.current = worksheets[0];
+            const input = element.querySelector('.jss_search') as HTMLInputElement;
+            input.value = 'a';
+            input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'a' }));
+            expect(jspreadsheet.current).to.equal(worksheets[0]);
+
+            worksheets[0].deleteWorksheet(0);
+
+            expect((jspreadsheet as unknown as { timeControl: unknown }).timeControl).to.equal(null);
+            // The search timer runs 200 ms after the key
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            expect(jspreadsheet.current).to.equal(null);
+        } finally {
+            jspreadsheet.destroy(element);
             element.remove();
         }
     });
