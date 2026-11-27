@@ -1861,6 +1861,13 @@ declare namespace jspreadsheet {
          */
         textOverflow?: boolean;
 
+        /**
+         * If false, a text longer than 200 characters does not wrap by itself. A cell then wraps only with the option
+         * `wordWrap` of the worksheet or of its column.
+         * @default true
+         */
+        wrapLongText?: boolean;
+
         /** Load a external json file from this URL. */
         url?: string;
 

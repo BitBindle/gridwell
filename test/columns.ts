@@ -989,3 +989,49 @@ describe('The first cell of a merged range over a hidden column (issue #20)', ()
         ]);
     });
 });
+
+describe('The worksheet option wrapLongText', () => {
+    const long = 'a'.repeat(250);
+
+    it('wraps a long text by default', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ data: [[long, 'b']] }] })[0];
+
+        expect(worksheet.records[0][0].element.style.whiteSpace).to.equal('pre-wrap');
+    });
+
+    it('does not wrap a long text when it is false, also after setValue and a render of a merged cell', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        [long, 'b', 'c', 'd'],
+                        ['1', '', 'x', ''],
+                    ],
+                    columns: [{ type: 'hidden' }, { type: 'dropdown', source: [{ id: '1', name: long }] }, { type: 'text' }, { type: 'text' }],
+                    mergeCells: { A2: [3, 1] },
+                    wrapLongText: false,
+                },
+            ],
+        })[0];
+
+        expect(worksheet.records[0][0].element.style.whiteSpace).to.equal('');
+        worksheet.setValueFromCoords(2, 0, long);
+        expect(worksheet.records[0][2].element.style.whiteSpace).to.equal('');
+
+        const merged = worksheet.records[1][0].element;
+        worksheet.hideColumn(1);
+        worksheet.showColumn(1);
+        expect(merged.style.whiteSpace).to.equal('');
+    });
+
+    it('keeps the wordWrap options of the worksheet and of a column when it is false', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b']], columns: [{ wordWrap: true }, {}], wrapLongText: false }],
+        })[0];
+        expect(worksheet.records[0][0].element.style.whiteSpace).to.equal('pre-wrap');
+        expect(worksheet.records[0][1].element.style.whiteSpace).to.equal('');
+
+        const all = jspreadsheet(document.createElement('div'), { worksheets: [{ data: [['a']], wordWrap: true, wrapLongText: false }] })[0];
+        expect(all.records[0][0].element.style.whiteSpace).to.equal('pre-wrap');
+    });
+});
