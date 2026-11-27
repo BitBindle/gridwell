@@ -1800,11 +1800,11 @@
 
 /*
  * The wrapper of the table has the width of the table, so the padding of the content adds to the scroll width, as it
- * does without the wrapper.
+ * does without the wrapper. A block adds no line box, so the height of the content does not change.
  */
 .jss_zoom {
-    display: inline-block;
-    vertical-align: top;
+    display: block;
+    width: max-content;
 }
 
 /*

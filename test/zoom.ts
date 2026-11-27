@@ -174,4 +174,33 @@ describe('Zoom', () => {
         expect(worksheet.editor.isOpen()).to.equal(false);
         expect([worksheet.content.scrollLeft, worksheet.content.scrollTop]).to.eql([150, 50]);
     });
+
+    it('hides the corner of a cell under the frozen columns on the screen', () => {
+        const [worksheet] = jspreadsheet(root, {
+            zoom: 2,
+            worksheets: [{ data: [['a', 'b', 'c']], tableOverflow: true, freezeColumns: 1, columns: [{ width: 100 }, { width: 100 }, { width: 100 }] }],
+        });
+        rect(worksheet.content, 0, 0, 600, 300);
+        // The right edge of C1 is 150 screen pixels right of the content: under the frozen column of 200 screen pixels
+        rect(worksheet.getCell('C1'), -50, 40, 200, 50);
+
+        worksheet.updateSelectionFromCoords(2, 0, 2, 0);
+
+        expect(worksheet.corner.style.display).to.equal('none');
+    });
+
+    it('puts a dragged row after the row when the mouse is over its upper half in the grid', async () => {
+        const [worksheet] = await load({ zoom: 2, worksheets: [{ data: [['a'], ['b'], ['c']], rowResize: false }] });
+        const rowNumber = worksheet.rows[0].element.children[0] as HTMLElement;
+        rect(rowNumber, 0, 0, 100, 50);
+        client(rowNumber, 50, 25);
+
+        mouse(rowNumber, 'mousedown', { offsetX: 98 });
+        // 20 screen pixels are 10 grid pixels, in the upper half of a row of 25 grid pixels
+        client(worksheet.records[2][0].element, 100, 25);
+        mouse(worksheet.records[2][0].element, 'mousemove', { offsetY: 20 });
+        mouse(worksheet.records[2][0].element, 'mouseup');
+
+        expect(worksheet.getColumnData(0)).to.eql(['b', 'c', 'a']);
+    });
 });

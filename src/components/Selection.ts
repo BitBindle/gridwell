@@ -133,7 +133,8 @@ export class Selection {
             worksheet.corner.style.left = `${x}px`;
 
             if (worksheet.options.freezeColumns) {
-                const width = worksheet.columns.getFreezeWidth();
+                // The width of the frozen columns on the screen, as the place of the cell
+                const width = toScreen(worksheet, worksheet.columns.getFreezeWidth());
                 // Only check if the last column is not part of the merged cells
                 if (lastX > worksheet.options.freezeColumns - 1 && x2 - x1 + w2 < width) {
                     worksheet.corner.style.display = 'none';
