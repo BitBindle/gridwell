@@ -2561,7 +2561,12 @@ declare namespace jspreadsheet {
          * @param insertBefore - Insert new columns before (a truthy value) or after the reference column. Default: false.
          * @param properties - New column properties.
          */
-        insertColumn: (mixed?: number | string | CellValue[], columnNumber?: number | string, insertBefore?: boolean | number, properties?: Column[]) => false | undefined;
+        insertColumn: (
+            mixed?: number | string | CellValue[],
+            columnNumber?: number | string,
+            insertBefore?: boolean | number,
+            properties?: Column[]
+        ) => false | undefined;
 
         /**
          * Insert one or more rows.

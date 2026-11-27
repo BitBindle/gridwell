@@ -381,7 +381,12 @@ export class Worksheet {
         return this.styles.reset(o, ignoreHistoryAndEvents);
     }
 
-    insertColumn(mixed?: number | string | jspreadsheet.CellValue[], columnNumber?: number | string, insertBefore?: boolean | number, properties?: jspreadsheet.Column[]) {
+    insertColumn(
+        mixed?: number | string | jspreadsheet.CellValue[],
+        columnNumber?: number | string,
+        insertBefore?: boolean | number,
+        properties?: jspreadsheet.Column[]
+    ) {
         return this.columns.insert(mixed, columnNumber, insertBefore, properties);
     }
 
