@@ -4,6 +4,7 @@ import { getColumnNameFromId, injectArray } from '../utils/internalHelpers.js';
 import { setHeaderRole } from './Accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
+import { toGrid, toScreen } from '../utils/zoom.js';
 import { askConfirm } from '../utils/dialogs.js';
 
 /**
@@ -1008,7 +1009,8 @@ export class Columns {
         // The worksheet can have fewer columns than freezeColumns, for example after deleteColumn
         const freezeColumns = Math.min(worksheet.options.freezeColumns!, worksheet.headers.length);
         let width = 0;
-        if (scrollLeft > indexWidth) {
+        // The scroll position is in screen pixels, and the widths and the left of a cell in grid pixels
+        if (scrollLeft > toScreen(worksheet, indexWidth)) {
             // The last frozen column that is not hidden shows the line of the frozen pane
             let last = freezeColumns - 1;
             while (last > 0 && worksheet.headers[last].style.display === 'none') {
@@ -1037,7 +1039,7 @@ export class Columns {
                 worksheet.headers[i].style.left = `${width}px`;
                 // The cells are relative, so all the frozen cells move by the same distance as the scroll. A cell of a
                 // frozen row is sticky, as a header is, so it gets the same distance from the left as the header.
-                const shifted = `${scrollLeft - indexWidth - 1}px`;
+                const shifted = `${toGrid(worksheet, scrollLeft) - indexWidth - 1}px`;
                 const frozenRows = worksheet.rowManager.getFreezeCount();
                 for (let j = 0; j < worksheet.rows.length; j++) {
                     if (worksheet.rows[j] && worksheet.records[j][i]) {

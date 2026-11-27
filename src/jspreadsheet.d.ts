@@ -813,6 +813,15 @@ declare namespace jspreadsheet {
         fullscreen?: boolean;
 
         /**
+         * The zoom factor of the grids of all worksheets: 1 at 100 %. The table, the selection corner and the cell editors
+         * show at this size, with the CSS property `zoom`. The tabs, the toolbar, the search, the pagination and the pop-up
+         * editors (dropdown, calendar, color, rich text, image) show at 100 %. A value that is not a number above 0 gives
+         * 1. Change it with `setZoom`.
+         * @default 1
+         */
+        zoom?: number;
+
+        /**
          * Include header titles on download.
          * @default false
          */
@@ -2018,6 +2027,12 @@ declare namespace jspreadsheet {
         content: HTMLDivElement;
 
         /**
+         * The wrapper in `content` that holds the table, the selection corner and the clipboard helper. It has the CSS
+         * property `zoom` of the spreadsheet option `zoom`.
+         */
+        zoomed: HTMLDivElement;
+
+        /**
          * Copies or cuts the contents of selected cells in the worksheet. Does nothing when no cell is selected.
          * @param cut - If true, the operation is cut, if not, it is copy.
          */
@@ -2472,6 +2487,13 @@ declare namespace jspreadsheet {
          * @param position - Worksheet index.
          */
         openWorksheet: (position: number) => void;
+
+        /**
+         * Change the zoom factor of the grids of all worksheets of the spreadsheet, as the option `zoom` describes. No
+         * history entry, no event.
+         * @param zoom - The factor: 1 at 100 %. A value that is not a number above 0 gives 1.
+         */
+        setZoom: (zoom: number) => void;
 
         /**
          * Move a worksheet and its tab to another position. The open worksheet stays open, and the focus stays where it is.

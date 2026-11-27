@@ -677,3 +677,10 @@ the input, because an input cannot keep the value as it is. Without word wrap, t
   it saved the value and moved the selection down. Alt+Enter is the key for a line break, so no option keeps the old
   behavior. An application can stop the key with a `keydown` listener in the capture phase.
 - Text with line breaks that the user pastes into an open editor keeps them. The input changed them to spaces.
+
+## The table is in a wrapper in the content
+
+The content of a worksheet (`worksheet.content`, `div.jss_content`) holds one element, the new wrapper
+`worksheet.zoomed` (`div.jss_zoom`), which holds the table, the selection corner and the clipboard helper. Version 5 put
+these three elements directly in the content. The wrapper has the zoom of the spreadsheet option `zoom`. CSS or code
+that selects `.jss_content > table` must select `.jss_content > .jss_zoom > table`, or `.jss_content table`.

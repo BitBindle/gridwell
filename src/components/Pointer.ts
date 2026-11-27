@@ -2,6 +2,7 @@ import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpe
 import libraryBase from '../utils/libraryBase.js';
 import { getIndex } from '../events/helpers.js';
 import type { DragColumnInfo, DragRowInfo, ResizeColumnInfo, ResizeRowInfo, CellValue } from '../jspreadsheet';
+import { toGrid } from '../utils/zoom.js';
 import type { Worksheet, TargetEvent } from '../types/internal';
 
 function doubleDigitFormat(v: number | string) {
@@ -369,10 +370,11 @@ export class Pointer {
             const info = e.target.getBoundingClientRect();
             if (worksheet.options.columnResize !== false && info.width - e.offsetX < 6) {
                 // Resize helper
+                // The width on the screen, as a width in the zoomed grid
                 worksheet.pointer.resizing = {
                     mousePosition: e.pageX,
                     column: columnId,
-                    width: info.width,
+                    width: toGrid(worksheet, info.width),
                 };
 
                 // Border indication
@@ -460,7 +462,7 @@ export class Pointer {
                 element: e.target.parentNode as HTMLTableRowElement,
                 mousePosition: e.pageY,
                 row: rowId,
-                height: info.height,
+                height: toGrid(worksheet, info.height),
             };
             // Border indication
             (e.target.parentNode as HTMLElement).classList.add('resizing');
@@ -553,7 +555,8 @@ export class Pointer {
         const resizing = worksheet.pointer.resizing!;
 
         if (resizing.column != null) {
-            const width = e.pageX - resizing.mousePosition;
+            // The move of the mouse is in screen pixels
+            const width = toGrid(worksheet, e.pageX - resizing.mousePosition);
 
             if (resizing.width + width > 0) {
                 const tempWidth = resizing.width + width;
@@ -562,7 +565,7 @@ export class Pointer {
                 worksheet.selection.updateCorner();
             }
         } else {
-            const height = e.pageY - resizing.mousePosition;
+            const height = toGrid(worksheet, e.pageY - resizing.mousePosition);
 
             if (resizing.height + height > 0) {
                 const tempHeight = resizing.height + height;
@@ -595,7 +598,8 @@ export class Pointer {
                     if (dragging.column === columnId) {
                         dragging.destination = columnId;
                     } else {
-                        if (e.target.clientWidth / 2 > e.offsetX) {
+                        // The offset of the mouse is in screen pixels, and clientWidth in grid pixels
+                        if (e.target.clientWidth / 2 > toGrid(worksheet, e.offsetX)) {
                             if (dragging.column < columnId) {
                                 dragging.destination = columnId - 1;
                             } else {
@@ -619,7 +623,7 @@ export class Pointer {
                 if (worksheet.merges.isRowMerged(rowId).length) {
                     console.error('Jspreadsheet: This row is part of a merged cell.');
                 } else {
-                    const target = e.target.clientHeight / 2 > e.offsetY ? e.target.parentNode!.nextSibling : e.target.parentNode;
+                    const target = e.target.clientHeight / 2 > toGrid(worksheet, e.offsetY) ? e.target.parentNode!.nextSibling : e.target.parentNode;
                     if (dragging.element !== target) {
                         e.target.parentNode!.parentNode!.insertBefore(dragging.element, target);
                         dragging.destination = Array.from(dragging.element.parentNode!.children).indexOf(dragging.element);

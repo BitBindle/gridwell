@@ -1797,3 +1797,24 @@
 .jcalendar-time {
     display: flex;
 }
+
+/*
+ * The wrapper of the table has the width of the table, so the padding of the content adds to the scroll width, as it
+ * does without the wrapper. A block adds no line box, so the height of the content does not change.
+ */
+.jss_zoom {
+    display: block;
+    width: max-content;
+}
+
+/*
+ * The zoom of the grid. The pop-up editors show at 100 %: they undo the zoom of the wrapper, so their fixed position is
+ * in screen pixels, as the position of the cell.
+ */
+.jss_zoom .jdropdown-container,
+.jss_zoom .jcalendar-container:not(.jcalendar),
+.jss_zoom .jcolor-content,
+.jss_zoom .jss_richtext,
+.jss_zoom .editor .jupload {
+    zoom: calc(1 / var(--jss-zoom, 1));
+}

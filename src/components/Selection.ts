@@ -1,6 +1,7 @@
 import { getCellNameFromCoords } from '../utils/helpers.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import libraryBase from '../utils/libraryBase.js';
+import { toGrid, toScreen } from '../utils/zoom.js';
 import type { WorksheetState, Worksheet, SelectedWorksheet } from '../types/internal';
 
 /** The column and the row of a corner of the selection, then of the other corner: [x1, y1, x2, y2]. */
@@ -123,15 +124,17 @@ export class Selection {
             const w2 = lastRect.width;
             const h2 = lastRect.height;
 
-            const x = x2 - x1 + worksheet.content.scrollLeft + w2 - 4;
-            const y = y2 - y1 + worksheet.content.scrollTop + h2 - 4;
+            // The corner is in the zoomed wrapper, so its place is in grid pixels
+            const x = toGrid(worksheet, x2 - x1 + worksheet.content.scrollLeft + w2) - 4;
+            const y = toGrid(worksheet, y2 - y1 + worksheet.content.scrollTop + h2) - 4;
 
             // Place the corner in the correct place
             worksheet.corner.style.top = `${y}px`;
             worksheet.corner.style.left = `${x}px`;
 
             if (worksheet.options.freezeColumns) {
-                const width = worksheet.columns.getFreezeWidth();
+                // The width of the frozen columns on the screen, as the place of the cell
+                const width = toScreen(worksheet, worksheet.columns.getFreezeWidth());
                 // Only check if the last column is not part of the merged cells
                 if (lastX > worksheet.options.freezeColumns - 1 && x2 - x1 + w2 < width) {
                     worksheet.corner.style.display = 'none';
@@ -1338,8 +1341,9 @@ export class Selection {
         }
 
         // The header and the frozen rows stick at the top of the content, so a cell shows only below them
-        const frozenHeight = worksheet.rowManager.getFreezeHeight();
-        const above = worksheet.rowManager.getHeaderHeight() + frozenHeight;
+        // The heights and the widths are in grid pixels, and the positions here in screen pixels
+        const frozenHeight = toScreen(worksheet, worksheet.rowManager.getFreezeHeight());
+        const above = toScreen(worksheet, worksheet.rowManager.getHeaderHeight()) + frozenHeight;
         const top = y2 - y1 + worksheet.content.scrollTop;
 
         // Top position check
@@ -1356,11 +1360,11 @@ export class Selection {
         }
 
         // Freeze columns?
-        const freezed = worksheet.columns.getFreezeWidth();
+        const freezed = toScreen(worksheet, worksheet.columns.getFreezeWidth());
 
         // The frozen columns stay at the left of the content only when scrollLeft is more than the width of the index column.
         // Then a cell whose left border is under the frozen columns goes to the right of the frozen columns.
-        const indexWidth = worksheet.columns.getIndexWidth();
+        const indexWidth = toScreen(worksheet, worksheet.columns.getIndexWidth());
         const frozen = freezed > 0 && worksheet.content.scrollLeft > indexWidth;
         const left = x2 - x1 + worksheet.content.scrollLeft;
         const underFreezed = frozen && left < worksheet.content.scrollLeft + freezed;

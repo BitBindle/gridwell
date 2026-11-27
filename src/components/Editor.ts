@@ -7,6 +7,7 @@ import { Calendar, type CalendarOptions } from '../utils/calendar.js';
 import { createRichText, getRichText } from '../utils/richText.js';
 import { ImageUpload, type ImageUploadElement } from '../utils/imageUpload.js';
 import type { Worksheet } from '../types/internal';
+import { toGrid } from '../utils/zoom.js';
 import type jspreadsheet from '../jspreadsheet';
 
 /**
@@ -26,15 +27,17 @@ type ColumnOptions = Worksheet['options']['columns'][number];
  * Put a new editor of the given tag in a cell, with the size of the cell. The editor is the focus target in place of the
  * cell, and a text editor gets the accessible name.
  */
-function createEditor<K extends keyof HTMLElementTagNameMap>(cell: HTMLTableCellElement, type: K, label: string) {
-    // Cell information
+function createEditor<K extends keyof HTMLElementTagNameMap>(worksheet: Worksheet, cell: HTMLTableCellElement, type: K, label: string) {
+    // The size of the cell on the screen, as a size in the zoomed grid
     const info = cell.getBoundingClientRect();
+    const width = toGrid(worksheet, info.width);
+    const height = toGrid(worksheet, info.height);
 
     // Create dropdown
     const editor = document.createElement(type);
-    editor.style.width = `${info.width}px`;
-    editor.style.height = `${info.height - 2}px`;
-    editor.style.minHeight = `${info.height - 2}px`;
+    editor.style.width = `${width}px`;
+    editor.style.height = `${height - 2}px`;
+    editor.style.minHeight = `${height - 2}px`;
 
     // Accessible name of a text editor
     if (type === 'input' || type === 'textarea') {
@@ -178,7 +181,7 @@ export class Editor {
         }
 
         // Create editor
-        const editor = createEditor(cell, 'div', label);
+        const editor = createEditor(this.worksheet, cell, 'div', label);
 
         // On edition start
         worksheet.dispatch('oncreateeditor', worksheet, cell, x, y, null, column);
@@ -208,7 +211,7 @@ export class Editor {
         // Value
         const value = worksheet.options.data[y][x];
         // Create editor
-        const editor = createEditor(cell, 'input', label);
+        const editor = createEditor(this.worksheet, cell, 'input', label);
 
         worksheet.dispatch('oncreateeditor', worksheet, cell, x, y, null, column);
 
@@ -261,7 +264,7 @@ export class Editor {
 
         const value = worksheet.options.data[y][x];
         // Create editor
-        const editor = createEditor(cell, 'div', label);
+        const editor = createEditor(this.worksheet, cell, 'div', label);
 
         worksheet.dispatch('oncreateeditor', worksheet, cell, x, y, null, column);
 
@@ -295,7 +298,7 @@ export class Editor {
         // Value
         const img = cell.children[0] as HTMLImageElement | undefined;
         // Create editor
-        const editor = createEditor(cell, 'div', label);
+        const editor = createEditor(this.worksheet, cell, 'div', label);
 
         worksheet.dispatch('oncreateeditor', worksheet, cell, x, y, null, column);
 
@@ -344,7 +347,7 @@ export class Editor {
 
         // The editor is a textarea for each cell, so it keeps the line breaks of the value. Without word wrap, it shows one
         // line, as an input does.
-        const editor = createEditor(cell, 'textarea', label);
+        const editor = createEditor(this.worksheet, cell, 'textarea', label);
         if (column?.wordWrap === false || (worksheet.options.wordWrap !== true && column?.wordWrap !== true)) {
             editor.setAttribute('rows', '1');
             editor.setAttribute('wrap', 'off');

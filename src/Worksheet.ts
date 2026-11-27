@@ -3,6 +3,7 @@ import { request } from './utils/request.js';
 import libraryBase from './utils/libraryBase.js';
 import { parseCSV } from './utils/helpers.js';
 import { getIdFromColumnName } from './utils/internalHelpers.js';
+import { applyZoom } from './utils/zoom.js';
 import { cutControls } from './events/clipboard.js';
 import type jspreadsheet from './jspreadsheet';
 import { Accessibility } from './components/Accessibility.js';
@@ -516,6 +517,10 @@ export class Worksheet {
         this.view.loadRow(y);
     }
 
+    setZoom(zoom: number) {
+        this.view.setZoom(zoom);
+    }
+
     isSelected(x: number, y: number) {
         return this.selection.isSelected(x, y);
     }
@@ -969,9 +974,14 @@ export class Worksheet {
         }
 
         // Elements
-        this.content.appendChild(this.table);
-        this.content.appendChild(this.corner);
-        this.content.appendChild(this.clipboard.textarea);
+        // The wrapper has the zoom of the spreadsheet
+        this.zoomed = document.createElement('div');
+        this.zoomed.className = 'jss_zoom';
+        this.zoomed.appendChild(this.table);
+        this.zoomed.appendChild(this.corner);
+        this.zoomed.appendChild(this.clipboard.textarea);
+        this.content.appendChild(this.zoomed);
+        applyZoom(this);
         this.accessibility.setGridLabels();
 
         this.element.appendChild(this.content);

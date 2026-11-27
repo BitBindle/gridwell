@@ -6,6 +6,7 @@ import type jspreadsheet from '../jspreadsheet';
 import type { CellValue } from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
 import { askConfirm } from '../utils/dialogs.js';
+import { applyZoom, toScreen, zoomOf } from '../utils/zoom.js';
 
 /**
  * The row that a load of the lazy loading keeps in place, and its offsetTop: the last row that shows for a load at the
@@ -880,6 +881,34 @@ export class View {
     }
 
     /**
+     * Change the zoom factor of the spreadsheet, and apply it to the built worksheets. The frozen columns and the
+     * selection corner use the factor, so they are placed again.
+     */
+    setZoom(zoom: number) {
+        const spreadsheet = this.worksheet.parent;
+        const factor = Number(zoom);
+        const next = Number.isFinite(factor) && factor > 0 ? factor : 1;
+        for (const worksheet of spreadsheet.worksheets) {
+            // A pop-up editor at a fixed place does not move with its cell, so it saves and closes, as after a scroll
+            if (worksheet.editor?.isOpen() && worksheet.view.hasFloatingEditor(worksheet.editor.x)) {
+                worksheet.editor.close(worksheet.editor.cell, true);
+            }
+        }
+        const previous = spreadsheet.worksheets[0] ? zoomOf(spreadsheet.worksheets[0]) : 1;
+        spreadsheet.config.zoom = next;
+        for (const worksheet of spreadsheet.worksheets) {
+            if (worksheet.zoomed) {
+                applyZoom(worksheet);
+                // The scroll position is in screen pixels, so the same cells stay in view
+                worksheet.content.scrollLeft = (worksheet.content.scrollLeft * next) / previous;
+                worksheet.content.scrollTop = (worksheet.content.scrollTop * next) / previous;
+                worksheet.columns.updateFreezePosition();
+                worksheet.selection.updateCorner();
+            }
+        }
+    }
+
+    /**
      * Go to a page in a lazyLoading
      */
     loadPage(pageNumber: number) {
@@ -1077,7 +1106,8 @@ export class View {
     private keepAnchor(anchor: ReturnType<typeof anchorRow>) {
         const content = this.worksheet.content;
         if (anchor && anchor.row.offsetParent !== null) {
-            content.scrollTop = content.scrollTop + anchor.row.offsetTop - anchor.top;
+            // offsetTop is in grid pixels, and the scroll position in screen pixels
+            content.scrollTop = content.scrollTop + toScreen(this.worksheet, anchor.row.offsetTop - anchor.top);
         }
         // The browser can clamp the position, so the next check must see no scroll
         this.lazyScrollTop = content.scrollTop;
@@ -1148,7 +1178,7 @@ export class View {
     /**
      * Check if the editor of a column floats over the page. It does not move with the cell.
      */
-    private hasFloatingEditor(x: number) {
+    hasFloatingEditor(x: number) {
         const worksheet = this.worksheet;
 
         const column = worksheet.options.columns?.[x];

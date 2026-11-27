@@ -314,7 +314,8 @@ describe('The options of the worksheet table', () => {
         const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [2, 2] }] })[0];
 
         expect(Array.from(worksheet.element.children).map((element) => element.className)).to.eql(['jss_content', 'jss_pagination', 'jss_about']);
-        expect(Array.from(worksheet.content.children)).to.eql([worksheet.table, worksheet.corner, worksheet.clipboard.textarea]);
+        expect(Array.from(worksheet.content.children)).to.eql([worksheet.zoomed]);
+        expect(Array.from(worksheet.zoomed.children)).to.eql([worksheet.table, worksheet.corner, worksheet.clipboard.textarea]);
         expect(Array.from(worksheet.table.children).map((element) => element.tagName)).to.eql(['COLGROUP', 'THEAD', 'TBODY']);
         expect(worksheet.table.querySelectorAll('colgroup col').length).to.equal(3);
         expect(worksheet.element.classList.contains('jss_container')).to.equal(true);
