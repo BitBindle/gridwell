@@ -1080,8 +1080,8 @@ export class RowSource {
 
     /**
      * Replace the row count, the runs and the merged ranges, for example after the application changed its rows. All
-     * records are made again. The scroll position and the selection stay. A merged range that hides the selected cell
-     * selects its first cell, as replaceMerges does.
+     * records are made again. The scroll position and the selection stay. When a merged range hides the first selected
+     * cell, a selection inside the range selects its first cell, and a larger selection grows to hold the range.
      */
     reset(options?: { count?: number; runs?: jspreadsheet.RowRun[]; merges?: Record<string, [number, number]> }) {
         const worksheet = this.worksheet;

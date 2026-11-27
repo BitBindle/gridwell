@@ -847,6 +847,21 @@ describe('The row source mode', () => {
         expect(worksheet.records[499][0].element.getAttribute('title')).to.equal(null);
     });
 
+    it('writes no history and no event for the comment of a row outside the window, so a redo adds nothing', () => {
+        const events: object[] = [];
+        const { worksheet } = build({}, {}, { oncomments: (instance, comments) => events.push(comments) });
+        worksheet.scrollToRow(900);
+        worksheet.setComments('A2', 'note');
+        worksheet.scrollToRow(0);
+
+        worksheet.undo();
+        worksheet.redo();
+
+        expect(events).to.eql([{}]);
+        expect(worksheet.records[1][0].element.getAttribute('title')).to.equal(null);
+        expect(worksheet.getComments()).to.eql({});
+    });
+
     it('ends a row resize when the row leaves the window during the resize', () => {
         const { worksheet } = build();
         const header = worksheet.rows[5].element.children[0] as HTMLElement;

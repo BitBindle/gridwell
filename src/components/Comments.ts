@@ -62,16 +62,18 @@ export class Comments {
         }
 
         const oldValue = this.apply(commentsObj);
+        // In the row source mode, a cell outside the window does not change, so the history and the event leave it out
+        const newValue = Object.fromEntries(Object.entries(commentsObj).filter(([cellName]) => cellName in oldValue));
 
         // Save history
         worksheet.history.add({
             action: 'setComments',
-            newValue: commentsObj,
+            newValue,
             oldValue,
         });
 
         // Set comments
-        worksheet.dispatch('oncomments', worksheet, commentsObj, oldValue);
+        worksheet.dispatch('oncomments', worksheet, newValue, oldValue);
     }
 
     /**
