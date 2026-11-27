@@ -237,13 +237,6 @@ export function contextMenuControls(e: TargetEvent<PointerEvent>) {
                     // A null index selects the whole row or column
                     const column = x == null ? null : parseInt(x);
                     const row = y == null ? null : parseInt(y);
-                    // As a left press, the press starts a selection of whole rows or columns, so that Delete and a
-                    // press with Shift act on the rows or columns
-                    if (role === 'row') {
-                        current.selection.row = row;
-                    } else {
-                        current.selection.column = column;
-                    }
                     current.selection.updateFromCoords(column, row, column, row, e);
                 }
             } else if (role === 'nested') {
