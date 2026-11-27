@@ -1152,6 +1152,18 @@ export class RowSource {
         this.render(true);
     }
 
+    /**
+     * The element of the cell (x, y). When its row has no record, the window scrolls to it first. Null when the cell has
+     * no record after the scroll, for example in a hidden row.
+     */
+    reveal(x: number, y: number) {
+        const worksheet = this.worksheet;
+        if (!worksheet.records[y]) {
+            this.scrollToRow(y);
+        }
+        return worksheet.records[y]?.[x]?.element ?? null;
+    }
+
     /** The merged range that holds cell (x, y), as [x1, y1, x2, y2], or null. */
     mergeAt(x: number, y: number): [number, number, number, number] | null {
         for (const range of this.mergesIn(y, y)) {
