@@ -1,6 +1,7 @@
 import libraryBase from '../utils/libraryBase.js';
 import { getColumnName } from '../utils/helpers.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
+import { isFormula } from '../utils/values.js';
 import type { HistoryCellChange, MergeInfo, Worksheet } from '../types/internal';
 
 // The cells in progress of updateChain, by cell name
@@ -62,13 +63,14 @@ export class Formulas {
 
     /**
      * Rename the cells in the chain after rows or columns moved. `references` gives the new name by the old name; the
-     * cells that are not in it keep their names.
+     * cells that are not in it keep their names. Without keys, only the formula cells get new names, because the formula
+     * texts keep the names of the cells that they refer to.
      */
-    rename(references: Record<string, string>) {
+    rename(references: Record<string, string>, keys = true) {
         const chain: Record<string, string[]> = {};
 
         for (const name of Object.keys(this.chain)) {
-            chain[references[name] || name] = this.chain[name].map((dependent) => references[dependent] || dependent);
+            chain[(keys && references[name]) || name] = this.chain[name].map((dependent) => references[dependent] || dependent);
         }
 
         this.chain = chain;
@@ -285,6 +287,44 @@ export class Formulas {
         }
 
         return execute(expression, x, y);
+    }
+
+    /**
+     * Show again the result of each formula that names a cell at or after a start, and of the formulas that name these
+     * formulas. Each formula cell shows its result once, with no data write and no event. A formula cell that a delete
+     * removed leaves the chain.
+     */
+    private showResults(firstColumn: number, firstRow: number) {
+        const worksheet = this.worksheet;
+        function exists(name: string) {
+            const [x, y] = getIdFromColumnName(name);
+            return !!worksheet.records[y]?.[x];
+        }
+
+        const cells = new Set<string>();
+        const next: string[] = [];
+        for (const name of Object.keys(this.chain)) {
+            this.chain[name] = this.chain[name].filter(exists);
+            const [x, y] = getIdFromColumnName(name);
+            if (x >= firstColumn && y >= firstRow) {
+                next.push(name);
+            }
+        }
+        while (next.length) {
+            for (const dependent of this.chain[next.pop()!] || []) {
+                if (!cells.has(dependent)) {
+                    cells.add(dependent);
+                    next.push(dependent);
+                }
+            }
+        }
+
+        for (const name of cells) {
+            const [x, y] = getIdFromColumnName(name);
+            if (isFormula(worksheet.options.data[y][x])) {
+                worksheet.cells.showValue(x, y);
+            }
+        }
     }
 
     /**
@@ -554,8 +594,14 @@ export class Formulas {
         }
 
         if (references) {
-            // Update formulas
-            this.updateFormulas(affectedTokens);
+            if (worksheet.parent.config.updateReferences === false) {
+                // The formula texts stay, so the chain keeps the names that they refer to. The formula cells moved.
+                this.rename(affectedTokens, false);
+                this.showResults(firstColumn, firstRow);
+            } else {
+                // Update formulas
+                this.updateFormulas(affectedTokens);
+            }
 
             // Update meta data
             worksheet.meta.update(affectedTokens);

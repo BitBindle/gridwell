@@ -1381,6 +1381,15 @@ declare namespace jspreadsheet {
         parseFormulas?: boolean;
 
         /**
+         * Change the references of the formulas when rows or columns are inserted, deleted, moved or sorted. With false,
+         * each formula text stays as it is, for example when a server changes the references, and each formula calculates
+         * again with the cells that its text names after the change. The fill handle still moves the relative references
+         * of a formula that it copies.
+         * @default true
+         */
+        updateReferences?: boolean;
+
+        /**
          * Function used in sorting columns. If not specified, the default function will be used.
          * @param order - Sorting direction. 0 for ascending and 1 for descending.
          */
