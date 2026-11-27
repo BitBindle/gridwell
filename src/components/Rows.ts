@@ -496,7 +496,7 @@ export class Rows {
             const currentRows = worksheet.rows.splice(rowIndex);
 
             // Adding lines
-            const { rowRecords, rowData, rowNode } = this.add(rowIndex, numOfRows, rowNumber, data, currentRows);
+            const { rowRecords, rowData, rowNode } = worksheet.formulas.keepChain(() => this.add(rowIndex, numOfRows, rowNumber!, data, currentRows));
 
             // Copy the data back to the main data
             worksheet.records.push(...currentRecords);
@@ -530,7 +530,7 @@ export class Rows {
             worksheet.selection.shift(1, rowIndex, numOfRows);
 
             // Remove table references
-            worksheet.formulas.updateTableReferences({ row: Number(rowNumber) });
+            worksheet.formulas.updateTableReferences({ row: Number(rowNumber), inserted: { axis: 1, index: rowIndex, count: numOfRows } });
 
             // Respect pagination. The positions of the cells are up to date, for the editor of a row that leaves the page.
             if (worksheet.options.pagination! > 0) {
@@ -803,7 +803,7 @@ export class Rows {
                     worksheet.selection.shift(1, rowNumber, -numOfRows);
 
                     // Remove table references
-                    worksheet.formulas.updateTableReferences({ row: Number(rowNumber) });
+                    worksheet.formulas.updateTableReferences({ row: Number(rowNumber), removed: { axis: 1, index: Number(rowNumber), count: numOfRows } });
 
                     // The page shows the rows of its positions again, also after a delete on an earlier page. The positions
                     // of the cells are up to date, for the editor of a row that leaves the page.

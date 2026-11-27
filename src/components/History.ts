@@ -146,7 +146,13 @@ export class History {
         worksheet.editor.shift(1, rowIndex, count);
         worksheet.selection.shift(1, rowIndex, count);
 
-        worksheet.formulas.updateTableReferences();
+        // The rows that the undo of a delete adds keep their formula texts, which name the cells at their positions after
+        // the undo. The redo of an insert moves the references of its formulas, as the insert did.
+        worksheet.formulas.updateTableReferences(
+            type === 1
+                ? { removed: { axis: 1, index: rowIndex, count: historyRecord.numOfRows } }
+                : { inserted: { axis: 1, index: rowIndex, count: historyRecord.numOfRows, keepTexts: historyRecord.action === 'deleteRow' } }
+        );
 
         // Respect pagination. An undo of an insert can remove the current page. The positions of the cells are up to date,
         // for the editor of a row that leaves the page.
@@ -253,7 +259,13 @@ export class History {
         worksheet.editor.shift(0, columnIndex, count);
         worksheet.selection.shift(0, columnIndex, count);
 
-        worksheet.formulas.updateTableReferences();
+        // The columns that the undo of a delete adds keep their formula texts. The redo of an insert moves the references
+        // of its formulas, as the insert did.
+        worksheet.formulas.updateTableReferences(
+            type === 1
+                ? { removed: { axis: 0, index: columnIndex, count: historyRecord.numOfColumns } }
+                : { inserted: { axis: 0, index: columnIndex, count: historyRecord.numOfColumns, keepTexts: historyRecord.action === 'deleteColumn' } }
+        );
     }
 
     /**

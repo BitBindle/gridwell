@@ -746,6 +746,16 @@ of one row, or the last row of a taller range. Version 5 did not ask. It kept th
 No option keeps the old behavior, because the removal of ranges that the action does not touch lost data. The dialog
 text stays the same, so that the translations of applications still apply.
 
+## The undo of a delete keeps the formula texts of the cells that it adds
+
+The undo of a row or column delete gives the cells that it adds the formula texts that they had before the delete.
+Version 5 moved their references again, so the restored formulas named other cells. A formula in the values of
+`insertRow` or `insertColumn` still moves its references with the cells, but it now shows the value of its new text.
+
+A formula cell that a delete removes leaves the formula chain. Version 5 kept its name, so a later change of a cell that
+the formula named threw a TypeError, or calculated the cell that then had the name. No option keeps the old behavior,
+because the old behavior changed the formulas that the history gave back.
+
 ## The build leaves out the merged ranges of the options that do not fit
 
 The build of a worksheet, `setData` and `loadWorksheet` leave out a range of `mergeCells` that goes past the last row or
