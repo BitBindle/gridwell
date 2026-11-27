@@ -3178,7 +3178,7 @@ declare namespace jspreadsheet {
         current: null | WorksheetInstance;
 
         /**
-         * Destroy an instance of jss.
+         * Destroy an instance of jss. An open context menu of the spreadsheet closes.
          * @param element - Root element of jss instance.
          * @param destroyEventHandlers - Remove event listeners. Default: false.
          */
