@@ -1,6 +1,6 @@
 import { getCoordsFromCellName } from '../utils/helpers.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
-import { recordRows } from './RowSource.js';
+import { forEachRecordRow } from './RowSource.js';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -32,7 +32,7 @@ export class Comments {
             return worksheet.records[cell[1]][cell[0]].element.getAttribute('title') || '';
         } else {
             const data: Record<string, string> = {};
-            for (const j of recordRows(worksheet)) {
+            forEachRecordRow(worksheet, (j) => {
                 for (let i = 0; i < worksheet.options.columns.length; i++) {
                     // A column outside the column window has no cell
                     const comments = worksheet.records[j][i]?.element.getAttribute('title');
@@ -41,7 +41,7 @@ export class Comments {
                         data[cell] = comments;
                     }
                 }
-            }
+            });
             return data;
         }
     }

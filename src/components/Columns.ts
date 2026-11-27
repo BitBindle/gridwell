@@ -5,7 +5,7 @@ import { setHeaderRole } from './Accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
 import { toGrid, toScreen } from '../utils/zoom.js';
-import { recordRows } from './RowSource.js';
+import { forEachRecordRow } from './RowSource.js';
 import { askConfirm } from '../utils/dialogs.js';
 
 /**
@@ -328,14 +328,10 @@ export class Columns {
 
             // The merged ranges that the new columns split are removed. The other ranges stay and move with their cells.
             const crossed = worksheet.merges.isColMerged(columnNumber, insertBefore);
-            if (crossed.length) {
-                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                    return false;
-                }
-                for (const key of crossed) {
-                    worksheet.merges.remove(key);
-                }
+            if (crossed.length && !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                return false;
             }
+            const merges = worksheet.merges.removeCrossed(crossed);
 
             // Insert before
             const columnIndex = !insertBefore ? columnNumber + 1 : columnNumber;
@@ -382,6 +378,7 @@ export class Columns {
                 records: historyRecords,
                 footers: historyFooters,
                 data: historyData,
+                ...(merges && { merges }),
             });
 
             // The selection and the editor stay on their cells
@@ -412,39 +409,32 @@ export class Columns {
             return false;
         }
 
-        if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
-            let insertBefore: 0 | 1;
-            if (o > d) {
-                insertBefore = 1;
-            } else {
-                insertBefore = 0;
-            }
-
-            if (worksheet.merges.isColMerged(o).length || worksheet.merges.isColMerged(d, insertBefore).length) {
-                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                    return false;
-                } else {
-                    worksheet.destroyMerge();
-                }
-            }
+        // The merged ranges that have the column, or that the column goes into, are removed. The other ranges stay and move
+        // with their cells.
+        const crossed = [...new Set([...worksheet.merges.isColMerged(o), ...worksheet.merges.isColMerged(d, Number(o) > Number(d) ? 1 : 0)])];
+        if (crossed.length && !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
+            return false;
         }
+        const merges = worksheet.merges.removeCrossed(crossed);
 
         o = parseInt(o);
         d = parseInt(d);
 
+        // The td of each column by its place in the row: the record of a cell that a merged range hides that stays has the td
+        // of the first cell of the range, in another row
         if (o > d) {
             worksheet.headerContainer.insertBefore(worksheet.headers[o], worksheet.headers[d]);
             worksheet.colgroupContainer.insertBefore(worksheet.cols[o].colElement, worksheet.cols[d].colElement);
 
-            for (let j = 0; j < worksheet.rows.length; j++) {
-                worksheet.rows[j].element.insertBefore(worksheet.records[j][o].element, worksheet.records[j][d].element);
+            for (const row of worksheet.rows) {
+                row.element.insertBefore(row.element.children[o + 1], row.element.children[d + 1]);
             }
         } else {
             worksheet.headerContainer.insertBefore(worksheet.headers[o], worksheet.headers[d].nextSibling);
             worksheet.colgroupContainer.insertBefore(worksheet.cols[o].colElement, worksheet.cols[d].colElement.nextSibling);
 
-            for (let j = 0; j < worksheet.rows.length; j++) {
-                worksheet.rows[j].element.insertBefore(worksheet.records[j][o].element, worksheet.records[j][d].element.nextSibling);
+            for (const row of worksheet.rows) {
+                row.element.insertBefore(row.element.children[o + 1], row.element.children[d + 1].nextSibling);
             }
         }
 
@@ -482,6 +472,7 @@ export class Columns {
             action: 'moveColumn',
             oldValue: o,
             newValue: d,
+            ...(merges && { merges }),
         });
         // The selection and the editor stay on their cells
         worksheet.editor.move(0, Number(o), Number(d));
@@ -559,14 +550,13 @@ export class Columns {
                 if (parseInt(columnNumber) > -1) {
                     // The merged ranges that have a cell in the deleted columns are removed. The other ranges stay and move with their cells.
                     const crossed = worksheet.merges.inColumns(columnNumber, columnNumber + numOfColumns - 1);
-                    if (crossed.length) {
-                        if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                            return false;
-                        }
-                        for (const key of crossed) {
-                            worksheet.merges.remove(key);
-                        }
+                    if (
+                        crossed.length &&
+                        !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))
+                    ) {
+                        return false;
                     }
+                    const merges = worksheet.merges.removeCrossed(crossed);
 
                     // An editor in a deleted column closes without a save
                     worksheet.editor.closeIn(0, columnNumber, columnNumber + numOfColumns - 1);
@@ -639,6 +629,7 @@ export class Columns {
                         records: historyRecords,
                         footers: historyFooters,
                         data: historyData,
+                        ...(merges && { merges }),
                     });
 
                     // The selection and the editor stay on their cells. A selection with a deleted cell is removed.
@@ -767,6 +758,13 @@ export class Columns {
 
             // Update corner position
             worksheet.selection.updateCorner();
+
+            // A column of width 0 shows no cell, so the tab stop leaves it, as after hideColumn
+            if ((Array.isArray(width) ? width : [width]).some((w) => Number(w) === 0)) {
+                worksheet.selection.updateTabStop();
+                // An editor in such a column detaches, as after hideColumn
+                worksheet.editor.settle();
+            }
         }
     }
 
@@ -786,13 +784,13 @@ export class Columns {
             if (worksheet.filter && worksheet.filter.children.length > columnIndex + 1) {
                 (worksheet.filter.children[columnIndex + 1] as HTMLElement).style.display = '';
             }
-            for (const j of this.rowIndexes()) {
+            forEachRecordRow(worksheet, (j) => {
                 // A column outside the column window has no cells
                 const record = worksheet.records[j][columnIndex];
                 if (record) {
                     record.element.style.display = '';
                 }
-            }
+            });
         }
 
         worksheet.merges.updateColumns(colNumber);
@@ -829,13 +827,13 @@ export class Columns {
             if (worksheet.filter && worksheet.filter.children.length > columnIndex + 1) {
                 (worksheet.filter.children[columnIndex + 1] as HTMLElement).style.display = 'none';
             }
-            for (const j of this.rowIndexes()) {
+            forEachRecordRow(worksheet, (j) => {
                 // A column outside the column window has no cells
                 const record = worksheet.records[j][columnIndex];
                 if (record) {
                     record.element.style.display = 'none';
                 }
-            }
+            });
         }
 
         worksheet.merges.updateColumns(colNumber);
@@ -855,8 +853,9 @@ export class Columns {
 
         worksheet.resetSelection();
 
-        // The tab stop of the grid can be in a hidden column
+        // The tab stop of the grid can be in a hidden column, and the editor of a hidden cell detaches
         worksheet.selection.updateTabStop();
+        worksheet.editor.settle();
     }
 
     /**
@@ -865,9 +864,9 @@ export class Columns {
     getData(columnNumber: number, processed?: boolean): jspreadsheet.CellValue[] {
         const worksheet = this.worksheet;
 
-        const dataset = [];
+        const dataset: jspreadsheet.CellValue[] = [];
         // Go through the rows to get the data
-        for (const j of this.rowIndexes()) {
+        forEachRecordRow(worksheet, (j) => {
             // A column outside the column window has no cells, and is empty
             if (!worksheet.records[j][columnNumber]) {
                 dataset.push('');
@@ -876,7 +875,7 @@ export class Columns {
             } else {
                 dataset.push(worksheet.options.data[j][columnNumber]);
             }
-        }
+        });
         return dataset;
     }
 
@@ -1033,11 +1032,6 @@ export class Columns {
         return tr;
     }
 
-    /** The rows with a record: all rows, or the frozen rows and the window of the row source mode. */
-    private rowIndexes() {
-        return recordRows(this.worksheet);
-    }
-
     // Get the width of the index column. The frozen columns stay at the left of the content when scrollLeft is more than this width.
     getIndexWidth() {
         return this.worksheet.table.classList.contains('jss_hidden_index') ? 0 : 50;
@@ -1074,8 +1068,6 @@ export class Columns {
         const indexWidth = this.getIndexWidth();
         // The worksheet can have fewer columns than freezeColumns, for example after deleteColumn
         const freezeColumns = Math.min(worksheet.options.freezeColumns!, worksheet.headers.length);
-        // The rows with a record, once for all frozen columns
-        const rows = freezeColumns > 0 ? this.rowIndexes() : [];
         let width = 0;
         // The scroll position is in screen pixels, and the widths and the left of a cell in grid pixels
         if (scrollLeft > toScreen(worksheet, indexWidth)) {
@@ -1109,7 +1101,7 @@ export class Columns {
                 // frozen row is sticky, as a header is, so it gets the same distance from the left as the header.
                 const shifted = `${toGrid(worksheet, scrollLeft) - indexWidth - 1}px`;
                 const frozenRows = worksheet.rowManager.getFreezeCount();
-                for (const j of rows) {
+                forEachRecordRow(worksheet, (j) => {
                     if (worksheet.rows[j] && worksheet.records[j][i]) {
                         worksheet.records[j][i].element.classList.add('jss_freezed');
                         if (isLast || wasLast) {
@@ -1117,7 +1109,7 @@ export class Columns {
                         }
                         worksheet.records[j][i].element.style.left = j < frozenRows ? `${width}px` : shifted;
                     }
-                }
+                });
             }
         } else {
             for (let i = 0; i < freezeColumns; i++) {
@@ -1146,12 +1138,12 @@ export class Columns {
 
         worksheet.headers[i].classList.remove('jss_freezed', 'jss_freezed_last');
         worksheet.headers[i].style.left = '';
-        for (const j of this.rowIndexes()) {
+        forEachRecordRow(worksheet, (j) => {
             if (worksheet.records[j][i]) {
                 worksheet.records[j][i].element.classList.remove('jss_freezed', 'jss_freezed_last');
                 worksheet.records[j][i].element.style.left = '';
             }
-        }
+        });
     }
 
     /**

@@ -534,6 +534,64 @@ describe('Delete the active worksheet (issue #182)', () => {
     });
 });
 
+describe('Destroy a spreadsheet with an open context menu (issue #183)', () => {
+    it('closes the open context menu when it destroys the spreadsheet', async () => {
+        const element = document.body.appendChild(document.createElement('div') as Jspreadsheet.JspreadsheetInstanceElement);
+        const removed: string[] = [];
+        const removedFromWindow: string[] = [];
+        const remove = document.removeEventListener;
+        const removeFromWindow = window.removeEventListener;
+        document.removeEventListener = function (this: Document, type: string, ...rest: unknown[]) {
+            removed.push(type);
+            return (remove as (...args: unknown[]) => void).call(this, type, ...rest);
+        } as typeof document.removeEventListener;
+        window.removeEventListener = function (this: Window, type: string, ...rest: unknown[]) {
+            removedFromWindow.push(type);
+            return (removeFromWindow as (...args: unknown[]) => void).call(this, type, ...rest);
+        } as typeof window.removeEventListener;
+
+        try {
+            const [worksheet] = jspreadsheet(element, { worksheets: [{ minDimensions: [1, 1] }] });
+            await new Promise((resolve) => setTimeout(resolve));
+            const menu = worksheet.parent.contextMenu.contextmenu!;
+            menu.open({ x: 5, y: 6 });
+            expect(menu.isOpened()).to.equal(true);
+
+            jspreadsheet.destroy(element);
+
+            expect(menu.isOpened()).to.equal(false);
+            expect(removed).to.include.members(['mousedown', 'touchstart']);
+            expect(removedFromWindow).to.include('wheel');
+        } finally {
+            document.removeEventListener = remove;
+            window.removeEventListener = removeFromWindow;
+            element.remove();
+        }
+    });
+
+    it('leaves no active worksheet when it destroys the spreadsheet while the menu of a focused cell is open', async () => {
+        const element = document.body.appendChild(document.createElement('div') as Jspreadsheet.JspreadsheetInstanceElement);
+
+        try {
+            const [worksheet] = jspreadsheet(element, { worksheets: [{ minDimensions: [2, 2] }] });
+            await new Promise((resolve) => setTimeout(resolve));
+            worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+            const cell = worksheet.getCell('A1')!;
+            cell.focus();
+            cell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 5, clientY: 5 }));
+            const menu = worksheet.parent.contextMenu.contextmenu!;
+            expect(menu.element.contains(document.activeElement)).to.equal(true);
+
+            jspreadsheet.destroy(element);
+
+            expect(menu.isOpened()).to.equal(false);
+            expect(jspreadsheet.current).to.equal(null);
+        } finally {
+            element.remove();
+        }
+    });
+});
+
 describe('Destroy all spreadsheets', () => {
     it('destroys each spreadsheet (issue #114)', async () => {
         // Each element gets its spreadsheet

@@ -38,6 +38,9 @@ export class View {
     /** The indexes of the rows that a search or the filters found, or null when the worksheet shows every row. */
     results: number[] | null = null;
 
+    /** The scroll position from the top at the last scroll, so the fill handle is checked only for a vertical scroll. */
+    private lastScrollTop = 0;
+
     /** The values that each column is filtered by, by column index. null or a missing entry is a column without filter. */
     filters: (string[] | null)[] = [];
 
@@ -414,19 +417,16 @@ export class View {
             startRow = 0;
         }
 
-        // Reset container
-        while (worksheet.tbody.firstChild) {
-            worksheet.tbody.removeChild(worksheet.tbody.firstChild);
-        }
-
-        // Appeding items
+        // The rows of the page. An open editor in a row that leaves the page detaches.
+        const wanted: HTMLTableRowElement[] = [];
         for (let j = startRow; j < finalRow; j++) {
             if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
-                worksheet.tbody.appendChild(worksheet.rows[results[j] as number].element);
+                wanted.push(worksheet.rows[results[j] as number].element);
             } else {
-                worksheet.tbody.appendChild(worksheet.rows[j].element);
+                wanted.push(worksheet.rows[j].element);
             }
         }
+        this.showRows(wanted);
 
         // The tab stop of the grid can be in a row of the old page
         worksheet.selection.updateTabStop();
@@ -475,16 +475,13 @@ export class View {
             }
         }
 
-        // Reset current nodes
-        while (worksheet.tbody.firstChild) {
-            worksheet.tbody.removeChild(worksheet.tbody.firstChild);
-        }
-
-        // Hide all records from the table
+        // The first rows of the results go in the table. An open editor in a row that leaves detaches.
+        const shown = worksheet.view.results ? new Set(worksheet.view.results) : null;
+        const wanted: HTMLTableRowElement[] = [];
         for (let j = 0; j < worksheet.rows.length; j++) {
-            if (!worksheet.view.results || worksheet.view.results.includes(j)) {
+            if (!shown || shown.has(j)) {
                 if (index < total) {
-                    worksheet.tbody.appendChild(worksheet.rows[j].element);
+                    wanted.push(worksheet.rows[j].element);
                     index++;
                 }
                 worksheet.rows[j].element.style.display = '';
@@ -492,6 +489,7 @@ export class View {
                 worksheet.rows[j].element.style.display = 'none';
             }
         }
+        this.showRows(wanted);
 
         // The tab stop of the grid can be in a row that is not in the results
         worksheet.selection.updateTabStop();
@@ -608,8 +606,8 @@ export class View {
                 if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                     return false;
                 } else {
-                    // Remove merged cells
-                    worksheet.destroyMerge();
+                    // Remove merged cells. The selection of the user stays.
+                    worksheet.merges.destroy(false, true);
                 }
             }
 
@@ -785,10 +783,34 @@ export class View {
     }
 
     /**
+     * Put these rows in the table body, in this order, and remove the other rows. The rows that stay are not removed
+     * first, so an open editor in such a row stays open. An editor in a row that leaves detaches.
+     */
+    private showRows(wanted: HTMLTableRowElement[]) {
+        const tbody = this.worksheet.tbody;
+        const keep = new Set<Element>(wanted);
+        for (const row of Array.from(tbody.children)) {
+            if (!keep.has(row)) {
+                this.removeRow(row);
+            }
+        }
+        // A cursor on the next row of the body, because the list of the children changes after each insert
+        let next = tbody.firstChild;
+        for (const row of wanted) {
+            if (row === next) {
+                next = row.nextSibling;
+            } else {
+                tbody.insertBefore(row, next);
+            }
+        }
+        // An editor that was open in a row outside the body, for example after a move, detaches too
+        this.worksheet.editor.settle();
+    }
+
+    /**
      * Remove a row from the table. If the row holds the open editor, detach the editor first: oneditordetach can take the
      * edit, else the editor saves.
      */
-    // The callers remove a row when the body has more than a page of rows, so it has a first and a last row
     private removeRow(row: ChildNode) {
         const worksheet = this.worksheet;
 
@@ -866,17 +888,7 @@ export class View {
             wanted.push(worksheet.rows[results ? results[j] : j].element);
         }
 
-        const keep = new Set<Element>(wanted);
-        for (const row of Array.from(worksheet.tbody.children)) {
-            if (!keep.has(row)) {
-                this.removeRow(row);
-            }
-        }
-        for (let k = 0; k < wanted.length; k++) {
-            if (worksheet.tbody.children[k] !== wanted[k]) {
-                worksheet.tbody.insertBefore(wanted[k], worksheet.tbody.children[k] || null);
-            }
-        }
+        this.showRows(wanted);
 
         // The tab stop of the grid can be in a removed row, and the selection corner can be in another place
         worksheet.selection.updateTabStop();
@@ -951,27 +963,22 @@ export class View {
             startRow = 0;
         }
 
-        // The frozen rows stay first
+        // The frozen rows stay first. Only the rows outside the new page leave, so an editor in a row of the new page
+        // stays open. More than one page can be attached before, for example after an insert next to the attached rows.
         const frozen = this.frozenRows();
+        const wanted: HTMLTableRowElement[] = [];
         for (let j = 0; j < frozen; j++) {
-            if (worksheet.tbody.children[j] !== worksheet.rows[j].element) {
-                worksheet.tbody.insertBefore(worksheet.rows[j].element, worksheet.tbody.children[j] || null);
-            }
+            wanted.push(worksheet.rows[j].element);
         }
-
-        // Appeding items
-        for (let j = Math.max(startRow, frozen); j < finalRow; j++) {
+        // A page has 100 rows with the frozen rows
+        for (let j = Math.max(startRow, frozen, finalRow - (quantityPerPage - frozen)); j < finalRow; j++) {
             if ((worksheet.options.search === true || worksheet.options.filters === true) && worksheet.view.results) {
-                worksheet.tbody.appendChild(worksheet.rows[results[j] as number].element);
+                wanted.push(worksheet.rows[results[j] as number].element);
             } else {
-                worksheet.tbody.appendChild(worksheet.rows[j].element);
-            }
-
-            // More than one page can be attached, for example after an insert next to the attached rows
-            while (worksheet.tbody.children.length > quantityPerPage) {
-                this.removeRow(this.firstScrollRow());
+                wanted.push(worksheet.rows[j].element);
             }
         }
+        this.showRows(wanted);
 
         // The tab stop of the grid can be in a removed row
         worksheet.selection.updateTabStop();
@@ -1180,6 +1187,12 @@ export class View {
         if (worksheet.options.freezeColumns! > 0 && worksheet.content.scrollLeft !== worksheet.lastScrollLeft) {
             worksheet.lastScrollLeft = worksheet.content.scrollLeft;
             worksheet.columns.updateFreezePosition();
+        }
+
+        // The fill handle hides while its cell is under the sticky header or the frozen rows
+        if (worksheet.content.scrollTop !== this.lastScrollTop) {
+            this.lastScrollTop = worksheet.content.scrollTop;
+            worksheet.selection.updateCornerCover();
         }
 
         // Close a floating editor. The text editor is inside the cell and scrolls with it.

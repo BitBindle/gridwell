@@ -80,6 +80,10 @@ libraryBase.jspreadsheet.destroy = (
 
         const root = element.spreadsheet.config.root || document;
 
+        // An open context menu listens to the document, and its items hold the spreadsheet. The close gives the focus back
+        // to the cell that had it, which makes its worksheet active, so the close comes before the active worksheet clears.
+        (element.spreadsheet as Spreadsheet).contextMenu.contextmenu?.close();
+
         // The active worksheet would keep the destroyed spreadsheet in memory. The application can make a worksheet that
         // deleteWorksheet removed the active worksheet: it is not in the list of worksheets, but its parent is still the
         // spreadsheet.

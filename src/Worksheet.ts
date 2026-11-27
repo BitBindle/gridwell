@@ -536,7 +536,7 @@ export class Worksheet {
     }
 
     resetRows(options?: Parameters<RowSource['reset']>[0]) {
-        this.rowSource?.reset(options);
+        return this.rowSource ? this.rowSource.reset(options) : [];
     }
 
     renderRows() {
@@ -1050,6 +1050,7 @@ export class Worksheet {
 
         this.setLayout();
         this.loadContent();
+        this.rowManager.observeHeader();
     }
 
     /**
