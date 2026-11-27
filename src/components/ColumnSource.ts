@@ -489,8 +489,8 @@ export class ColumnSource {
     }
 
     /**
-     * Show the text of the first cell of a merged range, at (from, y), in the cell (to, y) of the window. The values of the
-     * cell do not change.
+     * Show the text of the first cell of a merged range, at (from, y), in the cell (to, y) of the window. The cell takes
+     * the wrap of the text, as the first cell has it. The values of the cell do not change.
      */
     moveText(from: number, to: number, y: number) {
         const worksheet = this.worksheet;
@@ -498,7 +498,9 @@ export class ColumnSource {
         const value = given?.[from] ?? '';
         this.moved.set(getColumnNameFromId([to, y]), from);
         const element = worksheet.records[y][to].element;
-        element.innerHTML = worksheet.cells.create(from, y, value, true).innerHTML;
+        const td = worksheet.cells.create(from, y, value, true);
+        element.innerHTML = td.innerHTML;
+        element.style.whiteSpace = td.style.whiteSpace;
         // The text goes through the render of the first column, as createRecord does
         const column = worksheet.options.columns?.[from];
         if (column && typeof column.render === 'function') {
@@ -538,10 +540,13 @@ export class ColumnSource {
         }
     }
 
-    /** Make the content of the cell (x, y) again from its value, as a new cell has it. */
+    /** Make the content and the wrap of the cell (x, y) again from its value, as a new cell has them. */
     private rebuild(x: number, y: number) {
         const worksheet = this.worksheet;
-        worksheet.records[y][x].element.innerHTML = worksheet.cells.create(x, y, worksheet.options.data[y][x], true).innerHTML;
+        const element = worksheet.records[y][x].element;
+        const td = worksheet.cells.create(x, y, worksheet.options.data[y][x], true);
+        element.innerHTML = td.innerHTML;
+        element.style.whiteSpace = td.style.whiteSpace;
     }
 
     /** The cells that showed the text of a merged range show their own value again. */

@@ -201,6 +201,50 @@ describe('The column window of the row source mode', () => {
         expect(worksheet.records[4][135].element.textContent).to.equal('135:4');
     });
 
+    it('gives a cell that shows the text of a merged range the wrap of the first column of the range (issue #211)', () => {
+        const { worksheet } = build({}, { columns: [{ wordWrap: true }] });
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.scrollToColumn(145);
+
+        // Column 0 wraps and column 135 does not, so the cell that shows the text of column 0 wraps
+        const cell = worksheet.records[4][135].element;
+        expect(cell.textContent).to.equal('0:4');
+        expect(cell.style.whiteSpace).to.equal('pre-wrap');
+
+        // The cell gets the wrap of its own column again when the range goes
+        worksheet.removeMerge('A5');
+        expect(cell.textContent).to.equal('135:4');
+        expect(cell.style.whiteSpace).to.equal('');
+    });
+
+    it('gives a cell that shows a long text of a merged range the wrap of the long text, and takes it away again (issue #211)', () => {
+        const long = 'x'.repeat(250);
+        const { worksheet } = build({
+            row: (y, columns) => {
+                const values: Jspreadsheet.CellValue[] = [];
+                for (const x of columns || range(0, columnCount - 1)) {
+                    values[x] = x === 0 ? long : `${x}:${y}`;
+                }
+                return values;
+            },
+        });
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.scrollToColumn(145);
+
+        const cell = worksheet.records[4][135].element;
+        expect(cell.textContent).to.equal(long);
+        expect(cell.style.whiteSpace).to.equal('pre-wrap');
+
+        // A change of the cell keeps the text of the range and its wrap
+        worksheet.setValueFromCoords(135, 4, 'short');
+        expect(cell.textContent).to.equal(long);
+        expect(cell.style.whiteSpace).to.equal('pre-wrap');
+
+        worksheet.removeMerge('A5');
+        expect(cell.textContent).to.equal('short');
+        expect(cell.style.whiteSpace).to.equal('');
+    });
+
     it('reads the widths and the hidden columns again after setWidth, hideColumn and refreshColumns', () => {
         const { worksheet } = build();
         const spacerWidth = () => {
