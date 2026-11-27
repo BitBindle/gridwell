@@ -776,6 +776,7 @@ the width 0. `setWidth` with 0 moves the tab stop, as `hideColumn` does. A selec
 example `selectAll` with a first column of width 0, makes the cell that `down` moves from the active cell: the next
 column with a width, in the same row or in the next row that shows. `up` and `down` move in that column. No option
 keeps the old behavior, because the user could not see or reach the cell.
+
 ## Moves keep the merged ranges that they do not cross, and undo merges the removed ranges again
 
 `moveRow` and `moveColumn` remove only the merged ranges that they cross: a range that has the moved row or column, or a
