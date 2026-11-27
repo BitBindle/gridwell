@@ -471,9 +471,12 @@ export class Merges {
             const merges = { ...worksheet.rowSource.merges };
             if (merges[cellName]) {
                 const beforeMerges = { [cellName]: merges[cellName] };
+                const [x, y] = getIdFromColumnName(cellName);
+                const [colspan, rowspan] = merges[cellName];
                 delete merges[cellName];
                 worksheet.rowSource.replaceMerges(merges);
-                this.settleInRowSource({}, beforeMerges);
+                // As in the other modes, the selection holds the former range
+                worksheet.selection.updateFromCoords(x, y, x + colspan - 1, y + rowspan - 1);
                 worksheet.dispatch('onunmerge', worksheet, cellName, beforeMerges);
             }
             return;

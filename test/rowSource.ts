@@ -709,6 +709,52 @@ describe('The row source mode', () => {
         expect(stop.map((element) => `${element.getAttribute('data-x')},${element.getAttribute('data-y')}`)).to.eql(['0,1']);
     });
 
+    it('does not take the focus from the body when the window brings back a hidden selected row', () => {
+        const { worksheet } = build();
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+        worksheet.records[2][1].element.focus();
+        // The focus is in the grid at the selection
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+        worksheet.hideRow(2);
+        // A browser drops the focus of a cell that hides
+        (document.activeElement as HTMLElement).blur();
+        expect(document.activeElement).to.equal(document.body);
+
+        worksheet.scrollToRow(900);
+        worksheet.scrollToRow(0);
+
+        expect(document.activeElement).to.equal(document.body);
+        expect(worksheet.records[0][0].element.tabIndex).to.equal(0);
+    });
+
+    it('gives the focus to the new tab stop when resetRows hides the row of the focused cell', () => {
+        const { worksheet } = build();
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+        worksheet.records[2][1].element.focus();
+
+        worksheet.resetRows({ runs: [{ first: 2, last: 2, hidden: true }] });
+
+        expect(document.activeElement).to.equal(worksheet.records[0][0].element);
+
+        // A frozen row
+        const frozen = build({}, { freezeRows: 2 }).worksheet;
+        frozen.updateSelectionFromCoords(1, 0, 1, 0);
+        frozen.records[0][1].element.focus();
+        frozen.resetRows({ runs: [{ first: 0, last: 0, hidden: true }] });
+        expect(document.activeElement).to.equal(frozen.records[1][0].element);
+    });
+
+    it('selects the former range after removeMerge, as the other modes do', () => {
+        const { worksheet } = build();
+        worksheet.setMerge('B4', 2, 2);
+        worksheet.updateSelectionFromCoords(1, 3, 1, 3);
+
+        worksheet.removeMerge('B4');
+
+        expect(worksheet.selection.range).to.eql([1, 3, 2, 4]);
+        expect(worksheet.getSelected(true)).to.eql(['B4', 'C4', 'B5', 'C5']);
+    });
+
     it('moves the selection before onunmerge, as the other modes do', () => {
         const events: string[] = [];
         const { worksheet } = build(

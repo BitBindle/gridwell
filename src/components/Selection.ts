@@ -848,8 +848,9 @@ export class Selection {
      * is still in the table, else the first visible cell is the tab stop. When the focused cell left the table, or the table
      * attached its row again, the focus fell to the body, and the tab stop gets it back. A focused cell that is no longer the
      * tab stop also gives the focus to the tab stop.
+     * @param focus - False to move only the tab stop and not the focus.
      */
-    updateTabStop() {
+    updateTabStop(focus = true) {
         const worksheet = this.worksheet;
 
         let td: HTMLTableCellElement | null | undefined = null;
@@ -865,7 +866,7 @@ export class Selection {
 
         this.setActiveCell(td);
 
-        if (td && !worksheet.editor.isOpen() && libraryBase.jspreadsheet.current === worksheet) {
+        if (focus && td && !worksheet.editor.isOpen() && libraryBase.jspreadsheet.current === worksheet) {
             const active = this.getActiveElement();
             // The focus was in the grid at the last selection
             const lost = worksheet.selection.focusInGrid === true && isFocusLost();
