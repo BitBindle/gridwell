@@ -1,5 +1,5 @@
 import { getCellNameFromCoords } from '../utils/helpers.js';
-import { getColumnNameFromId } from '../utils/internalHelpers.js';
+import { getColumnNameFromId, movedIndex } from '../utils/internalHelpers.js';
 import libraryBase from '../utils/libraryBase.js';
 import { toGrid, toScreen } from '../utils/zoom.js';
 import type { WorksheetState, Worksheet, SelectedWorksheet } from '../types/internal';
@@ -619,6 +619,39 @@ export class Selection {
     }
 
     /**
+     * The first row number of a selection of whole rows, or null. The row field keeps the row number that a press selected
+     * first, and a selection of other cells with the keyboard or updateSelectionFromCoords does not clear it.
+     * So it counts only while the selection starts at that row and has all columns.
+     */
+    rowAnchor(): number | null {
+        const range = this.range;
+        if (this.row == null || !range || Number(range[1]) !== this.row) {
+            return null;
+        }
+        const x = [Number(range[0]), Number(range[2])];
+        return Math.min(...x) === 0 && Math.max(...x) >= this.lastColumn() ? this.row : null;
+    }
+
+    /** The first header of a selection of whole columns, or null. The same rules as for rowAnchor apply. */
+    columnAnchor(): number | null {
+        const range = this.range;
+        if (this.column == null || !range || Number(range[0]) !== this.column) {
+            return null;
+        }
+        const worksheet = this.worksheet;
+        const lastRow = (worksheet.rowSource ? worksheet.rowSource.count : worksheet.rows.length) - 1;
+        const y = [Number(range[1]), Number(range[3])];
+        return Math.min(...y) === 0 && Math.max(...y) >= lastRow ? this.column : null;
+    }
+
+    /** The last column of a selection of whole rows, as updateFromCoords makes it. */
+    private lastColumn() {
+        const worksheet = this.worksheet;
+        const headers = worksheet.headers.length;
+        return (worksheet.rowSource ? headers : Math.min(worksheet.options.data[0]?.length ?? 0, headers)) - 1;
+    }
+
+    /**
      * After an insert or a delete of rows or columns, the selection stays on its cells. A selection with a deleted cell
      * is removed. Call it before updateTableReferences, which shows the moved selection with refresh.
      * @param axis - 0 for columns, 1 for rows.
@@ -652,6 +685,29 @@ export class Selection {
             this.column = this.shiftIndex(this.column, index, count);
         } else {
             this.row = this.shiftIndex(this.row, index, count);
+        }
+    }
+
+    /**
+     * After a move of one row or column, the ends of the selection, and its first row number or header, stay on their
+     * cells. Call it before updateTableReferences, which shows the moved selection with refresh.
+     * @param axis - 0 for columns, 1 for rows.
+     * @param from - The row or column that moved.
+     * @param to - Its new position.
+     */
+    move(axis: 0 | 1, from: number, to: number) {
+        const range = this.range;
+        if (range) {
+            const next = [...range].map(Number) as [number, number, number, number];
+            for (const end of axis === 0 ? [0, 2] : [1, 3]) {
+                next[end] = movedIndex(next[end], from, to);
+            }
+            this.range = next;
+        }
+        if (axis === 0 && this.column != null) {
+            this.column = movedIndex(this.column, from, to);
+        } else if (axis === 1 && this.row != null) {
+            this.row = movedIndex(this.row, from, to);
         }
     }
 
@@ -698,7 +754,13 @@ export class Selection {
         const worksheet = this.worksheet;
 
         // updateSelectionFromCoords sets the range, unless onbeforeselection cancels the selection
+        const previous = this.range;
         worksheet.updateSelectionFromCoords(0, 0, worksheet.headers.length - 1, worksheet.records.length - 1);
+        // All cells are not a selection of whole rows or columns, so Delete clears them
+        if (this.range !== previous) {
+            this.row = null;
+            this.column = null;
+        }
     }
 
     get(): [number, number, number, number] | null {

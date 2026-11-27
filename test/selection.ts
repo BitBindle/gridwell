@@ -676,8 +676,179 @@ describe('Insert and delete keep the selection and the editor on their cells', (
         expect(worksheet.selection.row).to.equal(null);
         expect(range(worksheet)).to.eql([0, 3, 0, 3]);
 
-        // Without the first row number, a Shift press selects only its row
+        // Without the first row number, a Shift press extends from the first row of the selection
         press(rowNumber(worksheet, 2), { shiftKey: true });
-        expect(range(worksheet)).to.eql([0, 2, 2, 2]);
+        expect(range(worksheet)).to.eql([0, 3, 2, 2]);
+    });
+});
+
+describe('The first row number or header of a selection of whole rows or columns', () => {
+    // The spreadsheet adds its event handlers after a promise. jsdom gives the headers and the row numbers no size, so a
+    // press is at their edge, which resizes or drags unless that is off.
+    let questions: string[];
+    const load = () =>
+        new Promise<Worksheet>((resolve) => {
+            questions = [];
+            const data = Array.from({ length: 5 }, (row, y) => ['A', 'B', 'C'].map((column) => `${column}${y + 1}`));
+            const options = { data, rowResize: false, rowDrag: false, columnResize: false, columnDrag: false };
+            const confirm = (text: string) => {
+                questions.push(text);
+                return true;
+            };
+            const instance = jspreadsheet(root, { confirm, worksheets: [options], onload: () => resolve(instance[0]) });
+        });
+    const press = (element: Element, options?: MouseEventInit) => {
+        element.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, buttons: 1, ...options }));
+        document.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true, buttons: 1 }));
+    };
+    const key = (worksheet: Worksheet, which: number) =>
+        worksheet.element.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, cancelable: true, which, keyCode: which } as KeyboardEventInit));
+    const rowNumber = (worksheet: Worksheet, y: number) => worksheet.rows[y].element.children[0];
+    const range = (worksheet: Worksheet) => worksheet.selection.range?.map(Number) ?? null;
+    const column = (worksheet: Worksheet, x: number) => worksheet.getData().map((row) => row[x]);
+
+    it('clears the cell and keeps the row when Delete follows an arrow key after a press on a row number', async () => {
+        const worksheet = await load();
+        press(rowNumber(worksheet, 1));
+        worksheet.records[1][0].element.focus();
+
+        key(worksheet, 40);
+        key(worksheet, 46);
+
+        expect(questions).to.eql([]);
+        expect(worksheet.rows.length).to.equal(5);
+        expect(column(worksheet, 0)).to.eql(['A1', 'A2', '', 'A4', 'A5']);
+    });
+
+    it('clears the cell and keeps the column when Delete follows updateSelectionFromCoords after a press on a header', async () => {
+        const worksheet = await load();
+        press(worksheet.headers[1]);
+        worksheet.updateSelectionFromCoords(2, 0, 2, 0);
+        worksheet.records[0][2].element.focus();
+
+        key(worksheet, 46);
+
+        expect(questions).to.eql([]);
+        expect(worksheet.getData()[0]).to.eql(['A1', 'B1', '']);
+    });
+
+    it('still deletes the rows of a selection of whole rows', async () => {
+        const worksheet = await load();
+        press(rowNumber(worksheet, 1));
+        press(rowNumber(worksheet, 2), { shiftKey: true });
+        worksheet.records[1][0].element.focus();
+
+        key(worksheet, 46);
+
+        expect(questions).to.eql(['Are you sure to delete the selected rows?']);
+        expect(column(worksheet, 0)).to.eql(['A1', 'A4', 'A5']);
+    });
+
+    it('extends from the current selection when a Shift press on a row number follows another selection (#226)', async () => {
+        const worksheet = await load();
+        press(rowNumber(worksheet, 1));
+        worksheet.updateSelectionFromCoords(0, 3, 0, 3);
+
+        press(rowNumber(worksheet, 4), { shiftKey: true });
+
+        expect(range(worksheet)).to.eql([0, 3, 2, 4]);
+        expect(worksheet.selection.rowAnchor()).to.equal(3);
+    });
+
+    it('extends from the first column of a cell selection with a Shift press on a header', async () => {
+        const worksheet = await load();
+        worksheet.updateSelectionFromCoords(0, 2, 0, 2);
+
+        press(worksheet.headers[2], { shiftKey: true });
+
+        expect(range(worksheet)).to.eql([0, 0, 2, 4]);
+        expect(worksheet.selection.columnAnchor()).to.equal(0);
+    });
+
+    it('clears all cells when Delete follows selectAll after a press on the first row number', async () => {
+        const worksheet = await load();
+        press(rowNumber(worksheet, 0));
+        worksheet.selectAll();
+        worksheet.records[0][0].element.focus();
+
+        key(worksheet, 46);
+
+        expect(questions).to.eql([]);
+        expect(worksheet.rows.length).to.equal(5);
+        expect(
+            worksheet
+                .getData()
+                .flat()
+                .every((value) => value === '')
+        ).to.equal(true);
+    });
+});
+
+describe('moveRow and moveColumn keep the selection and the editor on their cells (#222)', () => {
+    function create() {
+        const data = Array.from({ length: 5 }, (row, y) => ['A', 'B', 'C', 'D'].map((column) => `${column}${y + 1}`));
+        return jspreadsheet(root, { worksheets: [{ data }] })[0];
+    }
+
+    const range = (worksheet: Worksheet) => worksheet.selection.range?.map(Number) ?? null;
+    const highlighted = (worksheet: Worksheet) => Array.from(worksheet.table.querySelectorAll('td.highlight')).map((td) => td.textContent);
+
+    it('moves the selected cell with its row and its column', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+
+        worksheet.moveRow(1, 3);
+        expect(range(worksheet)).to.eql([1, 3, 1, 3]);
+        worksheet.moveColumn(1, 0);
+        expect(range(worksheet)).to.eql([0, 3, 0, 3]);
+        expect(highlighted(worksheet)).to.eql(['B2']);
+    });
+
+    it('moves the selected cell when another row moves over it', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+
+        worksheet.moveRow(0, 4);
+        expect(range(worksheet)).to.eql([1, 1, 1, 1]);
+        worksheet.moveRow(4, 0);
+        expect(range(worksheet)).to.eql([1, 2, 1, 2]);
+        expect(highlighted(worksheet)).to.eql(['B3']);
+    });
+
+    it('keeps each end of a larger selection on its cell', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(0, 1, 1, 3);
+
+        worksheet.moveRow(2, 4);
+
+        expect(range(worksheet)).to.eql([0, 1, 1, 2]);
+    });
+
+    it('moves the selection back and forth with undo and redo', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(2, 0, 2, 0);
+
+        worksheet.moveColumn(2, 3);
+        worksheet.undo();
+        expect(range(worksheet)).to.eql([2, 0, 2, 0]);
+        worksheet.redo();
+        expect(range(worksheet)).to.eql([3, 0, 3, 0]);
+    });
+
+    it('keeps the editor on its cell, and saves to that cell', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+        worksheet.openEditor(worksheet.records[1][1].element);
+
+        worksheet.moveRow(1, 3);
+        worksheet.moveColumn(0, 2);
+
+        expect(worksheet.editor.isOpen()).to.equal(true);
+        expect([worksheet.editor.x, worksheet.editor.y]).to.eql([0, 3]);
+        expect(worksheet.editor.cell).to.equal(worksheet.records[3][0].element);
+
+        worksheet.editor.cell!.querySelector<HTMLTextAreaElement>('textarea')!.value = 'typed';
+        worksheet.closeEditor(worksheet.editor.cell!, true);
+        expect(worksheet.getValueFromCoords(0, 3)).to.equal('typed');
     });
 });

@@ -124,10 +124,10 @@ held, the cells of the area that the corner fills, is `worksheet.selection.fill`
 `worksheet.selection.highlighted` is an empty array before the first selection. `getSelection()`, `getSelected()`,
 `updateSelectionFromCoords()`, `resetSelection()` and the selection events work as before.
 
-## Insert and delete keep the selection and the editor on their cells
+## Insert, delete and move keep the selection and the editor on their cells
 
-After `insertRow`, `insertColumn`, `deleteRow`, `deleteColumn`, and their undo and redo, the selection and an open
-editor stay on their cells. Version 5 kept the row and column numbers, so the selection and the editor moved to other
+After `insertRow`, `insertColumn`, `deleteRow`, `deleteColumn`, `moveRow`, `moveColumn`, and their undo and redo, the
+selection and an open editor stay on their cells. After a move, each end of a larger selection stays on its cell. Version 5 kept the row and column numbers, so the selection and the editor moved to other
 cells, and a value typed into a deleted row went into the row that moved up.
 
 - `getSelection()` gives the new position of the selected cells.
@@ -137,6 +137,20 @@ cells, and a value typed into a deleted row went into the row that moved up.
   `onchange` fires. Version 5 left it open.
 
 No option keeps the old behavior, because it put values into the wrong cells.
+
+## Shift and Delete use only a current selection of whole rows or columns
+
+A press on a row number or a header starts a selection of whole rows or columns. Version 5 remembered that row or
+column after a selection of other cells with the keyboard, `updateSelectionFromCoords` or `selectAll`.
+
+- Delete deletes rows or columns only while the selection is of whole rows or columns that a press started. Version 5
+  deleted the row of a single cell after a press on its row number and an arrow key.
+- A Shift press on a row number or a header extends the current selection from its first row or column. Version 5
+  extended from the row or column of an earlier press, or selected only the pressed row or column.
+- `worksheet.selection.row` and `worksheet.selection.column` can still keep an earlier press. The new methods
+  `rowAnchor()` and `columnAnchor()` give them only while they count.
+
+No option keeps the old behavior, because it deleted rows that the user did not select.
 
 ## The formula chain is an object
 

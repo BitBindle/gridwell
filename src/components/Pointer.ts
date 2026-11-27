@@ -410,12 +410,15 @@ export class Pointer {
             } else {
                 let o, d;
 
-                if (worksheet.selection.column != null && (e.shiftKey || e.ctrlKey)) {
-                    o = worksheet.selection.column;
+                const range = worksheet.selection.range;
+                if (range && (e.shiftKey || e.ctrlKey)) {
+                    // Extend from the first header, or else from the first column of the selection
+                    o = worksheet.selection.columnAnchor() ?? Number(range[0]);
                     d = columnId;
+                    worksheet.selection.column = o;
                 } else {
                     // Hold the press on the selected header to rename the column. A move or the mouseup stops the timer.
-                    if (worksheet.selection.column === columnId && worksheet.options.allowRenameColumn !== false) {
+                    if (worksheet.selection.columnAnchor() === columnId && worksheet.options.allowRenameColumn !== false) {
                         // The active worksheet when the timer runs
                         libraryBase.jspreadsheet.timeControl = setTimeout(() => {
                             libraryBase.jspreadsheet.current!.columns.rename(columnId);
@@ -488,9 +491,12 @@ export class Pointer {
             }
         } else {
             let o, d;
-            if (worksheet.selection.row != null && (e.shiftKey || e.ctrlKey)) {
-                o = worksheet.selection.row;
+            const range = worksheet.selection.range;
+            if (range && (e.shiftKey || e.ctrlKey)) {
+                // Extend from the first row number, or else from the first row of the selection
+                o = worksheet.selection.rowAnchor() ?? Number(range[1]);
                 d = rowId;
+                worksheet.selection.row = o;
             } else {
                 // Keep track of which header was selected first
                 worksheet.selection.row = rowId;
