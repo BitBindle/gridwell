@@ -799,10 +799,10 @@ No option keeps the old behavior, because the old behavior lost merged ranges th
 ## An action that removes a merged range keeps the selection
 
 `insertRow`, `deleteRow`, `moveRow`, `insertColumn`, `deleteColumn`, `moveColumn` and `orderBy` keep the selection of
-the user when they remove a merged range. The selection moves with its cells, as without merged ranges. Version 5
-selected each removed range, so the action then moved or removed that range as the selection. `onunmerge` still occurs
-for each removed range, but `onselection` no longer receives the removed ranges during the action. An application with
-an `onselection` handler sees only the selection after the action. `removeMerge` and `destroyMerge` still select the
-removed ranges.
+the user when they remove a merged range. As without merged ranges, an insert, a delete or a move moves the selection
+with its cells, and a sort keeps the selected position. Version 5 selected each removed range, so the action then moved
+or removed that range as the selection. `onunmerge` still occurs for each removed range, but `onselection` no longer
+receives the removed ranges during the action. An application with an `onselection` handler sees only the selection
+after the action. `removeMerge` and `destroyMerge` still select the removed ranges.
 
 No option keeps the old behavior, because the old selection did not relate to what the user selected.

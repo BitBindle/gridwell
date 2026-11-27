@@ -1149,8 +1149,6 @@ describe('An action that removes a merged range keeps the selection of the user 
         ['insertColumn', (worksheet) => worksheet.insertColumn(1, 0, false), [3, 3, 3, 3]],
         ['deleteColumn', (worksheet) => worksheet.deleteColumn(1, 1), [1, 3, 1, 3]],
         ['moveColumn', (worksheet) => worksheet.moveColumn(0, 2), [1, 3, 1, 3]],
-        // The sort keeps the selected position
-        ['orderBy', (worksheet) => worksheet.orderBy(2, 0), [2, 3, 2, 3]],
     ];
     for (const [name, action, selection] of actions) {
         it(`moves the selection with its cell after ${name}`, () => {
@@ -1160,6 +1158,22 @@ describe('An action that removes a merged range keeps the selection of the user 
             expect(worksheet.getSelection()).to.eql(selection);
         });
     }
+
+    it('keeps the selected position after orderBy, as without merged ranges', () => {
+        const worksheet = create();
+        worksheet.orderBy(2, 0);
+        expect(worksheet.getMerge()).to.eql({});
+        expect(worksheet.getSelection()).to.eql([2, 3, 2, 3]);
+    });
+
+    it('moves the selection back on undo of moveRow, and again on redo', () => {
+        const worksheet = create();
+        worksheet.moveRow(0, 3);
+        worksheet.undo();
+        expect(worksheet.getSelection()).to.eql([2, 3, 2, 3]);
+        worksheet.redo();
+        expect(worksheet.getSelection()).to.eql([2, 2, 2, 2]);
+    });
 
     it('still selects the former range for removeMerge', () => {
         const worksheet = create();

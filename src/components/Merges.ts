@@ -488,8 +488,8 @@ export class Merges {
      * @param cellName - The first cell of the range.
      * @param data - The values of the other cells of the range, which the history kept.
      * @param keepOptions - Keep the range in the options.
-     * @param keepSelection - Do not select the former range. An insert, a delete or a move that crosses the range keeps
-     * the selection of the user, and moves it with the cells.
+     * @param keepSelection - Do not select the former range. An insert, a delete, a move or a sort that crosses the range
+     * keeps the selection of the user: an insert, a delete or a move moves it with the cells, a sort keeps its position.
      */
     remove(cellName: string, data?: jspreadsheet.CellValue[] | null, keepOptions?: boolean, keepSelection?: boolean) {
         const worksheet = this.worksheet;
