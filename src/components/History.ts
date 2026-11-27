@@ -328,8 +328,11 @@ export class History {
                 }
             }
         }
-        // The merged ranges that the action removed come back after its rows or columns. A cancelled move keeps the ranges.
-        if (historyRecord && 'merges' in historyRecord && historyRecord.merges && !refused) {
+        // The merged ranges that the action removed come back after its rows or columns. A cancelled move keeps the ranges,
+        // and the record stays the next one to undo.
+        if (refused) {
+            this.index++;
+        } else if (historyRecord && 'merges' in historyRecord && historyRecord.merges) {
             worksheet.merges.restoreCrossed(historyRecord.merges);
         }
         worksheet.parent.ignoreEvents = ignoreEvents;
@@ -409,9 +412,12 @@ export class History {
                 }
             }
         }
-        // A cancelled move keeps the ranges, so they are merged again
-        if (refused && historyRecord && 'merges' in historyRecord && historyRecord.merges) {
-            worksheet.merges.restoreCrossed(historyRecord.merges);
+        // A cancelled move keeps the ranges, so they are merged again, and the record stays the next one to redo
+        if (refused) {
+            this.index--;
+            if (historyRecord && 'merges' in historyRecord && historyRecord.merges) {
+                worksheet.merges.restoreCrossed(historyRecord.merges);
+            }
         }
         worksheet.parent.ignoreEvents = ignoreEvents;
         worksheet.history.ignore = ignoreHistory;

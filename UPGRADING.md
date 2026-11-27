@@ -776,6 +776,8 @@ closes without a save, and a selection that starts in such a cell goes to the fi
 records of these actions have a `merges` property with the removed ranges. Version 5 did not give the ranges back.
 
 The actions remove the ranges only after the question about the search results. A cancel of that question keeps the
-ranges, also for an undo or a redo of a move. Version 5 removed them before the question.
+ranges, also for an undo or a redo of a move. A cancelled undo or redo keeps its place in the history, so the next undo
+or redo applies it again. Version 5 removed the ranges before the question, and went past the record of a cancelled
+move.
 
 No option keeps the old behavior, because the old behavior lost merged ranges that the user did not change.

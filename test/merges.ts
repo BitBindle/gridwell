@@ -1048,6 +1048,7 @@ describe('Moves remove only the merged ranges that they cross, and undo merges t
         expect(worksheet.getMerge()).to.eql({ B3: [2, 2] });
         expectMerged(worksheet, 1, 2, 2, 2);
     });
+
     it('keeps the ranges when the search question cancels the undo or the redo of a move', () => {
         const worksheet = create({ A1: [2, 2], B3: [2, 2] }, { search: true });
         worksheet.moveRow(0, 5);
@@ -1067,6 +1068,24 @@ describe('Moves remove only the merged ranges that they cross, and undo merges t
         expect(other.getMerge()).to.eql({ B4: [2, 2], A1: [2, 2] });
         expectMerged(other, 0, 0, 2, 2);
         expectMerged(other, 1, 3, 2, 2);
+    });
+
+    it('keeps the record of a move that the search question cancels, so a later undo or redo applies it', () => {
+        const worksheet = create({ A1: [2, 2], B4: [2, 2] }, { search: true });
+        worksheet.moveRow(0, 5);
+        worksheet.undo();
+        worksheet.search('0:3');
+        answer = (message) => !String(message).includes('search');
+        worksheet.redo();
+        worksheet.resetSearch();
+
+        worksheet.undo();
+        expect(worksheet.getMerge()).to.eql({ B4: [2, 2], A1: [2, 2] });
+        expect(worksheet.getColumnData(0).slice(0, 3)).to.eql(['0:0', '', '0:2']);
+
+        worksheet.redo();
+        expect(worksheet.getMerge()).to.eql({ B3: [2, 2] });
+        expect(worksheet.getValueFromCoords(0, 5)).to.equal('0:0');
     });
 
     it('moves a column next to a range that the move does not cross', () => {
