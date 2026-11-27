@@ -978,7 +978,7 @@ export class Worksheet {
     /**
      * Prepare the table of the worksheet.
      */
-    private prepareTable(replaced: () => boolean = () => false): Promise<void> | void {
+    private prepareTable(replaced: () => boolean = () => false, waitForSources = false): Promise<void> | void {
         // Lazy loading
         if (this.options.lazyLoading === true && this.options.tableOverflow !== true && this.parent.config.fullscreen !== true) {
             console.error('Jspreadsheet: The lazyloading only works when tableOverflow = yes or fullscreen = yes');
@@ -1059,16 +1059,17 @@ export class Worksheet {
             this.createTable();
             return;
         }
-        // A source that fails does not stop the build of the spreadsheet
-        return Promise.all(requests)
-            .then(() => {
-                if (!replaced()) {
-                    this.createTable();
-                }
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+        const created = Promise.all(requests).then(() => {
+            if (!replaced()) {
+                this.createTable();
+            }
+        });
+        // For loadWorksheet, a source that fails gives its error to the console, and the worksheet has no table
+        return waitForSources
+            ? created.catch((error) => {
+                  console.error(error);
+              })
+            : created;
     }
 
     /**
@@ -1131,7 +1132,7 @@ export class Worksheet {
                         this.options.data = newData;
                     }
                     // Without the file, the worksheet is built with its other options
-                    const prepared = this.prepareTable(replaced);
+                    const prepared = this.prepareTable(replaced, waitForSources);
                     return waitForSources ? prepared : undefined;
                 })
             );
@@ -1146,13 +1147,13 @@ export class Worksheet {
                         this.options.data = (response.result as { data?: jspreadsheet.CellValue[][] }).data || (response.result as jspreadsheet.CellValue[][]);
                     }
                     // Without the data, the worksheet is built with its other options
-                    const prepared = this.prepareTable(replaced);
+                    const prepared = this.prepareTable(replaced, waitForSources);
                     return waitForSources ? prepared : undefined;
                 })
             );
         } else {
             // Prepare table. The sources of the dropdown columns can load before the table is created.
-            const prepared = this.prepareTable(replaced);
+            const prepared = this.prepareTable(replaced, waitForSources);
             if (prepared && waitForSources) {
                 promises.push(prepared);
             }

@@ -342,6 +342,33 @@ describe('loadWorksheet', () => {
             expect(jspreadsheet.current).to.equal(null);
         });
 
+        it('gives back no active worksheet when a new spreadsheet replaces the destroyed one during the load', async () => {
+            const [one] = await create();
+            jspreadsheet.current = one;
+            server.responses['/rows'] = { body: [['u']] };
+
+            // The answer waits until the new spreadsheet is built
+            const answer = globalThis.fetch;
+            let release = () => {};
+            const gate = new Promise<void>((resolve) => {
+                release = resolve;
+            });
+            globalThis.fetch = (async (...args: Parameters<typeof fetch>) => {
+                await gate;
+                return answer(...args);
+            }) as typeof fetch;
+
+            const loading = one.loadWorksheet(0, { url: '/rows' });
+            jspreadsheet.destroy(root as Jspreadsheet.JspreadsheetInstanceElement);
+            const [other] = await create({ worksheets: [{ worksheetName: 'New', data: [['n']] }] });
+            jspreadsheet.current = null;
+            release();
+            await loading;
+
+            expect(jspreadsheet.current).to.equal(null);
+            expect(other.parent.worksheets[0]).to.equal(other);
+        });
+
         it('stops the search timer of the active worksheet', async () => {
             const [one] = await create({ worksheets: [{ worksheetName: 'One', data: [['1'], ['2']], search: true }] });
             jspreadsheet.current = one;
@@ -362,14 +389,16 @@ describe('loadWorksheet', () => {
             jspreadsheet.current = one;
             server.responses['/rows'] = { body: 'null' };
 
-            let failed = false;
+            let failure: unknown = null;
             try {
                 await one.loadWorksheet(0, { url: '/rows' });
-            } catch {
-                failed = true;
+            } catch (error) {
+                failure = error;
             }
 
-            expect(failed).to.equal(true);
+            // The build fails on the empty answer, and the load ran
+            expect(String(failure)).to.include('TypeError');
+            expect(String(failure)).to.not.include('is not a function');
             expect(jspreadsheet.current).to.equal(one);
             expect(one.pendingLoad).to.equal(undefined);
         });

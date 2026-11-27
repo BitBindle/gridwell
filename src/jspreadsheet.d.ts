@@ -2426,7 +2426,8 @@ declare namespace jspreadsheet {
          * and the focus. Until the data of `url` or `csv`, or the `url` of a dropdown column, arrives, the worksheet has no
          * table, and when it was the active worksheet, no worksheet is active. A later call replaces a call whose data
          * has not arrived, and keeps the active worksheet and the focus from before the first call. The replaced call
-         * resolves with the worksheet when its own request ends.
+         * resolves with the worksheet when its own request ends. When the source of a dropdown column fails, its error goes
+         * to the console, the worksheet has no table, and the promise resolves.
          * @param position - Worksheet index.
          * @param options - The options of the new table.
          * @returns The worksheet when its build ends, or undefined for a position without a worksheet.
