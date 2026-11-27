@@ -892,3 +892,224 @@ describe('The build leaves out the merged ranges of the options that do not fit 
         expect(errors).to.have.length(0);
     });
 });
+
+describe('Moves remove only the merged ranges that they cross, and undo merges the removed ranges again (#218, #219)', () => {
+    const confirm = globalThis.confirm;
+    let questions: (string | undefined)[];
+    let answer: (message: string | undefined) => boolean;
+
+    beforeEach(() => {
+        questions = [];
+        answer = () => true;
+        globalThis.confirm = (message) => {
+            questions.push(message);
+            return answer(message);
+        };
+    });
+
+    afterEach(() => {
+        globalThis.confirm = confirm;
+    });
+
+    function create(mergeCells: Record<string, [number, number]>, options: Partial<Jspreadsheet.WorksheetOptions> = {}) {
+        const data = Array.from({ length: 6 }, (row, y) => Array.from({ length: 6 }, (cell, x) => `${x}:${y}`));
+        return jspreadsheet(root, { worksheets: [{ data, mergeCells, ...options }] })[0];
+    }
+
+    function expectMerged(worksheet: Jspreadsheet.WorksheetInstance, x: number, y: number, colspan: number, rowspan: number) {
+        const first = worksheet.records[y][x].element;
+        expect(first.getAttribute('data-merged')).to.equal('true');
+        for (let j = y; j < y + rowspan; j++) {
+            for (let i = x; i < x + colspan; i++) {
+                expect(worksheet.records[j][i].element).to.equal(first);
+            }
+        }
+    }
+
+    it('keeps and moves a range that moveRow does not cross', () => {
+        const worksheet = create({ A1: [2, 2], C4: [2, 1] });
+
+        worksheet.moveRow(1, 4);
+
+        expect(questions).to.have.length(1);
+        expect(worksheet.getMerge()).to.eql({ C3: [2, 1] });
+        expectMerged(worksheet, 2, 2, 2, 1);
+        expect(root.querySelectorAll('td[data-merged]')).to.have.length(1);
+    });
+
+    it('keeps and moves a range that moveColumn does not cross', () => {
+        const worksheet = create({ A1: [2, 2], D3: [1, 2] });
+
+        worksheet.moveColumn(0, 3);
+
+        expect(questions).to.have.length(1);
+        expect(worksheet.getMerge()).to.eql({ C3: [1, 2] });
+        expectMerged(worksheet, 2, 2, 1, 2);
+    });
+
+    it('removes a range that the moved row goes into, and asks nothing for a move that crosses no range', () => {
+        const worksheet = create({ B3: [1, 2], A6: [2, 1] });
+
+        worksheet.moveRow(0, 1);
+        expect(questions).to.have.length(0);
+        expect(worksheet.getMerge()).to.eql({ B3: [1, 2], A6: [2, 1] });
+
+        worksheet.moveRow(0, 2);
+        expect(questions).to.have.length(1);
+        expect(worksheet.getMerge()).to.eql({ A6: [2, 1] });
+    });
+
+    it('merges again on undo the range that deleteRow removed, and removes it again on redo', () => {
+        const worksheet = create({ B3: [2, 2] });
+
+        worksheet.deleteRow(2, 1);
+        expect(worksheet.getMerge()).to.eql({});
+
+        worksheet.undo();
+        expect(worksheet.getMerge()).to.eql({ B3: [2, 2] });
+        expectMerged(worksheet, 1, 2, 2, 2);
+        expect(worksheet.getValueFromCoords(1, 2)).to.equal('1:2');
+
+        worksheet.redo();
+        expect(worksheet.getMerge()).to.eql({});
+        expect(worksheet.getData()).to.have.length(5);
+        expect(root.querySelectorAll('td[data-merged]')).to.have.length(0);
+
+        worksheet.undo();
+        expect(worksheet.getMerge()).to.eql({ B3: [2, 2] });
+        expectMerged(worksheet, 1, 2, 2, 2);
+    });
+
+    it('merges again on undo the range that insertColumn split, with the values of its other cells', () => {
+        const worksheet = create({ B2: [3, 1] });
+        worksheet.setValueFromCoords(2, 1, 'hidden');
+
+        worksheet.insertColumn(1, 2, false);
+        expect(worksheet.getMerge()).to.eql({});
+
+        worksheet.undo();
+        expect(worksheet.getMerge()).to.eql({ B2: [3, 1] });
+        expectMerged(worksheet, 1, 1, 3, 1);
+        expect(worksheet.options.data[1][2]).to.equal('hidden');
+
+        worksheet.redo();
+        expect(worksheet.getMerge()).to.eql({});
+        expect(worksheet.getData()[0]).to.have.length(7);
+    });
+
+    it('merges again on undo the ranges that deleteColumn and insertRow removed', () => {
+        const worksheet = create({ A1: [2, 2], D4: [2, 2] });
+
+        worksheet.deleteColumn(1, 1);
+        worksheet.insertRow(1, 3, false);
+        expect(worksheet.getMerge()).to.eql({});
+
+        worksheet.undo();
+        expect(worksheet.getMerge()).to.eql({ C4: [2, 2] });
+        worksheet.undo();
+        expect(worksheet.getMerge()).to.eql({ A1: [2, 2], D4: [2, 2] });
+        expectMerged(worksheet, 0, 0, 2, 2);
+        expectMerged(worksheet, 3, 3, 2, 2);
+    });
+
+    it('merges again on undo the range that a move removed, and keeps the other ranges', () => {
+        const worksheet = create({ A1: [2, 2], C4: [2, 1] });
+
+        worksheet.moveRow(1, 4);
+        worksheet.undo();
+
+        expect(worksheet.getMerge()).to.eql({ A1: [2, 2], C4: [2, 1] });
+        expectMerged(worksheet, 0, 0, 2, 2);
+        expectMerged(worksheet, 2, 3, 2, 1);
+        expect(worksheet.getValueFromCoords(2, 1)).to.equal('2:1');
+
+        worksheet.redo();
+        expect(questions).to.have.length(1);
+        expect(worksheet.getMerge()).to.eql({ C3: [2, 1] });
+        expect(worksheet.getValueFromCoords(2, 4)).to.equal('2:1');
+
+        worksheet.moveColumn(0, 3);
+        worksheet.undo();
+        expect(worksheet.getMerge()).to.eql({ C3: [2, 1] });
+    });
+
+    it('keeps the ranges when the search question is cancelled', () => {
+        const worksheet = create({ B3: [2, 2] }, { search: true });
+        worksheet.search('0:');
+        worksheet.search('1:2');
+        answer = (message) => !String(message).includes('search');
+
+        expect(worksheet.deleteRow(2, 1)).to.equal(false);
+        expect(worksheet.insertRow(1, 2, false)).to.equal(false);
+        expect(worksheet.moveRow(0, 2)).to.equal(false);
+
+        expect(questions.filter((question) => String(question).includes('merged'))).to.have.length(3);
+        expect(questions.filter((question) => String(question).includes('search'))).to.have.length(3);
+        expect(worksheet.getMerge()).to.eql({ B3: [2, 2] });
+        expectMerged(worksheet, 1, 2, 2, 2);
+    });
+
+    it('keeps the ranges when the search question cancels the undo or the redo of a move', () => {
+        const worksheet = create({ A1: [2, 2], B3: [2, 2] }, { search: true });
+        worksheet.moveRow(0, 5);
+        expect(worksheet.getMerge()).to.eql({ B2: [2, 2] });
+
+        worksheet.search('0:3');
+        answer = (message) => !String(message).includes('search');
+        worksheet.undo();
+        expect(worksheet.getMerge()).to.eql({ B2: [2, 2] });
+        expectMerged(worksheet, 1, 1, 2, 2);
+
+        const other = create({ A1: [2, 2], B4: [2, 2] }, { search: true });
+        other.moveRow(0, 5);
+        other.undo();
+        other.search('0:3');
+        other.redo();
+        expect(other.getMerge()).to.eql({ B4: [2, 2], A1: [2, 2] });
+        expectMerged(other, 0, 0, 2, 2);
+        expectMerged(other, 1, 3, 2, 2);
+    });
+
+    it('keeps the record of a move that the search question cancels, so a later undo or redo applies it', () => {
+        const worksheet = create({ A1: [2, 2], B4: [2, 2] }, { search: true });
+        worksheet.moveRow(0, 5);
+        worksheet.undo();
+        worksheet.search('0:3');
+        answer = (message) => !String(message).includes('search');
+        worksheet.redo();
+        worksheet.resetSearch();
+
+        worksheet.undo();
+        expect(worksheet.getMerge()).to.eql({ B4: [2, 2], A1: [2, 2] });
+        expect(worksheet.getColumnData(0).slice(0, 3)).to.eql(['0:0', '', '0:2']);
+
+        worksheet.redo();
+        expect(worksheet.getMerge()).to.eql({ B3: [2, 2] });
+        expect(worksheet.getValueFromCoords(0, 5)).to.equal('0:0');
+    });
+
+    it('moves a column next to a range that the move does not cross', () => {
+        const worksheet = create({ B2: [2, 2] });
+
+        worksheet.moveColumn(0, 2);
+
+        expect(worksheet.getMerge()).to.eql({ A2: [2, 2] });
+        expectMerged(worksheet, 0, 1, 2, 2);
+        expect(worksheet.getValueFromCoords(2, 0)).to.equal('0:0');
+    });
+
+    it('selects the first cell and closes the editor when undo merges a range again over them', () => {
+        const worksheet = create({ B3: [2, 2] });
+        worksheet.deleteRow(2, 1);
+        worksheet.updateSelectionFromCoords(2, 2, 2, 2);
+        worksheet.openEditor(worksheet.records[2][2].element);
+        (worksheet.records[2][2].element.querySelector('input, textarea') as HTMLInputElement).value = 'typed';
+
+        worksheet.undo();
+
+        expect(worksheet.getSelection()).to.eql([1, 2, 1, 2]);
+        expect(worksheet.records[2][1].element.getAttribute('aria-selected')).to.equal('true');
+        expect(worksheet.editor.isOpen()).to.equal(false);
+        expect(worksheet.getValueFromCoords(2, 3)).to.equal('');
+    });
+});

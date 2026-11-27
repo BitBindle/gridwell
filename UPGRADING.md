@@ -763,6 +763,39 @@ No option keeps the old behavior, because the ranges that go past the sheet or c
 and the other ranges merged no cells. To keep a range, give it spans that fit in the sheet and do not cross another
 range.
 
+## The editor closes when its cell leaves the table
+
+The open editor saves and closes when its cell leaves the table or no longer shows: a page change, a search, a filter,
+an insert, a delete, a move or an undo that takes the row off the page, `hideRow`, `hideColumn` and `setWidth` with 0.
+`oneditordetach` occurs first, as for lazy loading, and its handler can take the edit. `setData` closes the editor
+without a save. Version 5 kept the editor open on a cell that was not in the table, and a later close saved the text into
+the cell that then had the same position. A load of the lazy loading keeps the editor of a row that stays in the table.
+
+The tab stop and the active cell do not go to a cell that does not show: a cell of a hidden row, or of a column with
+the width 0. `setWidth` with 0 moves the tab stop, as `hideColumn` does. A selection that starts in such a cell, for
+example `selectAll` with a first column of width 0, makes the cell that `down` moves from the active cell: the next
+column with a width, in the same row or in the next row that shows. `up` and `down` move in that column. No option
+keeps the old behavior, because the user could not see or reach the cell.
+
+## Moves keep the merged ranges that they do not cross, and undo merges the removed ranges again
+
+`moveRow` and `moveColumn` remove only the merged ranges that they cross: a range that has the moved row or column, or a
+range that the row or column goes into. The other ranges stay and move with their cells, and `onunmerge` fires only for
+the removed ranges. Version 5 removed all merged ranges of the worksheet, and sent `onunmerge` for each. A `moveColumn`
+next to a range that it does not cross no longer throws.
+
+An undo of `insertRow`, `deleteRow`, `insertColumn`, `deleteColumn`, `moveRow` or `moveColumn` merges again the ranges
+that the action removed, and a redo removes them again, with no question. An editor in a cell that a range hides again
+closes without a save, and a selection that starts in such a cell goes to the first cell of the range. The history
+records of these actions have a `merges` property with the removed ranges. Version 5 did not give the ranges back.
+
+The actions remove the ranges only after the question about the search results. A cancel of that question keeps the
+ranges, also for an undo or a redo of a move. A cancelled undo or redo keeps its place in the history, so the next undo
+or redo applies it again. Version 5 removed the ranges before the question, and went past the record of a cancelled
+move.
+
+No option keeps the old behavior, because the old behavior lost merged ranges that the user did not change.
+
 ## Row changes with pagination, lazy loading or a filter
 
 `deleteRow` and `moveRow` with `pagination` show the rows of the current page again, also when the rows change on
