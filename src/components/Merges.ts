@@ -269,26 +269,21 @@ export class Merges {
         } else if (typeof cellName !== 'string') {
             return null;
         } else {
-            if (source.merges[cellName]) {
-                showAlert(worksheet.parent.config, translate('Cell already merged'));
-                return;
-            }
-            // A name that is not a cell name, spans that are not whole numbers, one cell, or a range outside the sheet
-            const problem = mergeProblem(cellName, [colspan ?? 1, rowspan ?? 1], worksheet.headers.length, source.count);
-            if (problem) {
-                showAlert(worksheet.parent.config, translate(problem));
-                return;
-            }
+            // A missing span, or a span below 1, is one cell, as in the other modes
+            colspan = Number.isInteger(colspan) && colspan! > 1 ? colspan! : 1;
+            rowspan = Number.isInteger(rowspan) && rowspan! > 1 ? rowspan! : 1;
             [x1, y1] = getIdFromColumnName(cellName);
-            x2 = x1 + Math.max(1, colspan || 1) - 1;
-            y2 = y1 + Math.max(1, rowspan || 1) - 1;
+            x2 = x1 + colspan - 1;
+            y2 = y1 + rowspan - 1;
         }
         if (source.merges[cellName]) {
             showAlert(worksheet.parent.config, translate('Cell already merged'));
             return;
         }
-        if (x1 === x2 && y1 === y2) {
-            showAlert(worksheet.parent.config, translate('Invalid merged properties'));
+        // A name that is not a cell name, one cell, or a range outside the sheet
+        const problem = mergeProblem(cellName, [x2 - x1 + 1, y2 - y1 + 1], worksheet.headers.length, source.count);
+        if (problem) {
+            showAlert(worksheet.parent.config, translate(problem));
             return;
         }
         if (source.mergesIn(y1, y2).some((range) => range.x1 <= x2 && range.x2 >= x1)) {
@@ -508,7 +503,21 @@ export class Merges {
 
         // The row source mode keeps the merged ranges of the sheet, and merges the part in its window
         if (worksheet.rowSource && merges && typeof merges === 'object' && !Array.isArray(merges)) {
-            return worksheet.rowSource.replaceMerges(merges);
+            const source = worksheet.rowSource;
+            const before = source.merges;
+            const refused = source.replaceMerges(merges);
+            const after = source.merges;
+            // The events of the other modes: onunmerge for each range that goes, and onmerge once for the new ranges
+            for (const [name, span] of Object.entries(before)) {
+                if (after[name]?.[0] !== span[0] || after[name]?.[1] !== span[1]) {
+                    worksheet.dispatch('onunmerge', worksheet, name, { [name]: span });
+                }
+            }
+            const added = Object.fromEntries(Object.entries(after).filter(([name, span]) => before[name]?.[0] !== span[0] || before[name]?.[1] !== span[1]));
+            if (Object.keys(added).length) {
+                worksheet.dispatch('onmerge', worksheet, added);
+            }
+            return refused;
         }
 
         if (!merges || typeof merges !== 'object' || Array.isArray(merges)) {

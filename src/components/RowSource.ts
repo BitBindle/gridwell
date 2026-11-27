@@ -48,70 +48,126 @@ function ranges(rows: number[]) {
     return result;
 }
 
-/** The merged ranges as [colspan, rowspan] by the name of their first cell, with spans of at least 1. */
 /**
  * Why a merged range cannot be one of the ranges of the sheet, or null when it can: the name must be a cell name, the
  * spans two positive whole numbers for more than one cell, and the range inside the sheet.
  */
 export function mergeProblem(name: string, span: readonly unknown[], columns: number, rows: number) {
-    if (!/^[A-Z]+[1-9][0-9]*$/.test(name) || !Array.isArray(span)) {
+    if (!/^[A-Z]+[1-9][0-9]*$/.test(name) || !Array.isArray(span) || span.length !== 2) {
         return 'Invalid merged properties';
     }
-    const [colspan, rowspan] = span;
-    if (
-        !Number.isInteger(colspan) ||
-        !Number.isInteger(rowspan) ||
-        (colspan as number) < 1 ||
-        (rowspan as number) < 1 ||
-        (colspan as number) * (rowspan as number) < 2
-    ) {
+    const [colspan, rowspan] = span as number[];
+    if (!Number.isInteger(colspan) || !Number.isInteger(rowspan) || colspan < 1 || rowspan < 1 || colspan * rowspan < 2) {
         return 'Invalid merged properties';
     }
     const [x, y] = getIdFromColumnName(name);
-    if (x + (colspan as number) > columns || y + (rowspan as number) > rows) {
+    if (x + colspan > columns || y + rowspan > rows) {
         return 'Invalid merged properties';
     }
     return null;
 }
 
 /**
- * The merged ranges that can be ranges of the sheet, and the names of the others: a name that mergeProblem refuses, or
- * a range that crosses a range with a lower first row (with the same first row, a lower first column).
+ * The rows that merged ranges cover in each column, as sorted intervals. A check costs about the colspan of the range
+ * and a binary search in each of its columns.
  */
-function checkMerges(merges: Record<string, readonly unknown[]> | undefined, columns: number, rows: number) {
+class CoveredColumns {
+    private readonly columns = new Map<number, { starts: number[]; ends: number[] }>();
+
+    /** The place in the intervals of column x of the last interval that starts at or before row y, or -1. */
+    private find(intervals: { starts: number[] }, y: number) {
+        let low = 0;
+        let high = intervals.starts.length - 1;
+        let found = -1;
+        while (low <= high) {
+            const middle = (low + high) >> 1;
+            if (intervals.starts[middle] <= y) {
+                found = middle;
+                low = middle + 1;
+            } else {
+                high = middle - 1;
+            }
+        }
+        return found;
+    }
+
+    /** True when a range covers a cell of the columns x1 to x2 and the rows y1 to y2. */
+    crosses(x1: number, x2: number, y1: number, y2: number) {
+        for (let x = x1; x <= x2; x++) {
+            const intervals = this.columns.get(x);
+            if (!intervals) {
+                continue;
+            }
+            const i = this.find(intervals, y2);
+            if (i >= 0 && intervals.ends[i] >= y1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Keep that a range covers the columns x1 to x2 and the rows y1 to y2. */
+    add(x1: number, x2: number, y1: number, y2: number) {
+        for (let x = x1; x <= x2; x++) {
+            let intervals = this.columns.get(x);
+            if (!intervals) {
+                intervals = { starts: [], ends: [] };
+                this.columns.set(x, intervals);
+            }
+            const i = this.find(intervals, y1) + 1;
+            intervals.starts.splice(i, 0, y1);
+            intervals.ends.splice(i, 0, y2);
+        }
+    }
+}
+
+/**
+ * The merged ranges that can be ranges of the sheet, and the names of the others, as the other modes check them. The
+ * ranges of keep that merges has with the same spans stay first. Then each entry of merges, in the order of the keys,
+ * stays when mergeProblem accepts it and it does not cross a range that stays.
+ */
+function checkMerges(merges: Record<string, readonly unknown[]> | undefined, columns: number, rows: number, keep: Record<string, [number, number]> = {}) {
     const refused: string[] = [];
-    const candidates: { name: string; x1: number; y1: number; x2: number; y2: number }[] = [];
-    for (const [name, span] of Object.entries(merges || {})) {
+    const result: Record<string, [number, number]> = {};
+    const covered = new CoveredColumns();
+    const entries = Object.entries(merges || {});
+    function accept(name: string, colspan: number, rowspan: number) {
+        const [x1, y1] = getIdFromColumnName(name);
+        covered.add(x1, x1 + colspan - 1, y1, y1 + rowspan - 1);
+        result[name] = [colspan, rowspan];
+    }
+    const unchanged = new Set<string>();
+    for (const [name, span] of entries) {
+        const kept = keep[name];
+        if (kept && Array.isArray(span) && span.length === 2 && span[0] === kept[0] && span[1] === kept[1] && !mergeProblem(name, span, columns, rows)) {
+            unchanged.add(name);
+            accept(name, kept[0], kept[1]);
+        }
+    }
+    for (const [name, span] of entries) {
+        if (unchanged.has(name)) {
+            continue;
+        }
         if (mergeProblem(name, span, columns, rows)) {
             refused.push(name);
             continue;
         }
+        const [colspan, rowspan] = span as number[];
         const [x1, y1] = getIdFromColumnName(name);
-        candidates.push({ name, x1, y1, x2: x1 + (span[0] as number) - 1, y2: y1 + (span[1] as number) - 1 });
-    }
-    candidates.sort((a, b) => a.y1 - b.y1 || a.x1 - b.x1);
-    // The accepted ranges in the order of their first row, with the largest last row up to each one
-    const accepted: typeof candidates = [];
-    const ends: number[] = [];
-    const result: Record<string, [number, number]> = {};
-    for (const range of candidates) {
-        let crosses = false;
-        for (let i = accepted.length - 1; i >= 0 && ends[i] >= range.y1; i--) {
-            const other = accepted[i];
-            if (other.y2 >= range.y1 && other.x1 <= range.x2 && other.x2 >= range.x1) {
-                crosses = true;
-                break;
-            }
-        }
-        if (crosses) {
-            refused.push(range.name);
+        if (covered.crosses(x1, x1 + colspan - 1, y1, y1 + rowspan - 1)) {
+            refused.push(name);
             continue;
         }
-        accepted.push(range);
-        ends.push(Math.max(ends[ends.length - 1] ?? -1, range.y2));
-        result[range.name] = [range.x2 - range.x1 + 1, range.y2 - range.y1 + 1];
+        accept(name, colspan, rowspan);
     }
-    return { merges: result, refused };
+    // The ranges keep their order of the keys
+    const ordered: Record<string, [number, number]> = {};
+    for (const [name] of entries) {
+        if (result[name]) {
+            ordered[name] = result[name];
+        }
+    }
+    return { merges: ordered, refused };
 }
 
 /**
@@ -992,10 +1048,9 @@ export class RowSource {
         const count = Math.max(1, Math.floor(options?.count ?? this.count) || 1);
         this.count = count;
         this.layout = new RowLayout(count, this.layout.givenHeight, options?.runs ?? this.layout.runs, this.layout.minHeight);
-        if (options?.merges) {
-            this.merges = checkMerges(options.merges, worksheet.headers.length, count).merges;
-            this.indexMerges();
-        }
+        // The merged ranges must fit the new row count also without new ranges
+        this.merges = checkMerges(options?.merges ?? this.merges, worksheet.headers.length, count, this.merges).merges;
+        this.indexMerges();
         worksheet.rows = new Array(count);
         worksheet.records = new Array(count);
         worksheet.options.data = new Array(count);
@@ -1062,7 +1117,7 @@ export class RowSource {
      * @returns The first cells of the ranges that are left out.
      */
     replaceMerges(merges: Record<string, [number, number]>) {
-        const checked = checkMerges(merges, this.worksheet.headers.length, this.count);
+        const checked = checkMerges(merges, this.worksheet.headers.length, this.count, this.merges);
         this.clearMerges();
         this.merges = checked.merges;
         this.indexMerges();

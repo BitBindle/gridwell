@@ -562,7 +562,8 @@ describe('The row source mode', () => {
             A1: [1, 1],
             B2: [2, 2],
             C2: [2, 2],
-            A5: [2.5, 'x'] as unknown as [number, number],
+            // @ts-expect-error -- spans that are not whole numbers
+            A5: [2.5, 'x'],
             C8: [5, 1],
             A49: [1, 5],
         });
@@ -579,5 +580,44 @@ describe('The row source mode', () => {
         worksheet.scrollToRow(40);
         worksheet.scrollToRow(0);
         expect(worksheet.getCell('B2').getAttribute('rowspan')).to.equal('2');
+    });
+
+    it('leaves out the merged ranges that do not fit the new row count of resetRows', () => {
+        const { worksheet } = build({ count: 50 }, { mergeCells: { A2: [2, 2], A9: [2, 5], A40: [2, 2] } });
+
+        worksheet.resetRows({ count: 10 });
+
+        expect(worksheet.getMerge()).to.eql({ A2: [2, 2] });
+        worksheet.updateSelectionFromCoords(0, 9, 0, 9);
+        expect(worksheet.selection.bounds).to.eql([0, 9, 0, 9]);
+    });
+
+    it('keeps the order of the keys and the unchanged ranges in replaceMerges, with the events of the other modes', () => {
+        const events: string[] = [];
+        const { worksheet } = build(
+            {},
+            { mergeCells: { A2: [2, 2], C5: [1, 2] } },
+            {
+                onmerge: (instance, merges) => events.push(`merge ${Object.keys(merges).join(',')}`),
+                onunmerge: (instance, cellName) => events.push(`unmerge ${cellName}`),
+            }
+        );
+
+        // A2 does not change, so A1 crosses it. B5 is before C6 in the order of the keys.
+        expect(worksheet.replaceMerges({ A1: [1, 2], A2: [2, 2], B5: [2, 2], C6: [1, 2] }).sort()).to.eql(['A1', 'C6']);
+        expect(worksheet.getMerge()).to.eql({ A2: [2, 2], B5: [2, 2] });
+        expect(events).to.eql(['unmerge C5', 'merge B5']);
+    });
+
+    it('merges a span below 1 as one cell in setMerge, and refuses a cell that a range has', () => {
+        const alerts: string[] = [];
+        const { worksheet } = build({}, {}, { alert: (message) => alerts.push(message) });
+
+        worksheet.setMerge('A1', 0, 2);
+        worksheet.setMerge('A10', 2, -1);
+        expect(worksheet.getMerge()).to.eql({ A1: [1, 2], A10: [2, 1] });
+
+        worksheet.setMerge('A1', 2, 2);
+        expect(alerts).to.eql(['Cell already merged']);
     });
 });
