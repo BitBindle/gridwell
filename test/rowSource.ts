@@ -682,6 +682,33 @@ describe('The row source mode', () => {
         expect(worksheet.getSelected(true)).to.eql(['A2']);
     });
 
+    it('keeps the tab stop out of a hidden row after resetRows and after the window comes back', () => {
+        const { worksheet } = build();
+        const stops = () =>
+            Array.from(root.querySelectorAll('[tabindex="0"]'))
+                .filter((element) => worksheet.element.contains(element))
+                .map((element) => (element.tagName === 'TD' ? `${element.getAttribute('data-x')},${element.getAttribute('data-y')}` : element.tagName));
+
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+        worksheet.resetRows({ runs: [{ first: 2, last: 2, hidden: true }] });
+        expect(stops()).to.eql(['0,0']);
+
+        worksheet.resetRows({ runs: [] });
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+        worksheet.hideRow(2);
+        worksheet.scrollToRow(900);
+        expect(stops()).to.eql(['TABLE']);
+        worksheet.scrollToRow(0);
+        expect(stops()).to.eql(['0,0']);
+
+        // A frozen row
+        const frozen = build({}, { freezeRows: 2 }).worksheet;
+        frozen.updateSelectionFromCoords(1, 0, 1, 0);
+        frozen.resetRows({ runs: [{ first: 0, last: 0, hidden: true }] });
+        const stop = Array.from(root.querySelectorAll<HTMLElement>('[tabindex="0"]')).filter((element) => frozen.element.contains(element));
+        expect(stop.map((element) => `${element.getAttribute('data-x')},${element.getAttribute('data-y')}`)).to.eql(['0,1']);
+    });
+
     it('moves the selection before onunmerge, as the other modes do', () => {
         const events: string[] = [];
         const { worksheet } = build(

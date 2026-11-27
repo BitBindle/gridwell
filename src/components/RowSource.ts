@@ -782,7 +782,16 @@ export class RowSource {
     /** The table is the tab stop while the row of the active cell is outside the window, so the keys reach the grid. */
     private updateTabStop() {
         const worksheet = this.worksheet;
-        const cell = worksheet.selection.activeCell;
+        let cell = worksheet.selection.activeCell;
+        // A cell in a hidden row, or a cell that a merged range hides, cannot get the focus, so a cell that shows gets the tab stop
+        if (
+            cell?.isConnected &&
+            worksheet.tbody.contains(cell) &&
+            (cell.style.display === 'none' || (cell.parentNode as HTMLElement).style.display === 'none')
+        ) {
+            worksheet.selection.updateTabStop();
+            cell = worksheet.selection.activeCell;
+        }
         worksheet.table.tabIndex = cell?.isConnected && worksheet.table.contains(cell) ? -1 : 0;
     }
 
@@ -1050,8 +1059,8 @@ export class RowSource {
 
     /**
      * Replace the row count, the runs and the merged ranges, for example after the application changed its rows. All
-     * records are made again. The scroll position and the selection stay. A new merged range that hides the selected
-     * cell selects its first cell, as replaceMerges does.
+     * records are made again. The scroll position and the selection stay. A merged range that hides the selected cell
+     * selects its first cell, as replaceMerges does.
      */
     reset(options?: { count?: number; runs?: jspreadsheet.RowRun[]; merges?: Record<string, [number, number]> }) {
         const worksheet = this.worksheet;
@@ -1103,6 +1112,7 @@ export class RowSource {
         if (frozen) {
             this.applyMerges();
             this.decorate([[0, frozen - 1]]);
+            this.updateTabStop();
         }
         const selected = worksheet.selection.range;
         const merged = selected && this.mergeAt(Number(selected[0]), Number(selected[1]));
