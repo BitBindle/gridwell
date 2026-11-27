@@ -117,18 +117,8 @@ export class History {
             worksheet.options.data = injectArray(worksheet.options.data, rowIndex, data);
 
             worksheet.rows = injectArray(worksheet.rows, rowIndex, historyRecord.rowNode);
-            // Insert nodes before the next row when it is in the table body, else after the previous row when it is. With
-            // pagination or lazy loading, the rows next to the others can be outside the body.
-            const next = worksheet.rows[rowIndex + historyRecord.numOfRows];
-            const previous = worksheet.rows[rowIndex - 1];
-            const before = next?.element.parentNode === worksheet.tbody ? next.element : null;
-            const after = !before && previous?.element.parentNode === worksheet.tbody ? previous.element : null;
-            if (before || after || (!next && !previous)) {
-                const reference = before || after?.nextSibling || null;
-                for (const row of historyRecord.rowNode) {
-                    worksheet.tbody.insertBefore(row.element, reference);
-                }
-            }
+            // The same rule as insertRow
+            worksheet.rowManager.placeNew(historyRecord.rowNode, worksheet.rows[rowIndex + historyRecord.numOfRows], worksheet.rows[rowIndex - 1]);
         }
 
         for (let j = rowIndex; j < worksheet.rows.length; j++) {

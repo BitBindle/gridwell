@@ -367,4 +367,29 @@ describe('Row changes of rows that lazy loading did not attach (#188, #189)', ()
         worksheet.view.loadPage(0);
         expect(worksheet.tbody.children[0].children[1].textContent).to.equal('4');
     });
+
+    it('attaches the rows of an insert after the last attached row, and the redo attaches the same rows (#238)', () => {
+        const worksheet = create();
+
+        worksheet.insertRow(2, 99);
+        const inserted = attached(worksheet);
+        expect(inserted).to.eql(Array.from({ length: 102 }, (value, k) => k));
+
+        worksheet.undo();
+        expect(attached(worksheet)).to.eql(Array.from({ length: 100 }, (value, k) => k));
+
+        worksheet.redo();
+        expect(attached(worksheet)).to.eql(inserted);
+    });
+
+    it('keeps the rows of an insert out of the table body when no row next to them is attached', () => {
+        const worksheet = create();
+
+        worksheet.insertRow(2, 150);
+        expect(attached(worksheet)).to.eql(Array.from({ length: 100 }, (value, k) => k));
+
+        worksheet.undo();
+        worksheet.redo();
+        expect(attached(worksheet)).to.eql(Array.from({ length: 100 }, (value, k) => k));
+    });
 });

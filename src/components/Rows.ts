@@ -379,10 +379,31 @@ export class Rows {
     }
 
     /**
+     * Put new rows in the table body: before the next row when it is in the body, else after the previous row when it is.
+     * Without rows next to them, the new rows go in the body. With pagination or lazy loading, the rows next to the new
+     * rows can be outside the body, and then the new rows stay outside too. insertRow and the undo and redo of insertRow
+     * and deleteRow use this rule.
+     * @param rows - The new rows.
+     * @param next - The row after the new rows.
+     * @param previous - The row before the new rows.
+     */
+    placeNew(rows: Worksheet['rows'], next: Worksheet['rows'][number] | undefined, previous: Worksheet['rows'][number] | undefined) {
+        const tbody = this.worksheet.tbody;
+        const before = next?.element.parentNode === tbody ? next.element : null;
+        const after = !before && previous?.element.parentNode === tbody ? previous.element : null;
+        if (before || after || (!next && !previous)) {
+            const reference = before || after?.nextSibling || null;
+            for (const row of rows) {
+                tbody.insertBefore(row.element, reference);
+            }
+        }
+    }
+
+    /**
      * Create the new rows with the data or empty, and put them in the table before the rows that follow them.
      * @param currentRows - The rows after the new rows, which insertRow took out of the list of rows.
      */
-    private add(rowIndex: number, numOfRows: number, rowNumber: number, data: jspreadsheet.CellValue[], currentRows: Worksheet['rows']) {
+    private add(rowIndex: number, numOfRows: number, data: jspreadsheet.CellValue[], currentRows: Worksheet['rows']) {
         const worksheet = this.worksheet;
 
         const rowRecords = [];
@@ -397,21 +418,13 @@ export class Rows {
             }
             // Create row
             const newRow = this.create(row, worksheet.options.data[row]);
-            // Append node
-            if (currentRows[0]) {
-                if (currentRows[0].element.parentNode === worksheet.tbody) {
-                    worksheet.tbody.insertBefore(newRow.element, currentRows[0].element);
-                }
-            } else {
-                if (worksheet.rows[rowNumber].element.parentNode === worksheet.tbody) {
-                    worksheet.tbody.appendChild(newRow.element);
-                }
-            }
             // Record History
             rowRecords.push([...worksheet.records[row]]);
             rowData.push([...worksheet.options.data[row]]);
             rowNode.push(newRow);
         }
+
+        this.placeNew(rowNode, currentRows[0], worksheet.rows[rowIndex - 1]);
 
         return { rowRecords, rowData, rowNode };
     }
@@ -458,6 +471,12 @@ export class Rows {
                 rowNumber = lastRow;
             }
 
+            // A worksheet without rows, after a delete with allowDeletingAllRows, gets its rows before row 0
+            if (lastRow < 0) {
+                rowNumber = 0;
+                insertBefore = true;
+            }
+
             const onbeforeinsertrowRecords = this.getInserted(numOfRows, rowNumber, insertBefore, data);
 
             // Onbeforeinsertrow
@@ -496,7 +515,7 @@ export class Rows {
             const currentRows = worksheet.rows.splice(rowIndex);
 
             // Adding lines
-            const { rowRecords, rowData, rowNode } = worksheet.formulas.keepChain(() => this.add(rowIndex, numOfRows, rowNumber!, data, currentRows));
+            const { rowRecords, rowData, rowNode } = worksheet.formulas.keepChain(() => this.add(rowIndex, numOfRows, data, currentRows));
 
             // Copy the data back to the main data
             worksheet.records.push(...currentRecords);
