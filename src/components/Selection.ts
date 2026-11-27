@@ -61,10 +61,10 @@ export class Selection {
     /** Whether the keyboard focus is in the grid or in its editor. */
     focusInGrid = false;
 
-    /** The column whose header a press selected first, while the selection is of whole columns, or null. */
+    /** The column whose header a press selected first, or null. Another selection does not clear it: see columnAnchor. */
     column: number | null = null;
 
-    /** The row whose number a press selected first, while the selection is of whole rows, or null. */
+    /** The row whose number a press selected first, or null. Another selection does not clear it: see rowAnchor. */
     row: number | null = null;
 
     constructor(worksheet: Worksheet) {
@@ -638,10 +638,14 @@ export class Selection {
         if (this.column == null || !range || Number(range[0]) !== this.column) {
             return null;
         }
-        const worksheet = this.worksheet;
-        const lastRow = (worksheet.rowSource ? worksheet.rowSource.count : worksheet.rows.length) - 1;
         const y = [Number(range[1]), Number(range[3])];
-        return Math.min(...y) === 0 && Math.max(...y) >= lastRow ? this.column : null;
+        return Math.min(...y) === 0 && Math.max(...y) >= this.lastRow() ? this.column : null;
+    }
+
+    /** The last row of a selection of whole columns. */
+    private lastRow() {
+        const worksheet = this.worksheet;
+        return (worksheet.rowSource ? worksheet.rowSource.count : worksheet.rows.length) - 1;
     }
 
     /** The last column of a selection of whole rows, as updateFromCoords makes it. */
@@ -674,8 +678,14 @@ export class Selection {
             return;
         }
         const next = [...range].map(Number) as [number, number, number, number];
+        // A selection of whole rows or columns gets the columns or rows that an insert adds after its last one
+        const anchor = axis === 0 ? this.row : this.column;
+        const whole = anchor != null && next[axis === 0 ? 1 : 0] === anchor && low === 0 && high === index - 1;
+        const last = axis === 0 ? this.lastColumn() : this.lastRow();
         for (const end of ends) {
             if (next[end] >= index) {
+                next[end] += count;
+            } else if (whole && count > 0 && next[end] === high && index + count - 1 === last) {
                 next[end] += count;
             }
         }
@@ -690,7 +700,7 @@ export class Selection {
 
     /**
      * After a move of one row or column, the ends of the selection, and its first row number or header, stay on their
-     * cells. Call it before updateTableReferences, which shows the moved selection with refresh.
+     * cells. A move inside the selection changes nothing. Call it before updateTableReferences, which shows the moved selection with refresh.
      * @param axis - 0 for columns, 1 for rows.
      * @param from - The row or column that moved.
      * @param to - Its new position.
@@ -698,8 +708,16 @@ export class Selection {
     move(axis: 0 | 1, from: number, to: number) {
         const range = this.range;
         if (range) {
+            const ends = axis === 0 ? [0, 2] : [1, 3];
+            const low = Math.min(Number(range[ends[0]]), Number(range[ends[1]]));
+            const high = Math.max(Number(range[ends[0]]), Number(range[ends[1]]));
+            // A move inside the selection keeps the same rows or columns in it, so the selection keeps its numbers. So a
+            // selection of whole rows or columns stays whole after a move on the other axis.
+            if (from >= low && from <= high && to >= low && to <= high) {
+                return;
+            }
             const next = [...range].map(Number) as [number, number, number, number];
-            for (const end of axis === 0 ? [0, 2] : [1, 3]) {
+            for (const end of ends) {
                 next[end] = movedIndex(next[end], from, to);
             }
             this.range = next;

@@ -782,6 +782,74 @@ describe('The first row number or header of a selection of whole rows or columns
                 .every((value) => value === '')
         ).to.equal(true);
     });
+    it('extends from the current selection with a Ctrl press on a row number, as with a Shift press', async () => {
+        const worksheet = await load();
+        worksheet.updateSelectionFromCoords(1, 1, 1, 1);
+
+        press(rowNumber(worksheet, 4), { ctrlKey: true });
+
+        expect(range(worksheet)).to.eql([0, 1, 2, 4]);
+    });
+
+    it('keeps a selection of whole columns whole when a row moves, also on undo, so Delete still deletes the column', async () => {
+        const worksheet = await load();
+        press(worksheet.headers[1]);
+
+        worksheet.moveRow(0, 4);
+        expect(range(worksheet)).to.eql([1, 0, 1, 4]);
+        worksheet.undo();
+        expect(range(worksheet)).to.eql([1, 0, 1, 4]);
+        expect(worksheet.selection.columnAnchor()).to.equal(1);
+
+        worksheet.records[0][1].element.focus();
+        key(worksheet, 46);
+        expect(questions).to.eql(['Are you sure to delete the selected columns?']);
+        expect(worksheet.getData()[0]).to.eql(['A1', 'C1']);
+    });
+
+    it('keeps a selection of whole rows whole when a column moves, and selectAll when a row moves', async () => {
+        const worksheet = await load();
+        press(rowNumber(worksheet, 1));
+
+        worksheet.moveColumn(2, 0);
+        expect(range(worksheet)).to.eql([0, 1, 2, 1]);
+        expect(worksheet.selection.rowAnchor()).to.equal(1);
+
+        worksheet.selectAll();
+        worksheet.moveRow(0, 2);
+        expect(range(worksheet)).to.eql([0, 0, 2, 4]);
+    });
+
+    it('gives a selection of whole rows or columns the columns or rows that an insert adds after the last one', async () => {
+        const worksheet = await load();
+        press(rowNumber(worksheet, 1));
+
+        worksheet.insertColumn();
+        expect(range(worksheet)).to.eql([0, 1, 3, 1]);
+        expect(worksheet.selection.rowAnchor()).to.equal(1);
+
+        press(worksheet.headers[1]);
+        worksheet.insertRow();
+        expect(range(worksheet)).to.eql([1, 0, 1, 5]);
+        expect(worksheet.selection.columnAnchor()).to.equal(1);
+
+        // A cell selection that ends in the last column does not grow
+        worksheet.updateSelectionFromCoords(0, 2, 3, 2);
+        worksheet.insertColumn();
+        expect(range(worksheet)).to.eql([0, 2, 3, 2]);
+    });
+
+    it('does not extend an old selection of whole columns with a drag after a press on the selection corner', async () => {
+        const worksheet = await load();
+        press(worksheet.headers[1]);
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+
+        worksheet.corner.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, buttons: 1 }));
+        worksheet.headers[2].dispatchEvent(new window.MouseEvent('mouseover', { bubbles: true, cancelable: true, buttons: 1 }));
+        document.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true, buttons: 1 }));
+
+        expect(range(worksheet)).to.eql([0, 0, 0, 0]);
+    });
 });
 
 describe('moveRow and moveColumn keep the selection and the editor on their cells (#222)', () => {
@@ -822,6 +890,15 @@ describe('moveRow and moveColumn keep the selection and the editor on their cell
         worksheet.moveRow(2, 4);
 
         expect(range(worksheet)).to.eql([0, 1, 1, 2]);
+    });
+
+    it('keeps the numbers of a selection when the row moves inside it', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(1, 1, 1, 3);
+
+        worksheet.moveRow(1, 3);
+
+        expect(range(worksheet)).to.eql([1, 1, 1, 3]);
     });
 
     it('moves the selection back and forth with undo and redo', () => {

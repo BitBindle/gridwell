@@ -764,9 +764,10 @@ export class Pointer {
         } else {
             // Header found
             if (section === 1) {
-                if (worksheet.selection.column != null) {
+                // A press that does not select whole columns, for example on the selection corner, leaves the field
+                const o = worksheet.selection.columnAnchor();
+                if (o != null) {
                     columnId = getIndex(e.target, 'data-x');
-                    const o = worksheet.selection.column;
                     const d = columnId;
                     // Update selection
                     worksheet.selection.updateFromCoords(o, 0, d, worksheet.options.data.length - 1, e);
@@ -776,8 +777,8 @@ export class Pointer {
             // Body found
             if (section === 2) {
                 if (e.target.classList.contains('jss_row')) {
-                    if (worksheet.selection.row != null) {
-                        const o = worksheet.selection.row;
+                    const o = worksheet.selection.rowAnchor();
+                    if (o != null) {
                         const d = rowId;
                         // Update selection
                         worksheet.selection.updateFromCoords(0, o, worksheet.options.data[0].length - 1, d, e);
