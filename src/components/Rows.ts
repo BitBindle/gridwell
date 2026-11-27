@@ -444,7 +444,7 @@ export class Rows {
             const currentRows = worksheet.rows.splice(rowIndex);
 
             // Adding lines
-            const { rowRecords, rowData, rowNode } = this.add(rowIndex, numOfRows, rowNumber, data, currentRows);
+            const { rowRecords, rowData, rowNode } = worksheet.formulas.keepChain(() => this.add(rowIndex, numOfRows, rowNumber!, data, currentRows));
 
             // Copy the data back to the main data
             worksheet.records.push(...currentRecords);
@@ -482,7 +482,7 @@ export class Rows {
             worksheet.selection.shift(1, rowIndex, numOfRows);
 
             // Remove table references
-            worksheet.formulas.updateTableReferences({ row: Number(rowNumber) });
+            worksheet.formulas.updateTableReferences({ row: Number(rowNumber), inserted: { axis: 1, index: rowIndex, count: numOfRows } });
 
             // Events
             worksheet.dispatch('oninsertrow', worksheet, onbeforeinsertrowRecords);

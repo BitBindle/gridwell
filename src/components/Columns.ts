@@ -352,7 +352,7 @@ export class Columns {
             const historyFooters = this.addFooters(columnIndex, numOfColumns);
 
             // Adding visual columns
-            const { historyRecords, historyData } = this.addCells(columnIndex, numOfColumns, data);
+            const { historyRecords, historyData } = worksheet.formulas.keepChain(() => this.addCells(columnIndex, numOfColumns, data));
 
             worksheet.headers.push(...currentHeaders);
             worksheet.cols.push(...currentColgroup);
@@ -389,7 +389,7 @@ export class Columns {
             worksheet.selection.shift(0, columnIndex, numOfColumns);
 
             // Remove table references
-            worksheet.formulas.updateTableReferences({ column: Number(columnNumber) });
+            worksheet.formulas.updateTableReferences({ column: Number(columnNumber), inserted: { axis: 0, index: columnIndex, count: numOfColumns } });
 
             // The frozen columns can be other columns now
             this.updateFrozenColumns();

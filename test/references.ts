@@ -196,3 +196,159 @@ describe('The updateReferences option', () => {
         expect([worksheet.getCell('B2').textContent, worksheet.getCell('C2').innerHTML, worksheet.getCell('E2').textContent]).to.eql(['2', '<i>=A2</i>', 'R3']);
     });
 });
+
+describe('The formulas and the chain after an insert, a delete, and their undo (#197, #199)', () => {
+    it('keeps the references of a formula in a row that the undo of a delete brings back', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '10', '=A3+B3'],
+                        ['2', '20', ''],
+                        ['3', '30', ''],
+                        ['4', '40', ''],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.deleteRow(0, 1);
+        worksheet.undo();
+
+        expect(worksheet.getValue('C1')).to.equal('=A3+B3');
+        expect(worksheet.formulas.chain).to.eql({ A3: ['C1'], B3: ['C1'] });
+        worksheet.setValue('A3', '100');
+        expect(worksheet.getValue('C1', true)).to.equal('130');
+    });
+
+    it('keeps the references of a formula in a column that the undo of a delete brings back', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['=B2+C2', '2', '3'],
+                        ['', '4', '5'],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.deleteColumn(0, 1);
+        worksheet.undo();
+
+        expect(worksheet.getValue('A1')).to.equal('=B2+C2');
+        worksheet.setValue('B2', '10');
+        expect(worksheet.getValue('A1', true)).to.equal('15');
+    });
+
+    it('keeps the formula text of a new row, which names the cells at their new positions', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', ''],
+                        ['2', '=A1'],
+                        ['3', ''],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.insertRow(['9', '=A3*2'], 0, true);
+
+        expect(worksheet.getData()).to.eql([
+            ['9', '=A3*2'],
+            ['1', ''],
+            ['2', '=A2'],
+            ['3', ''],
+        ]);
+        expect(worksheet.getValue('B1', true)).to.equal('4');
+        worksheet.setValue('A3', '7');
+        expect(worksheet.getValue('B1', true)).to.equal('14');
+        expect(worksheet.getValue('B3', true)).to.equal('1');
+    });
+
+    it('does not throw on a change of a cell that a deleted formula named', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', ''],
+                        ['2', ''],
+                        ['3', '=A1*2'],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.deleteRow(2, 1);
+
+        expect(worksheet.formulas.chain).to.eql({});
+        worksheet.setValue('A1', '5');
+        expect(worksheet.getValue('A1')).to.equal('5');
+    });
+
+    it('does not calculate the cell that takes the name of a deleted formula cell', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', ''],
+                        ['2', '=A1*2'],
+                        ['3', '=A2*3'],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.deleteRow(1, 1);
+
+        // B2 is the old B3, whose formula names A2, the old A3
+        expect(worksheet.getValue('B2')).to.equal('=A2*3');
+        expect(worksheet.formulas.chain).to.eql({ A2: ['B2'] });
+    });
+
+    it('keeps the dependents of a deleted cell and of the cell that takes its name', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '=A3'],
+                        ['2', '=A4'],
+                        ['3', ''],
+                        ['4', ''],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.deleteRow(2, 1);
+
+        // B1 still names A3, which is the old A4 now
+        expect(worksheet.getData().map((row) => row[1])).to.eql(['=A3', '=A3', '']);
+        worksheet.setValue('A3', '8');
+        expect([worksheet.getValue('B1', true), worksheet.getValue('B2', true)]).to.eql(['8', '8']);
+    });
+
+    it('keeps the formula of a new column, also when the redo adds it again', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '2'],
+                        ['3', '4'],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.insertColumn(['=C2*2', ''], 0, true);
+        expect(worksheet.getValue('A1', true)).to.equal('8');
+        worksheet.undo();
+        worksheet.redo();
+
+        expect(worksheet.getValue('A1')).to.equal('=C2*2');
+        worksheet.setValue('C2', '5');
+        expect(worksheet.getValue('A1', true)).to.equal('10');
+    });
+});

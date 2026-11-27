@@ -143,7 +143,8 @@ export class History {
         worksheet.editor.shift(1, rowIndex, count);
         worksheet.selection.shift(1, rowIndex, count);
 
-        worksheet.formulas.updateTableReferences();
+        // The rows that the undo or the redo adds keep their formulas
+        worksheet.formulas.updateTableReferences(type === 1 ? {} : { inserted: { axis: 1, index: rowIndex, count: historyRecord.numOfRows } });
     }
 
     /**
@@ -244,7 +245,8 @@ export class History {
         worksheet.editor.shift(0, columnIndex, count);
         worksheet.selection.shift(0, columnIndex, count);
 
-        worksheet.formulas.updateTableReferences();
+        // The columns that the undo or the redo adds keep their formulas
+        worksheet.formulas.updateTableReferences(type === 1 ? {} : { inserted: { axis: 0, index: columnIndex, count: historyRecord.numOfColumns } });
     }
 
     /**
