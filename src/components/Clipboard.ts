@@ -263,6 +263,26 @@ export class Clipboard {
             delimiter = '\t';
         }
 
+        // In the row source mode, rows outside the window have no values. The application writes the clipboard from its
+        // own values in oncopy, which gets an empty text.
+        if (worksheet.rowSource && !returnData && worksheet.selection.range) {
+            const range = worksheet.selection.range;
+            const selectedRange: [number, number, number, number] = [
+                Math.min(range[0], range[2]),
+                Math.min(range[1], range[3]),
+                Math.max(range[0], range[2]),
+                Math.max(range[1], range[3]),
+            ];
+            const result = worksheet.dispatch('oncopy', worksheet, selectedRange, '', isCut);
+            if (result === false) {
+                return false;
+            }
+            const text = result ? result : '';
+            worksheet.clipboard.write(text);
+            worksheet.clipboard.keep(text, []);
+            return text;
+        }
+
         const div = new RegExp(delimiter, 'ig');
 
         // Controls

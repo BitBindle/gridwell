@@ -1382,6 +1382,16 @@ declare namespace jspreadsheet {
         onrowsattached?: (instance: WorksheetInstance, ranges: [number, number][]) => void;
 
         /**
+         * Occurs when the window of the row source mode changes.
+         * @param instance - Instance of the worksheet.
+         * @param from - First row of the window after the frozen rows.
+         * @param to - Last row of the window.
+         * @param first - First row in the view.
+         * @param last - Last row in the view.
+         */
+        onrowwindow?: (instance: WorksheetInstance, from: number, to: number, first: number, last: number) => void;
+
+        /**
          * Occurs when the rows that a search or a filter shows have changed.
          * @param instance - Instance of the worksheet.
          * @param results - Indexes of the rows that are shown, or null when every row is shown.
@@ -1444,6 +1454,47 @@ declare namespace jspreadsheet {
          * Worksheet settings.
          */
         worksheets: WorksheetOptions[];
+    }
+
+    /** A run of rows from `first` to `last` (from 0) with one height in pixels, or hidden. */
+    interface RowRun {
+        first: number;
+        last: number;
+        height?: number;
+        hidden?: boolean;
+    }
+
+    /**
+     * The rows of a worksheet in the row source mode. The application gives the row count, the row heights and the hidden
+     * rows, and the values of each row when the grid shows it. The grid makes rows only for a window around the view.
+     */
+    interface RowSource {
+        /** The number of rows. At least 1. */
+        count: number;
+
+        /** The height of a row without a run, in pixels. Default: the `defaultRowHeight` option, or 20. */
+        defaultHeight?: number;
+
+        /** The rows with another height, or hidden. */
+        runs?: RowRun[];
+
+        /**
+         * The values of row `y` from 0, for the columns of the worksheet. A value that is undefined or null shows empty.
+         * The grid calls it when the window shows the row, and keeps the values while the row is in the window.
+         */
+        row: (y: number) => CellValue[] | null | undefined;
+
+        /**
+         * The height of row `y` when it shows, from its values, for example the height of its wrapped text. A positive
+         * height that is not the height in the layout replaces it, and the row at the top of the view stays in place.
+         */
+        height?: (y: number, values: CellValue[]) => number;
+
+        /** The rows above and below the view that the window holds. Default: 200. */
+        buffer?: number;
+
+        /** The largest height of the scroll area in pixels. Above it, a scroll position maps to a row in proportion. Default: 15,000,000. */
+        maxScrollHeight?: number;
     }
 
     interface WorksheetOptions {
@@ -1616,6 +1667,18 @@ declare namespace jspreadsheet {
 
         /** Activate the table lazyloading. */
         lazyLoading?: boolean;
+
+        /**
+         * The row source mode, for a worksheet with many rows: the application gives the rows when the grid shows them.
+         * With it, `data` is not read, and lazy loading, pagination, search and filters are off. An insert, a delete, a
+         * move or a sort of rows does nothing: the application changes its rows and calls `resetRows`. `mergeCells` and
+         * `freezeRows` work. `style`, `comments`, `classes` and `meta` apply only to the rows of the first window. Each row
+         * of the window has its row number in `aria-rowindex`, and the table has the row count in `aria-rowcount`. A copy
+         * dispatches `oncopy` with an empty text: the application writes the clipboard from its own values. `getData`,
+         * `getStyle` and `getComments` give only the rows of the window, and a change of a cell outside the window does
+         * nothing.
+         */
+        rowSource?: RowSource;
 
         /** Cells to be merged in the table innitialization. */
         mergeCells?: Record<string, [number, number]>;
@@ -2513,6 +2576,42 @@ declare namespace jspreadsheet {
          * @returns False when the position is outside the worksheets or the name is not valid.
          */
         renameWorksheet: (position: number, name: string) => false | undefined;
+
+        /**
+         * In the row source mode, the first and the last row of the window after the frozen rows, or null in the other
+         * modes.
+         */
+        rowWindow: () => [number, number] | null;
+
+        /** In the row source mode, the top of row `y` in pixels of the grid, or null in the other modes. */
+        rowOffset: (y: number) => number | null;
+
+        /**
+         * In the row source mode, make the rows `from` to `to` of the window again from the values of the application, for
+         * example after it loaded them. Rows outside the window do not change. `onrowsattached` occurs for them.
+         */
+        refreshRows: (from: number, to: number) => void;
+
+        /**
+         * In the row source mode, replace the row count, the runs and the merged ranges, for example after the application
+         * inserted or deleted rows. All rows of the window are made again. The scroll position and the selection stay.
+         */
+        resetRows: (options?: { count?: number; runs?: RowRun[]; merges?: Record<string, [number, number]> }) => void;
+
+        /** In the row source mode, render the window for the scroll position, for example after the worksheet shows. */
+        renderRows: () => void;
+
+        /**
+         * In the row source mode, scroll so that row `y` shows. The row goes to the top of the view, or to the bottom when
+         * `toBottom` is true. A row that shows does not move.
+         */
+        scrollToRow: (y: number, toBottom?: boolean) => void;
+
+        /**
+         * In the row source mode, ask `rowSource.height` again for each row of `rows` in the window, for example after a
+         * change of its cells. The row at the top of the view stays in place.
+         */
+        fitRows: (rows: number[]) => void;
 
         /**
          * Spreadsheet settings.

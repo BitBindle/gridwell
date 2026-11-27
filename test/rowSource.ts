@@ -1,0 +1,351 @@
+import { expect } from 'chai';
+
+import jspreadsheet, { type Jspreadsheet, type Worksheet } from './support/jspreadsheet';
+
+// jsdom has no layout, so the view has a height of 1 pixel, and the window holds the first rows and the buffer
+function build(
+    source: Partial<Jspreadsheet.RowSource> = {},
+    options: Partial<Jspreadsheet.WorksheetOptions> = {},
+    spreadsheet: Partial<Jspreadsheet.SpreadsheetOptions> = {}
+) {
+    const calls: number[] = [];
+    const [worksheet] = jspreadsheet(root, {
+        worksheets: [
+            {
+                minDimensions: [3, 1],
+                tableOverflow: true,
+                rowSource: {
+                    count: 100000,
+                    buffer: 20,
+                    row: (y) => {
+                        calls.push(y);
+                        return [`a${y}`, `b${y}`, `c${y}`];
+                    },
+                    ...source,
+                },
+                ...options,
+            },
+        ],
+        ...spreadsheet,
+    });
+    return { worksheet, calls };
+}
+
+function attached(worksheet: Worksheet) {
+    return Array.from(worksheet.tbody.querySelectorAll('tr[data-y]')).map((row) => Number(row.getAttribute('data-y')));
+}
+
+describe('The row source mode', () => {
+    it('makes records only for the rows of the window, and gives the table the row count', () => {
+        const { worksheet, calls } = build();
+
+        expect(attached(worksheet)).to.eql(Array.from({ length: 21 }, (row, y) => y));
+        expect(calls.length).to.equal(21);
+        expect(worksheet.rows.length).to.equal(100000);
+        expect(worksheet.records[50000]).to.equal(undefined);
+        expect(worksheet.getValueFromCoords(1, 3)).to.equal('b3');
+        expect(worksheet.table.getAttribute('aria-rowcount')).to.equal('100001');
+        expect(worksheet.rows[3].element.getAttribute('aria-rowindex')).to.equal('5');
+        expect(worksheet.rowWindow()).to.eql([0, 20]);
+    });
+
+    it('moves the window to a row, and gives the new rows to onrowwindow and onrowsattached', () => {
+        const windows: number[][] = [];
+        const attachedRanges: [number, number][][] = [];
+        const { worksheet } = build(
+            {},
+            {},
+            {
+                onrowwindow: (instance, from, to) => windows.push([from, to]),
+                onrowsattached: (instance, ranges) => attachedRanges.push(ranges),
+            }
+        );
+
+        worksheet.scrollToRow(50000);
+
+        expect(worksheet.rowWindow()![0]).to.be.at.most(50000);
+        expect(worksheet.rowWindow()![1]).to.be.at.least(50000);
+        expect(worksheet.getValueFromCoords(0, 50000)).to.equal('a50000');
+        expect(worksheet.records[0]).to.equal(undefined);
+        expect(windows[windows.length - 1]).to.eql(worksheet.rowWindow());
+        expect(attachedRanges[attachedRanges.length - 1]).to.eql([worksheet.rowWindow()]);
+    });
+
+    it('keeps the frozen rows and merges the part of a range in the window', () => {
+        const { worksheet } = build({}, { freezeRows: 2, mergeCells: { B5: [2, 3] } });
+
+        expect(attached(worksheet).slice(0, 3)).to.eql([0, 1, 2]);
+        expect(worksheet.getCell('B5').getAttribute('colspan')).to.equal('2');
+        expect(worksheet.getCell('B5').getAttribute('rowspan')).to.equal('3');
+        expect((worksheet.rows[5].element.children[3] as HTMLElement).style.display).to.equal('none');
+
+        worksheet.scrollToRow(90000);
+        expect(attached(worksheet).slice(0, 2)).to.eql([0, 1]);
+        expect(worksheet.records[4]).to.equal(undefined);
+        expect(worksheet.getMerge()).to.eql({});
+    });
+
+    it('moves the selection with the keys over hidden rows and merged ranges, also outside the window', () => {
+        const { worksheet } = build({ runs: [{ first: 3, last: 9999, hidden: true }] }, { mergeCells: { A10001: [1, 3] } });
+        worksheet.updateSelectionFromCoords(0, 1, 0, 1);
+
+        worksheet.down();
+        expect(worksheet.selection.range).to.eql([0, 2, 0, 2]);
+        worksheet.down();
+        expect(worksheet.selection.range).to.eql([0, 10000, 0, 10000]);
+        worksheet.down();
+        expect(worksheet.selection.range).to.eql([0, 10003, 0, 10003]);
+        worksheet.up();
+        expect(worksheet.selection.range).to.eql([0, 10000, 0, 10000]);
+
+        worksheet.down(false, true);
+        expect(worksheet.selection.range).to.eql([0, 99999, 0, 99999]);
+        expect(worksheet.records[99999][0].element.classList.contains('highlight-selected')).to.equal(true);
+        expect(worksheet.selection.activeCell).to.equal(worksheet.records[99999][0].element);
+    });
+
+    it('grows a selection over the merged ranges of the source', () => {
+        const { worksheet } = build({}, { mergeCells: { B50001: [2, 2] } });
+
+        worksheet.updateSelectionFromCoords(0, 50000, 1, 50000);
+
+        expect(worksheet.selection.bounds).to.eql([0, 50000, 2, 50001]);
+    });
+
+    it('keeps the heights and the hidden rows in its layout', () => {
+        const { worksheet } = build({ defaultHeight: 24 });
+
+        worksheet.setHeight(2, 50);
+        expect(worksheet.getHeight(2)).to.equal('50px');
+        expect(worksheet.rows[2].element.style.height).to.equal('50px');
+        expect(worksheet.getHeight(70000)).to.equal('24px');
+        worksheet.undo();
+        expect(worksheet.getHeight(2)).to.equal('24px');
+
+        worksheet.hideRow(4);
+        expect(worksheet.rows[4].element.style.display).to.equal('none');
+        expect(worksheet.rowOffset(5)).to.equal(4 * 24);
+        worksheet.showRow(4);
+        expect(worksheet.rowOffset(5)).to.equal(5 * 24);
+    });
+
+    it('asks the height hook, and fits the rows again', () => {
+        const heights: Record<number, number> = { 1: 40 };
+        const { worksheet } = build({ defaultHeight: 20, height: (y) => heights[y] || 20 });
+
+        expect(worksheet.rows[1].element.style.height).to.equal('40px');
+        expect(worksheet.rowOffset(2)).to.equal(60);
+
+        heights[1] = 70;
+        worksheet.fitRows([1]);
+        expect(worksheet.rowOffset(2)).to.equal(90);
+    });
+
+    it('makes rows again from the source with refreshRows and resetRows', () => {
+        let prefix = 'a';
+        const { worksheet } = build({ row: (y) => [`${prefix}${y}`, '', ''] });
+
+        prefix = 'n';
+        worksheet.refreshRows(2, 3);
+        expect([worksheet.getValueFromCoords(0, 1), worksheet.getValueFromCoords(0, 2), worksheet.getValueFromCoords(0, 4)]).to.eql(['a1', 'n2', 'a4']);
+
+        worksheet.updateSelectionFromCoords(0, 3, 0, 3);
+        worksheet.resetRows({ count: 10, merges: { A1: [2, 2] } });
+        expect(worksheet.rows.length).to.equal(10);
+        expect(worksheet.getValueFromCoords(0, 4)).to.equal('n4');
+        expect(worksheet.getCell('A1').getAttribute('rowspan')).to.equal('2');
+        expect(worksheet.selection.range).to.eql([0, 3, 0, 3]);
+        expect(worksheet.table.getAttribute('aria-rowcount')).to.equal('11');
+    });
+
+    it('does nothing for an insert, a delete, a move or a sort of rows or columns', () => {
+        const { worksheet } = build();
+
+        expect(worksheet.insertRow()).to.equal(false);
+        expect(worksheet.deleteRow(0)).to.equal(false);
+        expect(worksheet.insertColumn()).to.equal(false);
+        expect(worksheet.deleteColumn(0)).to.equal(false);
+        expect(worksheet.orderBy(0, 1)).to.equal(false);
+        worksheet.moveRow(0, 2);
+        worksheet.moveColumn(0, 2);
+
+        expect(worksheet.getValueFromCoords(0, 0)).to.equal('a0');
+        expect(worksheet.rows.length).to.equal(100000);
+    });
+
+    it('gives oncopy an empty text and the selected range, and copies the text of the handler', () => {
+        const copies: unknown[][] = [];
+        const { worksheet } = build(
+            {},
+            {},
+            {
+                oncopy: (instance, range, text) => {
+                    copies.push([range, text]);
+                    return 'from the application';
+                },
+            }
+        );
+        worksheet.updateSelectionFromCoords(0, 2, 1, 60000);
+        // jsdom has no copy command
+        const execCommand = document.execCommand;
+        document.execCommand = () => true;
+        try {
+            worksheet.copy();
+        } finally {
+            document.execCommand = execCommand;
+        }
+
+        expect(copies).to.eql([[[0, 2, 1, 60000], '']]);
+        expect(worksheet.clipboard.textarea.value).to.equal('from the application');
+    });
+
+    it('writes the value of a row in the window, and ignores a row outside it', () => {
+        const { worksheet } = build();
+
+        worksheet.setValueFromCoords(0, 3, 'new');
+        worksheet.setValueFromCoords(0, 60000, 'ignored');
+
+        expect(worksheet.getValueFromCoords(0, 3)).to.equal('new');
+        expect(worksheet.records[60000]).to.equal(undefined);
+    });
+
+    it('detaches an open editor of a row that leaves the window', () => {
+        const { worksheet } = build();
+        const cell = worksheet.getCell('A2');
+        worksheet.openEditor(cell);
+        (cell.children[0] as HTMLTextAreaElement).value = 'typed';
+
+        worksheet.scrollToRow(80000);
+
+        expect(worksheet.editor.isOpen()).to.equal(false);
+        expect(worksheet.records[1]).to.equal(undefined);
+    });
+
+    it('gives the frozen columns of new rows their place after a horizontal scroll', () => {
+        const { worksheet } = build({}, { freezeColumns: 1, columns: [{ width: 100 }] });
+        Object.defineProperty(worksheet.content, 'scrollLeft', { value: 400, writable: true });
+        worksheet.columns.updateFreezePosition();
+
+        worksheet.scrollToRow(70000);
+
+        const cell = worksheet.records[70000][0].element;
+        expect(cell.classList.contains('jss_freezed')).to.equal(true);
+        expect(cell.style.left).to.equal(worksheet.records[worksheet.rowWindow()![0]][0].element.style.left);
+        expect(cell.style.left).to.not.equal('');
+    });
+
+    it('gives the rows of overlapping runs their own heights, and splits a run for one row', () => {
+        const { worksheet } = build({
+            defaultHeight: 20,
+            runs: [
+                { first: 5, last: 10, height: 40 },
+                { first: 8, last: 12, hidden: true },
+                { first: 100, last: 50, height: 30 },
+            ],
+        });
+
+        expect(worksheet.rowOffset(5)).to.equal(100);
+        expect(worksheet.rowOffset(8)).to.equal(100 + 3 * 40);
+        expect(worksheet.rowOffset(13)).to.equal(100 + 3 * 40);
+
+        worksheet.showRow(10);
+        expect(worksheet.rowOffset(11)).to.equal(100 + 3 * 40 + 20);
+        worksheet.setHeight(6, 25);
+        expect(worksheet.rowOffset(7)).to.equal(100 + 40 + 25);
+        expect(worksheet.getHeight()).to.include.members(['40px', '25px']);
+    });
+
+    it('scales the scroll position above the largest scroll height', () => {
+        const { worksheet } = build({ defaultHeight: 20, maxScrollHeight: 10000 });
+
+        worksheet.scrollToRow(99999);
+
+        expect(worksheet.content.scrollTop).to.be.at.most(10000);
+        expect(worksheet.rowWindow()![1]).to.equal(99999);
+        expect(worksheet.getValueFromCoords(0, 99999)).to.equal('a99999');
+    });
+
+    it('gives a far scroll a small window first, and all rows of the buffer after a short time', async () => {
+        const { worksheet } = build({ buffer: 100, defaultHeight: 20 });
+        Object.defineProperty(worksheet.content, 'scrollTop', { value: 20 * 50000, writable: true });
+
+        worksheet.content.dispatchEvent(new window.Event('scroll'));
+        const [from, to] = worksheet.rowWindow()!;
+        expect(to - from).to.be.below(100);
+
+        // The window fills 100 ms after the last far scroll
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        const [fullFrom, fullTo] = worksheet.rowWindow()!;
+        expect(fullTo - fullFrom).to.be.at.least(200);
+    });
+
+    it('renders the window when the view changes its size, and stops the observer with destroy', async () => {
+        const observers: { callback: () => void; disconnected: boolean }[] = [];
+        const original = (window as unknown as { ResizeObserver?: unknown }).ResizeObserver;
+        const Observer = class {
+            callback: () => void;
+            disconnected = false;
+            constructor(callback: () => void) {
+                this.callback = callback;
+                observers.push(this);
+            }
+            observe() {}
+            disconnect() {
+                this.disconnected = true;
+            }
+        };
+        (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = Observer;
+        try {
+            const windows: number[][] = [];
+            const { worksheet } = build({}, {}, { onrowwindow: (instance, from, to) => windows.push([from, to]) });
+            const observer = observers.find((item) => item.callback.toString().includes('render'))!;
+            Object.defineProperty(worksheet.content, 'scrollTop', { value: 20 * 30000, writable: true });
+
+            const before = windows.length;
+            observer.callback();
+            expect(windows.length).to.equal(before + 1);
+
+            // The spreadsheet is in its element after its build
+            await new Promise((resolve) => setTimeout(resolve));
+            jspreadsheet.destroy(root as Jspreadsheet.JspreadsheetInstanceElement);
+            expect(observer.disconnected).to.equal(true);
+        } finally {
+            (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = original;
+        }
+    });
+
+    it('keeps the focus in the grid when the row of the focus leaves the window, and gives it back', () => {
+        const { worksheet } = build();
+        worksheet.updateSelectionFromCoords(0, 2, 0, 2);
+        worksheet.getCell('A3').focus();
+
+        worksheet.scrollToRow(60000);
+        expect(document.activeElement).to.equal(worksheet.table);
+
+        worksheet.scrollToRow(2);
+        expect(document.activeElement).to.equal(worksheet.getCell('A3'));
+    });
+
+    it('starts the window at the first row of a merged range above it, and attaches the hidden rows of a range', () => {
+        const { worksheet } = build({ runs: [{ first: 60011, last: 60012, hidden: true }] }, { mergeCells: { A59900: [1, 200], B60010: [1, 5] } });
+
+        worksheet.scrollToRow(60005);
+
+        // The window would start at row 59985, and the range starts at row 59899
+        expect(worksheet.rowWindow()![0]).to.equal(59899);
+        expect(Number(worksheet.getCell('A59900').getAttribute('rowspan'))).to.equal(worksheet.rowWindow()![1] - 59899 + 1);
+        expect(worksheet.rows[60010].element).to.not.equal(undefined);
+        expect(worksheet.rows[60011].element.style.display).to.equal('none');
+        expect(worksheet.getCell('B60010').getAttribute('rowspan')).to.equal('5');
+    });
+
+    it('replaces the merged ranges of the source with replaceMerges', () => {
+        const { worksheet } = build({ runs: [{ first: 4, last: 4, hidden: true }] }, { mergeCells: { A2: [2, 2] } });
+
+        expect(worksheet.replaceMerges({ B3: [1, 3] })).to.eql([]);
+
+        expect(worksheet.getCell('A2').getAttribute('colspan')).to.equal(null);
+        expect(worksheet.getCell('B3').getAttribute('rowspan')).to.equal('3');
+        expect(worksheet.rows[4].element.style.display).to.equal('none');
+    });
+});

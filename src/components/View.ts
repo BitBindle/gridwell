@@ -597,6 +597,11 @@ export class View {
     orderBy(column: number, order?: 0 | 1): boolean | undefined {
         const worksheet = this.worksheet;
 
+        // The application sorts the rows of the row source mode
+        if (worksheet.rowSource) {
+            return false;
+        }
+
         if (column >= 0) {
             // Merged cells
             if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
@@ -1160,7 +1165,12 @@ export class View {
     scroll(e: Event) {
         const worksheet = this.worksheet;
 
-        this.wheel();
+        // The row source mode renders its window for the scroll position
+        if (worksheet.rowSource) {
+            worksheet.rowSource.render(false, true);
+        } else {
+            this.wheel();
+        }
 
         if (worksheet.options.freezeColumns! > 0 && worksheet.content.scrollLeft !== worksheet.lastScrollLeft) {
             worksheet.lastScrollLeft = worksheet.content.scrollLeft;

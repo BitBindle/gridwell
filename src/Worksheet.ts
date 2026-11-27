@@ -24,6 +24,7 @@ import { Selection } from './components/Selection.js';
 import { Styles } from './components/Styles.js';
 import { View } from './components/View.js';
 import type { EventHandlers, EventName, Spreadsheet, WorksheetState } from './types/internal';
+import type { RowSource } from './components/RowSource';
 
 /** The rows that persistence posts to the server, the data of onbeforesave */
 type SaveData = Parameters<NonNullable<jspreadsheet.SpreadsheetOptions['onbeforesave']>>[2];
@@ -76,6 +77,7 @@ export class Worksheet {
         this.accessibility = new Accessibility(this);
         this.keyboard = new Keyboard(this);
         this.lastScrollLeft = 0;
+        this.rowSource = null;
     }
 
     /**
@@ -521,6 +523,34 @@ export class Worksheet {
         this.view.setZoom(zoom);
     }
 
+    rowWindow(): [number, number] | null {
+        return this.rowSource ? [this.rowSource.from, this.rowSource.to] : null;
+    }
+
+    rowOffset(y: number) {
+        return this.rowSource ? this.rowSource.rowOffset(y) : null;
+    }
+
+    refreshRows(from: number, to: number) {
+        this.rowSource?.refreshRows(from, to);
+    }
+
+    resetRows(options?: Parameters<RowSource['reset']>[0]) {
+        this.rowSource?.reset(options);
+    }
+
+    renderRows() {
+        this.rowSource?.render();
+    }
+
+    scrollToRow(y: number, toBottom?: boolean) {
+        this.rowSource?.scrollToRow(y, toBottom);
+    }
+
+    fitRows(rows: number[]) {
+        this.rowSource?.fitRows(rows);
+    }
+
     isSelected(x: number, y: number) {
         return this.selection.isSelected(x, y);
     }
@@ -671,6 +701,7 @@ export class Worksheet {
 
         // The size observer of the frozen rows holds the worksheet
         removedWorksheet?.rowManager.stopFreeze();
+        removedWorksheet?.rowSource?.stop();
 
         // getConfig gives the options of the worksheets that the spreadsheet has. A position without a worksheet removes none.
         const index = removedWorksheet ? this.parent.config.worksheets.indexOf(removedWorksheet.options) : -1;
@@ -1000,6 +1031,14 @@ export class Worksheet {
      * Prepare the table of the worksheet.
      */
     private prepareTable(replaced: () => boolean = () => false, waitForSources = false): Promise<void> | void {
+        // The row source mode gives the rows itself, so the other ways to show part of the rows are off
+        if (this.options.rowSource) {
+            this.options.lazyLoading = false;
+            this.options.pagination = 0;
+            this.options.search = false;
+            this.options.filters = false;
+        }
+
         // Lazy loading
         if (this.options.lazyLoading === true && this.options.tableOverflow !== true && this.parent.config.fullscreen !== true) {
             console.error('Jspreadsheet: The lazyloading only works when tableOverflow = yes or fullscreen = yes');

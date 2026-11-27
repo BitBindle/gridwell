@@ -1,5 +1,6 @@
 import { getCoordsFromCellName } from '../utils/helpers.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
+import { recordRows } from './RowSource.js';
 import type { Worksheet } from '../types/internal';
 
 /**
@@ -31,7 +32,7 @@ export class Comments {
             return worksheet.records[cell[1]][cell[0]].element.getAttribute('title') || '';
         } else {
             const data: Record<string, string> = {};
-            for (let j = 0; j < worksheet.options.data.length; j++) {
+            for (const j of recordRows(worksheet)) {
                 for (let i = 0; i < worksheet.options.columns.length; i++) {
                     const comments = worksheet.records[j][i].element.getAttribute('title');
                     if (comments) {

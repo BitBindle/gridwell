@@ -256,6 +256,7 @@ export class Spreadsheet {
         // The size observer of the frozen rows holds the old rows. The timer of a search, a touch or a rename of a header
         // belongs to the active worksheet, and acts on the old table. The timer of a lazy load checks its worksheet.
         worksheet.rowManager?.stopFreeze();
+        worksheet.rowSource?.stop();
         if (libraryBase.jspreadsheet.current === worksheet && libraryBase.jspreadsheet.timeControl) {
             clearTimeout(libraryBase.jspreadsheet.timeControl);
             libraryBase.jspreadsheet.timeControl = null;

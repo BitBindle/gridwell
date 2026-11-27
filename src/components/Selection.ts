@@ -1,5 +1,5 @@
 import { getCellNameFromCoords } from '../utils/helpers.js';
-import { getColumnNameFromId } from '../utils/internalHelpers.js';
+import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import libraryBase from '../utils/libraryBase.js';
 import { toGrid, toScreen } from '../utils/zoom.js';
 import type { WorksheetState, Worksheet, SelectedWorksheet } from '../types/internal';
@@ -253,6 +253,11 @@ export class Selection {
     updateFromCoords(x1: number | null, y1: number | null, x2?: number | null, y2?: number | null, origin?: Event) {
         const worksheet = this.worksheet;
 
+        // The row source mode reads the merged ranges and the hidden rows from its source
+        if (worksheet.rowSource) {
+            return this.updateInRowSource(x1, y1, x2, y2, origin);
+        }
+
         // select column
         if (y1 == null) {
             y1 = 0;
@@ -459,6 +464,111 @@ export class Selection {
         worksheet.dispatch('onselection', worksheet, borderLeft, borderTop, borderRight, borderBottom, origin);
 
         // Find corner cell
+        this.updateCorner();
+    }
+
+    /**
+     * The selection of the row source mode. It can hold rows outside the window. Only the rows with a record get the
+     * classes now. A row that the window adds later gets them from the row source.
+     */
+    private updateInRowSource(x1: number | null, y1: number | null, x2: number | null | undefined, y2: number | null | undefined, origin?: Event) {
+        const worksheet = this.worksheet;
+        const source = worksheet.rowSource!;
+        const lastColumn = worksheet.headers.length - 1;
+        const lastRow = source.count - 1;
+        if (y1 == null) {
+            if (x1 == null) {
+                return;
+            }
+            y1 = 0;
+            y2 = lastRow;
+        } else if (x1 == null) {
+            x1 = 0;
+            x2 = lastColumn;
+        }
+        const a = Math.min(parseInt(x1), lastColumn);
+        const b = Math.min(parseInt(y1), lastRow);
+        const c = Math.min(parseInt(x2 ?? x1), lastColumn);
+        const d = Math.min(parseInt(y2 ?? y1), lastRow);
+        let px = Math.min(a, c);
+        let ux = Math.max(a, c);
+        let py = Math.min(b, d);
+        let uy = Math.max(b, d);
+
+        // The selection grows until it holds each merged range that it touches
+        let grown = true;
+        while (grown) {
+            grown = false;
+            for (const name of Object.keys(source.merges)) {
+                const [mx, my] = getIdFromColumnName(name);
+                const [colspan, rowspan] = source.merges[name];
+                const range = [mx, my, mx + colspan - 1, my + rowspan - 1];
+                if (range[0] <= ux && range[2] >= px && range[1] <= uy && range[3] >= py) {
+                    if (range[0] < px || range[2] > ux || range[1] < py || range[3] > uy) {
+                        px = Math.min(px, range[0]);
+                        ux = Math.max(ux, range[2]);
+                        py = Math.min(py, range[1]);
+                        uy = Math.max(uy, range[3]);
+                        grown = true;
+                    }
+                }
+            }
+        }
+
+        // The first and the last row that show
+        const layout = source.layout;
+        let borderTop: number | null = layout.nextShown(py, 1);
+        let borderBottom: number | null = layout.nextShown(uy, -1);
+        if (borderTop > uy || layout.isHidden(borderTop)) {
+            borderTop = null;
+            borderBottom = null;
+        }
+        let borderLeft: number | null = null;
+        let borderRight: number | null = null;
+        for (let i = px; i <= ux; i++) {
+            if (worksheet.options.columns?.[i]?.type !== 'hidden') {
+                if (borderLeft == null) {
+                    borderLeft = i;
+                }
+                borderRight = i;
+            }
+        }
+        borderLeft = borderLeft ?? 0;
+        borderRight = borderRight ?? 0;
+        const top = borderTop ?? py;
+        const bottom = borderBottom ?? uy;
+
+        if (worksheet.dispatch('onbeforeselection', worksheet, borderLeft, top, borderRight, bottom, origin) === false) {
+            return false;
+        }
+
+        const previousState = worksheet.resetSelection();
+        worksheet.selection.range = [a, b, c, d];
+        worksheet.selection.bounds = [borderLeft, top, borderRight, bottom];
+
+        for (let i = borderLeft; i <= borderRight; i++) {
+            if (worksheet.options.columns?.[i]?.type !== 'hidden' && worksheet.cols[i].colElement.style.display !== 'none') {
+                worksheet.headers[i].classList.add('selected');
+            }
+        }
+
+        // The rows with a record: the frozen rows and the window
+        for (const y of source.attachedRows()) {
+            source.selectRow(y);
+        }
+
+        // The selected cell is the tab stop when its row has a record
+        if (worksheet.records[b]?.[a]) {
+            this.updateActiveCell(a, b, origin);
+        }
+
+        if (previousState === 0) {
+            worksheet.dispatch('onfocus', worksheet);
+            worksheet.clipboard.clearBorder();
+        }
+
+        worksheet.dispatch('onselection', worksheet, borderLeft, top, borderRight, bottom, origin);
+
         this.updateCorner();
     }
 
@@ -689,7 +799,7 @@ export class Selection {
      * Roving tabindex: the active cell is the only cell with tabindex 0. The grid is multiselectable, so the active cell
      * gives aria-selected="false" when it is not selected.
      */
-    private setActiveCell(td: HTMLTableCellElement | null | undefined) {
+    setActiveCell(td: HTMLTableCellElement | null | undefined) {
         const worksheet = this.worksheet;
 
         const previous = worksheet.selection.activeCell;
@@ -823,11 +933,82 @@ export class Selection {
         });
     }
 
+    /** True when column x is hidden. */
+    private columnHidden(x: number) {
+        return this.worksheet.headers[x]?.style.display === 'none';
+    }
+
+    /**
+     * In the row source mode: the next cell from (x, y) in the direction (dx, dy) that shows and is not in the merged
+     * range of (x, y). The rows outside the window have no record, so the hidden rows come from the layout and the
+     * merged ranges from the source.
+     */
+    private sourceStep(x: number, y: number, dx: number, dy: number): [number, number] {
+        const worksheet = this.worksheet;
+        const source = worksheet.rowSource!;
+        const layout = source.layout;
+        if (dy !== 0 && this.columnHidden(x)) {
+            return [x, y];
+        }
+        const current = source.mergeAt(x, y);
+        let i = x + dx;
+        let j = y + dy;
+        while (i >= 0 && i < worksheet.headers.length && j >= 0 && j < source.count) {
+            if (dy !== 0 && layout.isHidden(j)) {
+                const run = layout.runOf(j)!;
+                j = dy > 0 ? run.last + 1 : run.first - 1;
+                continue;
+            }
+            if (dx !== 0 && this.columnHidden(i)) {
+                i += dx;
+                continue;
+            }
+            const range = source.mergeAt(i, j);
+            if (range && range[0] === current?.[0] && range[1] === current[1]) {
+                if (dy > 0) {
+                    j = range[3] + 1;
+                } else if (dy < 0) {
+                    j = range[1] - 1;
+                } else if (dx > 0) {
+                    i = range[2] + 1;
+                } else {
+                    i = range[0] - 1;
+                }
+                continue;
+            }
+            return range ? [range[0], range[1]] : [i, j];
+        }
+        return [x, y];
+    }
+
+    /** In the row source mode: the first (dy = -1) or the last (dy = 1) row that shows, or y when the column is hidden. */
+    private sourceEdgeRow(x: number, y: number, dy: -1 | 1) {
+        const source = this.worksheet.rowSource!;
+        const layout = source.layout;
+        if (this.columnHidden(x)) {
+            return y;
+        }
+        const row = dy < 0 ? layout.nextShown(0, 1) : layout.nextShown(source.count - 1, -1);
+        if (layout.isHidden(row) || (dy < 0 ? row >= y : row <= y)) {
+            return y;
+        }
+        return row;
+    }
+
     /**
      * Move the selection from a cell that a merged range hides to the first cell of the range
      */
     private toFirstCell(range: Range) {
         const worksheet = this.worksheet;
+
+        if (worksheet.rowSource) {
+            const merged = worksheet.rowSource.mergeAt(range[0], range[1]);
+            if (merged) {
+                range[0] = merged[0];
+                range[1] = merged[1];
+            }
+            return;
+        }
 
         const element = worksheet.records[range[1]][range[0]].element;
 
@@ -839,6 +1020,10 @@ export class Selection {
 
     private upGet(x: number, y: number) {
         const worksheet = this.worksheet;
+
+        if (worksheet.rowSource) {
+            return this.sourceStep(parseInt(x), parseInt(y), 0, -1)[1];
+        }
 
         x = parseInt(x);
         y = parseInt(y);
@@ -870,7 +1055,9 @@ export class Selection {
             y = parseInt(range[3]);
         }
 
-        if (direction === 0) {
+        if (direction === 0 && worksheet.rowSource) {
+            y = this.sourceEdgeRow(x, y, -1);
+        } else if (direction === 0) {
             for (let j = 0; j < y; j++) {
                 if (worksheet.records[j][x].element.style.display !== 'none' && worksheet.rows[j].element.style.display !== 'none') {
                     y = j;
@@ -948,6 +1135,10 @@ export class Selection {
     rightGet(x: number, y: number) {
         const worksheet = this.worksheet;
 
+        if (worksheet.rowSource) {
+            return this.sourceStep(parseInt(x), parseInt(y), 1, 0)[0];
+        }
+
         x = parseInt(x);
         y = parseInt(y);
 
@@ -981,7 +1172,7 @@ export class Selection {
 
         if (direction === 0) {
             for (let i = worksheet.headers.length - 1; i > x; i--) {
-                if (worksheet.records[y][i].element.style.display !== 'none') {
+                if (worksheet.rowSource ? !this.columnHidden(i) : worksheet.records[y][i].element.style.display !== 'none') {
                     x = i;
                     break;
                 }
@@ -1033,6 +1224,10 @@ export class Selection {
     downGet(x: number, y: number) {
         const worksheet = this.worksheet;
 
+        if (worksheet.rowSource) {
+            return this.sourceStep(parseInt(x), parseInt(y), 0, 1)[1];
+        }
+
         x = parseInt(x);
         y = parseInt(y);
         for (let j = y + 1; j < worksheet.rows.length; j++) {
@@ -1063,7 +1258,9 @@ export class Selection {
             y = parseInt(range[3]);
         }
 
-        if (direction === 0) {
+        if (direction === 0 && worksheet.rowSource) {
+            y = this.sourceEdgeRow(x, y, 1);
+        } else if (direction === 0) {
             for (let j = worksheet.rows.length - 1; j > y; j--) {
                 if (worksheet.records[j][x].element.style.display !== 'none' && worksheet.rows[j].element.style.display !== 'none') {
                     y = j;
@@ -1141,6 +1338,10 @@ export class Selection {
     private leftGet(x: number, y: number) {
         const worksheet = this.worksheet;
 
+        if (worksheet.rowSource) {
+            return this.sourceStep(parseInt(x), parseInt(y), -1, 0)[0];
+        }
+
         x = parseInt(x);
         y = parseInt(y);
         for (let i = x - 1; i >= 0; i--) {
@@ -1173,7 +1374,7 @@ export class Selection {
 
         if (direction === 0) {
             for (let i = 0; i < x; i++) {
-                if (worksheet.records[y][i].element.style.display !== 'none') {
+                if (worksheet.rowSource ? !this.columnHidden(i) : worksheet.records[y][i].element.style.display !== 'none') {
                     x = i;
                     break;
                 }
@@ -1312,6 +1513,14 @@ export class Selection {
     private updateScroll(direction: 0 | 1 | 2 | 3) {
         const worksheet = this.worksheet;
 
+        // The row source mode scrolls by its layout, because the row of the cell can be outside the window
+        if (worksheet.rowSource) {
+            worksheet.rowSource.scrollToRow(worksheet.selection.range![3], direction !== 0 && direction !== 1);
+        }
+        if (!worksheet.records[worksheet.selection.range![3]]?.[worksheet.selection.range![2]]) {
+            return;
+        }
+
         // Jspreadsheet Container information
         const contentRect = worksheet.content.getBoundingClientRect();
         const x1 = contentRect.left;
@@ -1347,7 +1556,7 @@ export class Selection {
         const top = y2 - y1 + worksheet.content.scrollTop;
 
         // Top position check
-        if (worksheet.selection.range![3] < worksheet.rowManager.getFreezeCount()) {
+        if (worksheet.rowSource || worksheet.selection.range![3] < worksheet.rowManager.getFreezeCount()) {
             // A frozen row is always in the viewport
         } else if (top >= worksheet.content.scrollTop + above && y < worksheet.content.scrollTop + h1) {
             // In the viewport

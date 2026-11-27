@@ -268,7 +268,7 @@ export class Merges {
      * of the range lose their values.
      * @returns The values of the other cells of the range, for the history.
      */
-    private merge(cellName: string, colspan: number, rowspan: number) {
+    private merge(cellName: string, colspan: number, rowspan: number, keepValues = false) {
         const worksheet = this.worksheet;
 
         const cell = getIdFromColumnName(cellName);
@@ -298,7 +298,9 @@ export class Merges {
             for (let x = cell[0]; x < cell[0] + colspan; x++) {
                 if (!(cell[0] === x && cell[1] === y)) {
                     data.push(worksheet.options.data[y][x]);
-                    worksheet.cells.update(x, y, '', true);
+                    if (!keepValues) {
+                        worksheet.cells.update(x, y, '', true);
+                    }
                     (worksheet.options.mergeCells[cellName] as MergeInfo)[2]!.push(worksheet.records[y][x].element);
                     worksheet.records[y][x].element.style.display = 'none';
                     worksheet.records[y][x].element = worksheet.records[cell[1]][cell[0]].element;
@@ -309,6 +311,35 @@ export class Merges {
         this.updateFirstCell(cellName);
 
         return data;
+    }
+
+    /**
+     * Merge a range of the rows that the row source mode shows, as the table shows it: no value, history, event or
+     * selection changes. A range that crosses another range of the table does not merge.
+     * @returns True when the range merged.
+     */
+    mergeWindow(cellName: string, colspan: number, rowspan: number) {
+        const worksheet = this.worksheet;
+        const [x1, y1] = getIdFromColumnName(cellName);
+        for (let y = y1; y < y1 + rowspan; y++) {
+            for (let x = x1; x < x1 + colspan; x++) {
+                if (!worksheet.records[y]?.[x] || worksheet.records[y][x].element.getAttribute('data-merged')) {
+                    return false;
+                }
+            }
+        }
+        this.merge(cellName, colspan, rowspan, true);
+        return true;
+    }
+
+    /**
+     * Split a range that mergeWindow merged, and remove it from the merged ranges of the table, with no event.
+     */
+    unmergeWindow(cellName: string) {
+        if (this.worksheet.options.mergeCells?.[cellName]) {
+            this.unmerge(cellName);
+            this.forget(cellName);
+        }
     }
 
     /**
@@ -396,6 +427,12 @@ export class Merges {
      */
     replace(merges: Record<string, [number, number]>) {
         const worksheet = this.worksheet;
+
+        // The row source mode keeps the merged ranges of the sheet, and merges the part in its window
+        if (worksheet.rowSource && merges && typeof merges === 'object' && !Array.isArray(merges)) {
+            worksheet.rowSource.replaceMerges(merges);
+            return [];
+        }
 
         if (!merges || typeof merges !== 'object' || Array.isArray(merges)) {
             throw new TypeError('replaceMerges needs an object of ranges');

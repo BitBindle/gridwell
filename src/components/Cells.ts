@@ -576,6 +576,11 @@ export class Cells {
     update(x: number, y: number, value: jspreadsheet.CellValue | undefined, force?: boolean) {
         const worksheet = this.worksheet;
 
+        // In the row source mode, a row outside the window has no record: the application keeps its values
+        if (worksheet.rowSource && !worksheet.records[y]?.[x]) {
+            return null;
+        }
+
         // Column options
         const c = this.getColumnIndex(x, y);
         const column = worksheet.options.columns?.[c];
