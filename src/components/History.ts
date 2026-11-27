@@ -265,6 +265,8 @@ export class History {
 
         // Update cells
         const historyRecord = worksheet.history.back();
+        // A move can be cancelled at the search question
+        let refused = false;
 
         if (historyRecord) {
             if (historyRecord.action === 'insertRow') {
@@ -276,9 +278,9 @@ export class History {
             } else if (historyRecord.action === 'deleteColumn') {
                 this.processColumn(0, historyRecord);
             } else if (historyRecord.action === 'moveRow') {
-                worksheet.moveRow(historyRecord.newValue, historyRecord.oldValue);
+                refused = worksheet.moveRow(historyRecord.newValue, historyRecord.oldValue) === false;
             } else if (historyRecord.action === 'moveColumn') {
-                worksheet.moveColumn(historyRecord.newValue, historyRecord.oldValue);
+                refused = worksheet.moveColumn(historyRecord.newValue, historyRecord.oldValue) === false;
             } else if (historyRecord.action === 'setMerge') {
                 worksheet.removeMerge(historyRecord.column, historyRecord.data);
             } else if (historyRecord.action === 'setStyle') {
@@ -326,8 +328,8 @@ export class History {
                 }
             }
         }
-        // The merged ranges that the action removed come back after its rows or columns
-        if (historyRecord && 'merges' in historyRecord && historyRecord.merges) {
+        // The merged ranges that the action removed come back after its rows or columns. A cancelled move keeps the ranges.
+        if (historyRecord && 'merges' in historyRecord && historyRecord.merges && !refused) {
             worksheet.merges.restoreCrossed(historyRecord.merges);
         }
         worksheet.parent.ignoreEvents = ignoreEvents;
@@ -352,6 +354,8 @@ export class History {
 
         // Update cells
         const historyRecord = worksheet.history.forward();
+        // A move can be cancelled at the search question
+        let refused = false;
 
         // The merged ranges that the action removed go again before the action
         if (historyRecord && 'merges' in historyRecord && historyRecord.merges) {
@@ -368,9 +372,9 @@ export class History {
             } else if (historyRecord.action === 'deleteColumn') {
                 this.processColumn(1, historyRecord);
             } else if (historyRecord.action === 'moveRow') {
-                worksheet.moveRow(historyRecord.oldValue, historyRecord.newValue);
+                refused = worksheet.moveRow(historyRecord.oldValue, historyRecord.newValue) === false;
             } else if (historyRecord.action === 'moveColumn') {
-                worksheet.moveColumn(historyRecord.oldValue, historyRecord.newValue);
+                refused = worksheet.moveColumn(historyRecord.oldValue, historyRecord.newValue) === false;
             } else if (historyRecord.action === 'setMerge') {
                 worksheet.merges.set(historyRecord.column, historyRecord.colspan, historyRecord.rowspan, 1);
             } else if (historyRecord.action === 'setStyle') {
@@ -404,6 +408,10 @@ export class History {
                     );
                 }
             }
+        }
+        // A cancelled move keeps the ranges, so they are merged again
+        if (refused && historyRecord && 'merges' in historyRecord && historyRecord.merges) {
+            worksheet.merges.restoreCrossed(historyRecord.merges);
         }
         worksheet.parent.ignoreEvents = ignoreEvents;
         worksheet.history.ignore = ignoreHistory;

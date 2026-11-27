@@ -317,18 +317,19 @@ export class Merges {
         const span: [number, number] = [x2 - x1 + 1, y2 - y1 + 1];
         source.replaceMerges({ ...source.merges, [cellName]: span });
         // The first cell of the new range is selected, as in the other modes
-        this.settleInRowSource({ [cellName]: span }, {}, [x1, y1]);
+        this.settleSelection({ [cellName]: span }, {}, [x1, y1]);
         if (!ignoreEvents) {
             worksheet.dispatch('onmerge', worksheet, { [cellName]: span });
         }
     }
 
     /**
-     * After a change of the merged ranges in the row source mode: an editor in a cell that a new range hides closes
-     * without a save, and the selection and the tab stop leave the hidden cells, as in replace for the other modes.
+     * After a change of the merged ranges in the row source mode, or after an undo merges ranges again: an editor in a
+     * cell that a new range hides closes without a save, and the selection and the tab stop leave the hidden cells, as in
+     * replace for the other modes.
      * @param select - A cell to select in all cases, as setMerge does.
      */
-    private settleInRowSource(added: Record<string, [number, number]>, removed: Record<string, [number, number]>, select?: [number, number]) {
+    private settleSelection(added: Record<string, [number, number]>, removed: Record<string, [number, number]>, select?: [number, number]) {
         const worksheet = this.worksheet;
         function hides(ranges: Record<string, [number, number]>, x: number, y: number, first: boolean) {
             return Object.entries(ranges).find(([name, [colspan, rowspan]]) => {
@@ -554,13 +555,14 @@ export class Merges {
 
     /**
      * Merge again the ranges that removeCrossed gave, after an undo of the action. The other cells keep their values, as
-     * the split left them. No event, history entry or change of the selection, but the tab stop leaves a hidden cell.
+     * the split left them. No event or history entry. An editor in a hidden cell closes without a save, and a selection
+     * that starts in a hidden cell goes to the first cell of its range.
      */
     restoreCrossed(removed: Record<string, [number, number]>) {
         for (const [cellName, [colspan, rowspan]] of Object.entries(removed)) {
             this.merge(cellName, colspan, rowspan, true);
         }
-        this.settleTabStop(removed);
+        this.settleSelection(removed, {});
     }
 
     /**
@@ -633,7 +635,7 @@ export class Merges {
             const added = Object.fromEntries(Object.entries(after).filter(([name, span]) => before[name]?.[0] !== span[0] || before[name]?.[1] !== span[1]));
             const removed = Object.fromEntries(Object.entries(before).filter(([name, span]) => after[name]?.[0] !== span[0] || after[name]?.[1] !== span[1]));
             // The order of the other modes: the selection moves, then onunmerge for each range that goes, and onmerge once for the new ranges
-            this.settleInRowSource(added, removed);
+            this.settleSelection(added, removed);
             for (const [name, span] of Object.entries(removed)) {
                 worksheet.dispatch('onunmerge', worksheet, name, { [name]: span });
             }
@@ -761,7 +763,7 @@ export class Merges {
         if (worksheet.rowSource) {
             const before = worksheet.rowSource.merges;
             worksheet.rowSource.replaceMerges({});
-            this.settleInRowSource({}, before);
+            this.settleSelection({}, before);
             for (const [key, span] of Object.entries(before)) {
                 worksheet.dispatch('onunmerge', worksheet, key, { [key]: span });
             }

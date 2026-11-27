@@ -766,14 +766,16 @@ range.
 ## Moves keep the merged ranges that they do not cross, and undo merges the removed ranges again
 
 `moveRow` and `moveColumn` remove only the merged ranges that they cross: a range that has the moved row or column, or a
-range that the row or column goes into. The other ranges stay and move with their cells. Version 5 removed all merged
-ranges of the worksheet.
+range that the row or column goes into. The other ranges stay and move with their cells, and `onunmerge` fires only for
+the removed ranges. Version 5 removed all merged ranges of the worksheet, and sent `onunmerge` for each. A `moveColumn`
+next to a range that it does not cross no longer throws.
 
 An undo of `insertRow`, `deleteRow`, `insertColumn`, `deleteColumn`, `moveRow` or `moveColumn` merges again the ranges
-that the action removed, and a redo removes them again, with no question. The history records of these actions have a
-`merges` property with the removed ranges. Version 5 did not give the ranges back.
+that the action removed, and a redo removes them again, with no question. An editor in a cell that a range hides again
+closes without a save, and a selection that starts in such a cell goes to the first cell of the range. The history
+records of these actions have a `merges` property with the removed ranges. Version 5 did not give the ranges back.
 
 The actions remove the ranges only after the question about the search results. A cancel of that question keeps the
-ranges. Version 5 removed them before the question.
+ranges, also for an undo or a redo of a move. Version 5 removed them before the question.
 
 No option keeps the old behavior, because the old behavior lost merged ranges that the user did not change.

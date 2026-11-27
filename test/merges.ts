@@ -1048,4 +1048,49 @@ describe('Moves remove only the merged ranges that they cross, and undo merges t
         expect(worksheet.getMerge()).to.eql({ B3: [2, 2] });
         expectMerged(worksheet, 1, 2, 2, 2);
     });
+    it('keeps the ranges when the search question cancels the undo or the redo of a move', () => {
+        const worksheet = create({ A1: [2, 2], B3: [2, 2] }, { search: true });
+        worksheet.moveRow(0, 5);
+        expect(worksheet.getMerge()).to.eql({ B2: [2, 2] });
+
+        worksheet.search('0:3');
+        answer = (message) => !String(message).includes('search');
+        worksheet.undo();
+        expect(worksheet.getMerge()).to.eql({ B2: [2, 2] });
+        expectMerged(worksheet, 1, 1, 2, 2);
+
+        const other = create({ A1: [2, 2], B4: [2, 2] }, { search: true });
+        other.moveRow(0, 5);
+        other.undo();
+        other.search('0:3');
+        other.redo();
+        expect(other.getMerge()).to.eql({ B4: [2, 2], A1: [2, 2] });
+        expectMerged(other, 0, 0, 2, 2);
+        expectMerged(other, 1, 3, 2, 2);
+    });
+
+    it('moves a column next to a range that the move does not cross', () => {
+        const worksheet = create({ B2: [2, 2] });
+
+        worksheet.moveColumn(0, 2);
+
+        expect(worksheet.getMerge()).to.eql({ A2: [2, 2] });
+        expectMerged(worksheet, 0, 1, 2, 2);
+        expect(worksheet.getValueFromCoords(2, 0)).to.equal('0:0');
+    });
+
+    it('selects the first cell and closes the editor when undo merges a range again over them', () => {
+        const worksheet = create({ B3: [2, 2] });
+        worksheet.deleteRow(2, 1);
+        worksheet.updateSelectionFromCoords(2, 2, 2, 2);
+        worksheet.openEditor(worksheet.records[2][2].element);
+        (worksheet.records[2][2].element.querySelector('input, textarea') as HTMLInputElement).value = 'typed';
+
+        worksheet.undo();
+
+        expect(worksheet.getSelection()).to.eql([1, 2, 1, 2]);
+        expect(worksheet.records[2][1].element.getAttribute('aria-selected')).to.equal('true');
+        expect(worksheet.editor.isOpen()).to.equal(false);
+        expect(worksheet.getValueFromCoords(2, 3)).to.equal('');
+    });
 });
