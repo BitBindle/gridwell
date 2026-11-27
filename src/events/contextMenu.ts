@@ -227,13 +227,15 @@ export function contextMenuControls(e: TargetEvent<PointerEvent>) {
                     x = e.target.getAttribute('data-x');
                 }
 
-                if (
-                    !current.selection.range ||
-                    Number(x) < parseInt(current.selection.range[0]) ||
-                    Number(x) > parseInt(current.selection.range[2]) ||
-                    Number(y) < parseInt(current.selection.range[1]) ||
-                    Number(y) > parseInt(current.selection.range[3])
-                ) {
+                // A selection of whole rows, or of whole columns, that has the pressed row or column stays. Another
+                // selection, also a cell selection with a cell of the row or column, changes as after a left press.
+                const range = current.selection.range?.map(Number);
+                const index = Number(role === 'row' ? y : x);
+                const anchor = role === 'row' ? current.selection.rowAnchor() : current.selection.columnAnchor();
+                const first = role === 'row' ? 1 : 0;
+                const inside =
+                    range != null && anchor != null && index >= Math.min(range[first], range[first + 2]) && index <= Math.max(range[first], range[first + 2]);
+                if (!inside) {
                     // A null index selects the whole row or column
                     const column = x == null ? null : parseInt(x);
                     const row = y == null ? null : parseInt(y);

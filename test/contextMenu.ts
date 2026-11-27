@@ -48,11 +48,49 @@ describe('The default context menu', () => {
         document.execCommand = execCommand;
     });
 
+    // The rows or columns that Delete removes after the menu closes, with the questions that it asks
+    function deleteKey(worksheet: Worksheet) {
+        const questions: (string | undefined)[] = [];
+        const confirm = global.confirm;
+        global.confirm = (message) => {
+            questions.push(message);
+            return true;
+        };
+        try {
+            worksheet.parent.contextMenu.contextmenu.close();
+            document.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, key: 'Delete', keyCode: 46, which: 46 }));
+        } finally {
+            global.confirm = confirm;
+        }
+        return questions;
+    }
+
     describe('on a header', () => {
         const data = () => [
             ['b', 2, 'x'],
             ['a', 1, 'y'],
         ];
+
+        it('starts a selection of whole columns on a header, so that Delete deletes the column (issue #229)', async () => {
+            const [worksheet] = await load({ worksheets: [{ data: [['a', 'b', 'c']] }] });
+
+            contextmenu(worksheet.headers[1]);
+            expect(worksheet.selection.columnAnchor()).to.equal(1);
+
+            expect(deleteKey(worksheet)).to.eql(['Are you sure to delete the selected columns?']);
+            expect(worksheet.getData()).to.eql([['a', 'c']]);
+        });
+
+        it('changes a cell selection with a cell of the column into a selection of the column, so that Delete deletes the column (issue #229)', async () => {
+            const [worksheet] = await load({ worksheets: [{ data: [['a', 'b', 'c']] }] });
+            worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+
+            contextmenu(worksheet.headers[0]);
+            expect(worksheet.selection.column).to.equal(0);
+
+            expect(deleteKey(worksheet)).to.eql(['Are you sure to delete the selected columns?']);
+            expect(worksheet.getData()).to.eql([['b', 'c']]);
+        });
 
         it('shows the items of a column', async () => {
             const [worksheet] = await load({ worksheets: [{ data: data() }] });
@@ -146,23 +184,6 @@ describe('The default context menu', () => {
             expect(worksheet.getColumnData(0)).to.eql(['', 'b', '']);
         });
 
-        // The rows or columns that Delete removes after the menu closes, with the questions that it asks
-        function deleteKey(worksheet: Worksheet) {
-            const questions: (string | undefined)[] = [];
-            const confirm = global.confirm;
-            global.confirm = (message) => {
-                questions.push(message);
-                return true;
-            };
-            try {
-                worksheet.parent.contextMenu.contextmenu.close();
-                document.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, key: 'Delete', keyCode: 46, which: 46 }));
-            } finally {
-                global.confirm = confirm;
-            }
-            return questions;
-        }
-
         it('starts a selection of whole rows, so that Delete deletes the row as after a left press (issue #229)', async () => {
             const [worksheet] = await load({ worksheets: [{ data: [['a'], ['b'], ['c']] }] });
 
@@ -173,14 +194,15 @@ describe('The default context menu', () => {
             expect(worksheet.getColumnData(0)).to.eql(['a', 'c']);
         });
 
-        it('starts a selection of whole columns on a header, so that Delete deletes the column (issue #229)', async () => {
-            const [worksheet] = await load({ worksheets: [{ data: [['a', 'b', 'c']] }] });
+        it('changes a cell selection with a cell of the row into a selection of the row, so that Delete deletes the row (issue #229)', async () => {
+            const [worksheet] = await load({ worksheets: [{ data: [['a'], ['b'], ['c']] }] });
+            worksheet.updateSelectionFromCoords(0, 1, 0, 1);
 
-            contextmenu(worksheet.headers[1]);
-            expect(worksheet.selection.columnAnchor()).to.equal(1);
+            contextmenu(worksheet.rows[1].element.children[0]);
+            expect(worksheet.selection.row).to.equal(1);
 
-            expect(deleteKey(worksheet)).to.eql(['Are you sure to delete the selected columns?']);
-            expect(worksheet.getData()).to.eql([['a', 'c']]);
+            expect(deleteKey(worksheet)).to.eql(['Are you sure to delete the selected rows?']);
+            expect(worksheet.getColumnData(0)).to.eql(['a', 'c']);
         });
 
         it('lets a press with Shift on another row number extend the selection from the row of the menu (issue #229)', async () => {

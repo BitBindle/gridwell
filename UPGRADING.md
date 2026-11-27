@@ -795,3 +795,13 @@ or redo applies it again. Version 5 removed the ranges before the question, and 
 move.
 
 No option keeps the old behavior, because the old behavior lost merged ranges that the user did not change.
+
+## A right press on a row number or a header selects as a left press
+
+A right press on a row number selects the whole row, and a right press on a header selects the whole column, as a left
+press does. `selection.row` or `selection.column` is the pressed row or column. Delete then deletes the selected rows or
+columns: `onbeforedeleterow` and `ondeleterow` (or the column events) fire instead of `onchange`, and with the
+`confirm` option false Delete asks no question. A selection of whole rows, or of whole columns, that has the pressed row
+or column stays. Version 5 kept each selection that had the pressed row or column, also a selection of cells, so Delete
+cleared the cells. No option keeps the old behavior, because the menu acts on the pressed rows or columns, and Delete
+did not.
