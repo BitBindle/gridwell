@@ -762,3 +762,22 @@ ranges without a message, and it now reads such a span as 1 too.
 No option keeps the old behavior, because the ranges that go past the sheet or cross another range broke the worksheet,
 and the other ranges merged no cells. To keep a range, give it spans that fit in the sheet and do not cross another
 range.
+
+## Moves keep the merged ranges that they do not cross, and undo merges the removed ranges again
+
+`moveRow` and `moveColumn` remove only the merged ranges that they cross: a range that has the moved row or column, or a
+range that the row or column goes into. The other ranges stay and move with their cells, and `onunmerge` fires only for
+the removed ranges. Version 5 removed all merged ranges of the worksheet, and sent `onunmerge` for each. A `moveColumn`
+next to a range that it does not cross no longer throws.
+
+An undo of `insertRow`, `deleteRow`, `insertColumn`, `deleteColumn`, `moveRow` or `moveColumn` merges again the ranges
+that the action removed, and a redo removes them again, with no question. An editor in a cell that a range hides again
+closes without a save, and a selection that starts in such a cell goes to the first cell of the range. The history
+records of these actions have a `merges` property with the removed ranges. Version 5 did not give the ranges back.
+
+The actions remove the ranges only after the question about the search results. A cancel of that question keeps the
+ranges, also for an undo or a redo of a move. A cancelled undo or redo keeps its place in the history, so the next undo
+or redo applies it again. Version 5 removed the ranges before the question, and went past the record of a cancelled
+move.
+
+No option keeps the old behavior, because the old behavior lost merged ranges that the user did not change.
