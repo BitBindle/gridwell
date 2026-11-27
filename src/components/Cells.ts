@@ -4,7 +4,7 @@ import { getMask, isFormula } from '../utils/values.js';
 import { formatDate, parseDate } from '../utils/dates.js';
 import { render } from '../utils/mask.js';
 import type { HistoryCellChange, Worksheet } from '../types/internal';
-import { recordRows } from './RowSource.js';
+import { forEachRecordRow } from './RowSource.js';
 import type jspreadsheet from '../jspreadsheet';
 
 // The date, then the date as text, then its parts
@@ -232,9 +232,9 @@ export class Cells {
                 // Unchecked all options
                 if (column.type === 'radio' && write) {
                     // The row source mode has values only for the rows of the window
-                    for (const y of recordRows(worksheet)) {
-                        worksheet.options.data[y][c] = false;
-                    }
+                    forEachRecordRow(worksheet, (row) => {
+                        worksheet.options.data[row][c] = false;
+                    });
                 }
 
                 // Update data and cell

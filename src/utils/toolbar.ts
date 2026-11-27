@@ -1,6 +1,5 @@
 import { translate } from './dictionary.js';
 import { getCellNameFromCoords } from './helpers.js';
-import { recordRows } from '../components/RowSource.js';
 import { ColorPicker, type ColorElement } from './color.js';
 import { BordersDialog, type BorderOptions } from './borders.js';
 import { ToolbarControl } from './toolbarControl.js';
@@ -64,7 +63,7 @@ function setSelectedStyle(worksheet: Worksheet, property: string, value: string,
  */
 function selectedRows(worksheet: Worksheet, range: number[]) {
     if (worksheet.rowSource) {
-        return recordRows(worksheet).filter((y) => y >= range[1] && y <= range[3]);
+        return worksheet.rowSource.attachedRows().filter((y) => y >= range[1] && y <= range[3]);
     }
     const rows = [];
     for (let y = range[1]; y <= range[3]; y++) {

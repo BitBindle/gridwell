@@ -223,10 +223,21 @@ export function checkMerges(
 }
 
 /**
- * The rows of a worksheet that have a record: all rows, or the frozen rows and the window of the row source mode.
+ * Call fn for each row of a worksheet that has a record: all rows, or the frozen rows and the window of the row source
+ * mode. In normal mode, a counted loop goes over the row numbers and makes no array or iterator, because it runs for each
+ * call of, for example, getColumnData and for each horizontal scroll with frozen columns.
  */
-export function recordRows(worksheet: Worksheet) {
-    return worksheet.rowSource ? worksheet.rowSource.attachedRows() : worksheet.rows.map((row, y) => y);
+export function forEachRecordRow(worksheet: Worksheet, fn: (y: number) => void) {
+    if (worksheet.rowSource) {
+        for (const y of worksheet.rowSource.attachedRows()) {
+            fn(y);
+        }
+        return;
+    }
+    const count = worksheet.rows.length;
+    for (let y = 0; y < count; y++) {
+        fn(y);
+    }
 }
 
 /**
