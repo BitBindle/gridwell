@@ -1,5 +1,5 @@
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
-import { recordRows } from './RowSource.js';
+import { forEachRecordRow } from './RowSource.js';
 import type { Worksheet } from '../types/internal';
 
 /** A style declaration read and written by property name, for example style['color'] */
@@ -66,16 +66,14 @@ export class Styles {
             // Control vars
             const data: Record<string, string> = {};
 
-            // The rows with a record: in the row source mode, the frozen rows and the window
-            const rows = recordRows(worksheet);
-            let x = 0;
-            for (const j of rows) {
-                x = worksheet.options.data[j].length;
-                break;
-            }
+            // The column count of the first row with a record
+            let x = -1;
 
-            // Go through the columns to get the data
-            for (const j of rows) {
+            // Go through the rows with a record: in the row source mode, the frozen rows and the window
+            forEachRecordRow(worksheet, (j) => {
+                if (x < 0) {
+                    x = worksheet.options.data[j].length;
+                }
                 for (let i = 0; i < x; i++) {
                     // A column outside the column window has no cell
                     const record = worksheet.records[j][i];
@@ -93,7 +91,7 @@ export class Styles {
                         data[k] = v;
                     }
                 }
-            }
+            });
 
             return data;
         } else {
