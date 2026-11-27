@@ -211,7 +211,8 @@ export class Formulas {
             });
 
             // Get the references, outside the string literals
-            const tokens = expression.replace(/"(?:[^"]|"")*"/g, '""').match(/([A-Z]+[0-9]+)/g);
+            const stripped = expression.replace(/"(?:[^"]|"")*"/g, '""');
+            const tokens = stripped.match(/([A-Z]+[0-9]+)/g);
 
             // Direct self-reference protection
             if (parentId && tokens?.includes(parentId)) {
@@ -220,7 +221,7 @@ export class Formulas {
             } else {
                 // Expressions to be used in the parsing
                 const formulaExpressions: Record<string, unknown> = {};
-                // A reference to a cell whose result is #REF! gives the formula the result #REF!
+                // A reference to a formula cell whose result is #REF! gives the formula the result #REF!
                 let refError = false;
 
                 if (tokens) {
@@ -250,9 +251,9 @@ export class Formulas {
                                     value = execute(value as string, position[0], position[1]);
                                     formulaResults[reference] = value;
                                 }
-                            }
-                            if (value === '#REF!') {
-                                refError = true;
+                                if (value === '#REF!') {
+                                    refError = true;
+                                }
                             }
                             // Type!
                             if (`${value}`.trim() === '') {
@@ -280,6 +281,7 @@ export class Formulas {
                 }
 
                 let source = text;
+                let given = false;
 
                 const ret = worksheet.dispatch('onbeforeformula', worksheet, expression, x, y);
                 if (ret === false) {
@@ -287,11 +289,13 @@ export class Formulas {
                 } else if (ret) {
                     expression = ret;
                     source = ret;
+                    given = true;
                 }
 
-                // A delete gave a reference the value #REF!, and the formula shows it, as other spreadsheets do. So does a
-                // formula that names a cell with the result #REF!. A formula engine of the application gets the text.
-                if (!formulaEngine && (refError || expression.replace(/"(?:[^"]|"")*"/g, '""').includes('#REF!'))) {
+                // A delete gave a reference the text #REF!, and the formula shows #REF!. So does a formula that names a
+                // formula cell with the result #REF!. The error functions, such as IFERROR, do not catch it. A formula
+                // engine of the application gets the text.
+                if (!formulaEngine && (refError || (given ? expression.replace(/"(?:[^"]|"")*"/g, '""') : stripped).includes('#REF!'))) {
                     return '#REF!';
                 }
 
@@ -492,44 +496,45 @@ export class Formulas {
     }
 
     /**
-     * Give a formula the new names of the cells that moved after a delete. A reference to a removed cell becomes #REF!. A
-     * range that keeps some of its cells ends at the first and the last cell that stay. A range that loses all its cells
-     * becomes #REF!. The string literals do not change.
+     * Give a formula the new names of the cells that moved after a delete. A reference to a removed cell becomes #REF!,
+     * with or without $ signs. A range that keeps some of its cells ends at the first and the last cell that stay, with
+     * the $ signs of its ends. A range that loses all its cells becomes #REF!. A cell that stays gets its new name as
+     * updateFormula gives it. The string literals, the function names, such as LOG10, and the names after a ! (the cells
+     * of another worksheet) do not change.
      * @param removed - The removed rows (axis 1) or columns (axis 0), at their positions before the delete.
      */
     private removeReferences(formula: string, referencesToUpdate: Record<string, string>, removed: Removed) {
         const end = removed.index + removed.count;
         const axis = removed.axis === 1 ? 1 : 0;
-        function position(name: string) {
-            return getIdFromColumnName(name)[axis];
-        }
-        function gone(name: string) {
-            return position(name) >= removed.index && position(name) < end;
-        }
-        // A cell that stays gets its new name. A removed end of a range goes to the first cell after the removed cells, or
-        // to the last cell before them, which is in the range.
-        function rename(name: string, low: boolean) {
-            if (!gone(name)) {
-                return referencesToUpdate[name] || name;
-            }
-            const cell = getIdFromColumnName(name);
-            cell[axis] = low ? removed.index : removed.index - 1;
-            return getColumnNameFromId(cell);
-        }
+        const updateFormula = (token: string) => this.updateFormula(token, referencesToUpdate);
         return formula.replace(
-            /("(?:[^"]|"")*")|(?<![A-Z0-9])([A-Z]+[0-9]+)(?::([A-Z]+[0-9]+))?(?![A-Z0-9])/g,
+            /("(?:[^"]|"")*")|(?<![A-Za-z0-9_.!$])(\$?[A-Z]+\$?[0-9]+)(?::(\$?[A-Z]+\$?[0-9]+))?(?![A-Za-z0-9_.!(])/g,
             (match, literal: string | undefined, from: string, to: string | undefined) => {
                 if (literal) {
                     return literal;
                 }
+                const fromCell = getIdFromColumnName(from.replace(/\$/g, ''));
+                const fromGone = fromCell[axis] >= removed.index && fromCell[axis] < end;
                 if (!to) {
-                    return gone(from) ? '#REF!' : referencesToUpdate[from] || from;
+                    return fromGone ? '#REF!' : updateFormula(from);
                 }
-                if (gone(from) && gone(to)) {
+                const toCell = getIdFromColumnName(to.replace(/\$/g, ''));
+                const toGone = toCell[axis] >= removed.index && toCell[axis] < end;
+                if (fromGone && toGone) {
                     return '#REF!';
                 }
-                const first = position(from) <= position(to);
-                return `${rename(from, first)}:${rename(to, !first)}`;
+                // A removed end of a range goes to the first cell after the removed cells, or to the last cell before
+                // them, which is in the range. It keeps its $ signs.
+                const first = fromCell[axis] <= toCell[axis];
+                function rename(token: string, cell: number[], gone: boolean, low: boolean) {
+                    if (!gone) {
+                        return updateFormula(token);
+                    }
+                    cell[axis] = low ? removed.index : removed.index - 1;
+                    const [column, row] = getColumnNameFromId(cell).split(/(?=[0-9])/, 2);
+                    return token.replace(/^(\$?)[A-Z]+(\$?)[0-9]+$/, `$1${column}$2${row}`);
+                }
+                return `${rename(from, fromCell, fromGone, first)}:${rename(to, toCell, toGone, !first)}`;
             }
         );
     }
@@ -541,6 +546,8 @@ export class Formulas {
     private updateFormulas(referencesToUpdate: Record<string, string>, keepText: (x: number, y: number) => boolean, removed?: Removed) {
         const worksheet = this.worksheet;
         const changed: FormulaText[] = [];
+        // The new names of the cells that the undo of a delete moves back, as the insert gives them
+        const back = removed ? Object.fromEntries(Object.entries(referencesToUpdate).map(([from, to]) => [to, from])) : undefined;
 
         // Update formulas. The formula of a cell that an undo or a redo adds already names the cells at their new positions.
         for (let j = 0; j < worksheet.options.data.length; j++) {
@@ -556,7 +563,8 @@ export class Formulas {
                     const newFormula = removed ? this.removeReferences(value, referencesToUpdate, removed) : this.updateFormula(value, referencesToUpdate);
                     if (newFormula !== value) {
                         row[i] = newFormula;
-                        if (removed) {
+                        // The undo of the delete moves the names back. The history keeps the texts that it does not give back.
+                        if (removed && this.updateFormula(newFormula, back!) !== value) {
                             const moved = (removed.axis === 1 ? j : i) >= removed.index ? removed.count : 0;
                             changed.push(removed.axis === 1 ? { x: i, y: j + moved, text: value } : { x: i + moved, y: j, text: value });
                         }

@@ -758,11 +758,13 @@ because the old behavior changed the formulas that the history gave back.
 
 ## A delete gives the references to the deleted cells #REF!
 
-`deleteRow` and `deleteColumn` change a reference of a formula to a deleted cell to `#REF!`, as other spreadsheets do. The
-formula shows `#REF!`, and so does a formula that names it. A range ends at the first and the last cell that stay, and a
-range whose cells all go becomes `#REF!`. The undo gives the changed formulas their texts again, and the redo gives them
-`#REF!` again. Version 5 kept the text of the reference, so the formula named the cell that took the place of the
-deleted cell, and the undo of the delete moved that reference to another cell.
+`deleteRow` and `deleteColumn` change a reference of a formula to a deleted cell to `#REF!`, also a reference with `$`
+signs. The formula shows `#REF!`, and so does a formula that names it. Without a formula engine, any formula whose text
+has `#REF!` shows `#REF!`, and the error functions, such as `IFERROR`, do not catch it. Version 5 gave `#ERROR` for such
+a formula. A range ends at the first and the last cell that stay, and a range whose cells all go becomes `#REF!`. The
+undo gives the changed formulas their texts again, and the redo gives them `#REF!` again. Version 5 kept the text of the
+reference, so the formula named the cell that took the place of the deleted cell, and the undo of the delete moved that
+reference to another cell.
 
 This affects code that reads the formula texts or the results after a delete. With `updateReferences: false`, the texts
 stay as before. A formula engine of the application (`formulaEngine`) gets the text with `#REF!` and gives the result. No

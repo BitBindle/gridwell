@@ -483,6 +483,39 @@ describe('References to deleted cells (#239)', () => {
         expect(worksheet.getData()).to.eql([['2', '=#REF!+A1', '="A1"&A1']]);
     });
 
+    it('gives #REF! to references with $ signs, keeps the $ signs of a range end, and keeps function names and other worksheets', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '=$A3+A$3*10'],
+                        ['2', '=SUM($A$1:A3)'],
+                        ['3', ''],
+                        ['4', '=$A$3'],
+                        ['5', '=ATAN2(A5,A6)+LOG10(A4)'],
+                        ['6', '=$A5&Sheet2!A3'],
+                    ],
+                },
+            ],
+        });
+        const before = column(worksheet, 1);
+
+        worksheet.deleteRow(2, 1);
+        expect(column(worksheet, 1)).to.eql(['=#REF!+#REF!*10', '=SUM($A$1:A2)', '=#REF!', '=ATAN2(A4,A5)+LOG10(A3)', '=$A4&Sheet2!A3']);
+        expect(worksheet.getValue('B1', true)).to.equal('#REF!');
+        expect(worksheet.getValue('B3', true)).to.equal('#REF!');
+
+        worksheet.undo();
+        expect(column(worksheet, 1)).to.eql(before);
+    });
+
+    it('does not give #REF! to a formula that names a cell with the text #REF!', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: [['#REF!', '=A1&"x"']] }],
+        });
+        expect(worksheet.getValue('B1', true)).to.equal('#REF!x');
+    });
+
     it('keeps the texts with updateReferences false', () => {
         const [worksheet] = jspreadsheet(root, {
             updateReferences: false,
