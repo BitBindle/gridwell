@@ -807,7 +807,7 @@ cell keeps the cell below all header rows, not only below the highest one.
 The fill handle hides while its cell is under the header or under the frozen rows, and shows again when the cell scrolls
 out from under them. This applies to a scroll of the content, of the page and of an element around the worksheet. For
 the scroll of the page, the library listens to `scroll` on the document in the capture phase. A scroll does not leave a
-shadow root, so the library also listens on the `root` option when it is in a shadow root. Version 5 showed the fill
+shadow root, so the library also listens on the shadow root that holds the `root` option. Version 5 showed the fill
 handle over the header.
 
 No option keeps the old behavior, because the header rows covered the titles of the groups, and the fill handle covered
