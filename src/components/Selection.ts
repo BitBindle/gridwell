@@ -797,8 +797,8 @@ export class Selection {
                 // The first child is the row number
                 for (let i = 1; i < tr.children.length; i++) {
                     const td = tr.children[i] as HTMLTableCellElement;
-                    const x = td.getAttribute('data-x');
-                    if (td.style.display !== 'none' && (x === null || !this.zeroWidth(parseInt(x)) || parseInt(td.getAttribute('colspan') ?? '1') > 1)) {
+                    const x = parseInt(td.getAttribute('data-x'));
+                    if (td.style.display !== 'none' && (!this.zeroWidth(x) || this.mergeShows(x, parseInt(td.getAttribute('data-y'))))) {
                         return td;
                     }
                 }
@@ -958,23 +958,50 @@ export class Selection {
     }
 
     /**
-     * True when a horizontal move can stop in column x of row y: the column is not hidden, and it has a width, or a
-     * merged range starts in it and spans more columns. A column of width 0 shows no cell, so the focus would not show.
+     * True when a horizontal move can stop in column x of row y: the column is not hidden. For a move of the keyboard, a
+     * column of width 0 is a stop only in a merged range that shows in another column. Such a column shows no cell, so
+     * the focus would not show. Paste keeps the columns of width 0, so that it fills the same cells that copy reads.
+     * @param keyboard - The move is a move of the keyboard.
      */
-    private columnShown(x: number, y: number) {
+    private columnStop(x: number, y: number, keyboard: boolean) {
         const worksheet = this.worksheet;
+        const shows = worksheet.rowSource ? !this.columnHidden(x) : worksheet.records[y][x].element.style.display !== 'none';
+        if (!shows || !keyboard || !this.zeroWidth(x)) {
+            return shows;
+        }
+        return this.mergeShows(x, y);
+    }
+
+    /** True when cell (x, y) is in a merged range that has a column that is not hidden and has a width. */
+    private mergeShows(x: number, y: number) {
+        const worksheet = this.worksheet;
+        let first: number;
+        let last: number;
         if (worksheet.rowSource) {
-            if (this.columnHidden(x)) {
+            const range = worksheet.rowSource.mergeAt(x, y);
+            if (!range) {
                 return false;
             }
-            const range = worksheet.rowSource.mergeAt(x, y);
-            return !this.zeroWidth(x) || (range?.[0] === x && range[2] > x);
+            [first, , last] = range;
+        } else {
+            // The record of each cell of a merged range has the element of the first cell
+            const td = worksheet.records[y]?.[x]?.element;
+            if (!td?.getAttribute('data-merged')) {
+                return false;
+            }
+            first = parseInt(td.getAttribute('data-x')!);
+            const merge = worksheet.options.mergeCells?.[getColumnNameFromId([first, parseInt(td.getAttribute('data-y')!)])];
+            if (!merge) {
+                return false;
+            }
+            last = first + merge[0] - 1;
         }
-        const td = worksheet.records[y][x].element;
-        if (td.style.display === 'none') {
-            return false;
+        for (let i = first; i <= last; i++) {
+            if (!this.columnHidden(i) && !this.zeroWidth(i)) {
+                return true;
+            }
         }
-        return !this.zeroWidth(x) || parseInt(td.getAttribute('colspan') ?? '1') > 1;
+        return false;
     }
 
     /** True when column x has the width 0. */
@@ -988,7 +1015,7 @@ export class Selection {
      * range of (x, y). The rows outside the window have no record, so the hidden rows come from the layout and the
      * merged ranges from the source.
      */
-    private sourceStep(x: number, y: number, dx: number, dy: number): [number, number] {
+    private sourceStep(x: number, y: number, dx: number, dy: number, keyboard = true): [number, number] {
         const worksheet = this.worksheet;
         const source = worksheet.rowSource!;
         const layout = source.layout;
@@ -1004,7 +1031,7 @@ export class Selection {
                 j = dy > 0 ? run.last + 1 : run.first - 1;
                 continue;
             }
-            if (dx !== 0 && !this.columnShown(i, j)) {
+            if (dx !== 0 && !this.columnStop(i, j, keyboard)) {
                 i += dx;
                 continue;
             }
@@ -1177,18 +1204,22 @@ export class Selection {
         this.updateScroll(1);
     }
 
-    rightGet(x: number, y: number) {
+    /**
+     * The next column to the right of cell (x, y) that a move can stop in.
+     * @param keyboard - Skip the columns of width 0, as a move of the keyboard does. Paste keeps them.
+     */
+    rightGet(x: number, y: number, keyboard = false) {
         const worksheet = this.worksheet;
 
         if (worksheet.rowSource) {
-            return this.sourceStep(parseInt(x), parseInt(y), 1, 0)[0];
+            return this.sourceStep(parseInt(x), parseInt(y), 1, 0, keyboard)[0];
         }
 
         x = parseInt(x);
         y = parseInt(y);
 
         for (let i = x + 1; i < worksheet.headers.length; i++) {
-            if (this.columnShown(i, y)) {
+            if (this.columnStop(i, y, keyboard)) {
                 if (worksheet.records[y][i].element.getAttribute('data-merged')) {
                     if (worksheet.records[y][i].element === worksheet.records[y][x].element) {
                         continue;
@@ -1217,13 +1248,13 @@ export class Selection {
 
         if (direction === 0) {
             for (let i = worksheet.headers.length - 1; i > x; i--) {
-                if (this.columnShown(i, y)) {
+                if (this.columnStop(i, y, true)) {
                     x = i;
                     break;
                 }
             }
         } else {
-            x = this.rightGet(x, y);
+            x = this.rightGet(x, y, true);
         }
 
         if (group === 0) {
@@ -1390,7 +1421,7 @@ export class Selection {
         x = parseInt(x);
         y = parseInt(y);
         for (let i = x - 1; i >= 0; i--) {
-            if (this.columnShown(i, y)) {
+            if (this.columnStop(i, y, true)) {
                 if (worksheet.records[y][i].element.getAttribute('data-merged')) {
                     if (worksheet.records[y][i].element === worksheet.records[y][x].element) {
                         continue;
@@ -1419,7 +1450,7 @@ export class Selection {
 
         if (direction === 0) {
             for (let i = 0; i < x; i++) {
-                if (this.columnShown(i, y)) {
+                if (this.columnStop(i, y, true)) {
                     x = i;
                     break;
                 }

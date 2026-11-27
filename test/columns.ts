@@ -889,12 +889,18 @@ describe('A column of width 0', () => {
 describe('The keyboard and a column of width 0', () => {
     const range = (worksheet: Worksheet) => worksheet.selection.range!.map(Number);
 
-    it('moves over a column of width 0 with the arrow keys and Ctrl, and does not make it the first tab stop', () => {
+    it('does not make a cell in a column of width 0 the first tab stop', () => {
         const worksheet = jspreadsheet(root, {
             worksheets: [{ minDimensions: [5, 2], columns: [{ width: 0 }, {}, { width: 0 }, {}, { width: 0 }] }],
         })[0];
 
         expect(Array.from(worksheet.table.querySelectorAll('[tabindex="0"]'))).to.eql([worksheet.records[0][1].element]);
+    });
+
+    it('moves over a column of width 0 with the arrow keys, Ctrl, Shift, Home and End', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [5, 2], columns: [{ width: 0 }, {}, { width: 0 }, {}, { width: 0 }] }],
+        })[0];
 
         worksheet.updateSelectionFromCoords(1, 0, 1, 0);
         worksheet.right();
@@ -910,11 +916,79 @@ describe('The keyboard and a column of width 0', () => {
         expect(range(worksheet)).to.eql([3, 0, 3, 0]);
         worksheet.left(false, true);
         expect(range(worksheet)).to.eql([1, 0, 1, 0]);
+
+        worksheet.right(true);
+        expect(range(worksheet)).to.eql([1, 0, 3, 0]);
+        worksheet.right(true);
+        expect(range(worksheet)).to.eql([1, 0, 3, 0]);
+
+        worksheet.updateSelectionFromCoords(3, 0, 3, 0);
+        worksheet.first();
+        expect(range(worksheet)).to.eql([1, 0, 1, 0]);
+        worksheet.last();
+        expect(range(worksheet)).to.eql([3, 0, 3, 0]);
+    });
+
+    it('pastes into a column of width 0, so that paste fills the cells that copy reads', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [4, 2], columns: [{}, { width: 0 }, {}, { width: 0 }] }],
+        })[0];
+
+        worksheet.paste(0, 0, '1\t2\t3\t4');
+
+        expect(worksheet.getData()[0]).to.eql(['1', '2', '3', '4']);
+    });
+
+    it('pastes into a column of width 0 in the row source mode', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    minDimensions: [4, 1],
+                    columns: [{}, { width: 0 }, {}, { width: 0 }],
+                    rowSource: { count: 3, row: () => ['', '', '', ''] },
+                },
+            ],
+        })[0];
+
+        worksheet.paste(0, 0, '1\t2\t3\t4');
+
+        expect([0, 1, 2, 3].map((x) => worksheet.getValueFromCoords(x, 0))).to.eql(['1', '2', '3', '4']);
     });
 
     it('stops on a merged range that starts in a column of width 0 and shows in the next column', () => {
         const worksheet = jspreadsheet(root, {
             worksheets: [{ minDimensions: [4, 1], columns: [{}, { width: 0 }, {}, {}], mergeCells: { B1: [2, 1] } }],
+        })[0];
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.right();
+        expect(range(worksheet)).to.eql([1, 0, 1, 0]);
+        worksheet.right();
+        expect(range(worksheet)).to.eql([3, 0, 3, 0]);
+    });
+
+    it('moves over a merged range whose columns all have the width 0', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [4, 1], columns: [{}, { width: 0 }, { width: 0 }, {}], mergeCells: { B1: [2, 1] } }],
+        })[0];
+
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.right();
+        expect(range(worksheet)).to.eql([3, 0, 3, 0]);
+        worksheet.left();
+        expect(range(worksheet)).to.eql([0, 0, 0, 0]);
+    });
+
+    it('stops on a merged range that starts in a column of width 0 in the row source mode', () => {
+        const worksheet = jspreadsheet(root, {
+            worksheets: [
+                {
+                    minDimensions: [4, 1],
+                    columns: [{}, { width: 0 }, {}, {}],
+                    mergeCells: { B1: [2, 1] },
+                    rowSource: { count: 10, row: (y) => [`a${y}`, `b${y}`, `c${y}`, `d${y}`] },
+                },
+            ],
         })[0];
 
         worksheet.updateSelectionFromCoords(0, 0, 0, 0);
