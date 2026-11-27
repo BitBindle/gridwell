@@ -745,3 +745,20 @@ of one row, or the last row of a taller range. Version 5 did not ask. It kept th
 
 No option keeps the old behavior, because the removal of ranges that the action does not touch lost data. The dialog
 text stays the same, so that the translations of applications still apply.
+
+## The build leaves out the merged ranges of the options that do not fit
+
+The build of a worksheet, `setData` and `loadWorksheet` leave out a range of `mergeCells` that goes past the last row or
+column, or that crosses an earlier range of the option. The console shows the first cells of these ranges, and
+`getMerge` does not give them. Version 5 merged them, and the worksheet then threw on a later delete, or kept merged
+cells after `destroyMerge`. A range whose first cell was in an earlier range showed the alert "Cell already merged". It
+now goes to the console.
+
+The build also leaves out, with the same message, a range that is not valid: a range of one cell, a span that is not a
+whole number, or a cell name that is not in capitals. Version 5 kept a range of one cell in `getMerge`. A missing span,
+a span of `null`, or a span below 1, is 1, as in `setMerge` and in version 5. The row source mode left out all these
+ranges without a message, and it now reads such a span as 1 too.
+
+No option keeps the old behavior, because the ranges that go past the sheet or cross another range broke the worksheet,
+and the other ranges merged no cells. To keep a range, give it spans that fit in the sheet and do not cross another
+range.
