@@ -4,7 +4,7 @@
     "description": "An accessible JavaScript data grid with spreadsheet controls, with no dependencies. A fork of Jspreadsheet CE.",
     "repository": {
         "type": "git",
-        "url": "https://github.com/BitBindle/jspreadsheet-ce.git"
+        "url": "https://github.com/BitBindle/gridwell.git"
     },
     "author": {
         "name": "BitBindle"
@@ -62,8 +62,8 @@
         "resources/lang"
     ],
     "version": "6.0.0",
-    "bugs": "https://github.com/BitBindle/jspreadsheet-ce/issues",
-    "homepage": "https://github.com/BitBindle/jspreadsheet-ce#readme",
+    "bugs": "https://github.com/BitBindle/gridwell/issues",
+    "homepage": "https://github.com/BitBindle/gridwell#readme",
     "scripts": {
         "format": "npm run prettier:fix && npm run lint:fix",
         "lint": "eslint . && node check-cycles.cjs",

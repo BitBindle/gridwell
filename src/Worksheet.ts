@@ -894,7 +894,7 @@ export class Worksheet {
      */
     private createAbout() {
         const ads = document.createElement('a');
-        ads.setAttribute('href', 'https://github.com/BitBindle/jspreadsheet-ce');
+        ads.setAttribute('href', 'https://github.com/BitBindle/gridwell');
         this.ads = document.createElement('div');
         this.ads.className = 'jss_about';
 

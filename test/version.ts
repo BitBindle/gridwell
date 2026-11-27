@@ -7,6 +7,6 @@ describe('Version', () => {
         const { version } = require('../package.json') as { version: string };
 
         expect(jspreadsheet.version().version).to.equal(version);
-        expect(jspreadsheet.version().print()[0]).to.equal(['Gridwell', version, 'https://github.com/BitBindle/jspreadsheet-ce', 'MIT'].join('\r\n'));
+        expect(jspreadsheet.version().print()[0]).to.equal(['Gridwell', version, 'https://github.com/BitBindle/gridwell', 'MIT'].join('\r\n'));
     });
 });

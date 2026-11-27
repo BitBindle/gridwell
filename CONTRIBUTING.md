@@ -27,13 +27,14 @@ sets it up once on npmjs.com:
    on an up-to-date `master` run `npm install` and `npm publish --access public`. It publishes the version in
    `package.json`, `6.0.0`.
 3. In the settings of the package on npmjs.com, add a trusted publisher for GitHub Actions: the organization
-   `BitBindle`, the repository `jspreadsheet-ce`, the workflow `publish.yml`, and no environment.
+   `BitBindle`, the repository `gridwell`, the workflow `publish.yml`, and no environment.
 4. In the same settings, set the publishing access to require two-factor authentication and disallow tokens. The
    workflow still publishes, and a stolen token cannot.
 
 Trusted publishing needs npm 11.5.1 or later, which the workflow installs, and a runner hosted by GitHub. The
-`repository` in `package.json` must stay `https://github.com/BitBindle/jspreadsheet-ce`, the repository that the
-provenance names.
+`repository` in `package.json` must name the repository that runs the workflow, `https://github.com/BitBindle/gridwell`.
+If the repository gets a new name, change the links in `package.json` and the trusted publisher on npmjs.com before the
+next publish.
 
 # Code of Conduct
 
