@@ -509,6 +509,46 @@ describe('References to deleted cells (#239)', () => {
         expect(column(worksheet, 1)).to.eql(before);
     });
 
+    it('gives back on undo the formulas that the delete keeps but the undo renames, and ends ranges after row 9', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [['1', '2', '3', '=A1&"C1"', '=A1+Sheet2!C1', '=SUM(C$1:A1)']],
+                },
+            ],
+        });
+        const before = worksheet.getData()[0].slice(3);
+        worksheet.deleteColumn(1, 1);
+        worksheet.undo();
+        expect(worksheet.getData()[0].slice(3)).to.eql(before);
+
+        const [other] = jspreadsheet(root, {
+            worksheets: [{ data: Array.from({ length: 20 }, (_, y) => [`${y + 1}`, y ? '' : '=SUM(A5:A12)', y ? '' : '=SUM($A$5:A$12)']) }],
+        });
+        other.deleteRow(11, 1);
+        expect(other.getData()[0].slice(1)).to.eql(['=SUM(A5:A11)', '=SUM($A$5:A$11)']);
+        other.deleteRow(9, 2);
+        expect(other.getData()[0].slice(1)).to.eql(['=SUM(A5:A9)', '=SUM($A$5:A$9)']);
+    });
+
+    it('calculates again a formula whose range loses a cell from its middle', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', '=SUM(A2:A4)'],
+                        ['2', ''],
+                        ['3', ''],
+                        ['4', ''],
+                    ],
+                },
+            ],
+            formulaEngine: (worksheet, expression) => `engine ${expression}`,
+        });
+        worksheet.deleteRow(2, 1);
+        expect(worksheet.getValue('B1', true)).to.equal('engine =SUM(A2:A3)');
+    });
+
     it('does not give #REF! to a formula that names a cell with the text #REF!', () => {
         const [worksheet] = jspreadsheet(root, {
             worksheets: [{ data: [['#REF!', '=A1&"x"']] }],

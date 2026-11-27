@@ -502,12 +502,14 @@ export class Formulas {
      * updateFormula gives it. The string literals, the function names, such as LOG10, and the names after a ! (the cells
      * of another worksheet) do not change.
      * @param removed - The removed rows (axis 1) or columns (axis 0), at their positions before the delete.
+     * @returns The new text, and if the formula named a removed cell, alone or in a range, so that its result changes.
      */
     private removeReferences(formula: string, referencesToUpdate: Record<string, string>, removed: Removed) {
         const end = removed.index + removed.count;
         const axis = removed.axis === 1 ? 1 : 0;
         const updateFormula = (token: string) => this.updateFormula(token, referencesToUpdate);
-        return formula.replace(
+        let named = false;
+        const text = formula.replace(
             /("(?:[^"]|"")*")|(?<![A-Za-z0-9_.!$])(\$?[A-Z]+\$?[0-9]+)(?::(\$?[A-Z]+\$?[0-9]+))?(?![A-Za-z0-9_.!(])/g,
             (match, literal: string | undefined, from: string, to: string | undefined) => {
                 if (literal) {
@@ -516,10 +518,12 @@ export class Formulas {
                 const fromCell = getIdFromColumnName(from.replace(/\$/g, ''));
                 const fromGone = fromCell[axis] >= removed.index && fromCell[axis] < end;
                 if (!to) {
+                    named ||= fromGone;
                     return fromGone ? '#REF!' : updateFormula(from);
                 }
                 const toCell = getIdFromColumnName(to.replace(/\$/g, ''));
                 const toGone = toCell[axis] >= removed.index && toCell[axis] < end;
+                named ||= Math.min(fromCell[axis], toCell[axis]) < end && Math.max(fromCell[axis], toCell[axis]) >= removed.index;
                 if (fromGone && toGone) {
                     return '#REF!';
                 }
@@ -531,12 +535,13 @@ export class Formulas {
                         return updateFormula(token);
                     }
                     cell[axis] = low ? removed.index : removed.index - 1;
-                    const [column, row] = getColumnNameFromId(cell).split(/(?=[0-9])/, 2);
+                    const [, column, row] = /^([A-Z]+)([0-9]+)$/.exec(getColumnNameFromId(cell))!;
                     return token.replace(/^(\$?)[A-Z]+(\$?)[0-9]+$/, `$1${column}$2${row}`);
                 }
                 return `${rename(from, fromCell, fromGone, first)}:${rename(to, toCell, toGone, !first)}`;
             }
         );
+        return { text, named };
     }
 
     /**
@@ -560,14 +565,17 @@ export class Formulas {
                 // Is formula
                 if (value.substr(0, 1) === '=') {
                     // Replace tokens
-                    const newFormula = removed ? this.removeReferences(value, referencesToUpdate, removed) : this.updateFormula(value, referencesToUpdate);
+                    const result = removed ? this.removeReferences(value, referencesToUpdate, removed) : null;
+                    const newFormula = result ? result.text : this.updateFormula(value, referencesToUpdate);
                     if (newFormula !== value) {
                         row[i] = newFormula;
-                        // The undo of the delete moves the names back. The history keeps the texts that it does not give back.
-                        if (removed && this.updateFormula(newFormula, back!) !== value) {
-                            const moved = (removed.axis === 1 ? j : i) >= removed.index ? removed.count : 0;
-                            changed.push(removed.axis === 1 ? { x: i, y: j + moved, text: value } : { x: i + moved, y: j, text: value });
-                        }
+                    }
+                    // A formula that named a removed cell calculates again. The undo of the delete moves the names back,
+                    // and the history keeps the texts that it does not give back, also of a formula that the delete did not
+                    // change.
+                    if (removed && result && (result.named || this.updateFormula(newFormula, back!) !== value)) {
+                        const moved = (removed.axis === 1 ? j : i) >= removed.index ? removed.count : 0;
+                        changed.push(removed.axis === 1 ? { x: i, y: j + moved, text: value } : { x: i + moved, y: j, text: value });
                     }
                 }
             }
