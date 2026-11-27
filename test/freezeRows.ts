@@ -783,6 +783,31 @@ describe('The fill handle under the header and the frozen rows (issue #185)', ()
     );
 
     it(
+        'checks the fill handle of a worksheet in a shadow root in another shadow root, on a scroll in the outer shadow root',
+        withRowHeight(async () => {
+            // An application host with a scrolled element in its shadow root, and a grid host with its own shadow root
+            const app = document.createElement('div');
+            root.appendChild(app);
+            const outer = app.attachShadow({ mode: 'open' });
+            const main = document.createElement('div');
+            outer.appendChild(main);
+            const host = document.createElement('div');
+            main.appendChild(host);
+            const inner = host.attachShadow({ mode: 'open' });
+            const element = document.createElement('div');
+            inner.appendChild(element);
+            const [worksheet] = jspreadsheet(element, { root: inner, worksheets: [{ data: rows(40), filters: true }] });
+            await built();
+            stick(worksheet.thead.lastElementChild!, 40);
+            select(worksheet, 1, 10, 300);
+
+            worksheet.records[10][1].element.getBoundingClientRect = rect(150, 10, 100, 20);
+            main.dispatchEvent(new Event('scroll'));
+            expect(worksheet.corner.style.display).to.equal('none');
+        })
+    );
+
+    it(
         'checks the fill handle when the root option is an element in a shadow root, on a scroll of an element around it',
         withRowHeight(async () => {
             const host = document.createElement('div');

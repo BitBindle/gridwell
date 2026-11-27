@@ -24,19 +24,24 @@ export function setEvents(root: Document | HTMLElement | ShadowRoot) {
     document.addEventListener('keydown', keyDownControls as EventListener);
     // A scroll does not bubble, so the document sees the scroll of the page and of any element in the capture phase
     document.addEventListener('scroll', scrollControls, true);
-    // A scroll in a shadow root does not leave it, so the shadow root of the spreadsheet listens too
-    const shadow = shadowOf(root);
-    if (shadow) {
+    // A scroll in a shadow root does not leave it, so each shadow root around the spreadsheet listens too
+    for (const shadow of shadowsOf(root)) {
         shadow.addEventListener('scroll', scrollControls, true);
     }
 }
 
 /**
- * The shadow root that holds the root, or the root when it is a shadow root.
+ * The shadow roots that hold the root, from the nearest one to the one in the document. A root that is a shadow root
+ * comes first.
  */
-function shadowOf(root: Document | HTMLElement | ShadowRoot) {
-    const node = root.getRootNode();
-    return node !== document && (node as ShadowRoot).host ? node : null;
+function shadowsOf(root: Document | HTMLElement | ShadowRoot) {
+    const shadows: ShadowRoot[] = [];
+    let node = root.getRootNode() as Node;
+    while (node !== document && (node as ShadowRoot).host) {
+        shadows.push(node as ShadowRoot);
+        node = (node as ShadowRoot).host.getRootNode();
+    }
+    return shadows;
 }
 
 export function destroyEvents(root: Document | HTMLElement | ShadowRoot) {
@@ -55,5 +60,7 @@ export function destroyEvents(root: Document | HTMLElement | ShadowRoot) {
     root.removeEventListener('focusin', focusInControls as EventListener);
     document.removeEventListener('keydown', keyDownControls as EventListener);
     document.removeEventListener('scroll', scrollControls, true);
-    shadowOf(root)?.removeEventListener('scroll', scrollControls, true);
+    for (const shadow of shadowsOf(root)) {
+        shadow.removeEventListener('scroll', scrollControls, true);
+    }
 }
