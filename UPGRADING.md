@@ -795,3 +795,17 @@ or redo applies it again. Version 5 removed the ranges before the question, and 
 move.
 
 No option keeps the old behavior, because the old behavior lost merged ranges that the user did not change.
+
+## The header rows stick below each other, and the fill handle hides under them
+
+The nested header rows and the filter row stick below each other when the content scrolls. Each header row gets the
+height of the rows above it in the custom property `--jss-header-top`, and its cells use it as their `top`. Version 5
+gave each header cell `top: 0`, so the last header row covered the rows above it. A stylesheet that sets `top` on the
+cells of the header replaces the new value. The frozen rows stick below all header rows, and the scroll to the active
+cell keeps the cell below all header rows, not only below the highest one.
+
+The fill handle hides while its cell is under the header or under the frozen rows, and shows again when the cell scrolls
+out from under them. Version 5 showed the fill handle over the header.
+
+No option keeps the old behavior, because the header rows covered the titles of the groups, and the fill handle covered
+the header.

@@ -49,6 +49,9 @@ export class Selection {
     /** The selected range from left to right and top to bottom, or null before the first selection. */
     bounds: Range | null = null;
 
+    /** True when updateCorner found the bottom right corner of the selection under the frozen columns. */
+    private cornerUnderColumns = false;
+
     /** The records of the selected cells. */
     highlighted: WorksheetState['records'][number] = [];
 
@@ -132,25 +135,61 @@ export class Selection {
             worksheet.corner.style.top = `${y}px`;
             worksheet.corner.style.left = `${x}px`;
 
+            this.cornerUnderColumns = false;
             if (worksheet.options.freezeColumns) {
                 // The width of the frozen columns on the screen, as the place of the cell
                 const width = toScreen(worksheet, worksheet.columns.getFreezeWidth());
                 // Only check if the last column is not part of the merged cells
-                if (lastX > worksheet.options.freezeColumns - 1 && x2 - x1 + w2 < width) {
-                    worksheet.corner.style.display = 'none';
-                } else {
-                    if (worksheet.options.selectionCopy !== false) {
-                        worksheet.corner.style.display = '';
-                    }
-                }
-            } else {
-                if (worksheet.options.selectionCopy !== false) {
-                    worksheet.corner.style.display = '';
-                }
+                this.cornerUnderColumns = lastX > worksheet.options.freezeColumns - 1 && x2 - x1 + w2 < width;
             }
+            this.showCorner(!this.cornerUnderColumns && !this.isCornerUnderHeader(last, y2 - y1 + h2));
         }
 
         worksheet.parent.toolbarManager.update(worksheet);
+    }
+
+    /**
+     * Check if the sticky header, or the frozen rows, cover the fill handle at the bottom of the cell. `bottom` is the
+     * distance on the screen from the top of the content to the bottom of the cell. A cell of a frozen row is not under
+     * the frozen rows.
+     */
+    private isCornerUnderHeader(cell: HTMLElement, bottom: number) {
+        const worksheet = this.worksheet;
+        const rowManager = worksheet.rowManager;
+
+        let covered = rowManager.getHeaderHeight();
+        if (parseInt(cell.getAttribute('data-y')!) >= rowManager.getFreezeCount()) {
+            covered += rowManager.getFreezeHeight();
+        }
+        // The fill handle starts 4 pixels above the bottom of the cell
+        return bottom - toScreen(worksheet, 4) < toScreen(worksheet, covered);
+    }
+
+    /**
+     * Show or hide the fill handle. A worksheet with selectionCopy false has no fill handle.
+     */
+    private showCorner(show: boolean) {
+        const worksheet = this.worksheet;
+        if (!show) {
+            worksheet.corner.style.display = 'none';
+        } else if (worksheet.options.selectionCopy !== false) {
+            worksheet.corner.style.display = '';
+        }
+    }
+
+    /**
+     * Hide the fill handle while the sticky header or the frozen rows cover the bottom of its cell, and show it again
+     * when the cell scrolls out from under them. The scroll calls it when the content scrolls up or down.
+     */
+    updateCornerCover() {
+        const worksheet = this.worksheet;
+        if (!worksheet.corner || !worksheet.selection.highlighted?.length) {
+            return;
+        }
+        const last = worksheet.selection.highlighted[worksheet.selection.highlighted.length - 1].element;
+        const bottom = last.getBoundingClientRect().bottom - worksheet.content.getBoundingClientRect().top;
+        // The frozen columns keep the result of updateCorner, which runs after each scroll to the left or to the right
+        this.showCorner(!this.cornerUnderColumns && !this.isCornerUnderHeader(last, bottom));
     }
 
     reset(blur?: boolean) {
