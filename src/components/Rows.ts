@@ -634,6 +634,13 @@ export class Rows {
                 }
 
                 if (parseInt(rowNumber) > -1) {
+                    // If delete all rows, and set allowDeletingAllRows false, will stay one row. The merge check below needs
+                    // the rows that go.
+                    if (worksheet.options.allowDeletingAllRows !== true && lastRow + 1 === numOfRows) {
+                        numOfRows--;
+                        console.error('Jspreadsheet: It is not possible to delete the last row');
+                    }
+
                     // The merged ranges that have a cell in the deleted rows are removed. The other ranges stay and move with their cells.
                     const crossed = worksheet.merges.inRows(rowNumber, rowNumber + numOfRows - 1);
                     if (crossed.length) {
@@ -656,12 +663,6 @@ export class Rows {
                         }
 
                         worksheet.view.results = null;
-                    }
-
-                    // If delete all rows, and set allowDeletingAllRows false, will stay one row
-                    if (worksheet.options.allowDeletingAllRows !== true && lastRow + 1 === numOfRows) {
-                        numOfRows--;
-                        console.error('Jspreadsheet: It is not possible to delete the last row');
                     }
 
                     // Remove node

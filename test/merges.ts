@@ -491,12 +491,22 @@ describe('Merge tests', () => {
         it('keeps the other ranges when deleteRow deletes a row of one range', () => {
             const worksheet = create({ A1: [2, 1], B3: [2, 2], A6: [2, 1] });
 
-            worksheet.deleteRow(3, 1);
+            worksheet.deleteRow(2, 1);
 
             expect(questions).to.have.length(1);
             expect(worksheet.getMerge()).to.eql({ A1: [2, 1], A5: [2, 1] });
             expect(worksheet.records[4][0].element.getAttribute('colspan')).to.equal('2');
-            expect(worksheet.getValue('A4')).to.equal('0:4');
+            expect(worksheet.getValue('A3')).to.equal('0:3');
+        });
+
+        it('keeps a range in the row that stays when deleteRow names all rows', () => {
+            const worksheet = create({ A6: [2, 1] });
+
+            worksheet.deleteRow(0, 6);
+
+            expect(questions).to.have.length(0);
+            expect(worksheet.rows.length).to.equal(1);
+            expect(worksheet.getMerge()).to.eql({ A1: [2, 1] });
         });
 
         it('keeps the other ranges when deleteColumn deletes a column of one range', () => {

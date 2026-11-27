@@ -698,6 +698,11 @@ set the width that you want.
 `insertRow`, `insertColumn`, `deleteRow` and `deleteColumn` remove only the merged ranges that they cross, after the
 dialog. An insert crosses a range when the new rows or columns split it. A delete crosses a range when the range has a
 cell in the deleted rows or columns. The other ranges stay and move with their cells. Version 5 removed all merged ranges
-of the worksheet. `deleteRow` also asks before it deletes a row with a merged range of one row, and removes that range.
-Version 5 did not ask, and kept the range on the next row in `getMerge`. To remove all ranges, call `destroyMerge` before
-the insert or the delete.
+of the worksheet.
+
+`deleteRow` also asks before it deletes a row of a range that version 5 did not count, and removes that range: a range
+of one row, or the last row of a taller range. Version 5 did not ask. It kept the range of one row on the next row in
+`getMerge`, and kept the rowspan of the taller range, which then covered the next row.
+
+No option keeps the old behavior, because the removal of ranges that the action does not touch lost data. The dialog
+text stays the same, so that the translations of applications still apply.
