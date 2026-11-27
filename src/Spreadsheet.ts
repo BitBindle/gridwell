@@ -298,8 +298,8 @@ export class Spreadsheet {
             if (worksheet.generation === generation) {
                 delete worksheet.pendingLoad;
                 const active = libraryBase.jspreadsheet.current;
-                // destroy empties the spreadsheet property of the element, and a new spreadsheet in the element replaces it
-                const destroyed = this.element.spreadsheet !== undefined && this.element.spreadsheet !== this;
+                // destroy empties the element of the spreadsheet, so the worksheet is not in it any more
+                const destroyed = !this.element.contains(element);
                 if (!destroyed && (active === worksheet || (active == null && current === worksheet))) {
                     libraryBase.jspreadsheet.current = current;
                 }

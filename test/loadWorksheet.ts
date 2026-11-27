@@ -369,6 +369,17 @@ describe('loadWorksheet', () => {
             expect(other.parent.worksheets[0]).to.equal(other);
         });
 
+        it('keeps the worksheet active after a load before the build of a new spreadsheet in a used element ends', async () => {
+            await create();
+            jspreadsheet.destroy(root as Jspreadsheet.JspreadsheetInstanceElement);
+
+            const worksheets = jspreadsheet(root, { worksheets: [{ worksheetName: 'One', data: [['1']] }] });
+            await worksheets[0].loadWorksheet(0, { data: [['d']] });
+
+            expect(worksheets[0].getData()).to.eql([['d']]);
+            expect(jspreadsheet.current).to.equal(worksheets[0]);
+        });
+
         it('stops the search timer of the active worksheet', async () => {
             const [one] = await create({ worksheets: [{ worksheetName: 'One', data: [['1'], ['2']], search: true }] });
             jspreadsheet.current = one;
