@@ -1310,9 +1310,11 @@ export class RowSource {
      */
     replaceMerges(merges: Record<string, [number, number]>) {
         const checked = checkMerges(merges, this.worksheet.headers.length, this.count, this.merges);
-        this.clearMerges();
+        // The new ranges come first: a first cell in a column with the type hidden that clearMerges renders again reads
+        // its range from them (Cells.getColumnIndex)
         this.merges = checked.merges;
         this.indexMerges();
+        this.clearMerges();
         // A new range can hold hidden rows of the window without a record. The window adds them.
         if (this.to >= this.from && this.missingRows(this.from, this.to).length > 0) {
             this.moveWindow(this.from, this.to);

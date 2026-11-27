@@ -477,3 +477,84 @@ describe('Row heights, visibility and data', () => {
         expect(worksheet.getValue('A1')).to.equal('a');
     });
 });
+
+describe('Row numbers as texts (#235, #236)', () => {
+    function create() {
+        return jspreadsheet(root, { worksheets: [{ data: Array.from({ length: 9 }, (row, y) => [`${y}`]) }] })[0];
+    }
+
+    function firstColumn(worksheet: ReturnType<typeof create>) {
+        return worksheet.getColumnData(0).join();
+    }
+
+    it('deletes the rows of a text row number and a text number of rows', () => {
+        const worksheet = create();
+
+        worksheet.deleteRow('3', 2);
+        expect(firstColumn(worksheet)).to.equal('0,1,2,5,6,7,8');
+
+        worksheet.deleteRow(0, '2');
+        expect(firstColumn(worksheet)).to.equal('2,5,6,7,8');
+    });
+
+    it('inserts a row at a text row number, and the undo removes only that row', () => {
+        const worksheet = create();
+
+        worksheet.insertRow(1, '3', true);
+        expect(firstColumn(worksheet)).to.equal('0,1,2,,3,4,5,6,7,8');
+
+        worksheet.undo();
+        expect(firstColumn(worksheet)).to.equal('0,1,2,3,4,5,6,7,8');
+    });
+
+    it('inserts a text number of rows', () => {
+        const worksheet = create();
+
+        worksheet.insertRow('2', 3);
+
+        expect(firstColumn(worksheet)).to.equal('0,1,2,3,,,4,5,6,7,8');
+        expect(worksheet.rows.map((row) => row.y)).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    });
+
+    it('does nothing for a row number that is not a number', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(0, 1, 0, 2);
+
+        expect(worksheet.insertRow(1, 'x')).to.equal(false);
+        expect(worksheet.deleteRow(NaN)).to.equal(false);
+        expect(worksheet.deleteRow('x')).to.equal(false);
+        // @ts-expect-error -- a boolean is outside the typing
+        expect(worksheet.deleteRow(true)).to.equal(false);
+
+        expect(firstColumn(worksheet)).to.equal('0,1,2,3,4,5,6,7,8');
+        worksheet.undo();
+        expect(firstColumn(worksheet)).to.equal('0,1,2,3,4,5,6,7,8');
+    });
+
+    it('inserts and deletes one row for a number of rows that is not a number, as with no number', () => {
+        const worksheet = create();
+
+        worksheet.insertRow('x', 2);
+        expect(firstColumn(worksheet)).to.equal('0,1,2,,3,4,5,6,7,8');
+
+        worksheet.deleteRow(1, 'x');
+        expect(firstColumn(worksheet)).to.equal('0,2,,3,4,5,6,7,8');
+
+        worksheet.deleteRow(1, NaN);
+        expect(firstColumn(worksheet)).to.equal('0,,3,4,5,6,7,8');
+
+        worksheet.undo();
+        worksheet.undo();
+        worksheet.undo();
+        expect(firstColumn(worksheet)).to.equal('0,1,2,3,4,5,6,7,8');
+    });
+
+    it('inserts one row for a null number of rows, as with no number', () => {
+        const worksheet = create();
+
+        // @ts-expect-error -- null is outside the typing
+        worksheet.insertRow(null, 3);
+
+        expect(firstColumn(worksheet)).to.equal('0,1,2,3,,4,5,6,7,8');
+    });
+});

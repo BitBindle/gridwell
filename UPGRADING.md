@@ -918,6 +918,18 @@ until it shows its own value.
 No option keeps the old style, because the cell showed the text with a style that the first column did not have. Code
 that saves `getStyle()` can save the style while no merged range starts left of the window.
 
+When the first column of the range has the type `hidden`, the first cell takes the options of the next column of the
+range that shows. In the row source mode, the range now comes from the merged ranges of the sheet, as in the other
+modes, and not from the part of the range in the table. So:
+
+- The cell in the window that shows the text takes these options too, as the first cell does.
+- A cell at the left edge of the window, in a column with the type `hidden`, inside a range that starts further left,
+  uses its own column. It is not the first cell of the range.
+- A range whose first columns are frozen columns with the type `hidden`, and that continues after the frozen columns,
+  gives its first cell the options of the first column after them that shows.
+- A formula that names the first cell reads its number with the options of that column also when the row is outside the
+  window.
+
 ## An insert next to the rows in the table body shows the new rows
 
 With `lazyLoading` or `filters`, `insertRow` puts the new rows in the table body when the row after them or the row
@@ -945,3 +957,16 @@ as `Sheet2!A1:A3` or `'Q1 2024'!A1`.
 
 No option keeps the old texts, because these formulas named other cells after the change. With `updateReferences:
 false`, no formula text changes, as before.
+
+## insertRow, deleteRow, insertColumn and deleteColumn read their numbers as numbers
+
+A text that is a number, such as the value of `data-y`, works as that number. Version 5 joined the texts, so the calls
+threw or changed other rows. Two calls that did something in version 5 now behave differently:
+
+- `insertRow` and `insertColumn` with a boolean row or column number inserted next to row or column 1 (`true`) or 0
+  (`false`). Now they return false and change nothing. Pass a number.
+- `deleteRow` and `deleteColumn` with a count that is a text that is not a number, such as `'x'`, or an array or an
+  object, removed nothing but fired the events with an empty list. Now they remove 1 row or column, as version 5 already
+  did for `NaN`, `''`, `0` and `false`.
+
+No option keeps the old behavior, because a boolean is not an index, and the default count of 1 is the documented one.
