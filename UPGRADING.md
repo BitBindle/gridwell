@@ -762,3 +762,15 @@ ranges without a message, and it now reads such a span as 1 too.
 No option keeps the old behavior, because the ranges that go past the sheet or cross another range broke the worksheet,
 and the other ranges merged no cells. To keep a range, give it spans that fit in the sheet and do not cross another
 range.
+
+## Row changes with pagination, lazy loading or a filter
+
+`deleteRow` and `moveRow` with `pagination` show the rows of the current page again, also when the rows change on
+another page. Undo and redo of `insertRow`, `deleteRow` and `moveRow` work for rows that are not on the page, or that
+lazy loading did not attach. Version 5 showed the old rows, or threw.
+
+With `filters`, `moveRow` keeps the rows that the filter shows: the moved row shows at its new place, and the other rows
+keep their place. A row that the filter hides stays hidden. Version 5 kept the old row numbers in the results of the
+filter, so the filter then showed other rows.
+
+No option keeps the old behavior, because it showed rows that the page or the filter did not have.

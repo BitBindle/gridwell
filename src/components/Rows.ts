@@ -533,18 +533,6 @@ export class Rows {
             worksheet.view.results = null;
         }
 
-        if (!ignoreDom) {
-            if (worksheet.rows[d].element.parentNode === worksheet.tbody) {
-                if (o > d) {
-                    worksheet.tbody.insertBefore(worksheet.rows[o].element, worksheet.rows[d].element);
-                } else {
-                    worksheet.tbody.insertBefore(worksheet.rows[o].element, worksheet.rows[d].element.nextSibling);
-                }
-            } else {
-                worksheet.tbody.removeChild(worksheet.rows[o].element);
-            }
-        }
-
         // Place references in the correct position
         worksheet.rows.splice(d, 0, worksheet.rows.splice(o, 1)[0]);
         worksheet.records.splice(d, 0, worksheet.records.splice(o, 1)[0]);
@@ -563,8 +551,47 @@ export class Rows {
             }
         }
 
-        // Respect pagination
-        if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
+        // The arguments can be texts
+        const from = Number(o);
+        const to = Number(d);
+
+        // The rows that a filter shows keep their place in the results
+        if (worksheet.view.results) {
+            worksheet.view.results = worksheet.view.results
+                .map((row) => {
+                    if (row === from) {
+                        return to;
+                    }
+                    if (from < to && row > from && row <= to) {
+                        return row - 1;
+                    }
+                    if (from > to && row >= to && row < from) {
+                        return row + 1;
+                    }
+                    return row;
+                })
+                .sort((a, b) => a - b);
+        }
+
+        // With pagination, lazy loading or filters, the table body has only some rows. The row goes next to a neighbour
+        // that the body shows, and leaves the body when it has none there.
+        if (!ignoreDom) {
+            const moved = worksheet.rows[to].element;
+            const shown = worksheet.view.results || null;
+            const k = shown ? shown.indexOf(to) : to;
+            const next = k < 0 ? undefined : worksheet.rows[shown ? shown[k + 1] : to + 1]?.element;
+            const previous = k < 1 ? undefined : worksheet.rows[shown ? shown[k - 1] : to - 1]?.element;
+            if (next?.parentNode === worksheet.tbody) {
+                worksheet.tbody.insertBefore(moved, next);
+            } else if (previous?.parentNode === worksheet.tbody) {
+                worksheet.tbody.insertBefore(moved, previous.nextSibling);
+            } else if (moved.parentNode === worksheet.tbody) {
+                worksheet.tbody.removeChild(moved);
+            }
+        }
+
+        // The page shows the rows of its positions again
+        if (worksheet.options.pagination! > 0) {
             worksheet.page(worksheet.view.pageNumber);
         }
 
@@ -704,8 +731,8 @@ export class Rows {
                         }
                     }
 
-                    // Respect pagination
-                    if (worksheet.options.pagination! > 0 && worksheet.tbody.children.length !== worksheet.options.pagination) {
+                    // The page shows the rows of its positions again, also after a delete on an earlier page
+                    if (worksheet.options.pagination! > 0) {
                         worksheet.page(worksheet.view.pageNumber);
                     }
 

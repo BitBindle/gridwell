@@ -94,9 +94,11 @@ export class History {
             const numOfRows = historyRecord.numOfRows;
             // An editor in a removed row closes without a save
             worksheet.editor.closeIn(1, rowIndex, rowIndex + numOfRows - 1);
-            // Remove nodes
+            // Remove nodes. With pagination or lazy loading, a row can be outside the table body.
             for (let j = rowIndex; j < numOfRows + rowIndex; j++) {
-                worksheet.rows[j].element.parentNode!.removeChild(worksheet.rows[j].element);
+                if (worksheet.rows[j].element.parentNode === worksheet.tbody) {
+                    worksheet.tbody.removeChild(worksheet.rows[j].element);
+                }
             }
             // Remove references
             worksheet.records.splice(rowIndex, numOfRows);
@@ -115,11 +117,15 @@ export class History {
             worksheet.options.data = injectArray(worksheet.options.data, rowIndex, data);
 
             worksheet.rows = injectArray(worksheet.rows, rowIndex, historyRecord.rowNode);
-            // Insert nodes
-            let index = 0;
-            for (let j = rowIndex; j < historyRecord.numOfRows + rowIndex; j++) {
-                worksheet.tbody.insertBefore(historyRecord.rowNode[index].element, worksheet.tbody.children[j]);
-                index++;
+            // Insert nodes before the next row, or after the previous row at the end, when that row is in the table body.
+            // With pagination or lazy loading, the rows next to the others can be outside the body.
+            const next = worksheet.rows[rowIndex + historyRecord.numOfRows];
+            const previous = worksheet.rows[rowIndex - 1];
+            const attached = next ? next.element.parentNode === worksheet.tbody : !previous || previous.element.parentNode === worksheet.tbody;
+            if (attached) {
+                for (const row of historyRecord.rowNode) {
+                    worksheet.tbody.insertBefore(row.element, next ? next.element : null);
+                }
             }
         }
 
