@@ -970,3 +970,17 @@ threw or changed other rows. Two calls that did something in version 5 now behav
   did for `NaN`, `''`, `0` and `false`.
 
 No option keeps the old behavior, because a boolean is not an index, and the default count of 1 is the documented one.
+
+## Insert and delete move the references to cells after the last row or column
+
+`insertRow`, `deleteRow`, `insertColumn`, `deleteColumn`, and their undo and redo, now move a reference to a cell after
+the last row or column as they move the cells of the table. On a sheet with 2 rows, `insertRow(1, 0, true)` changes
+`=SUM(A1:A100)` to `=SUM(A2:A101)`, and `Z2` to `Z3`. Version 5 renamed only the cells of the table, so a range lost its
+last row, and a reference named another cell when rows were added later. A delete gives `#REF!` to a reference to a cell
+in a deleted row or column, as it does for the cells of the table.
+
+An insert or a delete that moves no row or column of the table, such as rows that `minSpareRows` adds after the last
+row, keeps these references. So a range such as `A1:A100` keeps its end when the table grows.
+
+No option keeps the old texts, because those formulas named other cells after the change. With `updateReferences:
+false`, no formula text changes, as before.
