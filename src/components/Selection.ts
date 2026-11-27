@@ -647,12 +647,23 @@ export class Selection {
             }
         }
         worksheet.selection.range = next;
-        // The first header or row number of a selection of whole columns or rows moves with it
-        if (axis === 0 && this.column != null && this.column >= index) {
-            this.column += count;
-        } else if (axis === 1 && this.row != null && this.row >= index) {
-            this.row += count;
+        // The first header or row number of a selection of whole columns or rows moves with it, and goes if it is deleted
+        if (axis === 0) {
+            this.column = this.shiftIndex(this.column, index, count);
+        } else {
+            this.row = this.shiftIndex(this.row, index, count);
         }
+    }
+
+    /** The new position of a row or column after an insert or a delete, or null if it is deleted. */
+    private shiftIndex(position: number | null, index: number, count: number) {
+        if (position == null || position < index) {
+            return position;
+        }
+        if (count < 0 && position < index - count) {
+            return null;
+        }
+        return position + count;
     }
 
     /**

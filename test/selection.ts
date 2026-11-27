@@ -592,28 +592,92 @@ describe('Insert and delete keep the selection and the editor on their cells', (
         expect(worksheet.getData().flat()).to.not.include('typed');
     });
 
-    it('moves the first row number of a selection of whole rows, so that a Shift press extends it from that row', async () => {
-        const data = Array.from({ length: 6 }, (row, y) => Array.from({ length: 3 }, (cell, x) => `${x}:${y}`));
-        // jsdom gives the row numbers no size, so a press is at their edge, which resizes or drags unless that is off
-        const worksheet = await new Promise<Worksheet>((resolve) => {
-            const instance = jspreadsheet(root, { worksheets: [{ data, rowResize: false, rowDrag: false }], onload: () => resolve(instance[0]) });
+    // The spreadsheet adds its event handlers after a promise. jsdom gives the headers and the row numbers no size, so a
+    // press is at their edge, which resizes or drags unless that is off.
+    const load = (rows: number) =>
+        new Promise<Worksheet>((resolve) => {
+            const data = Array.from({ length: rows }, (row, y) => Array.from({ length: 3 }, (cell, x) => `${x}:${y}`));
+            const options = { data, rowResize: false, rowDrag: false, columnResize: false, columnDrag: false };
+            const instance = jspreadsheet(root, { worksheets: [options], onload: () => resolve(instance[0]) });
         });
-        const press = (y: number, options?: MouseEventInit) => {
-            worksheet.rows[y].element.children[0].dispatchEvent(
-                new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, buttons: 1, ...options })
-            );
-            document.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true, buttons: 1 }));
-        };
+    const press = (element: Element, options?: MouseEventInit) => {
+        element.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, buttons: 1, ...options }));
+        document.dispatchEvent(new window.MouseEvent('mouseup', { bubbles: true, buttons: 1 }));
+    };
+    const rowNumber = (worksheet: Worksheet, y: number) => worksheet.rows[y].element.children[0];
 
-        press(2);
+    it('moves a reversed selection, and a selection after rows or columns inserted after a cell', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(3, 4, 2, 2);
+
+        worksheet.insertRow(1, 3, false);
+        expect(range(worksheet)).to.eql([3, 5, 2, 2]);
+        worksheet.insertColumn(1, 1, false);
+        expect(range(worksheet)).to.eql([4, 5, 3, 2]);
+        worksheet.deleteRow(0, 1);
+        expect(range(worksheet)).to.eql([4, 4, 3, 1]);
+        // The new row splits the selection, so its two empty cells are selected too
+        expect(highlighted(worksheet)).to.eql(['2:2', '3:2', '2:3', '3:3', '', '', '2:4', '3:4']);
+    });
+
+    it('removes a selection with a cell in the deleted columns', () => {
+        const worksheet = create();
+        worksheet.updateSelectionFromCoords(1, 1, 3, 1);
+
+        worksheet.deleteColumn(3, 2);
+
+        expect(range(worksheet)).to.equal(null);
+    });
+
+    it('keeps the editor open when a press goes into it after an insert before it', async () => {
+        const worksheet = await load(3);
+        worksheet.updateSelectionFromCoords(0, 2, 0, 2);
+        worksheet.openEditor(worksheet.records[2][0].element);
+
+        worksheet.insertRow(1, 0, true);
+        press(input(worksheet));
+
+        expect(worksheet.editor.isOpen()).to.equal(true);
+    });
+
+    it('moves the first row number of a selection of whole rows, so that a Shift press extends it from that row', async () => {
+        const worksheet = await load(6);
+
+        press(rowNumber(worksheet, 2));
         worksheet.insertRow(1, 0, true);
         expect(worksheet.selection.row).to.equal(3);
 
-        press(4, { shiftKey: true });
+        press(rowNumber(worksheet, 4), { shiftKey: true });
         expect(range(worksheet)).to.eql([0, 3, 2, 4]);
 
         worksheet.deleteRow(3, 1);
         expect(range(worksheet)).to.equal(null);
         expect(worksheet.selection.row).to.equal(null);
+    });
+
+    it('moves the first header of a selection of whole columns', async () => {
+        const worksheet = await load(3);
+
+        press(worksheet.headers[1]);
+        worksheet.insertColumn(1, 0, true);
+        expect(worksheet.selection.column).to.equal(2);
+
+        worksheet.deleteColumn(0, 1);
+        expect(worksheet.selection.column).to.equal(1);
+        expect(range(worksheet)).to.eql([1, 0, 1, 2]);
+    });
+
+    it('forgets the first row number of a selection of whole rows when its row is deleted', async () => {
+        const worksheet = await load(8);
+
+        press(rowNumber(worksheet, 1));
+        worksheet.updateSelectionFromCoords(0, 6, 0, 6);
+        worksheet.deleteRow(0, 3);
+        expect(worksheet.selection.row).to.equal(null);
+        expect(range(worksheet)).to.eql([0, 3, 0, 3]);
+
+        // Without the first row number, a Shift press selects only its row
+        press(rowNumber(worksheet, 2), { shiftKey: true });
+        expect(range(worksheet)).to.eql([0, 2, 2, 2]);
     });
 });
