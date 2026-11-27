@@ -1723,7 +1723,8 @@ declare namespace jspreadsheet {
          * - A formula sees only the values of the window. `style`, `comments`, `classes` and `meta`, and `setStyle` and
          *   `setComments`, apply only while the row is in the window. A merge, an unmerge and a destroy of merged ranges
          *   write no history entry. A merge keeps the values of the hidden cells, and `destroyMerge` keeps the selection.
-         *   A value in a radio column clears only the other rows of the window.
+         *   In `onselection` of `removeMerge`, `getMerge` no longer gives the range. A value in a radio column clears only
+         *   the other rows of the window.
          * - A copy dispatches `oncopy` with an empty text: the application writes the clipboard from its own values. A cut
          *   clears only the cells of the window. `download` does nothing, and the context menu has no "Save as" item.
          */

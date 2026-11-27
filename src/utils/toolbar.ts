@@ -203,7 +203,11 @@ function getMergeItem(spreadsheet: Spreadsheet): jspreadsheet.ToolbarItem {
                 const selectedRange = getSelectedRange(worksheet.selection.range);
 
                 const cell = getCellNameFromCoords(selectedRange[0], selectedRange[1]);
-                if (worksheet.records[selectedRange[1]][selectedRange[0]].element.getAttribute('data-merged')) {
+                // In the row source mode, the first row of the selection can be outside the window
+                const merged = worksheet.rowSource
+                    ? !!worksheet.rowSource.merges[cell]
+                    : worksheet.records[selectedRange[1]][selectedRange[0]].element.getAttribute('data-merged');
+                if (merged) {
                     worksheet.removeMerge(cell);
                 } else {
                     const colspan = selectedRange[2] - selectedRange[0] + 1;
@@ -289,6 +293,7 @@ function setBorders(worksheet: Worksheet, borders: BorderOptions, type: string) 
                 // Col - px - ux
                 setBorder(getCellNameFromCoords(i, j), i, j);
 
+                // In the row source mode, a row or a column outside the window has no record
                 if (worksheet.records[j]?.[i]?.element.getAttribute('data-merged')) {
                     setBorder(getCellNameFromCoords(selectedRange[0], selectedRange[1]), i, j);
                 }

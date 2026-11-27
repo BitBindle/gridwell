@@ -249,6 +249,7 @@ export class RowSource {
     private changed = false;
     private measured = false;
     private focusLost = false;
+    private focusWatched = false;
 
     constructor(worksheet: Worksheet, source: jspreadsheet.RowSource) {
         this.worksheet = worksheet;
@@ -279,6 +280,15 @@ export class RowSource {
         }
         worksheet.tbody.appendChild(this.top);
         worksheet.tbody.appendChild(this.bottom);
+        // The focus that the table got from a cell that left the window is not lost any more when it leaves the table
+        if (!this.focusWatched) {
+            this.focusWatched = true;
+            worksheet.table.addEventListener('focusout', (e) => {
+                if (e.target === worksheet.table) {
+                    this.focusLost = false;
+                }
+            });
+        }
         this.applyMerges();
         this.render(true);
         // The window renders again when the view changes its size, for example when the tab of the worksheet opens
