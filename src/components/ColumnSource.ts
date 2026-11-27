@@ -4,6 +4,9 @@ import { toGrid, toScreen, zoomOf } from '../utils/zoom.js';
 import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet } from '../types/internal';
 
+/** The style of a cell that moveText changes. */
+type OwnStyle = Pick<CSSStyleDeclaration, 'whiteSpace' | 'textAlign' | 'color'>;
+
 /** The columns left and right of the view that the window holds. */
 const defaultBuffer = 10;
 
@@ -104,10 +107,10 @@ export class ColumnSource {
     /** The cells that show the text of a merged range that starts left of the window. */
     private readonly moved = new Map<string, number | null>();
     /**
-     * The own white-space of the cells that show the text of a merged range, from before moveText gave them the wrap of
-     * the text. The value can come from setStyle. rebuild puts it back.
+     * The own white-space, text-align and color of the cells that show the text of a merged range, from before moveText
+     * gave them the style of the text. A value can come from setStyle. rebuild puts them back.
      */
-    private readonly ownWrap = new Map<string, string>();
+    private readonly ownStyle = new Map<string, OwnStyle>();
 
     constructor(worksheet: Worksheet, source: jspreadsheet.RowSource) {
         this.worksheet = worksheet;
@@ -146,7 +149,7 @@ export class ColumnSource {
         const worksheet = this.worksheet;
         this.layout = this.makeLayout();
         this.moved.clear();
-        this.ownWrap.clear();
+        this.ownStyle.clear();
         const frozen = this.frozenCount();
         const header = worksheet.headerContainer;
         const colgroup = worksheet.colgroupContainer;
@@ -496,7 +499,9 @@ export class ColumnSource {
 
     /**
      * Show the text of the first cell of a merged range, at (from, y), in the cell (to, y) of the window. The cell takes
-     * the wrap of the text, as the first cell has it. The values of the cell do not change.
+     * the wrap of the text, as the first cell has it. As Cells.render does, it takes the alignment of the first column
+     * when the two columns have different alignments, and the color of the text when one of them is a color column. The
+     * values of the cell do not change.
      */
     moveText(from: number, to: number, y: number) {
         const worksheet = this.worksheet;
@@ -507,10 +512,19 @@ export class ColumnSource {
         const element = worksheet.records[y][to].element;
         const td = worksheet.cells.create(from, y, value, true);
         element.innerHTML = td.innerHTML;
-        if (!this.ownWrap.has(name)) {
-            this.ownWrap.set(name, element.style.whiteSpace);
+        if (!this.ownStyle.has(name)) {
+            const { whiteSpace, textAlign, color } = element.style;
+            this.ownStyle.set(name, { whiteSpace, textAlign, color });
         }
         element.style.whiteSpace = td.style.whiteSpace;
+        const first = worksheet.options.columns?.[from] || {};
+        const own = worksheet.options.columns?.[to] || {};
+        if (first.align !== own.align) {
+            element.style.textAlign = td.style.textAlign;
+        }
+        if (first.type === 'color' || own.type === 'color') {
+            element.style.color = td.style.color;
+        }
         // The text goes through the render of the first column, as createRecord does
         const column = worksheet.options.columns?.[from];
         if (column && typeof column.render === 'function') {
@@ -550,16 +564,21 @@ export class ColumnSource {
         }
     }
 
-    /** Make the content of the cell (x, y) again from its value, as a new cell has it, and give the cell its own wrap again. */
+    /**
+     * Make the content of the cell (x, y) again from its value, as a new cell has it, and give the cell its own wrap,
+     * alignment and color again.
+     */
     private rebuild(x: number, y: number) {
         const worksheet = this.worksheet;
         const element = worksheet.records[y][x].element;
         element.innerHTML = worksheet.cells.create(x, y, worksheet.options.data[y][x], true).innerHTML;
         const name = getColumnNameFromId([x, y]);
-        const own = this.ownWrap.get(name);
-        if (own !== undefined) {
-            element.style.whiteSpace = own;
-            this.ownWrap.delete(name);
+        const own = this.ownStyle.get(name);
+        if (own) {
+            element.style.whiteSpace = own.whiteSpace;
+            element.style.textAlign = own.textAlign;
+            element.style.color = own.color;
+            this.ownStyle.delete(name);
         }
     }
 
@@ -577,8 +596,8 @@ export class ColumnSource {
                 worksheet.cells.showValue(x, y);
             }
         }
-        // A cell that left the window has no own wrap to get back
-        this.ownWrap.clear();
+        // A cell that left the window has no own style to get back
+        this.ownStyle.clear();
     }
 
     /**

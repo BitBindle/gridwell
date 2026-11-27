@@ -39,6 +39,15 @@ function build(
     return { worksheet, calls };
 }
 
+/** The row of the source where column 0 has the value red. */
+function redFirst(y: number, columns?: number[]) {
+    const values: Jspreadsheet.CellValue[] = [];
+    for (const x of columns || range(0, columnCount - 1)) {
+        values[x] = x === 0 ? 'red' : `${x}:${y}`;
+    }
+    return values;
+}
+
 /** The columns with a cell in row y, in the order of the table. */
 function cellColumns(worksheet: Worksheet, y: number) {
     return Array.from(worksheet.rows[y].element.querySelectorAll('td[data-x]')).map((td) => Number(td.getAttribute('data-x')));
@@ -279,6 +288,43 @@ describe('The column window of the row source mode', () => {
 
         worksheet.removeMerge('A5');
         expect(cell.style.whiteSpace).to.equal('');
+    });
+
+    it('gives a cell that shows the text of a merged range the alignment and the color of the first column, and its own again when the range goes (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { align: 'left', type: 'color' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.setMerge('A5', 150, 1);
+        worksheet.scrollToColumn(145);
+
+        const cell = worksheet.records[4][135].element;
+        expect(cell.textContent).to.equal('red');
+        expect(cell.style.textAlign).to.equal('left');
+        expect(cell.style.color).to.equal('red');
+
+        worksheet.removeMerge('A5');
+        expect(cell.textContent).to.equal('135:4');
+        expect(cell.style.textAlign).to.equal('center');
+        expect(cell.style.color).to.equal('');
+    });
+
+    it('keeps the alignment from setStyle when the columns have the same alignment, and gives back the color from setStyle (issue #246)', () => {
+        const columns: Jspreadsheet.Column[] = [];
+        columns[0] = { type: 'color' };
+        const { worksheet } = build({ row: redFirst }, { columns });
+        worksheet.scrollToColumn(145);
+        worksheet.setStyle('EF5', 'text-align', 'right');
+        worksheet.setStyle('EF5', 'color', 'blue');
+        worksheet.setMerge('A5', 150, 1);
+
+        const cell = worksheet.records[4][135].element;
+        expect(cell.textContent).to.equal('red');
+        expect(cell.style.textAlign).to.equal('right');
+        expect(cell.style.color).to.equal('red');
+
+        worksheet.removeMerge('A5');
+        expect(cell.style.textAlign).to.equal('right');
+        expect(cell.style.color).to.equal('blue');
     });
 
     it('reads the widths and the hidden columns again after setWidth, hideColumn and refreshColumns', () => {
