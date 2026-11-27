@@ -2,7 +2,14 @@ import libraryBase from '../utils/libraryBase.js';
 import { getColumnName } from '../utils/helpers.js';
 import { getColumnNameFromId, getIdFromColumnName } from '../utils/internalHelpers.js';
 import { isFormula } from '../utils/values.js';
-import type { HistoryCellChange, MergeInfo, Worksheet } from '../types/internal';
+import type { FormulaText, HistoryCellChange, MergeInfo, Worksheet } from '../types/internal';
+
+/** The rows (axis 1) or the columns (axis 0) that a delete removed, at their positions before the delete. */
+interface Removed {
+    axis: 0 | 1;
+    index: number;
+    count: number;
+}
 
 // The cells in progress of updateChain, by cell name
 let chainLoopProtection: Record<string, boolean> = {};
@@ -213,6 +220,8 @@ export class Formulas {
             } else {
                 // Expressions to be used in the parsing
                 const formulaExpressions: Record<string, unknown> = {};
+                // A reference to a cell whose result is #REF! gives the formula the result #REF!
+                let refError = false;
 
                 if (tokens) {
                     for (const reference of tokens) {
@@ -241,6 +250,9 @@ export class Formulas {
                                     value = execute(value as string, position[0], position[1]);
                                     formulaResults[reference] = value;
                                 }
+                            }
+                            if (value === '#REF!') {
+                                refError = true;
                             }
                             // Type!
                             if (`${value}`.trim() === '') {
@@ -275,6 +287,12 @@ export class Formulas {
                 } else if (ret) {
                     expression = ret;
                     source = ret;
+                }
+
+                // A delete gave a reference the value #REF!, and the formula shows it, as other spreadsheets do. So does a
+                // formula that names a cell with the result #REF!. A formula engine of the application gets the text.
+                if (!formulaEngine && (refError || expression.replace(/"(?:[^"]|"")*"/g, '""').includes('#REF!'))) {
+                    return '#REF!';
                 }
 
                 // Hand string literals to the formula parser as variables, so characters such as $ or & inside them are not
@@ -337,7 +355,6 @@ export class Formulas {
             return !!worksheet.records[y]?.[x];
         }
 
-        const cells = new Set<string>();
         const next: string[] = [];
         for (const name of Object.keys(this.chain)) {
             this.chain[name] = this.chain[name].filter(exists);
@@ -346,6 +363,13 @@ export class Formulas {
                 next.push(name);
             }
         }
+        this.showDependents(next);
+    }
+
+    /** Show again the result of each formula that names one of the cells, directly or through other formulas. */
+    private showDependents(next: string[]) {
+        const worksheet = this.worksheet;
+        const cells = new Set<string>();
         while (next.length) {
             for (const dependent of this.chain[next.pop()!] || []) {
                 if (!cells.has(dependent)) {
@@ -468,10 +492,55 @@ export class Formulas {
     }
 
     /**
-     * Update formulas
+     * Give a formula the new names of the cells that moved after a delete. A reference to a removed cell becomes #REF!. A
+     * range that keeps some of its cells ends at the first and the last cell that stay. A range that loses all its cells
+     * becomes #REF!. The string literals do not change.
+     * @param removed - The removed rows (axis 1) or columns (axis 0), at their positions before the delete.
      */
-    private updateFormulas(referencesToUpdate: Record<string, string>, keepText: (x: number, y: number) => boolean) {
+    private removeReferences(formula: string, referencesToUpdate: Record<string, string>, removed: Removed) {
+        const end = removed.index + removed.count;
+        const axis = removed.axis === 1 ? 1 : 0;
+        function position(name: string) {
+            return getIdFromColumnName(name)[axis];
+        }
+        function gone(name: string) {
+            return position(name) >= removed.index && position(name) < end;
+        }
+        // A cell that stays gets its new name. A removed end of a range goes to the first cell after the removed cells, or
+        // to the last cell before them, which is in the range.
+        function rename(name: string, low: boolean) {
+            if (!gone(name)) {
+                return referencesToUpdate[name] || name;
+            }
+            const cell = getIdFromColumnName(name);
+            cell[axis] = low ? removed.index : removed.index - 1;
+            return getColumnNameFromId(cell);
+        }
+        return formula.replace(
+            /("(?:[^"]|"")*")|(?<![A-Z0-9])([A-Z]+[0-9]+)(?::([A-Z]+[0-9]+))?(?![A-Z0-9])/g,
+            (match, literal: string | undefined, from: string, to: string | undefined) => {
+                if (literal) {
+                    return literal;
+                }
+                if (!to) {
+                    return gone(from) ? '#REF!' : referencesToUpdate[from] || from;
+                }
+                if (gone(from) && gone(to)) {
+                    return '#REF!';
+                }
+                const first = position(from) <= position(to);
+                return `${rename(from, first)}:${rename(to, !first)}`;
+            }
+        );
+    }
+
+    /**
+     * Update formulas. With removed, a delete removed rows or columns, and the references to its cells become #REF!.
+     * @returns The formula cells whose texts changed, at their positions before the change, with their texts before it.
+     */
+    private updateFormulas(referencesToUpdate: Record<string, string>, keepText: (x: number, y: number) => boolean, removed?: Removed) {
         const worksheet = this.worksheet;
+        const changed: FormulaText[] = [];
 
         // Update formulas. The formula of a cell that an undo or a redo adds already names the cells at their new positions.
         for (let j = 0; j < worksheet.options.data.length; j++) {
@@ -484,9 +553,13 @@ export class Formulas {
                 // Is formula
                 if (value.substr(0, 1) === '=') {
                     // Replace tokens
-                    const newFormula = this.updateFormula(value, referencesToUpdate);
+                    const newFormula = removed ? this.removeReferences(value, referencesToUpdate, removed) : this.updateFormula(value, referencesToUpdate);
                     if (newFormula !== value) {
                         row[i] = newFormula;
+                        if (removed) {
+                            const moved = (removed.axis === 1 ? j : i) >= removed.index ? removed.count : 0;
+                            changed.push(removed.axis === 1 ? { x: i, y: j + moved, text: value } : { x: i + moved, y: j, text: value });
+                        }
                     }
                 }
             }
@@ -494,6 +567,41 @@ export class Formulas {
 
         // Update formula chain
         worksheet.formulas.rename(referencesToUpdate);
+
+        // A formula that names #REF! in place of a removed cell has another result now, and so have the formulas that
+        // name it
+        if (changed.length) {
+            const names: string[] = [];
+            for (const cell of changed) {
+                const moved = removed!.axis === 1 ? cell.y >= removed!.index : cell.x >= removed!.index;
+                const x = removed!.axis === 0 && moved ? cell.x - removed!.count : cell.x;
+                const y = removed!.axis === 1 && moved ? cell.y - removed!.count : cell.y;
+                if (worksheet.records[y]?.[x]) {
+                    worksheet.cells.showValue(x, y);
+                    names.push(getColumnNameFromId([x, y]));
+                }
+            }
+            this.showDependents(names);
+        }
+
+        return changed;
+    }
+
+    /**
+     * Give formula cells their texts again, for the undo of a delete, and show their results and the results of the
+     * formulas that name them.
+     */
+    restoreTexts(texts: FormulaText[]) {
+        const worksheet = this.worksheet;
+        const names: string[] = [];
+        for (const { x, y, text } of texts) {
+            if (worksheet.options.data[y] && worksheet.records[y]?.[x]) {
+                worksheet.options.data[y][x] = text;
+                worksheet.cells.showValue(x, y);
+                names.push(getColumnNameFromId([x, y]));
+            }
+        }
+        this.showDependents(names);
     }
 
     /**
@@ -504,20 +612,23 @@ export class Formulas {
      * columns (axis 0) that an insert, an undo or a redo added: they get their place in the chain after the other cells
      * moved. With `keepTexts`, their formulas keep their texts, else their references move as the other references do.
      * `removed` gives the rows (axis 1) or the columns (axis 0) that a delete removed, at their old positions: the formula
-     * cells that it removed leave the chain.
+     * cells that it removed leave the chain. With `refErrors`, the references to the removed cells become #REF!.
+     * @returns The formula cells whose texts the delete changed, at their positions before the delete, with their texts
+     * before it. The undo of the delete gives them back.
      */
     updateTableReferences(
         from: {
             row?: number;
             column?: number;
             inserted?: { axis: 0 | 1; index: number; count: number; keepTexts?: boolean };
-            removed?: { axis: 0 | 1; index: number; count: number };
+            removed?: Removed & { refErrors?: boolean };
         } = {}
-    ) {
+    ): FormulaText[] {
         const worksheet = this.worksheet;
         if (worksheet.skipUpdateTableReferences) {
-            return;
+            return [];
         }
+        let changed: FormulaText[] = [];
 
         let firstRow = Number.isInteger(from.row) ? Math.max(0, from.row!) : 0;
         let firstColumn = Number.isInteger(from.column) ? Math.max(0, from.column!) : 0;
@@ -684,6 +795,12 @@ export class Formulas {
                     }
                 }
                 const chain = this.chain;
+                // A removed cell that formulas named leaves the chain when the formulas name #REF! in its place
+                if (removed.refErrors && worksheet.parent.config.updateReferences !== false) {
+                    for (const name of gone) {
+                        delete chain[name];
+                    }
+                }
                 for (const name in chain) {
                     const dependents = chain[name];
                     for (const dependent of dependents) {
@@ -701,7 +818,7 @@ export class Formulas {
                 this.showResults(firstColumn, firstRow);
             } else {
                 // Update formulas
-                this.updateFormulas(affectedTokens, keepsText);
+                changed = this.updateFormulas(affectedTokens, keepsText, removed?.refErrors ? removed : undefined);
             }
 
             // The formulas of the new cells calculate again at their positions, and get their place in the chain
@@ -736,6 +853,8 @@ export class Formulas {
 
         // Update table with custom configuration if applicable
         worksheet.data.updateTable();
+
+        return changed;
     }
 
     /**

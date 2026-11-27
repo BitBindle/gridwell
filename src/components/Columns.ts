@@ -3,7 +3,7 @@ import { getColumnName } from '../utils/helpers.js';
 import { getColumnNameFromId, injectArray } from '../utils/internalHelpers.js';
 import { setHeaderRole } from './Accessibility.js';
 import type jspreadsheet from '../jspreadsheet';
-import type { Worksheet } from '../types/internal';
+import type { Worksheet, WorksheetHistoryRecord } from '../types/internal';
 import { toGrid, toScreen } from '../utils/zoom.js';
 import { forEachRecordRow } from './RowSource.js';
 import { askConfirm } from '../utils/dialogs.js';
@@ -618,7 +618,7 @@ export class Columns {
                     }
 
                     // Keeping history of changes
-                    worksheet.history.add({
+                    const historyRecord: WorksheetHistoryRecord = {
                         action: 'deleteColumn',
                         columnNumber,
                         numOfColumns,
@@ -630,17 +630,22 @@ export class Columns {
                         footers: historyFooters,
                         data: historyData,
                         ...(merges && { merges }),
-                    });
+                    };
+                    worksheet.history.add(historyRecord);
 
                     // The selection and the editor stay on their cells. A selection with a deleted cell is removed.
                     worksheet.editor.shift(0, columnNumber, -numOfColumns);
                     worksheet.selection.shift(0, columnNumber, -numOfColumns);
 
-                    // Update table references
-                    worksheet.formulas.updateTableReferences({
+                    // Update table references. The references to the deleted cells become #REF!, and the undo gives the
+                    // formulas their texts again.
+                    const formulas = worksheet.formulas.updateTableReferences({
                         column: Number(columnNumber),
-                        removed: { axis: 0, index: Number(columnNumber), count: numOfColumns },
+                        removed: { axis: 0, index: Number(columnNumber), count: numOfColumns, refErrors: true },
                     });
+                    if (formulas.length) {
+                        historyRecord.formulas = formulas;
+                    }
 
                     // The frozen columns can be other columns now
                     this.updateFrozenColumns();

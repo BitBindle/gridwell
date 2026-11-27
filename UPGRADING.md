@@ -756,6 +756,18 @@ A formula cell that a delete removes leaves the formula chain. Version 5 kept it
 the formula named threw a TypeError, or calculated the cell that then had the name. No option keeps the old behavior,
 because the old behavior changed the formulas that the history gave back.
 
+## A delete gives the references to the deleted cells #REF!
+
+`deleteRow` and `deleteColumn` change a reference of a formula to a deleted cell to `#REF!`, as other spreadsheets do. The
+formula shows `#REF!`, and so does a formula that names it. A range ends at the first and the last cell that stay, and a
+range whose cells all go becomes `#REF!`. The undo gives the changed formulas their texts again, and the redo gives them
+`#REF!` again. Version 5 kept the text of the reference, so the formula named the cell that took the place of the
+deleted cell, and the undo of the delete moved that reference to another cell.
+
+This affects code that reads the formula texts or the results after a delete. With `updateReferences: false`, the texts
+stay as before. A formula engine of the application (`formulaEngine`) gets the text with `#REF!` and gives the result. No
+other option keeps the old behavior, because the old texts named other cells than before the delete.
+
 ## The build leaves out the merged ranges of the options that do not fit
 
 The build of a worksheet, `setData` and `loadWorksheet` leave out a range of `mergeCells` that goes past the last row or

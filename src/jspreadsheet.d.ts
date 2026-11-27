@@ -1459,7 +1459,8 @@ declare namespace jspreadsheet {
         parseFormulas?: boolean;
 
         /**
-         * Change the references of the formulas when rows or columns are inserted, deleted, moved or sorted. With false,
+         * Change the references of the formulas when rows or columns are inserted, deleted, moved or sorted. A delete gives a
+         * reference to a deleted cell the value #REF!, and a range ends at the cells that stay. With false,
          * each formula text stays as it is, for example when a server changes the references, and each formula calculates
          * again with the cells that its text names after the change. The fill handle still moves the relative references
          * of a formula that it copies.
@@ -2205,6 +2206,8 @@ declare namespace jspreadsheet {
          *
          * The merged ranges that have a cell in the removed columns are removed, after the dialog. The other ranges stay and move with their cells.
          *
+         * A reference of a formula to a removed cell becomes #REF!, and the formula shows #REF!. A range ends at the cells that stay. The undo gives the formulas their texts again.
+         *
          * This method returns false if the {@link SpreadsheetOptions.onbeforedeletecolumn} event returns false or if the "This action will destroy any existing merged cells. Are you sure?" dialog receives a negative response.
          *
          * The selection and an open editor stay on their cells. A selection with a cell in the removed columns is removed, and an editor in a removed column closes without a save.
@@ -2217,6 +2220,8 @@ declare namespace jspreadsheet {
          * Remove rows.
          *
          * The merged ranges that have a cell in the removed rows are removed, after the dialog. The other ranges stay and move with their cells.
+         *
+         * A reference of a formula to a removed cell becomes #REF!, and the formula shows #REF!. A range ends at the cells that stay. The undo gives the formulas their texts again.
          *
          * This method returns false if the {@link SpreadsheetOptions.onbeforedeleterow} event returns false or if the dialog cases "This action will destroy any existing merged cells. Are you sure?" or "This action will clear your search results. Are you sure?" receive a negative response.
          *

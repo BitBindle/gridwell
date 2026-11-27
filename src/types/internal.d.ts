@@ -240,6 +240,13 @@ export type HistoryCellChange = {
     oldValue: jspreadsheet.CellValue;
 };
 
+/** The text of a formula cell before a change, at the position of the cell before the change. */
+export interface FormulaText {
+    x: number;
+    y: number;
+    text: string;
+}
+
 /**
  * A record of the undo history, by its action. Undo and redo read the fields of the action. Type aliases, not
  * interfaces, so that a record is a public HistoryRecord too.
@@ -260,6 +267,8 @@ export type WorksheetHistoryRecord =
           data: jspreadsheet.CellValue[][];
           /** The merged ranges that the action removed: the spans by first cell before the action. Undo merges them again. */
           merges?: Record<string, [number, number]>;
+          /** The formula cells whose texts a delete changed, at their positions before the delete. Undo gives the texts back. */
+          formulas?: FormulaText[];
       }
     | {
           action: 'insertRow' | 'deleteRow';
@@ -272,6 +281,8 @@ export type WorksheetHistoryRecord =
           rowNode: Worksheet['rows'];
           /** The merged ranges that the action removed: the spans by first cell before the action. Undo merges them again. */
           merges?: Record<string, [number, number]>;
+          /** The formula cells whose texts a delete changed, at their positions before the delete. Undo gives the texts back. */
+          formulas?: FormulaText[];
       }
     | {
           action: 'moveColumn' | 'moveRow';

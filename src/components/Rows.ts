@@ -1,7 +1,7 @@
 import { translate } from '../utils/dictionary.js';
 import { getColumnNameFromId } from '../utils/internalHelpers.js';
 import type jspreadsheet from '../jspreadsheet';
-import type { Worksheet } from '../types/internal';
+import type { Worksheet, WorksheetHistoryRecord } from '../types/internal';
 import { toGrid } from '../utils/zoom.js';
 import { askConfirm } from '../utils/dialogs.js';
 
@@ -787,7 +787,7 @@ export class Rows {
                     }
 
                     // Keep history
-                    worksheet.history.add({
+                    const historyRecord: WorksheetHistoryRecord = {
                         action: 'deleteRow',
                         rowNumber,
                         numOfRows,
@@ -796,14 +796,22 @@ export class Rows {
                         rowData,
                         rowNode,
                         ...(merges && { merges }),
-                    });
+                    };
+                    worksheet.history.add(historyRecord);
 
                     // The selection and the editor stay on their cells. A selection with a deleted cell is removed.
                     worksheet.editor.shift(1, rowNumber, -numOfRows);
                     worksheet.selection.shift(1, rowNumber, -numOfRows);
 
-                    // Remove table references
-                    worksheet.formulas.updateTableReferences({ row: Number(rowNumber), removed: { axis: 1, index: Number(rowNumber), count: numOfRows } });
+                    // Remove table references. The references to the deleted cells become #REF!, and the undo gives the
+                    // formulas their texts again.
+                    const formulas = worksheet.formulas.updateTableReferences({
+                        row: Number(rowNumber),
+                        removed: { axis: 1, index: Number(rowNumber), count: numOfRows, refErrors: true },
+                    });
+                    if (formulas.length) {
+                        historyRecord.formulas = formulas;
+                    }
 
                     // The page shows the rows of its positions again, also after a delete on an earlier page. The positions
                     // of the cells are up to date, for the editor of a row that leaves the page.

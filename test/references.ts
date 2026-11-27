@@ -293,7 +293,7 @@ describe('The formulas and the chain after an insert, a delete, and their undo (
         expect(worksheet.getValue('A1')).to.equal('5');
     });
 
-    it('does not calculate the cell that takes the name of a deleted formula cell', () => {
+    it('does not calculate the cell that takes the name of a deleted formula cell (#239)', () => {
         const [worksheet] = jspreadsheet(root, {
             worksheets: [
                 {
@@ -308,12 +308,13 @@ describe('The formulas and the chain after an insert, a delete, and their undo (
 
         worksheet.deleteRow(1, 1);
 
-        // B2 is the old B3, whose formula names A2, the old A3
-        expect(worksheet.getValue('B2')).to.equal('=A2*3');
-        expect(worksheet.formulas.chain).to.eql({ A2: ['B2'] });
+        // B2 is the old B3, whose formula named the deleted A2
+        expect(worksheet.getValue('B2')).to.equal('=#REF!*3');
+        expect(worksheet.getValue('B2', true)).to.equal('#REF!');
+        expect(worksheet.formulas.chain).to.eql({});
     });
 
-    it('keeps the dependents of a deleted cell and of the cell that takes its name', () => {
+    it('gives #REF! to the references to a deleted cell, and keeps the dependents of the cell that takes its name (#239)', () => {
         const [worksheet] = jspreadsheet(root, {
             worksheets: [
                 {
@@ -329,10 +330,10 @@ describe('The formulas and the chain after an insert, a delete, and their undo (
 
         worksheet.deleteRow(2, 1);
 
-        // B1 still names A3, which is the old A4 now
-        expect(worksheet.getData().map((row) => row[1])).to.eql(['=A3', '=A3', '']);
+        // B1 named the deleted A3. B2 names the old A4, which is A3 now.
+        expect(worksheet.getData().map((row) => row[1])).to.eql(['=#REF!', '=A3', '']);
         worksheet.setValue('A3', '8');
-        expect([worksheet.getValue('B1', true), worksheet.getValue('B2', true)]).to.eql(['8', '8']);
+        expect([worksheet.getValue('B1', true), worksheet.getValue('B2', true)]).to.eql(['#REF!', '8']);
     });
 
     it('removes the formula cells from the chain when a delete removes all rows', () => {
@@ -374,5 +375,131 @@ describe('The formulas and the chain after an insert, a delete, and their undo (
         expect(worksheet.getValue('A1')).to.equal('=C2*2');
         worksheet.setValue('C2', '5');
         expect(worksheet.getValue('A1', true)).to.equal('10');
+    });
+});
+
+describe('References to deleted cells (#239)', () => {
+    const column = (worksheet: Worksheet, x: number, shown = false) =>
+        Array.from({ length: worksheet.options.data.length }, (_, y) => worksheet.getValueFromCoords(x, y, shown));
+
+    it('gives #REF! to a reference to a deleted row, and the undo gives back the formula texts', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', ''],
+                        ['5', '=A1'],
+                        ['7', '=A2'],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.deleteRow(0, 1);
+        expect(column(worksheet, 1)).to.eql(['=#REF!', '=A1']);
+        expect(column(worksheet, 1, true)).to.eql(['#REF!', '5']);
+
+        worksheet.undo();
+        expect(column(worksheet, 1)).to.eql(['', '=A1', '=A2']);
+        expect(column(worksheet, 1, true)).to.eql(['', '1', '5']);
+
+        worksheet.redo();
+        expect(column(worksheet, 1)).to.eql(['=#REF!', '=A1']);
+        expect(column(worksheet, 1, true)).to.eql(['#REF!', '5']);
+
+        // The formulas that the undo gives back are in the chain
+        worksheet.undo();
+        worksheet.setValue('A1', '3');
+        expect(column(worksheet, 1, true)).to.eql(['', '3', '5']);
+    });
+
+    it('gives #REF! to a formula that names a cell with the result #REF!', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    data: [
+                        ['1', ''],
+                        ['2', '=A1*2'],
+                        ['3', '=B2+1'],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.deleteRow(0, 1);
+        expect(column(worksheet, 1)).to.eql(['=#REF!*2', '=B1+1']);
+        expect(column(worksheet, 1, true)).to.eql(['#REF!', '#REF!']);
+
+        worksheet.undo();
+        expect(column(worksheet, 1, true)).to.eql(['', '2', '3']);
+    });
+
+    it('ends a range at the cells that stay, and gives #REF! to a range whose cells all go', () => {
+        const data = () => [
+            ['1', '=SUM(A2:A4)'],
+            ['2', '=A4:A2'],
+            ['3', ''],
+            ['4', ''],
+            ['5', ''],
+        ];
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data: data() }] });
+
+        worksheet.deleteRow(2, 1);
+        expect(column(worksheet, 1)).to.eql(['=SUM(A2:A3)', '=A3:A2', '', '']);
+        worksheet.undo();
+
+        worksheet.deleteRow(3, 2);
+        expect(column(worksheet, 1)).to.eql(['=SUM(A2:A3)', '=A3:A2', '']);
+        worksheet.undo();
+
+        worksheet.deleteRow(1, 1);
+        expect(column(worksheet, 1)).to.eql(['=SUM(A2:A3)', '', '', '']);
+        worksheet.undo();
+
+        worksheet.deleteRow(2, 3);
+        expect(column(worksheet, 1)).to.eql(['=SUM(A2:A2)', '=A2:A2']);
+        worksheet.undo();
+        expect(worksheet.getData()).to.eql(data());
+
+        worksheet.deleteRow(1, 4);
+        expect(column(worksheet, 1)).to.eql(['=SUM(#REF!)']);
+        expect(worksheet.getValue('B1', true)).to.equal('#REF!');
+        worksheet.undo();
+        expect(worksheet.getData()).to.eql(data());
+    });
+
+    it('gives #REF! to a reference to a deleted column, and keeps the string literals', () => {
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data: [['1', '2', '=A1+B1', '="A1"&B1']] }] });
+
+        worksheet.deleteColumn(0, 1);
+        expect(worksheet.getData()).to.eql([['2', '=#REF!+A1', '="A1"&A1']]);
+        expect(worksheet.getValue('B1', true)).to.equal('#REF!');
+
+        worksheet.undo();
+        expect(worksheet.getData()).to.eql([['1', '2', '=A1+B1', '="A1"&B1']]);
+        expect(worksheet.getValue('C1', true)).to.equal('3');
+
+        worksheet.redo();
+        expect(worksheet.getData()).to.eql([['2', '=#REF!+A1', '="A1"&A1']]);
+    });
+
+    it('keeps the texts with updateReferences false', () => {
+        const [worksheet] = jspreadsheet(root, {
+            updateReferences: false,
+            worksheets: [
+                {
+                    data: [
+                        ['1', ''],
+                        ['5', '=A1'],
+                        ['7', '=A2'],
+                    ],
+                },
+            ],
+        });
+
+        worksheet.deleteRow(0, 1);
+        expect(column(worksheet, 1)).to.eql(['=A1', '=A2']);
+        worksheet.undo();
+        expect(column(worksheet, 1)).to.eql(['', '=A1', '=A2']);
     });
 });

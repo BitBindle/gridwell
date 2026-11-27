@@ -147,12 +147,17 @@ export class History {
         worksheet.selection.shift(1, rowIndex, count);
 
         // The rows that the undo of a delete adds keep their formula texts, which name the cells at their positions after
-        // the undo. The redo of an insert moves the references of its formulas, as the insert did.
+        // the undo. The redo of an insert moves the references of its formulas, as the insert did. The redo of a delete
+        // gives the references to the deleted cells #REF! again, and its undo gives the formulas their texts again.
+        const deletes = historyRecord.action === 'deleteRow';
         worksheet.formulas.updateTableReferences(
             type === 1
-                ? { removed: { axis: 1, index: rowIndex, count: historyRecord.numOfRows } }
-                : { inserted: { axis: 1, index: rowIndex, count: historyRecord.numOfRows, keepTexts: historyRecord.action === 'deleteRow' } }
+                ? { removed: { axis: 1, index: rowIndex, count: historyRecord.numOfRows, refErrors: deletes } }
+                : { inserted: { axis: 1, index: rowIndex, count: historyRecord.numOfRows, keepTexts: deletes } }
         );
+        if (type === 0 && historyRecord.formulas) {
+            worksheet.formulas.restoreTexts(historyRecord.formulas);
+        }
 
         // Respect pagination. An undo of an insert can remove the current page. The positions of the cells are up to date,
         // for the editor of a row that leaves the page.
@@ -260,12 +265,17 @@ export class History {
         worksheet.selection.shift(0, columnIndex, count);
 
         // The columns that the undo of a delete adds keep their formula texts. The redo of an insert moves the references
-        // of its formulas, as the insert did.
+        // of its formulas, as the insert did. The redo of a delete gives the references to the deleted cells #REF! again,
+        // and its undo gives the formulas their texts again.
+        const deletes = historyRecord.action === 'deleteColumn';
         worksheet.formulas.updateTableReferences(
             type === 1
-                ? { removed: { axis: 0, index: columnIndex, count: historyRecord.numOfColumns } }
-                : { inserted: { axis: 0, index: columnIndex, count: historyRecord.numOfColumns, keepTexts: historyRecord.action === 'deleteColumn' } }
+                ? { removed: { axis: 0, index: columnIndex, count: historyRecord.numOfColumns, refErrors: deletes } }
+                : { inserted: { axis: 0, index: columnIndex, count: historyRecord.numOfColumns, keepTexts: deletes } }
         );
+        if (type === 0 && historyRecord.formulas) {
+            worksheet.formulas.restoreTexts(historyRecord.formulas);
+        }
     }
 
     /**
