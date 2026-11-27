@@ -359,12 +359,10 @@ export class Data {
         const rows = recordRows(worksheet);
 
         // Column length
-        const x = Math.max(
-            0,
-            ...rows.map((j) => {
-                return worksheet.options.data[j].length;
-            })
-        );
+        let x = 0;
+        for (const j of rows) {
+            x = Math.max(x, worksheet.options.data[j].length);
+        }
 
         // A column outside the column window has no cell. It is selected when the selection holds it, and it is empty.
         const bounds = worksheet.selection.bounds;

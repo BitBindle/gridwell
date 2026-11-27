@@ -68,7 +68,11 @@ export class Styles {
 
             // The rows with a record: in the row source mode, the frozen rows and the window
             const rows = recordRows(worksheet);
-            const x = rows.length ? worksheet.options.data[rows[0]].length : 0;
+            let x = 0;
+            for (const j of rows) {
+                x = worksheet.options.data[j].length;
+                break;
+            }
 
             // Go through the columns to get the data
             for (const j of rows) {
