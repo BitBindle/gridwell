@@ -888,3 +888,13 @@ pressed row. Version 5 kept each selection that had the pressed row or column, a
 cleared the cells.
 
 No option keeps the old behavior, because Delete did not act on the rows or columns that the menu names.
+
+## An insert next to the rows in the table body shows the new rows
+
+With `lazyLoading` or `filters`, `insertRow` puts the new rows in the table body when the row after them or the row
+before them is in the body. Version 5 did not attach them when the row after them was outside the body, but its redo
+attached them. So an insert after the last attached row, or after a row that a filter shows, now shows its rows. With
+lazy loading, the table body can then hold more than 100 rows until the next scroll.
+
+No option keeps the old behavior, because the insert and its redo must give the same rows, and the undo of a delete
+must give back the rows that were in the body.
