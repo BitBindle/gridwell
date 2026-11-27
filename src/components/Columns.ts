@@ -47,7 +47,7 @@ export class Columns {
         const worksheet = this.worksheet;
 
         // Create col global control
-        const colWidth = worksheet.options.columns?.[colNumber]?.width || worksheet.options.defaultColWidth || 100;
+        const colWidth = this.givenWidth(colNumber);
         const colAlign = worksheet.options.columns?.[colNumber]?.align || worksheet.options.defaultColAlign || 'center';
 
         // Create header cell
@@ -652,6 +652,18 @@ export class Columns {
      * Get the width of a column.
      * @param column - The column, from 0. Without it, the widths of all columns.
      */
+    /**
+     * The width of a column in the options, else the default width. A width of 0 stays 0, so that a column can have no
+     * width.
+     */
+    private givenWidth(column: number): number | string {
+        const width = this.worksheet.options.columns?.[column]?.width;
+        if (width !== undefined && width !== null && width !== '') {
+            return width;
+        }
+        return this.worksheet.options.defaultColWidth ?? 100;
+    }
+
     getWidth(column?: number): number | (number | string)[] {
         const worksheet = this.worksheet;
 
@@ -661,7 +673,7 @@ export class Columns {
             // Get all headers
             data = [];
             for (let i = 0; i < worksheet.headers.length; i++) {
-                data.push(worksheet.options.columns?.[i]?.width || worksheet.options.defaultColWidth || 100);
+                data.push(this.givenWidth(i));
             }
         } else {
             data = parseInt(worksheet.cols[column].colElement.getAttribute('width'));
