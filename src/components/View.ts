@@ -38,6 +38,9 @@ export class View {
     /** The indexes of the rows that a search or the filters found, or null when the worksheet shows every row. */
     results: number[] | null = null;
 
+    /** The scroll position from the top at the last scroll, so the fill handle is checked only for a vertical scroll. */
+    private lastScrollTop = 0;
+
     /** The values that each column is filtered by, by column index. null or a missing entry is a column without filter. */
     filters: (string[] | null)[] = [];
 
@@ -656,8 +659,8 @@ export class View {
                 if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                     return false;
                 } else {
-                    // Remove merged cells
-                    worksheet.destroyMerge();
+                    // Remove merged cells. The selection of the user stays.
+                    worksheet.merges.destroy(false, true);
                 }
             }
 
@@ -1237,6 +1240,12 @@ export class View {
         if (worksheet.options.freezeColumns! > 0 && worksheet.content.scrollLeft !== worksheet.lastScrollLeft) {
             worksheet.lastScrollLeft = worksheet.content.scrollLeft;
             worksheet.columns.updateFreezePosition();
+        }
+
+        // The fill handle hides while its cell is under the sticky header or the frozen rows
+        if (worksheet.content.scrollTop !== this.lastScrollTop) {
+            this.lastScrollTop = worksheet.content.scrollTop;
+            worksheet.selection.updateCornerCover();
         }
 
         // Close a floating editor. The text editor is inside the cell and scrolls with it.

@@ -23,6 +23,9 @@ export class Rows {
     /** True while a placement of the frozen rows waits for the end of the current task. */
     private placing = false;
 
+    /** Places the header rows again when a header row changes its height. Only a header of more than one row has it. */
+    private headerObserver: ResizeObserver | null = null;
+
     constructor(worksheet: Worksheet) {
         this.worksheet = worksheet;
     }
@@ -68,15 +71,64 @@ export class Rows {
     }
 
     /**
-     * The height that the sticky header covers at the top of the content. Each header row sticks at the top, so the
-     * header covers the height of its highest row.
+     * The height that the sticky header covers at the top of the content. Each header row sticks below the rows above
+     * it, so the header covers the height of all its rows.
      */
     getHeaderHeight() {
         let height = 0;
         for (const row of Array.from(this.worksheet.thead.children) as HTMLElement[]) {
-            height = Math.max(height, row.offsetHeight);
+            height += row.offsetHeight;
         }
         return height;
+    }
+
+    /**
+     * Give each header row its distance from the top of the content in the custom property --jss-header-top: the height
+     * of the header rows above it. The nested headers and the filters stick below each other, and do not cover each
+     * other. A header of one row needs no distance.
+     */
+    placeHeader() {
+        const rows = Array.from(this.worksheet.thead.children) as HTMLElement[];
+        if (rows.length < 2) {
+            return;
+        }
+
+        // All reads come before the writes, so the browser computes the layout once
+        const heights = rows.map((row) => row.offsetHeight);
+        let top = 0;
+        rows.forEach((row, j) => {
+            const value = `${top}px`;
+            if (row.style.getPropertyValue('--jss-header-top') !== value) {
+                row.style.setProperty('--jss-header-top', value);
+            }
+            top += heights[j];
+        });
+    }
+
+    /**
+     * Place the header rows when the worksheet shows, and again when a header row changes its height, for example after
+     * a web font loads. The frozen rows and the fill handle depend on the height of the header, so they follow.
+     */
+    observeHeader() {
+        const rows = Array.from(this.worksheet.thead.children);
+        if (rows.length < 2) {
+            return;
+        }
+        if (typeof ResizeObserver !== 'function') {
+            queueMicrotask(() => this.placeHeader());
+            return;
+        }
+        this.headerObserver?.disconnect();
+        this.headerObserver = new ResizeObserver(() => {
+            this.placeHeader();
+            if (this.frozen.length) {
+                this.placeFrozen();
+            }
+            this.worksheet.selection.updateCornerCover();
+        });
+        for (const row of rows) {
+            this.headerObserver.observe(row);
+        }
     }
 
     /**
@@ -210,11 +262,13 @@ export class Rows {
     }
 
     /**
-     * Stop the size observer of the frozen rows, for example when the spreadsheet is destroyed.
+     * Stop the size observers of the frozen rows and of the header rows, for example when the spreadsheet is destroyed.
      */
     stopFreeze() {
         this.freezeObserver?.disconnect();
         this.freezeObserver = null;
+        this.headerObserver?.disconnect();
+        this.headerObserver = null;
     }
 
     /**
