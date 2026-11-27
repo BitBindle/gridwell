@@ -323,7 +323,7 @@ export class Editor {
     }
 
     /**
-     * The text editor: an input, or a text area when the column wraps its text, with the mask of the column. empty opens it
+     * The text editor: a textarea, which shows one line without word wrap, with the mask of the column. empty opens it
      * without the value of the cell.
      */
     private openText(
@@ -342,13 +342,14 @@ export class Editor {
         const editValue = worksheet.parent.config.editValue;
         const text = empty !== true && typeof editValue === 'function' ? editValue(worksheet, x, y, value) : undefined;
 
-        // Basic editor
-        let editor;
-
-        if (column?.wordWrap !== false && (worksheet.options.wordWrap === true || column?.wordWrap === true)) {
-            editor = createEditor(cell, 'textarea', label);
-        } else {
-            editor = createEditor(cell, 'input', label);
+        // The editor is a textarea for each cell, so it keeps the line breaks of the value. Without word wrap, it shows one
+        // line, as an input does.
+        const editor = createEditor(cell, 'textarea', label);
+        if (column?.wordWrap === false || (worksheet.options.wordWrap !== true && column?.wordWrap !== true)) {
+            editor.setAttribute('rows', '1');
+            editor.setAttribute('wrap', 'off');
+            // Each line has the height of the editor, so the line with the caret shows in the middle, as in an input
+            editor.style.lineHeight = editor.style.height;
         }
 
         worksheet.dispatch('oncreateeditor', worksheet, cell, x, y, null, column);
@@ -369,7 +370,9 @@ export class Editor {
         editor.onblur = () => {
             worksheet.editor.close(cell, true);
         };
+        // The caret is at the end of the text, so the end shows
         editor.scrollLeft = editor.scrollWidth;
+        editor.scrollTop = editor.scrollHeight;
     }
 
     /**

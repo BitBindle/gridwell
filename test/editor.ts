@@ -504,3 +504,80 @@ describe('The editor of a worksheet', () => {
         ]);
     });
 });
+
+describe('The text editor and line breaks', () => {
+    function altEnter(editor: HTMLElement) {
+        editor.dispatchEvent(new window.KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter', keyCode: 13, which: 13, altKey: true }));
+    }
+
+    it('keeps the line breaks of a value when the editor saves it as it is', () => {
+        const changes: unknown[] = [];
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: [['a\nb']] }],
+            onchange: (instance, cell, x, y, value) => {
+                changes.push(value);
+            },
+        });
+        const cell = worksheet.getCell('A1');
+
+        worksheet.openEditor(cell);
+        expect((cell.children[0] as HTMLTextAreaElement).value).to.equal('a\nb');
+        worksheet.closeEditor(cell, true);
+
+        expect(worksheet.getValue('A1')).to.equal('a\nb');
+        expect(changes).to.eql([]);
+    });
+
+    it('shows one line without wrap in a cell without word wrap, and keeps the wrap of word wrap', () => {
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data: [['a', 'b']], columns: [{}, { wordWrap: true }] }] });
+
+        worksheet.openEditor(worksheet.getCell('A1'));
+        const editor = worksheet.getCell('A1').children[0];
+        expect([editor.tagName, editor.getAttribute('rows'), editor.getAttribute('wrap')]).to.eql(['TEXTAREA', '1', 'off']);
+        worksheet.closeEditor(worksheet.getCell('A1'), false);
+
+        worksheet.openEditor(worksheet.getCell('B1'));
+        const wrapped = worksheet.getCell('B1').children[0];
+        expect([wrapped.tagName, wrapped.getAttribute('rows'), wrapped.getAttribute('wrap')]).to.eql(['TEXTAREA', null, null]);
+    });
+
+    it('adds a line break at the caret with Alt+Enter in a cell without word wrap, and replaces the selected text', () => {
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data: [['abcd']] }] });
+        const cell = worksheet.getCell('A1');
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.openEditor(cell);
+        const editor = cell.children[0] as HTMLTextAreaElement;
+        const inputs: string[] = [];
+        editor.addEventListener('input', () => inputs.push(editor.value));
+
+        editor.setSelectionRange(1, 3);
+        altEnter(editor);
+
+        expect(worksheet.editor.isOpen()).to.equal(true);
+        expect(editor.value).to.equal('a\nd');
+        expect([editor.selectionStart, editor.selectionEnd]).to.eql([2, 2]);
+        expect(inputs).to.eql(['a\nd']);
+
+        worksheet.closeEditor(cell, true);
+        expect(worksheet.getValue('A1')).to.equal('a\nd');
+    });
+
+    it('closes the editor of another type with Alt+Enter, as with Enter', () => {
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data: [['#ff0000']], columns: [{ type: 'color' }] }] });
+        const cell = worksheet.getCell('A1');
+        worksheet.updateSelectionFromCoords(0, 0, 0, 0);
+        worksheet.openEditor(cell);
+        const editor = cell.children[0] as HTMLInputElement;
+        let blurred = false;
+        editor.addEventListener('blur', () => {
+            blurred = true;
+        });
+        editor.focus();
+
+        altEnter(editor);
+
+        expect(blurred).to.equal(true);
+        // The color picker closes on its own events, which jsdom does not send
+        worksheet.closeEditor(cell, false);
+    });
+});

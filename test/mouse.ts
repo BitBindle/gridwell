@@ -126,7 +126,7 @@ describe('The mouse on the document', () => {
         mouse(worksheet.records[0][0].element, 'mousedown');
         mouse(worksheet.records[0][0].element, 'mouseup');
         worksheet.openEditor(worksheet.records[0][0].element);
-        (worksheet.records[0][0].element.querySelector('input') as HTMLInputElement).value = 'x';
+        (worksheet.records[0][0].element.querySelector('textarea') as HTMLTextAreaElement).value = 'x';
         mouse(outside(), 'mousedown');
 
         expect(worksheet.editor.isOpen()).to.equal(false);
@@ -152,7 +152,7 @@ describe('The mouse on the document', () => {
         mouse(first.records[0][0].element, 'mousedown');
         mouse(first.records[0][0].element, 'mouseup');
         first.openEditor(first.records[0][0].element);
-        (first.records[0][0].element.querySelector('input') as HTMLInputElement).value = 'x';
+        (first.records[0][0].element.querySelector('textarea') as HTMLTextAreaElement).value = 'x';
         mouse(second.records[1][1].element, 'mousedown');
         mouse(second.records[1][1].element, 'mouseup');
 
