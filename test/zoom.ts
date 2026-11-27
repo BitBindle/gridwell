@@ -48,8 +48,11 @@ describe('Zoom', () => {
         expect(worksheets.map((worksheet) => worksheet.zoomed.style.zoom)).to.eql(['2', '2']);
         expect(worksheets[0].parent.config.zoom).to.equal(2);
 
-        for (const value of [0, -1, NaN, 'x']) {
-            worksheets[1].setZoom(value as number);
+        // @ts-expect-error -- a value that is not a number
+        worksheets[1].setZoom('x');
+        expect(worksheets[0].parent.config.zoom).to.equal(1);
+        for (const value of [0, -1, NaN]) {
+            worksheets[1].setZoom(value);
             expect(worksheets.map((worksheet) => worksheet.zoomed.style.zoom)).to.eql(['', '']);
             expect(worksheets[0].parent.config.zoom).to.equal(1);
         }
@@ -202,5 +205,21 @@ describe('Zoom', () => {
         mouse(worksheet.records[2][0].element, 'mouseup');
 
         expect(worksheet.getColumnData(0)).to.eql(['b', 'c', 'a']);
+    });
+
+    it('keeps the rows in view in place on the screen when lazy loading adds rows', () => {
+        const data = Array.from({ length: 300 }, (row, y) => [`${y}`]);
+        const [worksheet] = jspreadsheet(root, { zoom: 2, worksheets: [{ data, lazyLoading: true, tableOverflow: true }] });
+        // jsdom has no layout: each attached row is 25 grid pixels high, in the order of the table body
+        for (const row of worksheet.rows) {
+            Object.defineProperty(row.element, 'offsetParent', { get: () => (row.element.parentNode ? worksheet.tbody : null) });
+            Object.defineProperty(row.element, 'offsetTop', { get: () => Array.prototype.indexOf.call(worksheet.tbody.children, row.element) * 25 });
+        }
+        Object.defineProperty(worksheet.content, 'scrollTop', { value: 2000, writable: true });
+
+        // The load adds 30 rows at the end and removes 30 rows at the top, so the last row moves up by 750 grid pixels
+        worksheet.view.loadDown();
+
+        expect(worksheet.content.scrollTop).to.equal(2000 - 1500);
     });
 });
