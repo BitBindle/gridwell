@@ -1251,14 +1251,27 @@ describe('Column numbers as texts', () => {
         expect(worksheet.getData()).to.eql([['a', '', '', 'b', 'c']]);
     });
 
-    it('does nothing for a column number or a number of columns that is not a number', () => {
+    it('does nothing for a column number that is not a number', () => {
         const worksheet = create();
 
         expect(worksheet.insertColumn(1, 'x')).to.equal(false);
-        expect(worksheet.insertColumn(NaN, 0)).to.equal(false);
         expect(worksheet.deleteColumn(NaN)).to.equal(false);
-        expect(worksheet.deleteColumn(0, 'x')).to.equal(false);
+        expect(worksheet.deleteColumn('x')).to.equal(false);
 
+        expect(worksheet.getData()).to.eql([['a', 'b', 'c']]);
+    });
+
+    it('inserts and deletes one column for a number of columns that is not a number, as with no number', () => {
+        const worksheet = create();
+
+        worksheet.insertColumn(NaN, 0);
+        expect(worksheet.getData()).to.eql([['a', '', 'b', 'c']]);
+
+        worksheet.deleteColumn(0, 'x');
+        expect(worksheet.getData()).to.eql([['', 'b', 'c']]);
+
+        worksheet.undo();
+        worksheet.undo();
         expect(worksheet.getData()).to.eql([['a', 'b', 'c']]);
     });
 

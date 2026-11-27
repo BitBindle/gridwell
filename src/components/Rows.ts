@@ -455,10 +455,10 @@ export class Rows {
             let numOfRows;
 
             if (!Array.isArray(mixed)) {
-                numOfRows = toNumber(mixed) ?? 1;
-                // A value that is not a number inserts nothing
+                // A number of rows that is not a number inserts one row, as no number does
+                numOfRows = toNumber(mixed) ?? NaN;
                 if (Number.isNaN(numOfRows)) {
-                    return false;
+                    numOfRows = 1;
                 }
             } else {
                 numOfRows = 1;
@@ -735,10 +735,11 @@ export class Rows {
                 // Last column
                 const lastRow = worksheet.options.data.length - 1;
 
-                // A value that is not a number deletes nothing
+                // A row number that is not a number deletes nothing. A number of rows that is not a number
+                // deletes one, as no number does.
                 rowNumber = toNumber(rowNumber);
                 numOfRows = toNumber(numOfRows);
-                if (Number.isNaN(rowNumber) || Number.isNaN(numOfRows)) {
+                if (Number.isNaN(rowNumber)) {
                     return false;
                 }
                 if (rowNumber == null || rowNumber > lastRow || rowNumber < 0) {

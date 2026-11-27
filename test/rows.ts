@@ -516,18 +516,35 @@ describe('Row numbers as texts (#235, #236)', () => {
         expect(worksheet.rows.map((row) => row.y)).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     });
 
-    it('does nothing for a row number or a number of rows that is not a number', () => {
+    it('does nothing for a row number that is not a number', () => {
         const worksheet = create();
         worksheet.updateSelectionFromCoords(0, 1, 0, 2);
 
         expect(worksheet.insertRow(1, 'x')).to.equal(false);
-        expect(worksheet.insertRow('x', 2)).to.equal(false);
         expect(worksheet.deleteRow(NaN)).to.equal(false);
         expect(worksheet.deleteRow('x')).to.equal(false);
-        expect(worksheet.deleteRow(1, 'x')).to.equal(false);
-        expect(worksheet.deleteRow(true as unknown as number)).to.equal(false);
+        // @ts-expect-error -- a boolean is outside the typing
+        expect(worksheet.deleteRow(true)).to.equal(false);
 
         expect(firstColumn(worksheet)).to.equal('0,1,2,3,4,5,6,7,8');
+        worksheet.undo();
+        expect(firstColumn(worksheet)).to.equal('0,1,2,3,4,5,6,7,8');
+    });
+
+    it('inserts and deletes one row for a number of rows that is not a number, as with no number', () => {
+        const worksheet = create();
+
+        worksheet.insertRow('x', 2);
+        expect(firstColumn(worksheet)).to.equal('0,1,2,,3,4,5,6,7,8');
+
+        worksheet.deleteRow(1, 'x');
+        expect(firstColumn(worksheet)).to.equal('0,2,,3,4,5,6,7,8');
+
+        worksheet.deleteRow(1, NaN);
+        expect(firstColumn(worksheet)).to.equal('0,,3,4,5,6,7,8');
+
+        worksheet.undo();
+        worksheet.undo();
         worksheet.undo();
         expect(firstColumn(worksheet)).to.equal('0,1,2,3,4,5,6,7,8');
     });
@@ -535,7 +552,8 @@ describe('Row numbers as texts (#235, #236)', () => {
     it('inserts one row for a null number of rows, as with no number', () => {
         const worksheet = create();
 
-        worksheet.insertRow(null as unknown as number, 3);
+        // @ts-expect-error -- null is outside the typing
+        worksheet.insertRow(null, 3);
 
         expect(firstColumn(worksheet)).to.equal('0,1,2,3,,4,5,6,7,8');
     });

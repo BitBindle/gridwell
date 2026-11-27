@@ -281,10 +281,10 @@ export class Columns {
             // The insert could be lead by number of rows or the array of data
             let numOfColumns;
             if (!Array.isArray(mixed)) {
-                numOfColumns = toNumber(mixed) ?? 1;
-                // A value that is not a number inserts nothing
+                // A number of columns that is not a number inserts one column, as no number does
+                numOfColumns = toNumber(mixed) ?? NaN;
                 if (Number.isNaN(numOfColumns)) {
-                    return false;
+                    numOfColumns = 1;
                 }
             } else {
                 numOfColumns = 1;
@@ -530,10 +530,11 @@ export class Columns {
                 // Lasat column
                 const lastColumn = worksheet.options.data[0].length - 1;
 
-                // A value that is not a number deletes nothing
+                // A column number that is not a number deletes nothing. A number of columns that is not a number
+                // deletes one, as no number does.
                 columnNumber = toNumber(columnNumber);
                 numOfColumns = toNumber(numOfColumns);
-                if (Number.isNaN(columnNumber) || Number.isNaN(numOfColumns)) {
+                if (Number.isNaN(columnNumber)) {
                     return false;
                 }
                 if (columnNumber == null || columnNumber > lastColumn || columnNumber < 0) {
