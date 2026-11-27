@@ -2644,8 +2644,9 @@ declare namespace jspreadsheet {
 
         /**
          * In the row source mode, replace the row count, the runs and the merged ranges, for example after the application
-         * inserted or deleted rows. All rows of the window are made again. The scroll position and the selection stay. A
-         * merged range that hides the selected cell selects its first cell, as `replaceMerges` does.
+         * inserted or deleted rows. All rows of the window are made again. The scroll position and the selection stay. When
+         * a merged range hides the first selected cell, a selection inside the range selects its first cell, and a larger
+         * selection grows to hold the range.
          */
         resetRows: (options?: { count?: number; runs?: RowRun[]; merges?: Record<string, [number, number]> }) => void;
 

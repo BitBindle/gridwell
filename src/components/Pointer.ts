@@ -274,10 +274,13 @@ export class Pointer {
                 }
             }
         } else {
+            // In the row source mode, the row can leave the window during the resize. Then the row kept at the press
+            // gives the height.
+            const row = worksheet.rows[resizing.row]?.element ?? resizing.element;
             // Remove Class
-            worksheet.rows[resizing.row].element.children[0].classList.remove('resizing');
+            row.children[0].classList.remove('resizing');
             // setHeight parses the height, and it ignores a missing attribute (NaN) as it ignored null
-            const newHeight = parseInt(worksheet.rows[resizing.row].element.getAttribute('height'));
+            const newHeight = parseInt(row.getAttribute('height'));
             worksheet.rowManager.setHeight(resizing.row, newHeight, resizing.height);
             // Remove border
             resizing.element.classList.remove('resizing');
@@ -570,7 +573,8 @@ export class Pointer {
 
             if (resizing.height + height > 0) {
                 const tempHeight = resizing.height + height;
-                worksheet.rows[resizing.row].element.setAttribute('height', tempHeight);
+                // In the row source mode, the row can leave the window during the resize
+                (worksheet.rows[resizing.row]?.element ?? resizing.element).setAttribute('height', tempHeight);
 
                 worksheet.selection.updateCorner();
             }

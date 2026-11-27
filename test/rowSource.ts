@@ -810,6 +810,110 @@ describe('The row source mode', () => {
         expect(document.activeElement).to.equal(worksheet.table);
     });
 
+    it('runs the select items and the color items of the toolbar for a selection with rows outside the window', async () => {
+        const { worksheet } = build({}, {}, { toolbar: true });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        worksheet.updateSelectionFromCoords(0, 0, 2, 300);
+
+        // The font, the size, the alignment and the vertical alignment
+        const pickers = root.querySelectorAll('.jss_toolbar .jpicker');
+        expect(pickers.length).to.equal(4);
+        for (const picker of Array.from(pickers)) {
+            picker.querySelectorAll<HTMLElement>('.jpicker-item')[1].click();
+        }
+        for (const content of ['format_color_text', 'format_color_fill']) {
+            const item = Array.from(root.querySelectorAll<HTMLElement>('.jss_toolbar .jtoolbar-item')).find((element) => element.textContent === content)!;
+            item.click();
+            (item as HTMLElement & { color: { setValue(color: string): void } }).color.setValue('#f44336');
+        }
+
+        const style = worksheet.getStyle('C1') as string;
+        for (const property of ['font-family', 'font-size', 'text-align', 'vertical-align', ' color', 'background-color']) {
+            expect(style).to.contain(property);
+        }
+        expect(worksheet.getStyle('C21')).to.contain('font-size');
+    });
+
+    it('does nothing for the comment of a row outside the window, also in an undo', () => {
+        const { worksheet } = build();
+        worksheet.setComments('A2', 'note');
+        worksheet.scrollToRow(900);
+
+        worksheet.undo();
+        expect(worksheet.history.index).to.equal(-1);
+        worksheet.setComments('A500', 'other');
+        worksheet.scrollToRow(499);
+
+        expect(worksheet.records[499][0].element.getAttribute('title')).to.equal(null);
+    });
+
+    it('ends a row resize when the row leaves the window during the resize', () => {
+        const { worksheet } = build();
+        const header = worksheet.rows[5].element.children[0] as HTMLElement;
+        header.getBoundingClientRect = () => ({ left: 0, top: 0, right: 50, bottom: 20, width: 50, height: 20 }) as DOMRect;
+        // jsdom has no layout, so the event gets the offset and the position
+        const mouse = (element: EventTarget, type: string, offsetY: number, pageY: number) => {
+            const event = new MouseEvent(type, { bubbles: true, cancelable: true, buttons: 1 });
+            Object.defineProperty(event, 'offsetY', { value: offsetY });
+            Object.defineProperty(event, 'pageY', { value: pageY });
+            element.dispatchEvent(event);
+        };
+        mouse(header, 'mousedown', 18, 100);
+        expect(worksheet.pointer.resizing?.row).to.equal(5);
+
+        worksheet.scrollToRow(900);
+        mouse(document, 'mousemove', 0, 130);
+        mouse(document, 'mouseup', 0, 130);
+
+        expect(worksheet.pointer.resizing).to.equal(null);
+        expect(worksheet.getHeight(5)).to.equal('50px');
+    });
+
+    it('gives the selected rows that show, also outside the window', () => {
+        const { worksheet } = build({ runs: [{ first: 500, last: 509, hidden: true }] });
+        worksheet.updateSelectionFromCoords(0, 495, 0, 515);
+
+        expect(worksheet.getSelectedRows(true)).to.eql([495, 496, 497, 498, 499, 510, 511, 512, 513, 514, 515]);
+    });
+
+    it('removes its focus listener when it stops', () => {
+        const { worksheet } = build();
+        const removed: string[] = [];
+        const remove = worksheet.table.removeEventListener.bind(worksheet.table);
+        worksheet.table.removeEventListener = (type: string, listener: EventListenerOrEventListenerObject) => {
+            removed.push(type);
+            remove(type, listener);
+        };
+
+        worksheet.setData([['x']]);
+
+        expect(removed).to.contain('focusout');
+    });
+
+    it('keeps the focus on a cell that becomes a frozen row', () => {
+        const { worksheet } = build();
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+        worksheet.records[2][1].element.focus();
+
+        worksheet.setFreeze(5);
+
+        expect(document.activeElement).to.equal(worksheet.records[2][1].element);
+    });
+
+    it('keeps a selection larger than a merged range after resetRows', () => {
+        const { worksheet } = build();
+        worksheet.setMerge('A1', 3, 1);
+        worksheet.updateSelectionFromCoords(1, 0, 2, 3);
+
+        worksheet.resetRows();
+
+        expect(worksheet.selection.range).to.eql([1, 0, 2, 3]);
+
+        worksheet.updateSelectionFromCoords(1, 0, 1, 0);
+        worksheet.resetRows();
+        expect(worksheet.selection.range).to.eql([0, 0, 0, 0]);
+    });
+
     it('moves the selection before onunmerge, as the other modes do', () => {
         const events: string[] = [];
         const { worksheet } = build(

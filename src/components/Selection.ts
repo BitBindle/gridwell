@@ -664,7 +664,9 @@ export class Selection {
             i <= Math.max(worksheet.selection.range[1], worksheet.selection.range[3]);
             i++
         ) {
-            if (!visibleOnly || worksheet.rows[i].element.style.display !== 'none') {
+            // In the row source mode, a row outside the window has no item, and the layout tells if it is hidden
+            const hidden = worksheet.rowSource ? worksheet.rowSource.layout.isHidden(i) : worksheet.rows[i].element.style.display === 'none';
+            if (!visibleOnly || !hidden) {
                 result.push(i);
             }
         }
