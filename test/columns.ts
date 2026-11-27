@@ -878,6 +878,11 @@ describe('A column of width 0', () => {
         expect(worksheet.getWidth(2)).to.equal(0);
         worksheet.undo();
         expect(worksheet.getWidth(2)).to.equal(70);
+
+        // NaN is no width, so the columns keep their widths
+        worksheet.setWidth(2, NaN);
+        worksheet.setWidth([0, 1], [NaN, NaN]);
+        expect(worksheet.getWidth()).to.eql([80, 0, 70]);
     });
 });
 

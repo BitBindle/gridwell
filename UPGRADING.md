@@ -688,7 +688,7 @@ that selects `.jss_content > table` must select `.jss_content > .jss_zoom > tabl
 ## A column width of 0 stays 0
 
 A column with `width: 0`, and each column without a width when `defaultColWidth` is 0, has no width. `getWidth` gives
-0, and `setWidth(column, 0)` sets a width of 0. Version 5 gave such a column `defaultColWidth`, or 100 pixels, and
+0, and `setWidth` sets a width of 0, also for a 0 in an array of widths. Version 5 gave such a column `defaultColWidth`, or 100 pixels, and
 `setWidth` with 0 did nothing. No option keeps the old behavior, because `defaultColWidth` is the width of the columns
-with no width, and `getFreezeWidth` already counted such a column as 0. To keep a visible column, remove `width: 0`, or
+with no width, and the frozen columns already counted such a column as 0. To keep a visible column, remove `width: 0`, or
 set the width that you want.

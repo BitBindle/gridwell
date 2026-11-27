@@ -9,10 +9,10 @@ import { recordRows } from './RowSource.js';
 import { askConfirm } from '../utils/dialogs.js';
 
 /**
- * A width is given when it is not undefined, null or empty. A width of 0 is given.
+ * A width is given when it is not undefined, null, empty or NaN. A width of 0 is given.
  */
 function given<T>(width: T | undefined | null | ''): width is T {
-    return width !== undefined && width !== null && width !== '';
+    return width !== undefined && width !== null && width !== '' && !Number.isNaN(width);
 }
 
 /**
