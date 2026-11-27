@@ -940,6 +940,24 @@ lazy loading, the table body can then hold more than 100 rows until the next scr
 No option keeps the old behavior, because the insert and its redo must give the same rows, and the undo of a delete
 must give back the rows that were in the body.
 
+## Insert and delete rename the references with $ signs, and the footers
+
+`insertRow`, `deleteRow`, `insertColumn`, `deleteColumn`, and their undo and redo, now rename these references in the
+formulas:
+
+- A reference with `$` signs, such as `$A$2`, `A$2` or `$A2`. It keeps its `$` signs. Version 5 did not rename it, so
+  after the change it named another cell. A `$` sign fixes a reference for a copy, not for an insert or a delete.
+- The references in the formulas of `footers`. A reference of a footer to a deleted cell becomes `#REF!`, and the undo
+  gives back the text.
+
+They no longer rename a cell name in a string literal, such as `"A1"`, or a cell or a range of another worksheet, such
+as `Sheet2!A1:A3` or `'Q1 2024'!A1`.
+
+`moveRow`, `moveColumn` and the sort do not change: they rename the formulas of the cells as version 5 did.
+
+No option keeps the old texts, because these formulas named other cells after the change. With `updateReferences:
+false`, no formula text changes, as before.
+
 ## insertRow, deleteRow, insertColumn and deleteColumn read their numbers as numbers
 
 A text that is a number, such as the value of `data-y`, works as that number. Version 5 joined the texts, so the calls
