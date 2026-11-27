@@ -411,14 +411,14 @@ export class Rows {
                 return false;
             }
 
-            // Merged cells
-            if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
-                if (worksheet.merges.isRowMerged(rowNumber, insertBefore).length) {
-                    if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                        return false;
-                    } else {
-                        worksheet.destroyMerge();
-                    }
+            // The merged ranges that the new rows split are removed. The other ranges stay and move with their cells.
+            const crossed = worksheet.merges.isRowMerged(rowNumber, insertBefore);
+            if (crossed.length) {
+                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                    return false;
+                }
+                for (const key of crossed) {
+                    worksheet.merges.remove(key);
                 }
             }
 
@@ -634,20 +634,14 @@ export class Rows {
                 }
 
                 if (parseInt(rowNumber) > -1) {
-                    // Merged cells
-                    let mergeExists = false;
-                    if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
-                        for (let row = rowNumber; row < rowNumber + numOfRows; row++) {
-                            if (worksheet.merges.isRowMerged(row, false).length) {
-                                mergeExists = true;
-                            }
-                        }
-                    }
-                    if (mergeExists) {
+                    // The merged ranges that have a cell in the deleted rows are removed. The other ranges stay and move with their cells.
+                    const crossed = worksheet.merges.inRows(rowNumber, rowNumber + numOfRows - 1);
+                    if (crossed.length) {
                         if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                             return false;
-                        } else {
-                            worksheet.destroyMerge();
+                        }
+                        for (const key of crossed) {
+                            worksheet.merges.remove(key);
                         }
                     }
 

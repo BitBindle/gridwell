@@ -443,6 +443,118 @@ describe('Merge tests', () => {
             expect(worksheet.rows.length).to.equal(5);
         });
     });
+
+    describe('Insert and delete remove only the merged ranges that they cross', () => {
+        const confirm = globalThis.confirm;
+        let questions: (string | undefined)[];
+
+        beforeEach(() => {
+            questions = [];
+            globalThis.confirm = (message) => {
+                questions.push(message);
+                return true;
+            };
+        });
+
+        afterEach(() => {
+            globalThis.confirm = confirm;
+        });
+
+        function create(mergeCells: Record<string, [number, number]>) {
+            const data = Array.from({ length: 6 }, (row, y) => Array.from({ length: 8 }, (cell, x) => `${x}:${y}`));
+            return jspreadsheet(root, { worksheets: [{ data, mergeCells }] })[0];
+        }
+
+        it('keeps the other ranges when insertRow splits one range', () => {
+            const worksheet = create({ A1: [2, 1], B2: [2, 2], A5: [3, 1] });
+
+            worksheet.insertRow(1, 2, true);
+
+            expect(questions).to.have.length(1);
+            expect(worksheet.getMerge()).to.eql({ A1: [2, 1], A6: [3, 1] });
+            expect(worksheet.records[0][0].element.getAttribute('colspan')).to.equal('2');
+            expect(worksheet.records[5][0].element.getAttribute('colspan')).to.equal('3');
+            expect(worksheet.records[1][1].element.getAttribute('rowspan')).to.equal(null);
+        });
+
+        it('keeps the other ranges when insertColumn splits one range', () => {
+            const worksheet = create({ A1: [1, 2], B3: [2, 2], E1: [1, 3] });
+
+            worksheet.insertColumn(1, 2, true);
+
+            expect(questions).to.have.length(1);
+            expect(worksheet.getMerge()).to.eql({ A1: [1, 2], F1: [1, 3] });
+            expect(worksheet.records[0][5].element.getAttribute('rowspan')).to.equal('3');
+            expect(worksheet.records[2][1].element.getAttribute('colspan')).to.equal(null);
+        });
+
+        it('keeps the other ranges when deleteRow deletes a row of one range', () => {
+            const worksheet = create({ A1: [2, 1], B3: [2, 2], A6: [2, 1] });
+
+            worksheet.deleteRow(3, 1);
+
+            expect(questions).to.have.length(1);
+            expect(worksheet.getMerge()).to.eql({ A1: [2, 1], A5: [2, 1] });
+            expect(worksheet.records[4][0].element.getAttribute('colspan')).to.equal('2');
+            expect(worksheet.getValue('A4')).to.equal('0:4');
+        });
+
+        it('keeps the other ranges when deleteColumn deletes a column of one range', () => {
+            const worksheet = create({ A1: [1, 2], C2: [2, 2], H1: [1, 2] });
+
+            worksheet.deleteColumn(3, 1);
+
+            expect(questions).to.have.length(1);
+            expect(worksheet.getMerge()).to.eql({ A1: [1, 2], G1: [1, 2] });
+            expect(worksheet.records[0][6].element.getAttribute('rowspan')).to.equal('2');
+        });
+
+        it('keeps all ranges and rows when the user cancels a delete', () => {
+            const worksheet = create({ A1: [2, 1], B3: [2, 2] });
+            globalThis.confirm = () => false;
+
+            worksheet.deleteRow(3, 1);
+
+            expect(worksheet.getMerge()).to.eql({ A1: [2, 1], B3: [2, 2] });
+            expect(worksheet.rows.length).to.equal(6);
+        });
+
+        it('removes a range of one row when deleteRow deletes its row (#214)', () => {
+            const worksheet = create({ A1: [2, 1] });
+
+            worksheet.deleteRow(0, 1);
+
+            expect(questions).to.have.length(1);
+            expect(worksheet.getMerge()).to.eql({});
+            expect(worksheet.records[0][0].element.getAttribute('colspan')).to.equal(null);
+        });
+
+        it('removes a range when deleteRow deletes its last row', () => {
+            const worksheet = create({ A1: [1, 2] });
+
+            worksheet.deleteRow(1, 1);
+
+            expect(questions).to.have.length(1);
+            expect(worksheet.getMerge()).to.eql({});
+            expect(worksheet.records[0][0].element.getAttribute('rowspan')).to.equal(null);
+            expect(worksheet.getValue('A2')).to.equal('0:2');
+        });
+
+        it('keeps a range that moves onto the old name of another range (#195)', () => {
+            const columns = create({ A1: [1, 2], B1: [1, 2] });
+            columns.insertColumn(1, 0, true);
+            expect(columns.getMerge()).to.eql({ B1: [1, 2], C1: [1, 2] });
+
+            const rows = create({ A1: [2, 1], A2: [2, 1] });
+            rows.insertRow(1, 0, true);
+            expect(rows.getMerge()).to.eql({ A2: [2, 1], A3: [2, 1] });
+
+            const sizes = create({ A1: [1, 2], C1: [2, 2] });
+            sizes.insertColumn(2, 0, true);
+            expect(sizes.getMerge()).to.eql({ C1: [1, 2], E1: [2, 2] });
+            expect(questions).to.have.length(0);
+        });
+    });
 });
 
 describe('replaceMerges', () => {

@@ -692,3 +692,12 @@ A column with `width: 0`, and each column without a width when `defaultColWidth`
 `setWidth` with 0 did nothing. No option keeps the old behavior, because `defaultColWidth` is the width of the columns
 with no width, and the frozen columns already counted such a column as 0. To keep a visible column, remove `width: 0`, or
 set the width that you want.
+
+## Insert and delete keep the merged ranges that they do not cross
+
+`insertRow`, `insertColumn`, `deleteRow` and `deleteColumn` remove only the merged ranges that they cross, after the
+dialog. An insert crosses a range when the new rows or columns split it. A delete crosses a range when the range has a
+cell in the deleted rows or columns. The other ranges stay and move with their cells. Version 5 removed all merged ranges
+of the worksheet. `deleteRow` also asks before it deletes a row with a merged range of one row, and removes that range.
+Version 5 did not ask, and kept the range on the next row in `getMerge`. To remove all ranges, call `destroyMerge` before
+the insert or the delete.

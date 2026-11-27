@@ -326,14 +326,14 @@ export class Columns {
                 return false;
             }
 
-            // Merged cells
-            if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
-                if (worksheet.merges.isColMerged(columnNumber, insertBefore).length) {
-                    if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
-                        return false;
-                    } else {
-                        worksheet.destroyMerge();
-                    }
+            // The merged ranges that the new columns split are removed. The other ranges stay and move with their cells.
+            const crossed = worksheet.merges.isColMerged(columnNumber, insertBefore);
+            if (crossed.length) {
+                if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
+                    return false;
+                }
+                for (const key of crossed) {
+                    worksheet.merges.remove(key);
                 }
             }
 
@@ -550,20 +550,14 @@ export class Columns {
 
                 // Can't remove the last column
                 if (parseInt(columnNumber) > -1) {
-                    // Merged cells
-                    let mergeExists = false;
-                    if (worksheet.options.mergeCells && Object.keys(worksheet.options.mergeCells).length > 0) {
-                        for (let col = columnNumber; col < columnNumber + numOfColumns; col++) {
-                            if (worksheet.merges.isColMerged(col, null).length) {
-                                mergeExists = true;
-                            }
-                        }
-                    }
-                    if (mergeExists) {
+                    // The merged ranges that have a cell in the deleted columns are removed. The other ranges stay and move with their cells.
+                    const crossed = worksheet.merges.inColumns(columnNumber, columnNumber + numOfColumns - 1);
+                    if (crossed.length) {
                         if (!askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
                             return false;
-                        } else {
-                            worksheet.destroyMerge();
+                        }
+                        for (const key of crossed) {
+                            worksheet.merges.remove(key);
                         }
                     }
 
