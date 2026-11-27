@@ -1294,7 +1294,7 @@ export class Selection {
 
     /**
      * A copy of the selected range, where a move of the keys starts. When the selection is one cell that does not show,
-     * in a hidden row or in a column of width 0, the active cell took the tab stop, and a move without Shift starts from
+     * in a hidden row, in a hidden column or in a column of width 0, the active cell took the tab stop, and a move without Shift starts from
      * the active cell. The selection keeps the cell that the application selected.
      */
     private moveStart(shiftKey?: boolean): Range {
@@ -1303,7 +1303,14 @@ export class Selection {
         const active = worksheet.selection.activeCell;
         if (!shiftKey && active && range[0] === range[2] && range[1] === range[3]) {
             const td = worksheet.records[range[1]]?.[range[0]]?.element;
-            if (td && td !== active && td.parentNode?.parentNode === worksheet.tbody && td.style.display !== 'none' && !this.isVisibleCell(td)) {
+            if (
+                td &&
+                td !== active &&
+                td.parentNode?.parentNode === worksheet.tbody &&
+                // A merged range hides its other cells with display none. hideColumn hides the cells of its column the same way.
+                (td.style.display !== 'none' || this.columnHidden(range[0])) &&
+                !this.isVisibleCell(td)
+            ) {
                 const x = parseInt(active.getAttribute('data-x')!);
                 const y = parseInt(active.getAttribute('data-y')!);
                 return [x, y, x, y];

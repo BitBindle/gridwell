@@ -1032,6 +1032,31 @@ describe('Keys after the selection of a cell that does not show (#240)', () => {
         expect(range(right)).to.eql([2, 6, 2, 6]);
     });
 
+    it('moves right from the cell that has the tab stop after the selection of a cell in a hidden column', () => {
+        const worksheet = jspreadsheet(root, { worksheets: [{ minDimensions: [4, 8] }] })[0];
+        worksheet.hideColumn(1);
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+        expect(worksheet.selection.activeCell).to.equal(worksheet.records[2][2].element);
+
+        worksheet.right();
+
+        expect(range(worksheet)).to.eql([3, 2, 3, 2]);
+    });
+
+    it('moves left, and to the first and the last column, from the cell that has the tab stop', () => {
+        const left = create();
+        left.left();
+        expect(range(left)).to.eql([0, 6, 0, 6]);
+
+        const first = create();
+        first.first();
+        expect(range(first)).to.eql([0, 6, 0, 6]);
+
+        const last = create();
+        last.last();
+        expect(range(last)).to.eql([3, 6, 3, 6]);
+    });
+
     it('extends the selected range with Shift', () => {
         const worksheet = create();
 
