@@ -764,8 +764,9 @@ describe('replaceMerges', () => {
     });
 
     it('treats a range of the options that the build did not merge as not merged', () => {
-        const alert = global.alert;
-        global.alert = () => undefined;
+        // The build leaves out B2 with a message on the console
+        const consoleError = console.error;
+        console.error = () => undefined;
         try {
             const worksheet = jspreadsheet(root, {
                 worksheets: [{ minDimensions: [4, 4], mergeCells: { A1: [2, 2], B2: [2, 1] } }],
@@ -774,7 +775,7 @@ describe('replaceMerges', () => {
             expect(worksheet.replaceMerges({ A1: [2, 2] })).to.eql([]);
             expect(worksheet.getMerge()).to.eql({ A1: [2, 2] });
         } finally {
-            global.alert = alert;
+            console.error = consoleError;
         }
     });
 });
@@ -793,5 +794,101 @@ describe('removeMerge and the selection events', () => {
 
         expect(seen).to.eql([[2, 2]]);
         expect(worksheet.getMerge()).to.eql({});
+    });
+});
+
+describe('The build leaves out the merged ranges of the options that do not fit (#191, #220)', () => {
+    let errors: unknown[][];
+    let consoleError: typeof console.error;
+
+    beforeEach(() => {
+        errors = [];
+        consoleError = console.error;
+        console.error = (...args: unknown[]) => {
+            errors.push(args);
+        };
+    });
+
+    afterEach(() => {
+        console.error = consoleError;
+    });
+
+    it('leaves out a range that crosses an earlier range (#191)', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [6, 5], mergeCells: { C4: [2, 1], C3: [2, 2] } }],
+        });
+
+        expect(worksheet.getMerge()).to.eql({ C4: [2, 1] });
+        expect(errors).to.have.length(1);
+        expect(String(errors[0][0])).to.contain('C3');
+
+        worksheet.destroyMerge();
+
+        expect(root.querySelectorAll('td[data-merged]')).to.have.length(0);
+        expect(worksheet.records[3][3].element).not.to.equal(worksheet.records[3][2].element);
+    });
+
+    it('leaves out a range that goes past the last row, so a delete of its rows does not throw (#220)', () => {
+        const [worksheet] = jspreadsheet(root, {
+            confirm: false,
+            worksheets: [{ minDimensions: [4, 4], mergeCells: { C4: [2, 3], A1: [2, 2] } }],
+        });
+
+        expect(worksheet.getMerge()).to.eql({ A1: [2, 2] });
+        expect(String(errors[0][0])).to.contain('C4');
+
+        worksheet.deleteRow(3, 1);
+
+        expect(worksheet.getData()).to.have.length(3);
+    });
+
+    it('leaves out a range that goes past the last column (#220)', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [4, 4], mergeCells: { D1: [2, 1] } }],
+        });
+
+        expect(worksheet.getMerge()).to.eql({});
+        expect(root.querySelectorAll('td[data-merged]')).to.have.length(0);
+    });
+
+    it('leaves out a range that goes past the last row of the data of setData', () => {
+        const data = Array.from({ length: 4 }, (row, y) => ['a', 'b', 'c', 'd'].map((column) => `${column}${y + 1}`));
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data, mergeCells: { A1: [2, 2], C3: [2, 2] } }] });
+
+        worksheet.setData(data.slice(0, 3));
+
+        expect(worksheet.getMerge()).to.eql({ A1: [2, 2] });
+        expect(String(errors[0][0])).to.contain('C3');
+        expect(root.querySelectorAll('td[data-merged]')).to.have.length(1);
+    });
+
+    it('reads a missing span, a span of null or a span below 1 as 1, as setMerge does, and leaves out a range of one cell', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [
+                {
+                    minDimensions: [4, 4],
+                    mergeCells: { A1: [0, 2], B1: [2] as unknown as [number, number], A3: [null, 2] as unknown as [number, number], D1: [1, 1] },
+                },
+            ],
+        });
+
+        expect(worksheet.getMerge()).to.eql({ A1: [1, 2], B1: [2, 1], A3: [1, 2] });
+        expect(String(errors[0][0])).to.contain('D1');
+    });
+
+    it('keeps the ranges that fit when setData builds the rows again', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ minDimensions: [4, 4], mergeCells: { A1: [2, 2], C3: [2, 2] } }],
+        });
+
+        worksheet.setData([
+            ['a', 'b', 'c', 'd'],
+            ['e', 'f', 'g', 'h'],
+            ['i', 'j', 'k', 'l'],
+            ['m', 'n', 'o', 'p'],
+        ]);
+
+        expect(worksheet.getMerge()).to.eql({ A1: [2, 2], C3: [2, 2] });
+        expect(errors).to.have.length(0);
     });
 });

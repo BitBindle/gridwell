@@ -575,6 +575,10 @@ export class Rows {
             newValue: d,
         });
 
+        // The selection and the editor stay on their cells
+        worksheet.editor.move(1, Number(o), Number(d));
+        worksheet.selection.move(1, Number(o), Number(d));
+
         // Update table references
         worksheet.formulas.updateTableReferences({ row: Math.min(Number(o), Number(d)) });
 
