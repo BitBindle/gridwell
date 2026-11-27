@@ -918,6 +918,9 @@ until it shows its own value.
 No option keeps the old style, because the cell showed the text with a style that the first column did not have. Code
 that saves `getStyle()` can save the style while no merged range starts left of the window.
 
+When the first column of the range has the type `hidden`, the first cell takes the options of the next column of the
+range that shows. The cell in the window now takes them too, as the first cell does.
+
 ## An insert next to the rows in the table body shows the new rows
 
 With `lazyLoading` or `filters`, `insertRow` puts the new rows in the table body when the row after them or the row

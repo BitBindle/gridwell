@@ -658,16 +658,24 @@ export class Cells {
      * Get the column whose options a cell uses. The first cell of a merged range whose first column has the
      * type hidden uses the options of the first visible column of the range, because it shows the range.
      * A checkbox or radio column is not used, because these types write a boolean to the data of the cell.
+     * In the row source mode, the range comes from the merged ranges of the sheet, because the table merges only the
+     * part of a range in the window, under the name of its first cell in the window.
      */
     getColumnIndex(x: number, y: number) {
         const worksheet = this.worksheet;
 
         x = parseInt(x);
 
-        if (worksheet.options.columns?.[x]?.type === 'hidden' && worksheet.options.mergeCells) {
-            const merged = worksheet.options.mergeCells[getColumnNameFromId([x, y])];
-            if (merged) {
-                for (let i = x + 1; i < x + merged[0]; i++) {
+        if (worksheet.options.columns?.[x]?.type === 'hidden') {
+            let colspan: number;
+            if (worksheet.rowSource) {
+                const range = worksheet.rowSource.mergeAt(x, y);
+                colspan = range?.[0] === x && range[1] === y ? range[2] - x + 1 : 0;
+            } else {
+                colspan = worksheet.options.mergeCells?.[getColumnNameFromId([x, y])]?.[0] || 0;
+            }
+            if (colspan) {
+                for (let i = x + 1; i < x + colspan; i++) {
                     if (worksheet.headers[i] && worksheet.headers[i].style.display !== 'none' && worksheet.options.columns[i]?.type !== 'hidden') {
                         if (
                             worksheet.options.columns[i] &&
