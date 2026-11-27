@@ -731,8 +731,8 @@ now goes to the console.
 
 The build also leaves out, with the same message, a range that is not valid: a range of one cell, a span that is not a
 whole number, or a cell name that is not in capitals. Version 5 kept a range of one cell in `getMerge`. A missing span,
-or a span below 1, is 1, as in `setMerge` and in version 5. The row source mode left out all these ranges without a
-message, and it now reads a missing or low span as 1 too.
+a span of `null`, or a span below 1, is 1, as in `setMerge` and in version 5. The row source mode left out all these
+ranges without a message, and it now reads such a span as 1 too.
 
 No option keeps the old behavior, because the ranges that go past the sheet or cross another range broke the worksheet,
 and the other ranges merged no cells. To keep a range, give it spans that fit in the sheet and do not cross another

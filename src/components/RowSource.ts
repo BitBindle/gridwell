@@ -152,9 +152,7 @@ class CoveredColumns {
 export function optionSpans(merges: Record<string, readonly unknown[]> | undefined) {
     const spans: Record<string, unknown[]> = {};
     for (const [name, value] of Object.entries(merges || {})) {
-        spans[name] = Array.isArray(value)
-            ? [value[0], value[1]].map((span) => (span === undefined || (typeof span === 'number' && !(span > 1)) ? 1 : span))
-            : [];
+        spans[name] = Array.isArray(value) ? [value[0], value[1]].map((span) => (span == null || (typeof span === 'number' && !(span > 1)) ? 1 : span)) : [];
     }
     return spans;
 }

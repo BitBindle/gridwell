@@ -862,12 +862,17 @@ describe('The build leaves out the merged ranges of the options that do not fit 
         expect(root.querySelectorAll('td[data-merged]')).to.have.length(1);
     });
 
-    it('reads a missing span or a span below 1 as 1, as setMerge does, and leaves out a range of one cell', () => {
+    it('reads a missing span, a span of null or a span below 1 as 1, as setMerge does, and leaves out a range of one cell', () => {
         const [worksheet] = jspreadsheet(root, {
-            worksheets: [{ minDimensions: [4, 4], mergeCells: { A1: [0, 2], B1: [2] as unknown as [number, number], D1: [1, 1] } }],
+            worksheets: [
+                {
+                    minDimensions: [4, 4],
+                    mergeCells: { A1: [0, 2], B1: [2] as unknown as [number, number], A3: [null, 2] as unknown as [number, number], D1: [1, 1] },
+                },
+            ],
         });
 
-        expect(worksheet.getMerge()).to.eql({ A1: [1, 2], B1: [2, 1] });
+        expect(worksheet.getMerge()).to.eql({ A1: [1, 2], B1: [2, 1], A3: [1, 2] });
         expect(String(errors[0][0])).to.contain('D1');
     });
 
