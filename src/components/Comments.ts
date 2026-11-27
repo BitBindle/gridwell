@@ -97,10 +97,10 @@ export class Comments {
         for (const [cellName, comment] of Object.entries(commentsObj)) {
             const cellCoords = getCoordsFromCellName(cellName);
             // In the row source mode, a row or a column outside the window has no record, and its comment does not change
-            const element = worksheet.records[cellCoords![1]!]?.[cellCoords![0]]?.element;
-            if (!element) {
+            if (worksheet.rowSource && !worksheet.records[cellCoords![1]!]?.[cellCoords![0]]) {
                 continue;
             }
+            const element = worksheet.records[cellCoords![1]!][cellCoords![0]].element;
 
             // Keep old value
             oldValue[cellName] = element.getAttribute('title');
