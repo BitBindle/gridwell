@@ -326,6 +326,10 @@ export class History {
                 }
             }
         }
+        // The merged ranges that the action removed come back after its rows or columns
+        if (historyRecord && 'merges' in historyRecord && historyRecord.merges) {
+            worksheet.merges.restoreCrossed(historyRecord.merges);
+        }
         worksheet.parent.ignoreEvents = ignoreEvents;
         worksheet.history.ignore = ignoreHistory;
 
@@ -348,6 +352,11 @@ export class History {
 
         // Update cells
         const historyRecord = worksheet.history.forward();
+
+        // The merged ranges that the action removed go again before the action
+        if (historyRecord && 'merges' in historyRecord && historyRecord.merges) {
+            worksheet.merges.dropCrossed(historyRecord.merges);
+        }
 
         if (historyRecord) {
             if (historyRecord.action === 'insertRow') {

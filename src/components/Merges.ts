@@ -523,6 +523,47 @@ export class Merges {
     }
 
     /**
+     * Split the merged ranges that an insert, a delete or a move crosses, as removeMerge does.
+     * @returns The spans of the ranges by first cell, for the history, or undefined when there are none.
+     */
+    removeCrossed(cellNames: string[]) {
+        const mergeCells = this.worksheet.options.mergeCells;
+        if (!cellNames.length || !mergeCells) {
+            return undefined;
+        }
+        const removed: Record<string, [number, number]> = {};
+        for (const cellName of cellNames) {
+            removed[cellName] = [mergeCells[cellName][0], mergeCells[cellName][1]];
+            this.remove(cellName);
+        }
+        return removed;
+    }
+
+    /**
+     * Split again the ranges that removeCrossed gave, before a redo of the action. No event, history entry or change of
+     * the selection.
+     */
+    dropCrossed(removed: Record<string, [number, number]>) {
+        for (const cellName of Object.keys(removed)) {
+            if (this.worksheet.options.mergeCells?.[cellName]) {
+                this.unmerge(cellName);
+                this.forget(cellName);
+            }
+        }
+    }
+
+    /**
+     * Merge again the ranges that removeCrossed gave, after an undo of the action. The other cells keep their values, as
+     * the split left them. No event, history entry or change of the selection, but the tab stop leaves a hidden cell.
+     */
+    restoreCrossed(removed: Record<string, [number, number]>) {
+        for (const [cellName, [colspan, rowspan]] of Object.entries(removed)) {
+            this.merge(cellName, colspan, rowspan, true);
+        }
+        this.settleTabStop(removed);
+    }
+
+    /**
      * Split a merged range in the table, without an event or a change of the selection. The range stays in the options
      * until forget removes it.
      * @param cellName - The first cell of the range.
