@@ -261,3 +261,13 @@ describe('Freeze columns after the columns change (issue #24)', () => {
         ]);
     });
 });
+
+describe('Freeze columns with a large number', () => {
+    it('gives the frozen width of the columns that exist when the option is larger', () => {
+        const [worksheet] = jspreadsheet(root, {
+            worksheets: [{ data: [['a', 'b']], freezeColumns: 1e9, columns: [{ width: 100 }, { width: 300 }] }],
+        });
+
+        expect(worksheet.columns.getFreezeWidth()).to.equal(400);
+    });
+});

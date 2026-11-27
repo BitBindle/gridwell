@@ -2627,6 +2627,14 @@ declare namespace jspreadsheet {
         setData: (data?: CellValue[][] | Record<string, CellValue>[]) => void;
 
         /**
+         * Change the number of frozen rows and frozen columns. The method writes no history entry and dispatches no event.
+         * With lazy loading, the new frozen rows come into the table at once.
+         * @param rows - Number of frozen rows. Undefined keeps the current number. Lazy loading freezes at most 40 rows.
+         * @param columns - Number of frozen columns. Undefined keeps the current number.
+         */
+        setFreeze: (rows?: number, columns?: number) => void;
+
+        /**
          * Set a column title.
          * @param column - Column index.
          * @param newValue - New title. Empty string or undefined to reset the header title.
