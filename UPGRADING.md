@@ -128,12 +128,14 @@ held, the cells of the area that the corner fills, is `worksheet.selection.fill`
 
 After `insertRow`, `insertColumn`, `deleteRow`, `deleteColumn`, `moveRow`, `moveColumn`, and their undo and redo, the
 selection and an open editor stay on their cells. After a move, each end of a larger selection stays on its cell, and a
-move inside the selection keeps it as it is, so a selection of whole rows or columns stays whole. An insert after the
-last column or row adds the new columns or rows to a selection of whole rows or columns. Version 5 kept the row and
+move inside the selection keeps its rows and columns, so a selection of whole rows or columns stays whole. The active
+cell can then be another cell. An insert after the last column or row adds the new columns or rows to a selection of
+whole rows or columns. Version 5 kept the row and
 column numbers, so the selection and the editor moved to other cells, and a value typed into a deleted row went into the
 row that moved up.
 
 - `getSelection()` gives the new position of the selected cells.
+- After an insert at the end, a selection of whole rows or columns includes the new columns or rows.
 - A delete removes the selection if a selected cell is deleted, also when the selection is inside the deleted rows or
   columns. Version 5 kept such a selection.
 - An editor in a deleted row or column closes without a save: `oneditionend` gets `false` for the save, and no

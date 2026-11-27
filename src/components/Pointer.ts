@@ -764,7 +764,8 @@ export class Pointer {
         } else {
             // Header found
             if (section === 1) {
-                // A press that does not select whole columns, for example on the selection corner, leaves the field
+                // A press that does not select whole columns, for example on the selection corner, keeps the old
+                // value of the field
                 const o = worksheet.selection.columnAnchor();
                 if (o != null) {
                     columnId = getIndex(e.target, 'data-x');
