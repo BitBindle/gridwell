@@ -501,16 +501,15 @@ export class Editor {
     }
 
     /**
-     * After a change of the rows or columns that show: an editor whose cell is not in the table body, or does not show,
-     * detaches.
+     * After a change of the rows or columns that show: an editor whose cell is not in the table body, or is hidden, or
+     * is in a column of width 0, detaches.
      */
     settle() {
         if (!this.isOpen()) {
             return;
         }
-        const cell = this.cell;
-        const row = cell.parentElement;
-        if (row?.parentNode !== this.worksheet.tbody || row.style.display === 'none' || cell.style.display === 'none') {
+        // A cell of a column of width 0 does not show either, unless a merged range shows it in another column
+        if (!this.worksheet.selection.isVisibleCell(this.cell)) {
             this.detach();
         }
     }

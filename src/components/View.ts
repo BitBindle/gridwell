@@ -762,9 +762,13 @@ export class View {
         }
 
         const wanted = [...worksheet.rows.slice(0, frozen).map((row) => row.element), ...keep.flat()];
-        for (let k = 0; k < wanted.length; k++) {
-            if (tbody.children[k] !== wanted[k]) {
-                tbody.insertBefore(wanted[k], tbody.children[k] || null);
+        // A cursor on the next row of the body, because the list of the children changes after each insert
+        let next = tbody.firstChild;
+        for (const row of wanted) {
+            if (row === next) {
+                next = row.nextSibling;
+            } else {
+                tbody.insertBefore(row, next);
             }
         }
 
@@ -791,9 +795,13 @@ export class View {
                 this.removeRow(row);
             }
         }
-        for (let k = 0; k < wanted.length; k++) {
-            if (tbody.children[k] !== wanted[k]) {
-                tbody.insertBefore(wanted[k], tbody.children[k] || null);
+        // A cursor on the next row of the body, because the list of the children changes after each insert
+        let next = tbody.firstChild;
+        for (const row of wanted) {
+            if (row === next) {
+                next = row.nextSibling;
+            } else {
+                tbody.insertBefore(row, next);
             }
         }
         // An editor that was open in a row outside the body, for example after a move, detaches too

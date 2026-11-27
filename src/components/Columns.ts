@@ -771,6 +771,8 @@ export class Columns {
             // A column of width 0 shows no cell, so the tab stop leaves it, as after hideColumn
             if ((Array.isArray(width) ? width : [width]).some((w) => Number(w) === 0)) {
                 worksheet.selection.updateTabStop();
+                // An editor in such a column detaches, as after hideColumn
+                worksheet.editor.settle();
             }
         }
     }

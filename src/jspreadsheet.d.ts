@@ -1201,13 +1201,13 @@ declare namespace jspreadsheet {
         oneditionstart?: (instance: WorksheetInstance, td: HTMLTableCellElement, colIndex: number, rowIndex: number) => void;
 
         /**
-         * Occurs when the cell of the open editor leaves the table or stops to show:
+         * Occurs when the cell of the open editor leaves the table or no longer shows:
          *
          * - Lazy loading removes its row, for example after a scroll, a sort, or a move of the selection with `down` or
          *   `last`. A row that is on the old page and on the new page stays, with its editor.
-         * - `page` goes to another page, or an insert, a delete or `moveRow` takes the row to another page.
+         * - `page` goes to another page, or an insert, a delete, `moveRow` or an undo takes the row to another page.
          * - A search or a filter hides the row, or `moveRow` takes the row out of the rows that show.
-         * - `hideRow` or `hideColumn` hides the cell.
+         * - `hideRow` or `hideColumn` hides the cell, or `setWidth` gives its column the width 0.
          *
          * `setData` and the deletion of the cell close the editor without a save and without this event. On a scroll, an
          * editor that floats over the grid closes and saves before the row leaves, so only the text editor gets the event

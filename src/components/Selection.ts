@@ -874,7 +874,7 @@ export class Selection {
      * A cell can be the tab stop when its row is in the table, the cell and its row are not hidden, and its column has a
      * width or it is a merged range that shows in another column
      */
-    private isVisibleCell(td: HTMLTableCellElement | null | undefined) {
+    isVisibleCell(td: HTMLTableCellElement | null | undefined) {
         const worksheet = this.worksheet;
 
         if (td?.parentNode?.parentNode !== worksheet.tbody || td.style.display === 'none' || (td.parentNode as HTMLElement).style.display === 'none') {
@@ -882,6 +882,27 @@ export class Selection {
         }
         const x = parseInt(td.getAttribute('data-x'));
         return !this.zeroWidth(x) || this.mergeShows(x, parseInt(td.getAttribute('data-y')));
+    }
+
+    /**
+     * The cell that shows in the column where up and down move from cell (x, y): in row y or the next row of the table
+     * that shows, else in the row before it.
+     */
+    private nextVisibleCell(x: number, y: number) {
+        const worksheet = this.worksheet;
+        const column = this.stopColumn(x, y);
+        let before: HTMLTableCellElement | null = null;
+        for (const tr of worksheet.tbody.children) {
+            const row = parseInt(tr.getAttribute('data-y')!);
+            const td = worksheet.records[row]?.[column]?.element;
+            if (this.isVisibleCell(td)) {
+                if (row >= y) {
+                    return td;
+                }
+                before = td;
+            }
+        }
+        return before;
     }
 
     /**
@@ -1014,10 +1035,10 @@ export class Selection {
             return;
         }
 
-        // A cell in the table that does not show, in a hidden row or in a column of width 0, is not the tab stop: the
-        // active cell stays, or the first cell that shows takes it
+        // A cell in the table that does not show, in a hidden row or in a column of width 0, is not the tab stop. The next
+        // cell that shows takes it, in the column where up and down move.
         if (td.parentNode?.parentNode === worksheet.tbody && !this.isVisibleCell(td)) {
-            td = (this.isVisibleCell(worksheet.selection.activeCell) ? worksheet.selection.activeCell : this.getFirstVisibleCell()) || td;
+            td = this.nextVisibleCell(x, y) || this.getFirstVisibleCell() || td;
         }
 
         this.setActiveCell(td);
