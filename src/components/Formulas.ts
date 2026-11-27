@@ -50,8 +50,14 @@ export class Formulas {
         this.worksheet = worksheet;
     }
 
+    /** True while keepChain runs a change: add does not change the chain then. */
+    private paused = false;
+
     /** Keep that the formula of the cell `dependent` refers to the cell `cell`. Both are cell names, such as A1. */
     add(cell: string, dependent: string) {
+        if (this.paused) {
+            return;
+        }
         if (!this.chain[cell]) {
             this.chain[cell] = [];
         }
@@ -70,10 +76,40 @@ export class Formulas {
         const chain: Record<string, string[]> = {};
 
         for (const name of Object.keys(this.chain)) {
-            chain[(keys && references[name]) || name] = this.chain[name].map((dependent) => references[dependent] || dependent);
+            // A name that a delete removed can get the same new name as a cell that moved, as the formula texts do. The
+            // dependents of both stay, and a name without dependents leaves the chain.
+            const key = (keys && references[name]) || name;
+            const dependents = this.chain[name].map((dependent) => references[dependent] || dependent);
+            if (dependents.length === 0) {
+                continue;
+            }
+            if (!chain[key]) {
+                chain[key] = dependents;
+            } else {
+                for (const dependent of dependents) {
+                    if (!chain[key].includes(dependent)) {
+                        chain[key].push(dependent);
+                    }
+                }
+            }
         }
 
         this.chain = chain;
+    }
+
+    /**
+     * Run a change and keep the chain as it was before it. Insert creates the cells of the new rows or columns before
+     * the other cells move, so the formulas of the new cells would add their names before the names of the chain change.
+     * updateTableReferences adds the new cells to the chain after the move.
+     */
+    keepChain<T>(change: () => T): T {
+        const paused = this.paused;
+        this.paused = true;
+        try {
+            return change();
+        } finally {
+            this.paused = paused;
+        }
     }
 
     /**
@@ -434,12 +470,16 @@ export class Formulas {
     /**
      * Update formulas
      */
-    private updateFormulas(referencesToUpdate: Record<string, string>) {
+    private updateFormulas(referencesToUpdate: Record<string, string>, keepText: (x: number, y: number) => boolean) {
         const worksheet = this.worksheet;
 
-        // Update formulas
-        for (const row of worksheet.options.data) {
+        // Update formulas. The formula of a cell that an undo or a redo adds already names the cells at their new positions.
+        for (let j = 0; j < worksheet.options.data.length; j++) {
+            const row = worksheet.options.data[j];
             for (let i = 0; i < worksheet.options.data[0].length; i++) {
+                if (keepText(i, j)) {
+                    continue;
+                }
                 const value = `${row[i]}`;
                 // Is formula
                 if (value.substr(0, 1) === '=') {
@@ -460,9 +500,20 @@ export class Formulas {
      * Update the positions of the rows, the columns and the cells, and the references of the formulas, after rows or
      * columns move.
      * @param from - The first row or column that moved. The rows or columns before it keep their positions, so the update
-     * starts there. Without it, the update reads each row and each column.
+     * starts there. Without it, the update reads each row and each column. `inserted` gives the rows (axis 1) or the
+     * columns (axis 0) that an insert, an undo or a redo added: they get their place in the chain after the other cells
+     * moved. With `keepTexts`, their formulas keep their texts, else their references move as the other references do.
+     * `removed` gives the rows (axis 1) or the columns (axis 0) that a delete removed, at their old positions: the formula
+     * cells that it removed leave the chain.
      */
-    updateTableReferences(from: { row?: number; column?: number } = {}) {
+    updateTableReferences(
+        from: {
+            row?: number;
+            column?: number;
+            inserted?: { axis: 0 | 1; index: number; count: number; keepTexts?: boolean };
+            removed?: { axis: 0 | 1; index: number; count: number };
+        } = {}
+    ) {
         const worksheet = this.worksheet;
         if (worksheet.skipUpdateTableReferences) {
             return;
@@ -491,6 +542,21 @@ export class Formulas {
 
         // The new names of the moved cells are only for the formulas, the formula chain and the meta information
         const references = Object.keys(this.chain).length > 0 || Object.keys(worksheet.options.meta || {}).length > 0 || this.hasFormulas();
+
+        // The cells that an insert or an undo added. Their position attributes can be of another position, for example
+        // of the cell before a delete, so they give no old name.
+        const inserted = from.inserted;
+        function isInserted(x: number, y: number) {
+            if (!inserted) {
+                return false;
+            }
+            const position = inserted.axis === 1 ? y : x;
+            return position >= inserted.index && position < inserted.index + inserted.count;
+        }
+
+        function keepsText(x: number, y: number) {
+            return !!inserted?.keepTexts && isInserted(x, y);
+        }
 
         // Update headers
         for (let i = firstColumn; i < worksheet.headers.length; i++) {
@@ -539,6 +605,9 @@ export class Formulas {
             }
 
             // Other updates
+            if (isInserted(i, j)) {
+                return;
+            }
             if (references && (x !== i || y !== j)) {
                 const columnIdFrom = getColumnNameFromId([x, y]);
                 const columnIdTo = getColumnNameFromId([i, j]);
@@ -602,13 +671,50 @@ export class Formulas {
         }
 
         if (references) {
+            // A formula cell that a delete removed leaves the chain. Before, a change of a cell that it named threw, or
+            // calculated the cell that then had its name.
+            const removed = from.removed;
+            if (removed) {
+                // The old names of the removed cells
+                const gone = new Set<string>();
+                const other = removed.axis === 1 ? worksheet.headers.length : worksheet.options.data.length;
+                for (let k = removed.index; k < removed.index + removed.count; k++) {
+                    for (let o = 0; o < other; o++) {
+                        gone.add(getColumnNameFromId(removed.axis === 1 ? [o, k] : [k, o]));
+                    }
+                }
+                const chain = this.chain;
+                for (const name in chain) {
+                    const dependents = chain[name];
+                    for (const dependent of dependents) {
+                        if (gone.has(dependent)) {
+                            chain[name] = dependents.filter((dependent) => !gone.has(dependent));
+                            break;
+                        }
+                    }
+                }
+            }
+
             if (worksheet.parent.config.updateReferences === false) {
                 // The formula texts stay, so the chain keeps the names that they refer to. The formula cells moved.
                 this.rename(affectedTokens, false);
                 this.showResults(firstColumn, firstRow);
             } else {
                 // Update formulas
-                this.updateFormulas(affectedTokens);
+                this.updateFormulas(affectedTokens, keepsText);
+            }
+
+            // The formulas of the new cells calculate again at their positions, and get their place in the chain
+            if (inserted) {
+                const rows = inserted.axis === 1 ? [inserted.index, inserted.index + inserted.count] : [0, worksheet.options.data.length];
+                const columns = inserted.axis === 0 ? [inserted.index, inserted.index + inserted.count] : [0, worksheet.options.data[0]?.length || 0];
+                for (let j = rows[0]; j < Math.min(rows[1], worksheet.options.data.length); j++) {
+                    for (let i = columns[0]; i < columns[1]; i++) {
+                        if (worksheet.records[j]?.[i] && isFormula(worksheet.options.data[j][i])) {
+                            worksheet.cells.showValue(i, j);
+                        }
+                    }
+                }
             }
 
             // Update meta data
