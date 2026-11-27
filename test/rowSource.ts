@@ -774,6 +774,42 @@ describe('The row source mode', () => {
         }
     });
 
+    it('runs the merge and the borders items of the toolbar for a selection outside the window', async () => {
+        const { worksheet } = build({}, {}, { toolbar: true, confirm: false });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        worksheet.setMerge('A500', 2, 2);
+        worksheet.updateSelectionFromCoords(0, 499, 1, 500);
+        worksheet.scrollToRow(0);
+        const merge = Array.from(root.querySelectorAll<HTMLElement>('.jss_toolbar .jtoolbar-item')).find((item) => item.children[0]?.textContent === 'web')!;
+        merge.click();
+        expect(worksheet.getMerge()).to.eql({});
+
+        worksheet.updateSelectionFromCoords(0, 0, 1, 200);
+        const borders = root.querySelector<HTMLElement>('.jss_toolbar [aria-label="Borders"]')!;
+        borders.click();
+        document.getElementById(borders.getAttribute('aria-controls')!)!.querySelector<HTMLElement>('button[aria-label="Outer borders"]')!.click();
+        expect(worksheet.getStyle('A1')).to.contain('border-top');
+    });
+
+    it('forgets a focus that the table got from a cell that left the window when the focus leaves the table', () => {
+        const { worksheet } = build();
+        const outside = document.createElement('input');
+        root.appendChild(outside);
+        worksheet.updateSelectionFromCoords(1, 2, 1, 2);
+        worksheet.records[2][1].element.focus();
+        worksheet.scrollToRow(900);
+        expect(document.activeElement).to.equal(worksheet.table);
+        outside.focus();
+        worksheet.scrollToRow(0);
+        expect(document.activeElement).to.equal(outside);
+
+        worksheet.table.focus();
+        worksheet.scrollToRow(900);
+        worksheet.scrollToRow(0);
+
+        expect(document.activeElement).to.equal(worksheet.table);
+    });
+
     it('moves the selection before onunmerge, as the other modes do', () => {
         const events: string[] = [];
         const { worksheet } = build(
