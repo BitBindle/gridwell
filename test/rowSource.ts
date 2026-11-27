@@ -847,7 +847,15 @@ describe('The row source mode', () => {
         expect(worksheet.records[499][0].element.getAttribute('title')).to.equal(null);
     });
 
-    it('writes no history and no event for the comment of a row outside the window, so a redo adds nothing', () => {
+    it('keeps the formula rewrite of normal mode for values right of the first row', () => {
+        const [worksheet] = jspreadsheet(root, { worksheets: [{ data: [['T'], [1, 2, '=A2+B2']] }] });
+
+        worksheet.insertRow(1, 0, true);
+
+        expect(worksheet.options.data[2]).to.eql([1, 2, '=A2+B2']);
+    });
+
+    it('leaves the comment of a row outside the window out of the history and the event, so a redo adds nothing', () => {
         const events: object[] = [];
         const { worksheet } = build({}, {}, { oncomments: (instance, comments) => events.push(comments) });
         worksheet.scrollToRow(900);
