@@ -7,7 +7,7 @@ import type { Worksheet } from '../types/internal';
 /** The style of a cell that moveText changes. */
 type OwnStyle = Pick<CSSStyleDeclaration, 'whiteSpace' | 'textAlign' | 'color'>;
 
-/** The style of a cell that moveText changes, as the cell has it now. */
+/** The properties of OwnStyle. */
 const ownStyleKeys = ['whiteSpace', 'textAlign', 'color'] as const;
 
 /** The property of OwnStyle for a CSS property, in either spelling, or undefined. */
@@ -16,6 +16,7 @@ function styleKey(property: string) {
     return (ownStyleKeys as readonly string[]).includes(key) ? (key as keyof OwnStyle) : undefined;
 }
 
+/** The style of a cell that moveText changes, as the cell has it now. */
 function styleOf(element: HTMLElement): OwnStyle {
     const { whiteSpace, textAlign, color } = element.style;
     return { whiteSpace, textAlign, color };
@@ -571,8 +572,9 @@ export class ColumnSource {
      * merged range. Undefined when the cell shows its own value, or for another property.
      */
     ownValue(name: string, property: string) {
-        const key = styleKey(property);
-        return key ? this.ownStyle.get(name)?.own[key] : undefined;
+        const saved = this.ownStyle.get(name);
+        const key = saved && styleKey(property);
+        return key ? saved.own[key] : undefined;
     }
 
     /** The style text of the cell with its own white-space, alignment and color, as ownValue. */
