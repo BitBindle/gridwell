@@ -44,12 +44,19 @@ export interface Worksheet extends WorksheetState {}
 export class Worksheet {
     constructor(spreadsheet: Spreadsheet, options: jspreadsheet.WorksheetOptions, element?: HTMLElement) {
         this.parent = spreadsheet;
-        // build fills in the options that the internal type says are always there
-        this.options = options as Worksheet['options'];
         if (element) {
             // build adds jssWorksheet
             this.element = element as Worksheet['element'];
         }
+        this.setup(options);
+    }
+
+    /**
+     * Give the worksheet its options and new components, as before its first build. loadWorksheet calls it again.
+     */
+    setup(options: jspreadsheet.WorksheetOptions) {
+        // build fills in the options that the internal type says are always there
+        this.options = options as Worksheet['options'];
         this.history = new History(this);
         this.clipboard = new Clipboard(this);
         this.editor = new Editor(this);
@@ -634,6 +641,13 @@ export class Worksheet {
     }
 
     /**
+     * Build the worksheet at a position again from new options, in its tab. The worksheet object stays.
+     */
+    loadWorksheet(position: number, options: jspreadsheet.WorksheetOptions) {
+        return this.parent.loadWorksheet(position, options);
+    }
+
+    /**
      * Open the tab of the worksheet at a position.
      */
     openWorksheet(position: number) {
@@ -975,7 +989,7 @@ export class Worksheet {
     /**
      * Prepare the table of the worksheet.
      */
-    private prepareTable() {
+    private prepareTable(replaced: () => boolean = () => false, waitForSources = false): Promise<void> | void {
         // Lazy loading
         if (this.options.lazyLoading === true && this.options.tableOverflow !== true && this.parent.config.fullscreen !== true) {
             console.error('Jspreadsheet: The lazyloading only works when tableOverflow = yes or fullscreen = yes');
@@ -1051,17 +1065,29 @@ export class Worksheet {
             }
         }
 
-        // Create the table when is ready
+        // Create the table when is ready. A later load of the worksheet can replace this build while the sources load.
         if (!requests.length) {
             this.createTable();
-        } else {
-            Promise.all(requests).then(() => {
-                this.createTable();
-            });
+            return;
         }
+        const created = Promise.all(requests).then(() => {
+            if (!replaced()) {
+                this.createTable();
+            }
+        });
+        // For loadWorksheet, a source that fails gives its error to the console, and the worksheet has no table
+        return waitForSources
+            ? created.catch((error) => {
+                  console.error(error);
+              })
+            : created;
     }
 
-    async build() {
+    /**
+     * Build the worksheet from its options. With waitForSources, the promise also waits for the sources of the dropdown
+     * columns, as loadWorksheet needs. The first build of a spreadsheet does not wait for them.
+     */
+    async build(waitForSources = false) {
         const el = this.element;
 
         const spreadsheet = this.parent;
@@ -1076,12 +1102,19 @@ export class Worksheet {
 
         libraryBase.jspreadsheet.current = this;
 
+        // A load of the worksheet that starts before the data of this build arrives replaces this build
+        const generation = this.generation;
+        const replaced = () => this.generation !== generation;
+
         const promises = [];
 
         // Load the table data based on an CSV file
         if (this.options.csv) {
             promises.push(
                 request(this, this.options.csv, 'text').then((response) => {
+                    if (replaced()) {
+                        return;
+                    }
                     if (response) {
                         // Convert data
                         const newData = parseCSV(response.result as string, this.options.csvDelimiter);
@@ -1110,26 +1143,37 @@ export class Worksheet {
                         this.options.data = newData;
                     }
                     // Without the file, the worksheet is built with its other options
-                    this.prepareTable();
+                    const prepared = this.prepareTable(replaced, waitForSources);
+                    return waitForSources ? prepared : undefined;
                 })
             );
         } else if (this.options.url) {
             promises.push(
                 request(this, this.options.url, 'json').then((response) => {
+                    if (replaced()) {
+                        return;
+                    }
                     if (response) {
                         // The data, or an object with the data in its data property. setData changes rows of objects to arrays.
                         this.options.data = (response.result as { data?: jspreadsheet.CellValue[][] }).data || (response.result as jspreadsheet.CellValue[][]);
                     }
                     // Without the data, the worksheet is built with its other options
-                    this.prepareTable();
+                    const prepared = this.prepareTable(replaced, waitForSources);
+                    return waitForSources ? prepared : undefined;
                 })
             );
         } else {
-            // Prepare table
-            this.prepareTable();
+            // Prepare table. The sources of the dropdown columns can load before the table is created.
+            const prepared = this.prepareTable(replaced, waitForSources);
+            if (prepared && waitForSources) {
+                promises.push(prepared);
+            }
         }
 
         await Promise.all(promises);
+        if (replaced()) {
+            return;
+        }
 
         if (typeof spreadsheet.plugins === 'object') {
             for (const plugin of Object.values(spreadsheet.plugins)) {

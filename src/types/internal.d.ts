@@ -116,6 +116,12 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
     /** The colgroup tag of the table, which holds the col tags. */
     colgroupContainer: HTMLElement;
 
+    /** The number of the last loadWorksheet of the worksheet. A build that a later load replaced does not end. */
+    generation?: number;
+
+    /** The active worksheet and the focus from before a loadWorksheet that has not ended, for a load that replaces it. */
+    pendingLoad?: { current: Worksheet | null; focused: boolean };
+
     /** The square in the lower-right corner of the selection, which fills the cells it is dragged over. */
     corner: HTMLDivElement;
 

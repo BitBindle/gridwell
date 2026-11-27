@@ -168,6 +168,10 @@ export class Rows {
         this.placing = true;
         queueMicrotask(() => {
             this.placing = false;
+            // loadWorksheet can replace the rows of the worksheet before the placement
+            if (this.worksheet.rowManager !== this) {
+                return;
+            }
             this.placeFrozen();
 
             // A cell of a frozen row and a frozen column sticks on both axes. The placement reads the scroll position.

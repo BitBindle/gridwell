@@ -1097,6 +1097,11 @@ export class View {
 
             if (libraryBase.jspreadsheet.timeControlLoading == null) {
                 libraryBase.jspreadsheet.timeControlLoading = setTimeout(() => {
+                    // loadWorksheet can replace the table of the worksheet before the timer ends
+                    if (worksheet.view !== this) {
+                        libraryBase.jspreadsheet.timeControlLoading = null;
+                        return;
+                    }
                     const content = worksheet.content;
                     // The last wheel event, else the change of the scroll position since the last check or load
                     const direction = this.lazyWheel || Math.sign(content.scrollTop - this.lazyScrollTop);

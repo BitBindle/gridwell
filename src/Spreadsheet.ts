@@ -215,6 +215,123 @@ export class Spreadsheet {
     }
 
     /**
+     * Build the worksheet at a position again from new options, in its tab. The jspreadsheet.d.ts typing of loadWorksheet
+     * tells what stays and what changes.
+     * @returns The worksheet when it is built, or undefined for a position without a worksheet.
+     */
+    async loadWorksheet(position: number, options: jspreadsheet.WorksheetOptions) {
+        const worksheet = this.worksheets[position];
+        if (!worksheet) {
+            return undefined;
+        }
+
+        if (worksheet.editor?.isOpen()) {
+            worksheet.editor.close(worksheet.editor.cell, false);
+        }
+        // An open filter and the context menu belong to the old table, so they close without their events
+        for (const dropdown of worksheet.element.querySelectorAll<HTMLElement & { dropdown?: { close: (ignoreEvents?: boolean) => void } }>('.jdropdown')) {
+            dropdown.dropdown?.close(true);
+        }
+        this.contextMenu.contextmenu?.close();
+
+        const oldName = worksheet.options.worksheetName!;
+        const name = options.worksheetName;
+        const renamed =
+            typeof name === 'string' &&
+            !!name.trim() &&
+            name !== oldName &&
+            !this.worksheets.some((other) => other !== worksheet && other.options.worksheetName === name);
+        if (renamed) {
+            this.element.tabs!.rename(position, name);
+            worksheet.options.worksheetName = name;
+            worksheet.dispatch('onrenameworksheet', worksheet, position, name, oldName);
+        } else {
+            options.worksheetName = oldName;
+        }
+        // The options of the first build give the styles of the cells with a getter, which the reset would empty
+        if (options === worksheet.options && worksheet.records) {
+            Object.defineProperty(options, 'style', { value: worksheet.getStyle(), writable: true, enumerable: true, configurable: true });
+        }
+
+        // The size observer of the frozen rows holds the old rows. The timer of a search, a touch or a rename of a header
+        // belongs to the active worksheet, and acts on the old table. The timer of a lazy load checks its worksheet.
+        worksheet.rowManager?.stopFreeze();
+        if (libraryBase.jspreadsheet.current === worksheet && libraryBase.jspreadsheet.timeControl) {
+            clearTimeout(libraryBase.jspreadsheet.timeControl);
+            libraryBase.jspreadsheet.timeControl = null;
+        }
+
+        // A load that replaces a load that has not ended keeps the active worksheet and the focus from before the first one
+        const element = worksheet.element;
+        const pending = worksheet.pendingLoad;
+        const focused = pending ? pending.focused : element.contains(document.activeElement);
+        const current = pending ? pending.current : libraryBase.jspreadsheet.current;
+        const ignore = worksheet.history?.ignore;
+        const index = this.config.worksheets.indexOf(worksheet.options);
+        if (index >= 0) {
+            this.config.worksheets[index] = options;
+        }
+
+        // The state of the old table goes, and the methods stay on the class. The number of the load stays, so that a load
+        // that has not ended can see that a later load replaced it.
+        const generation = (worksheet.generation ?? 0) + 1;
+        for (const key of Object.keys(worksheet) as (keyof Worksheet)[]) {
+            if (key !== 'parent' && key !== 'element') {
+                delete worksheet[key];
+            }
+        }
+        element.innerHTML = '';
+        element.classList.remove('with-toolbar');
+        worksheet.generation = generation;
+        worksheet.pendingLoad = { current, focused };
+        worksheet.setup(options);
+        worksheet.history.ignore = ignore === true;
+
+        // build makes the worksheet the active worksheet. While its data or the sources of its dropdown columns load, the
+        // worksheet has no table, so another worksheet stays active, or no worksheet is active. The user can make another
+        // worksheet active during the load, and that worksheet stays active.
+        const building = worksheet.build(true);
+        if (libraryBase.jspreadsheet.current === worksheet) {
+            libraryBase.jspreadsheet.current = current === worksheet ? null : current;
+        }
+        try {
+            await building;
+        } finally {
+            // The last load gives back the active worksheet, also when the build fails, but not after destroy
+            if (worksheet.generation === generation) {
+                delete worksheet.pendingLoad;
+                const active = libraryBase.jspreadsheet.current;
+                // destroy empties the element of the spreadsheet, so the worksheet is not in it any more
+                const destroyed = !this.element.contains(element);
+                if (!destroyed && (active === worksheet || (active == null && current === worksheet))) {
+                    libraryBase.jspreadsheet.current = current;
+                }
+            }
+        }
+        if (worksheet.generation !== generation) {
+            return worksheet;
+        }
+
+        // The focus moves only when no other element took it during the load
+        const lost = !document.activeElement || document.activeElement === document.body;
+        if (focused && lost) {
+            // The tab stop becomes the selection, so that the keys move it
+            const td = element.querySelector<HTMLTableCellElement>('td[tabindex="0"]');
+            if (td) {
+                const x = Number(td.getAttribute('data-x'));
+                const y = Number(td.getAttribute('data-y'));
+                worksheet.updateSelectionFromCoords(x, y, x, y);
+                td.focus({ preventScroll: true });
+            }
+        }
+        if (this.worksheets[this.getWorksheetActive()] === worksheet) {
+            this.toolbarManager.update(worksheet);
+        }
+
+        return worksheet;
+    }
+
+    /**
      * Move a worksheet, its options and its tab to another position. The open tab stays open, and an element of the
      * moved worksheet that has the focus keeps it.
      */
