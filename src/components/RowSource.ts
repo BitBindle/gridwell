@@ -35,6 +35,11 @@ interface Geometry {
     maxTop: number;
 }
 
+/** True when the cell and its row are not hidden. */
+function shows(cell: HTMLElement) {
+    return cell.style.display !== 'none' && (cell.parentNode as HTMLElement | null)?.style.display !== 'none';
+}
+
 /** The runs of consecutive rows of a sorted list of rows, as [from, to] pairs. */
 function ranges(rows: number[]) {
     const result: [number, number][] = [];
@@ -810,8 +815,14 @@ export class RowSource {
             worksheet.tbody.contains(cell) &&
             (cell.style.display === 'none' || (cell.parentNode as HTMLElement).style.display === 'none')
         ) {
-            worksheet.selection.updateTabStop();
+            // A window change does not drop the focus to the body, so the focus does not move here
+            worksheet.selection.updateTabStop(false);
             cell = worksheet.selection.activeCell;
+            // The focus that the table got from a cell that left the window goes to the new tab stop
+            if (this.focusLost && document.activeElement === worksheet.table && cell && shows(cell) && worksheet.tbody.contains(cell)) {
+                this.focusLost = false;
+                cell.focus({ preventScroll: true });
+            }
         }
         worksheet.table.tabIndex = cell?.isConnected && worksheet.table.contains(cell) ? -1 : 0;
     }
@@ -999,7 +1010,8 @@ export class RowSource {
             return;
         }
         const record = worksheet.records[range[1]]?.[range[0]];
-        if (record) {
+        // A cell in a hidden row cannot get the focus: updateTabStop gives it to the new tab stop
+        if (record && shows(record.element)) {
             this.focusLost = false;
             record.element.focus({ preventScroll: true });
         }
