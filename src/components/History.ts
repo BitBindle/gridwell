@@ -146,7 +146,9 @@ export class History {
         // The rows that the undo of a delete adds keep their formula texts, which name the cells at their positions after
         // the undo. The redo of an insert moves the references of its formulas, as the insert did.
         worksheet.formulas.updateTableReferences(
-            type === 1 ? {} : { inserted: { axis: 1, index: rowIndex, count: historyRecord.numOfRows, keepTexts: historyRecord.action === 'deleteRow' } }
+            type === 1
+                ? { removed: { axis: 1, index: rowIndex, count: historyRecord.numOfRows } }
+                : { inserted: { axis: 1, index: rowIndex, count: historyRecord.numOfRows, keepTexts: historyRecord.action === 'deleteRow' } }
         );
     }
 
@@ -252,7 +254,7 @@ export class History {
         // of its formulas, as the insert did.
         worksheet.formulas.updateTableReferences(
             type === 1
-                ? {}
+                ? { removed: { axis: 0, index: columnIndex, count: historyRecord.numOfColumns } }
                 : { inserted: { axis: 0, index: columnIndex, count: historyRecord.numOfColumns, keepTexts: historyRecord.action === 'deleteColumn' } }
         );
     }

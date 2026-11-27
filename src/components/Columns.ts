@@ -643,7 +643,10 @@ export class Columns {
                     worksheet.selection.shift(0, columnNumber, -numOfColumns);
 
                     // Update table references
-                    worksheet.formulas.updateTableReferences({ column: Number(columnNumber) });
+                    worksheet.formulas.updateTableReferences({
+                        column: Number(columnNumber),
+                        removed: { axis: 0, index: Number(columnNumber), count: numOfColumns },
+                    });
 
                     // The frozen columns can be other columns now
                     this.updateFrozenColumns();

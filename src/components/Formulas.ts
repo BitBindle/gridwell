@@ -79,13 +79,17 @@ export class Formulas {
             // A name that a delete removed can get the same new name as a cell that moved, as the formula texts do. The
             // dependents of both stay, and a name without dependents leaves the chain.
             const key = (keys && references[name]) || name;
-            for (const dependent of this.chain[name]) {
-                const renamed = references[dependent] || dependent;
-                if (!chain[key]) {
-                    chain[key] = [];
-                }
-                if (!chain[key].includes(renamed)) {
-                    chain[key].push(renamed);
+            const dependents = this.chain[name].map((dependent) => references[dependent] || dependent);
+            if (dependents.length === 0) {
+                continue;
+            }
+            if (!chain[key]) {
+                chain[key] = dependents;
+            } else {
+                for (const dependent of dependents) {
+                    if (!chain[key].includes(dependent)) {
+                        chain[key].push(dependent);
+                    }
                 }
             }
         }
@@ -499,8 +503,17 @@ export class Formulas {
      * starts there. Without it, the update reads each row and each column. `inserted` gives the rows (axis 1) or the
      * columns (axis 0) that an insert, an undo or a redo added: they get their place in the chain after the other cells
      * moved. With `keepTexts`, their formulas keep their texts, else their references move as the other references do.
+     * `removed` gives the rows (axis 1) or the columns (axis 0) that a delete removed, at their old positions: the formula
+     * cells that it removed leave the chain.
      */
-    updateTableReferences(from: { row?: number; column?: number; inserted?: { axis: 0 | 1; index: number; count: number; keepTexts?: boolean } } = {}) {
+    updateTableReferences(
+        from: {
+            row?: number;
+            column?: number;
+            inserted?: { axis: 0 | 1; index: number; count: number; keepTexts?: boolean };
+            removed?: { axis: 0 | 1; index: number; count: number };
+        } = {}
+    ) {
         const worksheet = this.worksheet;
         if (worksheet.skipUpdateTableReferences) {
             return;
@@ -545,18 +558,9 @@ export class Formulas {
             return !!inserted?.keepTexts && isInserted(x, y);
         }
 
-        // The old positions of the rows and the columns that are still in the worksheet, in the part that the update reads
-        const keptRows = new Set<number>();
-        const keptColumns = new Set<number>();
-        // A row without an object gives no old position, so the rows are not checked then
-        let allRows = true;
-
         // Update headers
         for (let i = firstColumn; i < worksheet.headers.length; i++) {
             const x = parseInt(worksheet.headers[i].getAttribute('data-x'));
-            if (references && !(inserted?.axis === 0 && isInserted(i, 0))) {
-                keptColumns.add(x);
-            }
 
             if (x !== i) {
                 // Update coords
@@ -573,9 +577,6 @@ export class Formulas {
         for (let j = firstRow; j < worksheet.rows.length; j++) {
             if (worksheet.rows[j]) {
                 const y = parseInt(worksheet.rows[j].element.getAttribute('data-y'));
-                if (references && !(inserted?.axis === 1 && isInserted(0, j))) {
-                    keptRows.add(y);
-                }
 
                 if (y !== j) {
                     // Update coords
@@ -585,8 +586,6 @@ export class Formulas {
                     // Row number
                     worksheet.rows[j].element.children[0].innerHTML = String(j + 1);
                 }
-            } else {
-                allRows = false;
             }
         }
 
@@ -674,15 +673,24 @@ export class Formulas {
         if (references) {
             // A formula cell that a delete removed leaves the chain. Before, a change of a cell that it named threw, or
             // calculated the cell that then had its name.
-            function gone(name: string) {
-                const [x, y] = getIdFromColumnName(name);
-                return (x >= firstColumn && !keptColumns.has(x)) || (allRows && y >= firstRow && !keptRows.has(y));
-            }
-            // An insert removes no cell
-            if (!inserted) {
-                for (const [name, dependents] of Object.entries(this.chain)) {
-                    if (dependents.some(gone)) {
-                        this.chain[name] = dependents.filter((dependent) => !gone(dependent));
+            const removed = from.removed;
+            if (removed) {
+                // The old names of the removed cells
+                const gone = new Set<string>();
+                const other = removed.axis === 1 ? worksheet.options.data[0]?.length || 0 : worksheet.options.data.length;
+                for (let k = removed.index; k < removed.index + removed.count; k++) {
+                    for (let o = 0; o < other; o++) {
+                        gone.add(getColumnNameFromId(removed.axis === 1 ? [o, k] : [k, o]));
+                    }
+                }
+                const chain = this.chain;
+                for (const name in chain) {
+                    const dependents = chain[name];
+                    for (const dependent of dependents) {
+                        if (gone.has(dependent)) {
+                            chain[name] = dependents.filter((dependent) => !gone.has(dependent));
+                            break;
+                        }
                     }
                 }
             }

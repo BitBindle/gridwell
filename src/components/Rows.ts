@@ -721,7 +721,7 @@ export class Rows {
                     worksheet.selection.shift(1, rowNumber, -numOfRows);
 
                     // Remove table references
-                    worksheet.formulas.updateTableReferences({ row: Number(rowNumber) });
+                    worksheet.formulas.updateTableReferences({ row: Number(rowNumber), removed: { axis: 1, index: Number(rowNumber), count: numOfRows } });
 
                     // Events
                     worksheet.dispatch('ondeleterow', worksheet, onbeforedeleterowRecords);
