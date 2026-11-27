@@ -346,7 +346,7 @@ export class Formulas {
                 for (let i = 0; i < worksheet.formulas.chain[cellId].length; i++) {
                     const cell = getIdFromColumnName(worksheet.formulas.chain[cellId][i]);
                     // A cell outside the window of the row source mode has no record, and calculates when it shows
-                    if (!worksheet.records[cell[1]]?.[cell[0]]) {
+                    if (worksheet.rowSource && !worksheet.records[cell[1]]?.[cell[0]]) {
                         continue;
                     }
                     // Update cell
