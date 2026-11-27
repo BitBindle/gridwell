@@ -1732,7 +1732,11 @@ declare namespace jspreadsheet {
          */
         rowSource?: RowSource;
 
-        /** Cells to be merged in the table innitialization. */
+        /**
+         * The merged ranges of the build: the first cell of each range, with its colspan and its rowspan. The build leaves
+         * out a range that does not fit in the sheet, that crosses an earlier range, or that has invalid spans, and shows
+         * its first cell on the console.
+         */
         mergeCells?: Record<string, [number, number]>;
 
         /**

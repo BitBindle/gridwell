@@ -113,6 +113,23 @@ describe('The row source mode', () => {
         expect(worksheet.selection.bounds).to.eql([0, 50000, 2, 50001]);
     });
 
+    it('leaves out the merged ranges of the options that do not fit, with a message on the console', () => {
+        const errors: unknown[][] = [];
+        const consoleError = console.error;
+        console.error = (...args: unknown[]) => {
+            errors.push(args);
+        };
+        try {
+            const { worksheet } = build({}, { mergeCells: { A1: [2, 2], B2: [2, 2], C5: [2, 2] } });
+
+            expect(worksheet.getMerge()).to.eql({ A1: [2, 2] });
+            expect(errors).to.have.length(1);
+            expect(String(errors[0][0])).to.contain('B2, C5');
+        } finally {
+            console.error = consoleError;
+        }
+    });
+
     it('keeps the heights and the hidden rows in its layout', () => {
         const { worksheet } = build({ defaultHeight: 24 });
 
