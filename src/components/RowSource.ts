@@ -68,55 +68,73 @@ export function mergeProblem(name: string, span: readonly unknown[], columns: nu
 }
 
 /**
- * The rows that merged ranges cover in each column, as sorted intervals. A check costs about the colspan of the range
- * and a binary search in each of its columns.
+ * The cells that the accepted merged ranges cover, by column. The start rows of all candidate ranges are known first, so
+ * each column keeps them sorted, with a Fenwick tree of the largest last row of the accepted ranges up to each place. A
+ * check and an add then take O(log n) for each column of a range, in any order of the keys.
  */
 class CoveredColumns {
-    private readonly columns = new Map<number, { starts: number[]; ends: number[] }>();
+    private readonly columns = new Map<number, { starts: number[]; ends: Int32Array }>();
 
-    /** The place in the intervals of column x of the last interval that starts at or before row y, or -1. */
-    private find(intervals: { starts: number[] }, y: number) {
-        let low = 0;
-        let high = intervals.starts.length - 1;
-        let found = -1;
-        while (low <= high) {
-            const middle = (low + high) >> 1;
-            if (intervals.starts[middle] <= y) {
-                found = middle;
-                low = middle + 1;
-            } else {
-                high = middle - 1;
+    constructor(candidates: Iterable<readonly [number, number, number]>) {
+        const starts = new Map<number, number[]>();
+        for (const [x1, x2, y1] of candidates) {
+            for (let x = x1; x <= x2; x++) {
+                let list = starts.get(x);
+                if (!list) {
+                    list = [];
+                    starts.set(x, list);
+                }
+                list.push(y1);
             }
         }
-        return found;
+        for (const [x, list] of starts) {
+            list.sort((a, b) => a - b);
+            const unique = list.filter((y, i) => i === 0 || y !== list[i - 1]);
+            this.columns.set(x, { starts: unique, ends: new Int32Array(unique.length + 1).fill(-1) });
+        }
     }
 
-    /** True when a range covers a cell of the columns x1 to x2 and the rows y1 to y2. */
+    /** The number of start rows of the column that are at or before row y. */
+    private static countUpTo(starts: number[], y: number) {
+        let low = 0;
+        let high = starts.length;
+        while (low < high) {
+            const middle = (low + high) >> 1;
+            if (starts[middle] <= y) {
+                low = middle + 1;
+            } else {
+                high = middle;
+            }
+        }
+        return low;
+    }
+
+    /** True when an accepted range covers a cell of the columns x1 to x2 and the rows y1 to y2. */
     crosses(x1: number, x2: number, y1: number, y2: number) {
         for (let x = x1; x <= x2; x++) {
-            const intervals = this.columns.get(x);
-            if (!intervals) {
+            const column = this.columns.get(x);
+            if (!column) {
                 continue;
             }
-            const i = this.find(intervals, y2);
-            if (i >= 0 && intervals.ends[i] >= y1) {
+            // The largest last row of the accepted ranges that start at or before y2
+            let last = -1;
+            for (let i = CoveredColumns.countUpTo(column.starts, y2); i > 0; i -= i & -i) {
+                last = Math.max(last, column.ends[i]);
+            }
+            if (last >= y1) {
                 return true;
             }
         }
         return false;
     }
 
-    /** Keep that a range covers the columns x1 to x2 and the rows y1 to y2. */
+    /** Accept a candidate range of the columns x1 to x2 and the rows y1 to y2. */
     add(x1: number, x2: number, y1: number, y2: number) {
         for (let x = x1; x <= x2; x++) {
-            let intervals = this.columns.get(x);
-            if (!intervals) {
-                intervals = { starts: [], ends: [] };
-                this.columns.set(x, intervals);
+            const column = this.columns.get(x)!;
+            for (let i = CoveredColumns.countUpTo(column.starts, y1); i < column.ends.length; i += i & -i) {
+                column.ends[i] = Math.max(column.ends[i], y2);
             }
-            const i = this.find(intervals, y1) + 1;
-            intervals.starts.splice(i, 0, y1);
-            intervals.ends.splice(i, 0, y2);
         }
     }
 }
@@ -129,36 +147,40 @@ class CoveredColumns {
 function checkMerges(merges: Record<string, readonly unknown[]> | undefined, columns: number, rows: number, keep: Record<string, [number, number]> = {}) {
     const refused: string[] = [];
     const result: Record<string, [number, number]> = {};
-    const covered = new CoveredColumns();
+    // The entries that mergeProblem accepts, with their first column, last column, first row and last row
+    const candidates = new Map<string, [number, number, number, number]>();
     const entries = Object.entries(merges || {});
-    function accept(name: string, colspan: number, rowspan: number) {
-        const [x1, y1] = getIdFromColumnName(name);
-        covered.add(x1, x1 + colspan - 1, y1, y1 + rowspan - 1);
-        result[name] = [colspan, rowspan];
+    for (const [name, span] of entries) {
+        if (!mergeProblem(name, span, columns, rows)) {
+            const [colspan, rowspan] = span as number[];
+            const [x1, y1] = getIdFromColumnName(name);
+            candidates.set(name, [x1, x1 + colspan - 1, y1, y1 + rowspan - 1]);
+        }
+    }
+    const covered = new CoveredColumns(Array.from(candidates.values(), ([x1, x2, y1]) => [x1, x2, y1] as const));
+    function accept(name: string) {
+        const [x1, x2, y1, y2] = candidates.get(name)!;
+        covered.add(x1, x2, y1, y2);
+        result[name] = [x2 - x1 + 1, y2 - y1 + 1];
     }
     const unchanged = new Set<string>();
     for (const [name, span] of entries) {
         const kept = keep[name];
-        if (kept && Array.isArray(span) && span.length === 2 && span[0] === kept[0] && span[1] === kept[1] && !mergeProblem(name, span, columns, rows)) {
+        if (kept && candidates.has(name) && span[0] === kept[0] && span[1] === kept[1]) {
             unchanged.add(name);
-            accept(name, kept[0], kept[1]);
+            accept(name);
         }
     }
-    for (const [name, span] of entries) {
+    for (const [name] of entries) {
         if (unchanged.has(name)) {
             continue;
         }
-        if (mergeProblem(name, span, columns, rows)) {
+        const range = candidates.get(name);
+        if (!range || covered.crosses(...range)) {
             refused.push(name);
             continue;
         }
-        const [colspan, rowspan] = span as number[];
-        const [x1, y1] = getIdFromColumnName(name);
-        if (covered.crosses(x1, x1 + colspan - 1, y1, y1 + rowspan - 1)) {
-            refused.push(name);
-            continue;
-        }
-        accept(name, colspan, rowspan);
+        accept(name);
     }
     // The ranges keep their order of the keys
     const ordered: Record<string, [number, number]> = {};

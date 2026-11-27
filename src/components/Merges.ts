@@ -292,8 +292,47 @@ export class Merges {
         }
         const span: [number, number] = [x2 - x1 + 1, y2 - y1 + 1];
         source.replaceMerges({ ...source.merges, [cellName]: span });
+        // The first cell of the new range is selected, as in the other modes
+        this.settleInRowSource({ [cellName]: span }, {}, [x1, y1]);
         if (!ignoreEvents) {
             worksheet.dispatch('onmerge', worksheet, { [cellName]: span });
+        }
+    }
+
+    /**
+     * After a change of the merged ranges in the row source mode: an editor in a cell that a new range hides closes
+     * without a save, and the selection and the tab stop leave the hidden cells, as in replace for the other modes.
+     * @param select - A cell to select in all cases, as setMerge does.
+     */
+    private settleInRowSource(added: Record<string, [number, number]>, removed: Record<string, [number, number]>, select?: [number, number]) {
+        const worksheet = this.worksheet;
+        function hides(ranges: Record<string, [number, number]>, x: number, y: number, first: boolean) {
+            return Object.entries(ranges).find(([name, [colspan, rowspan]]) => {
+                const [left, top] = getIdFromColumnName(name);
+                return x >= left && x < left + colspan && y >= top && y < top + rowspan && (first || x !== left || y !== top);
+            });
+        }
+        const editor = worksheet.editor;
+        if (editor.isOpen() && hides(added, editor.x, editor.y, false)) {
+            worksheet.closeEditor(editor.cell, false);
+        }
+        const range = worksheet.selection.range;
+        if (!range && !select) {
+            return;
+        }
+        const [x, y] = select || [Number(range![0]), Number(range![1])];
+        const hiding = select ? [getColumnNameFromId(select)] : hides(added, x, y, false);
+        let selected = false;
+        if (hiding) {
+            const [left, top] = getIdFromColumnName(hiding[0]);
+            selected = worksheet.selection.updateFromCoords(left, top, left, top) !== false;
+        } else if (hides(removed, x, y, true)) {
+            // A removed range shows its cells again, so the selection is set again on the cells that show
+            selected = worksheet.selection.updateFromCoords(range![0], range![1], range![2], range![3]) !== false;
+        }
+        // A handler can cancel the selection. The tab stop then leaves the hidden cell. A row outside the window gets it later.
+        if (!selected && (hiding || Object.keys(removed).length) && worksheet.rows[range ? Number(range[1]) : y]) {
+            worksheet.selection.updateTabStop();
         }
     }
 
@@ -419,6 +458,7 @@ export class Merges {
                 const beforeMerges = { [cellName]: merges[cellName] };
                 delete merges[cellName];
                 worksheet.rowSource.replaceMerges(merges);
+                this.settleInRowSource({}, beforeMerges);
                 worksheet.dispatch('onunmerge', worksheet, cellName, beforeMerges);
             }
             return;
@@ -514,6 +554,8 @@ export class Merges {
                 }
             }
             const added = Object.fromEntries(Object.entries(after).filter(([name, span]) => before[name]?.[0] !== span[0] || before[name]?.[1] !== span[1]));
+            const removed = Object.fromEntries(Object.entries(before).filter(([name, span]) => after[name]?.[0] !== span[0] || after[name]?.[1] !== span[1]));
+            this.settleInRowSource(added, removed);
             if (Object.keys(added).length) {
                 worksheet.dispatch('onmerge', worksheet, added);
             }
@@ -638,6 +680,7 @@ export class Merges {
         if (worksheet.rowSource) {
             const before = worksheet.rowSource.merges;
             worksheet.rowSource.replaceMerges({});
+            this.settleInRowSource({}, before);
             for (const [key, span] of Object.entries(before)) {
                 worksheet.dispatch('onunmerge', worksheet, key, { [key]: span });
             }

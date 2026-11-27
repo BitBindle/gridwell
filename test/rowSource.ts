@@ -620,4 +620,27 @@ describe('The row source mode', () => {
         worksheet.setMerge('A1', 2, 2);
         expect(alerts).to.eql(['Cell already merged']);
     });
+
+    it('moves the selection, the tab stop and an open editor out of the cells that a new merged range hides', () => {
+        const { worksheet } = build();
+        const stops = () => Array.from(root.querySelectorAll('[tabindex="0"]')).filter((element) => worksheet.element.contains(element));
+
+        // setMerge selects the first cell of the range, also for a selection from the bottom right
+        worksheet.updateSelectionFromCoords(1, 5, 0, 2);
+        worksheet.setMerge();
+        expect(worksheet.getMerge()).to.eql({ A3: [2, 4] });
+        expect(worksheet.selection.range?.slice(0, 2)).to.eql([0, 2]);
+        expect(stops()).to.eql([worksheet.getCell('A3')]);
+
+        // replaceMerges selects the first cell of a range that hides the selected cell, and closes its editor without a save
+        worksheet.updateSelectionFromCoords(1, 9, 1, 9);
+        const cell = worksheet.records[9][1].element;
+        worksheet.openEditor(cell);
+        (cell.children[0] as HTMLTextAreaElement).value = 'typed';
+        worksheet.replaceMerges({ A3: [2, 4], A9: [2, 2] });
+        expect(worksheet.editor.isOpen()).to.equal(false);
+        expect(worksheet.getValueFromCoords(1, 9)).to.equal('b9');
+        expect(worksheet.selection.range?.slice(0, 2)).to.eql([0, 8]);
+        expect(stops()).to.eql([worksheet.getCell('A9')]);
+    });
 });
