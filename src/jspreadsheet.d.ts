@@ -2703,8 +2703,9 @@ declare namespace jspreadsheet {
          * a merged range hides the first selected cell, a selection inside the range selects its first cell, and a larger
          * selection grows to hold the range.
          *
-         * A merged range is left out when it is not valid, does not fit the new row count, or crosses a range that stays. Without
-         * `merges`, the current ranges that do not fit the new row count are left out.
+         * A merged range is left out when it is not valid, does not fit the new row count, or crosses a range that stays. A
+         * current range with the same spans stays. When two new entries cross, the first one in the order of the keys stays.
+         * Without `merges`, the current ranges that do not fit the new row count are left out.
          * @returns The first cells of the ranges that are left out, as for `replaceMerges`. In the other modes, an empty list.
          */
         resetRows: (options?: { count?: number; runs?: RowRun[]; merges?: Record<string, [number, number]> }) => string[];

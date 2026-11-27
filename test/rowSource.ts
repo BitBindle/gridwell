@@ -620,6 +620,10 @@ describe('The row source mode', () => {
         expect(refused).to.eql(['A9', 'B1', 'D1', 'X']);
         expect(worksheet.getMerge()).to.eql({ A1: [2, 2] });
         expect(worksheet.resetRows()).to.eql([]);
+
+        // A current range with the same spans stays, also after an earlier key that crosses it
+        expect(worksheet.resetRows({ merges: { B1: [2, 2], A1: [2, 2] } })).to.eql(['B1']);
+        expect(worksheet.getMerge()).to.eql({ A1: [2, 2] });
     });
 
     it('returns an empty list from resetRows outside the row source mode', () => {
