@@ -120,6 +120,9 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
     /** The number of the last loadWorksheet of the worksheet. A build that a later load replaced does not end. */
     generation?: number;
 
+    /** The build that the tab of a new worksheet starts. It ends after oncreateworksheet, and createWorksheet returns it. */
+    created?: Promise<void>;
+
     /** The row source mode of the worksheet, or null. */
     rowSource: RowSource | null;
 

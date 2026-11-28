@@ -265,7 +265,12 @@ export class Tabs {
         this.setBorder(this.getActive());
     }
 
-    create(title?: string): HTMLDivElement | false | undefined {
+    /**
+     * Add a tab at the end, and call oncreate.
+     * @param title - The title of the tab. Without it, the tab asks for one.
+     * @param openTab - False to keep the open tab open.
+     */
+    create(title?: string, openTab?: boolean): HTMLDivElement | false | undefined {
         if (typeof this.options.onbeforecreate === 'function') {
             const ret = this.options.onbeforecreate(this.el, title);
 
@@ -276,7 +281,7 @@ export class Tabs {
             }
         }
 
-        const div = this.appendElement(title);
+        const div = this.appendElement(title, null, openTab);
 
         if (typeof this.options.oncreate === 'function') {
             // The constructor sets el.tabs before a tab can be created

@@ -631,21 +631,25 @@ export class Worksheet {
     }
 
     /**
-     * Add a worksheet to the spreadsheet, in a new tab. The tabs add it at the end, and position moves it.
+     * Add a worksheet to the spreadsheet, in a new tab. The tabs add it at the end, and position moves it. With open false,
+     * the open tab stays open.
      */
-    createWorksheet(options: jspreadsheet.WorksheetOptions, position?: number) {
+    async createWorksheet(options: jspreadsheet.WorksheetOptions, position?: number, open?: boolean) {
         const spreadsheet = this.parent;
 
         spreadsheet.creationThroughJss = true;
 
-        spreadsheet.createWorksheetObj(options);
+        const worksheet = spreadsheet.createWorksheetObj(options);
 
-        spreadsheet.element.tabs!.create(options.worksheetName);
+        spreadsheet.element.tabs!.create(options.worksheetName, open);
 
         const last = spreadsheet.worksheets.length - 1;
         if (Number.isInteger(position) && position! >= 0 && position! < last) {
             spreadsheet.placeWorksheet(last, position!);
         }
+
+        await worksheet.created;
+        return worksheet;
     }
 
     /**
