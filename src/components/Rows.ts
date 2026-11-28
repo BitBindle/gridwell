@@ -4,6 +4,7 @@ import type jspreadsheet from '../jspreadsheet';
 import type { Worksheet, WorksheetHistoryRecord } from '../types/internal';
 import { toGrid } from '../utils/zoom.js';
 import { askConfirm } from '../utils/dialogs.js';
+import { applyQuietly } from '../utils/quiet.js';
 
 /**
  * The rows of a worksheet: it creates, inserts, moves, deletes, hides and shows them, gets and sets their heights and
@@ -447,7 +448,7 @@ export class Rows {
         }
 
         // Configuration
-        if (worksheet.options.allowInsertRow !== false) {
+        if (worksheet.options.allowInsertRow !== false || worksheet.quiet) {
             // Data to be insert
             let data: jspreadsheet.CellValue[] = [];
 
@@ -497,14 +498,18 @@ export class Rows {
 
             // The merged ranges that the new rows split are removed. The other ranges stay and move with their cells.
             const crossed = worksheet.merges.isRowMerged(rowNumber, insertBefore);
-            if (crossed.length && !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
+            if (
+                crossed.length &&
+                !worksheet.quiet &&
+                !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))
+            ) {
                 return false;
             }
 
             // Clear any search
             if (worksheet.options.search === true) {
                 if (worksheet.view.results && worksheet.view.results.length !== worksheet.rows.length) {
-                    if (askConfirm(worksheet.parent.config, translate('This action will clear your search results. Are you sure?'))) {
+                    if (worksheet.quiet || askConfirm(worksheet.parent.config, translate('This action will clear your search results. Are you sure?'))) {
                         worksheet.resetSearch();
                     } else {
                         return false;
@@ -704,6 +709,32 @@ export class Rows {
     }
 
     /**
+     * Insert empty rows before a row, or delete rows from a row, as another source changed them. The change writes no
+     * history record, dispatches no event, asks no question, ignores allowInsertRow and allowDeleteRow, and keeps the formula
+     * texts. Otherwise it works as insert and delete.
+     * @param at - The first new row, or the first deleted row. For an insert, the number of rows adds rows at the end.
+     * @param count - The number of rows.
+     * @param insert - True to insert rows, false to delete them.
+     */
+    shift(at: number, count: number, insert: boolean): false | undefined {
+        const worksheet = this.worksheet;
+        const length = worksheet.options.data.length;
+
+        // The application changes the rows of the row source mode, and calls resetRows
+        if (worksheet.rowSource || !Number.isInteger(at) || !Number.isInteger(count) || count < 1 || at < 0 || at > (insert ? length : length - 1)) {
+            return false;
+        }
+
+        return applyQuietly(worksheet, () => {
+            if (!insert) {
+                return this.delete(at, count);
+            }
+            // After the last row, the rows go after it
+            return at < length ? this.insert(count, at, true) : this.insert(count, length - 1, false);
+        });
+    }
+
+    /**
      * Delete rows.
      * @param rowNumber - The first row to delete. Without it, the selected rows, or the last row.
      * @param numOfRows - The number of rows to delete.
@@ -717,7 +748,7 @@ export class Rows {
         }
 
         // Global Configuration
-        if (worksheet.options.allowDeleteRow !== false) {
+        if (worksheet.options.allowDeleteRow !== false || worksheet.quiet) {
             if (worksheet.options.allowDeletingAllRows === true || worksheet.options.data.length > 1) {
                 // Delete row definitions
                 if (rowNumber == null) {
@@ -777,6 +808,7 @@ export class Rows {
                     const crossed = worksheet.merges.inRows(rowNumber, rowNumber + numOfRows - 1);
                     if (
                         crossed.length &&
+                        !worksheet.quiet &&
                         !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))
                     ) {
                         return false;
@@ -785,7 +817,10 @@ export class Rows {
                     // Clear any search
                     if (worksheet.options.search === true) {
                         if (worksheet.view.results && worksheet.view.results.length !== worksheet.rows.length) {
-                            if (askConfirm(worksheet.parent.config, translate('This action will clear your search results. Are you sure?'))) {
+                            if (
+                                worksheet.quiet ||
+                                askConfirm(worksheet.parent.config, translate('This action will clear your search results. Are you sure?'))
+                            ) {
                                 worksheet.resetSearch();
                             } else {
                                 return false;

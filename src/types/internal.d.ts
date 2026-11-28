@@ -141,6 +141,12 @@ export interface WorksheetState extends jspreadsheet.WorksheetInstance {
     /** True while a paste updates many cells, so that formula references are updated once at the end. */
     skipUpdateTableReferences?: boolean;
 
+    /**
+     * True while shiftRows or shiftColumns runs. The insert and the delete then ask no question, ignore the allow options
+     * and keep the formula texts.
+     */
+    quiet: boolean;
+
     /** The footer of the table, when the worksheet has footers. */
     tfoot?: HTMLTableSectionElement;
 

@@ -3069,6 +3069,44 @@ declare namespace jspreadsheet {
         setWidth(column: number[], width: number | number[]): void;
 
         /**
+         * Insert empty columns before a column, or delete columns from a column, without a history record, an event or
+         * a question. Only the events that also occur while `ignoreEvents` is set occur. The method ignores
+         * allowInsertColumn and allowDeleteColumn, and the formulas keep their texts, as with
+         * {@link SpreadsheetOptions.updateReferences} false.
+         *
+         * The merged ranges that the change crosses are removed, and the other ranges move with their cells, as for
+         * {@link WorksheetInstance.insertColumn}. The selection and an open editor stay on their cells, and an editor
+         * in a deleted column closes without a save. Use it to show a change that another source made, for example a
+         * server that the worksheet shows. A worksheet in the row source mode does not support it: change the rows of
+         * the source and call {@link WorksheetInstance.resetRows}.
+         * @param at - The first new column, or the first deleted column. To insert columns after the last one, give the
+         *   number of columns.
+         * @param count - The number of columns, 1 or more.
+         * @param insert - True to insert empty columns, false to delete columns.
+         * @returns False when an argument is not valid, or for a worksheet in the row source mode.
+         */
+        shiftColumns: (at: number, count: number, insert: boolean) => false | undefined;
+
+        /**
+         * Insert empty rows before a row, or delete rows from a row, without a history record, an event or a question.
+         * Only the events that also occur while `ignoreEvents` is set occur. The method ignores allowInsertRow and
+         * allowDeleteRow, and the formulas keep their texts, as with {@link SpreadsheetOptions.updateReferences} false.
+         * A delete of all rows keeps one row, unless allowDeletingAllRows is true.
+         *
+         * The merged ranges that the change crosses are removed, and the other ranges move with their cells, as for
+         * {@link WorksheetInstance.insertRow}. The selection and an open editor stay on their cells, and an editor in a
+         * deleted row closes without a save. Use it to show a change that another source made, for example a server
+         * that the worksheet shows. A worksheet in the row source mode does not support it: change the rows of the
+         * source and call {@link WorksheetInstance.resetRows}.
+         * @param at - The first new row, or the first deleted row. To insert rows after the last one, give the number
+         *   of rows.
+         * @param count - The number of rows, 1 or more.
+         * @param insert - True to insert empty rows, false to delete rows.
+         * @returns False when an argument is not valid, or for a worksheet in the row source mode.
+         */
+        shiftRows: (at: number, count: number, insert: boolean) => false | undefined;
+
+        /**
          * Show hidden column.
          * @param colNumber - Column index.
          */

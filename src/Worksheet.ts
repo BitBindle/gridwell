@@ -78,6 +78,7 @@ export class Worksheet {
         this.keyboard = new Keyboard(this);
         this.lastScrollLeft = 0;
         this.rowSource = null;
+        this.quiet = false;
     }
 
     /**
@@ -295,6 +296,10 @@ export class Worksheet {
         return this.rowManager.delete(rowNumber, numOfRows);
     }
 
+    shiftRows(at: number, count: number, insert: boolean) {
+        return this.rowManager.shift(at, count, insert);
+    }
+
     hideRow(rowNumber: number | number[]) {
         return this.rowManager.hide(rowNumber);
     }
@@ -396,6 +401,10 @@ export class Worksheet {
 
     deleteColumn(columnNumber?: number | string, numOfColumns?: number | string) {
         return this.columns.delete(columnNumber, numOfColumns);
+    }
+
+    shiftColumns(at: number, count: number, insert: boolean) {
+        return this.columns.shift(at, count, insert);
     }
 
     getColumnData(columnNumber: number, processed?: boolean) {

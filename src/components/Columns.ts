@@ -7,6 +7,7 @@ import type { Worksheet, WorksheetHistoryRecord } from '../types/internal';
 import { toGrid, toScreen } from '../utils/zoom.js';
 import { forEachRecordRow } from './RowSource.js';
 import { askConfirm } from '../utils/dialogs.js';
+import { applyQuietly } from '../utils/quiet.js';
 
 /**
  * A width is given when it is not undefined, null, empty or NaN. A width of 0 is given.
@@ -274,7 +275,7 @@ export class Columns {
         }
 
         // Configuration
-        if (worksheet.options.allowInsertColumn !== false) {
+        if (worksheet.options.allowInsertColumn !== false || worksheet.quiet) {
             // Data to be insert
             let data: jspreadsheet.CellValue[] = [];
 
@@ -336,7 +337,11 @@ export class Columns {
 
             // The merged ranges that the new columns split are removed. The other ranges stay and move with their cells.
             const crossed = worksheet.merges.isColMerged(columnNumber, insertBefore);
-            if (crossed.length && !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))) {
+            if (
+                crossed.length &&
+                !worksheet.quiet &&
+                !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))
+            ) {
                 return false;
             }
             const merges = worksheet.merges.removeCrossed(crossed);
@@ -497,6 +502,33 @@ export class Columns {
     }
 
     /**
+     * Insert empty columns before a column, or delete columns from a column, as another source changed them. The change
+     * writes no history record, dispatches no event, asks no question, ignores allowInsertColumn and allowDeleteColumn, and
+     * keeps the formula texts. Otherwise it works as insert and delete.
+     * @param at - The first new column, or the first deleted column. For an insert, the number of columns adds columns at
+     * the end.
+     * @param count - The number of columns.
+     * @param insert - True to insert columns, false to delete them.
+     */
+    shift(at: number, count: number, insert: boolean): false | undefined {
+        const worksheet = this.worksheet;
+        const length = worksheet.headers.length;
+
+        // The row source mode keeps the columns of the build
+        if (worksheet.rowSource || !Number.isInteger(at) || !Number.isInteger(count) || count < 1 || at < 0 || at > (insert ? length : length - 1)) {
+            return false;
+        }
+
+        return applyQuietly(worksheet, () => {
+            if (!insert) {
+                return this.delete(at, count);
+            }
+            // After the last column, the columns go after it
+            return at < length ? this.insert(count, at, true) : this.insert(count, length - 1, false);
+        });
+    }
+
+    /**
      * Delete columns.
      * @param columnNumber - The first column to delete. Without it, the selected columns, or the last column.
      * @param numOfColumns - The number of columns to delete.
@@ -510,7 +542,7 @@ export class Columns {
         }
 
         // Global Configuration
-        if (worksheet.options.allowDeleteColumn !== false) {
+        if (worksheet.options.allowDeleteColumn !== false || worksheet.quiet) {
             if (worksheet.headers.length > 1) {
                 // Delete column definitions
                 if (columnNumber == null) {
@@ -567,6 +599,7 @@ export class Columns {
                     const crossed = worksheet.merges.inColumns(columnNumber, columnNumber + numOfColumns - 1);
                     if (
                         crossed.length &&
+                        !worksheet.quiet &&
                         !askConfirm(worksheet.parent.config, translate('This action will destroy any existing merged cells. Are you sure?'))
                     ) {
                         return false;
