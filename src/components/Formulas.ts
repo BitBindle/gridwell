@@ -759,6 +759,14 @@ export class Formulas {
     }
 
     /**
+     * True when an insert, a delete, a move or a sort keeps the formula texts: with the option updateReferences false, and
+     * during shiftRows and shiftColumns.
+     */
+    private keepsTexts() {
+        return this.worksheet.parent.config.updateReferences === false || this.worksheet.quiet;
+    }
+
+    /**
      * Update the positions of the rows, the columns and the cells, and the references of the formulas, after rows or
      * columns move.
      * @param from - The first row or column that moved. The rows or columns before it keep their positions, so the update
@@ -954,7 +962,7 @@ export class Formulas {
                 }
                 const chain = this.chain;
                 // A removed cell that formulas named leaves the chain when the formulas name #REF! in its place
-                if (removed.refErrors && worksheet.parent.config.updateReferences !== false) {
+                if (removed.refErrors && !this.keepsTexts()) {
                     for (const name of gone) {
                         delete chain[name];
                     }
@@ -970,7 +978,7 @@ export class Formulas {
                 }
             }
 
-            if (worksheet.parent.config.updateReferences === false) {
+            if (this.keepsTexts()) {
                 // The formula texts stay, so the chain keeps the names that they refer to. The formula cells moved.
                 this.rename(affectedTokens, false);
                 this.showResults(firstColumn, firstRow);
