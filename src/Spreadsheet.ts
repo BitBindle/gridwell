@@ -114,12 +114,21 @@ export class Spreadsheet {
                     // onbeforecreate always gives a title, so the tab has its content
                     newWorksheet.element = newTabContent as Worksheet['element'];
 
-                    newWorksheet.build().then(() => {
-                        this.toolbarManager.update(newWorksheet);
+                    // build makes the worksheet the active worksheet. A worksheet in a tab that is not open does not take it.
+                    const current = libraryBase.jspreadsheet.current;
+                    const opened = element.tabs.getActive() === element.tabs.headers.children.length - 2;
+                    newWorksheet.created = newWorksheet.build().then(() => {
+                        // The toolbar shows the worksheet of the open tab
+                        if (this.worksheets[element.tabs.getActive() as number] === newWorksheet) {
+                            this.toolbarManager.update(newWorksheet);
+                        }
 
                         // createWorksheet can move the new worksheet before it is built
                         newWorksheet.dispatch('oncreateworksheet', newWorksheet, newWorksheet.options, this.worksheets.indexOf(newWorksheet));
                     });
+                    if (!opened && libraryBase.jspreadsheet.current === newWorksheet) {
+                        libraryBase.jspreadsheet.current = current;
+                    }
                 },
                 onchange: (element: HTMLElement, instance: Tabs, tabIndex: number) => {
                     if (this.worksheets.length !== 0 && this.worksheets[tabIndex]) {

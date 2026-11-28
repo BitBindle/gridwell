@@ -330,6 +330,45 @@ describe('Worksheet tabs', () => {
         expect(created).to.eql([['Between', 1]]);
     });
 
+    it('createWorksheet returns the new worksheet when it is built, after oncreateworksheet', async () => {
+        const created: string[] = [];
+        const worksheets = await create({ oncreateworksheet: (worksheet, options) => created.push(options.worksheetName!) });
+
+        const worksheet = await worksheets[0].createWorksheet({ minDimensions: [2, 2], worksheetName: 'Fourth' }, 1);
+
+        expect(worksheet).to.equal(worksheets[1]);
+        expect(worksheet.options.worksheetName).to.equal('Fourth');
+        expect(worksheet.getData()).to.eql([
+            ['', ''],
+            ['', ''],
+        ]);
+        expect(created).to.eql(['Fourth']);
+        expect(worksheets[0].getWorksheetActive()).to.equal(1);
+        expect(jspreadsheet.current).to.equal(worksheet);
+    });
+
+    it('createWorksheet with open false keeps the open tab and the active worksheet', async () => {
+        const worksheets = await create({ tabs: true });
+        worksheets[0].openWorksheet(1);
+        jspreadsheet.current = worksheets[1];
+
+        const atEnd = await worksheets[0].createWorksheet({ minDimensions: [2, 2], worksheetName: 'Fourth' }, undefined, false);
+        const between = await worksheets[0].createWorksheet({ minDimensions: [2, 2], worksheetName: 'Between' }, 0, false);
+
+        expect(worksheets.map((worksheet) => worksheet.options.worksheetName)).to.eql(['Between', 'First', 'Second', 'Third', 'Fourth']);
+        expect(getTabs().map((tab) => tab.textContent)).to.eql(['Between', 'First', 'Second', 'Third', 'Fourth']);
+        expect(getTabs().map((tab) => tab.getAttribute('aria-selected'))).to.eql(['false', 'false', 'true', 'false', 'false']);
+        expect(getTabs().map((tab) => tab.getAttribute('tabindex'))).to.eql(['-1', '-1', '0', '-1', '-1']);
+        expect(worksheets[0].getWorksheetActive()).to.equal(2);
+        expect(jspreadsheet.current).to.equal(worksheets[2]);
+        expect(atEnd).to.equal(worksheets[4]);
+        expect(between).to.equal(worksheets[0]);
+        expect(between.getData()).to.eql([
+            ['', ''],
+            ['', ''],
+        ]);
+    });
+
     it('moveWorksheet moves a worksheet and its tab, and keeps the open worksheet open', async () => {
         const moves: [string, number, number][] = [];
         const worksheets = await create({

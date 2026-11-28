@@ -2201,11 +2201,14 @@ declare namespace jspreadsheet {
         copy: (cut?: boolean) => void;
 
         /**
-         * Create a new worksheet.
+         * Create a new worksheet in a new tab, and open the tab. With `open` false, the open tab stays open, and
+         * {@link JSpreadsheet.current} stays the same worksheet.
          * @param options - Worksheet options.
          * @param position - Index of the new worksheet. Without it, or outside the worksheets, the new worksheet is the last one.
+         * @param open - False to add the worksheet without opening its tab. The default is true.
+         * @returns The new worksheet, when it is built and after oncreateworksheet. The promise rejects when the build fails.
          */
-        createWorksheet: (options: WorksheetOptions, position?: number) => void;
+        createWorksheet: (options: WorksheetOptions, position?: number, open?: boolean) => Promise<WorksheetInstance>;
 
         /**
          * Remove columns.
